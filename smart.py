@@ -7,10 +7,14 @@ import os
 import re
 import logging
 import pandas as pd
+import matplotlib.pyplot as plt
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 log.addHandler(logging.StreamHandler())
+
+lookup = dict(ASP06_J3="PGS_5_(ASP-06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)", ASP06_J6="VIS_7_(ASP_06)",
+              ASP07_J3="PGS_4_(ASP_07)", ASP07_J4="VIS_8_(ASP_07)")
 
 
 def read_smart_raw(path: str, filename: str) -> pd.DataFrame:
@@ -47,8 +51,26 @@ def read_smart_raw(path: str, filename: str) -> pd.DataFrame:
     return df
 
 
+def read_pixel_to_wavelength(path: str, filename: str) -> pd.DataFrame:
+    """
+
+    Args:
+        path: Path where to find file
+        filename: Name of file
+
+    Returns: pandas DataFrame relating pixel number to wavelength
+
+    """
+    path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"
+    filename = "pixel_wl_PGS_5_(ASP_06).dat"
+
 if __name__ == '__main__':
     # test read in function
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/Calib_Lab_20210329/15.4cm"
-    filename = "2021_03_29_08_48.Fdw_SWIR.dat"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/Calib_Lab_20210329/calib_J3_4"
+    filename = "2021_03_29_11_15.Fdw_SWIR.dat"
     df = read_smart_raw(path, filename)
+
+    # plot netto counts time series
+    wavelength =
+
+    # subtract dark current
