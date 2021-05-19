@@ -1,0 +1,13 @@
+# paths to files
+[cirrus-hl]
+
+[cirrus-hl.jr_local]
+base_dir = "C:/Users/Johannes/Documents/Doktor"
+pixel_to_wavelength = "instruments/SMART/pixel_wl"
+calib_data = "campaigns/CIRRUS-HL/SMART"
+measurement_data = "campaigns/CIRRUS-HL/SMART/raw"
+# on LIM server
+[cirrus-hl.lim_server]
+base_dir = "/projekt_agmwend"
+pixel_to_wavelength = "kalibration/Spektros/pixel_wl"
+calib_data = "data/Cirrus_HL/SMART"
