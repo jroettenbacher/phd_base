@@ -5,7 +5,8 @@
 base_dir = "C:/Users/Johannes/Documents/Doktor"
 pixel_to_wavelength = "instruments/SMART/pixel_wl"
 calib_data = "campaigns/CIRRUS-HL/SMART"
-measurement_data = "campaigns/CIRRUS-HL/SMART/raw"
+raw_data = "campaigns/CIRRUS-HL/SMART/raw"
+data = "campaigns/CIRRUS-HL/SMART/data"
 # on LIM server
 [cirrus-hl.lim_server]
 base_dir = "/projekt_agmwend"
