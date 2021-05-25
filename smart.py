@@ -57,7 +57,7 @@ def read_smart_raw(path: str, filename: str) -> pd.DataFrame:
         path: Path where to find file
         filename: Name of file
 
-    Returns: pandas DataFrame with column names and datetime index and the channel of the measurement (SWIR or VNIR)
+    Returns: pandas DataFrame with column names and datetime index
 
     """
     file = os.path.join(path, filename)
@@ -75,6 +75,22 @@ def read_smart_raw(path: str, filename: str) -> pd.DataFrame:
     df = pd.read_csv(file, sep="\t", header=None, names=header)
     datetime_str = date_str + " " + df["time"]
     df = df.set_index(pd.to_datetime(datetime_str, format="%Y_%m_%d %H %M %S.%f")).drop("time", axis=1)
+    return df
+
+
+def read_smart_cor(path: str, filename: str) -> pd.DataFrame:
+    """
+        Read dark current corrected SMART data files
+
+        Args:
+            path: Path where to find file
+            filename: Name of file
+
+        Returns: pandas DataFrame with column names and datetime index
+
+        """
+    file = os.path.join(path, filename)
+    df = pd.read_csv(file, sep="\t", index_col="time", parse_dates=True)
     return df
 
 
@@ -305,6 +321,10 @@ def correct_smart_dark_current(smart_file: str, option: int) -> pd.Series:
     return measurement_cor
 
 
+def plot_smart():
+    return None
+
+
 if __name__ == '__main__':
     # test read in functions
     path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/ASP_06_Calib_Lab_20210329/calib_J3_4"
@@ -343,12 +363,62 @@ if __name__ == '__main__':
     smart_cor = correct_smart_dark_current(filename, option)
 
     # plot mean corrected smart measurement
-    data_path, _, _ = set_paths()
+    raw_path, _, _, _ = set_paths()
     filename = "2021_03_29_11_07.Fup_VNIR.dat"
     option = 2
-    smart = read_smart_raw(data_path, filename)
+    smart = read_smart_raw(raw_path, filename)
     smart_cor = correct_smart_dark_current(filename, option=option)
     measurement = smart.mean().iloc[2:]
     measurement_cor = smart_cor.mean()
     plot_mean_corrected_measurement(filename, measurement, measurement_cor, option)
 
+    # read corrected file
+    _, _, _, data_path = set_paths()
+    filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
+    smart_cor = read_smart_cor(data_path, filename)
+
+    # plot any smart measurement given a range of wavelengths, one specific one or all
+    raw_path, pixel_wl_path, _, data_path = set_paths()
+    filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
+    raw_file = "2021_03_29_11_07.Fup_VNIR.dat"
+    date_str, channel, direction = get_info_from_filename(filename)
+    smart_cor = read_smart_cor(data_path, filename)
+    smart_raw = read_smart_raw(raw_path, raw_file)
+    pixel_wl = read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+    wavelength = "all"
+    pixel_nr = []
+    if len(wavelength) == 2:
+        for wl in wavelength:
+            pixel_nr.append(str(find_pixel(pixel_wl, wl)))
+        smart_sel = smart_cor.loc[:, pixel_nr[0]:pixel_nr[1]]
+        begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]
+        smart_mean = smart_sel.mean(axis=0).to_frame()
+        smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))
+        smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel="Netto Counts",
+                        title=f"Time Averaged SMART Measurement Corrected for Dark Current\n {begin_dt} - {end_dt}")
+        plt.show()
+        plt.close()
+    elif len(wavelength) == 1:
+        pixel_nr = find_pixel(pixel_wl, wavelength[0])
+        smart_sel = smart_cor.loc[:, str(pixel_nr)].to_frame()
+        begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]
+        time_extend = end_dt - begin_dt
+        fig, ax = plt.subplots()
+        smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel="Netto Counts",
+                       title=f"SMART Time Series at {wavelength[0]} nm {begin_dt:%Y-%m-%d}")
+        ax = jr.set_xticks_and_xlabels(ax, time_extend)
+        ax.grid()
+        plt.show()
+        plt.close()
+    elif wavelength == "all":
+        begin_dt, end_dt = smart_cor.index[0], smart_cor.index[-1]
+        smart_mean = smart_cor.mean().to_frame()
+        smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))
+        smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel="Netto Counts",
+                        title=f"Time Averaged SMART Measurement Corrected for Dark Current\n "
+                              f"{begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}")
+        plt.grid()
+        plt.show()
+        plt.close()
