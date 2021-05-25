@@ -29,6 +29,7 @@ lookup = dict(ASP_06_J3="PGS_5_(ASP_06)", ASP_06_J4="VIS_6_(ASP_06)", ASP_06_J5=
 def get_info_from_filename(filename: str):
     """
     Using regular expressions some information from the filename is extracted.
+
     Args:
         filename: string in the form yyyy_mm_dd_hh_MM.[F/I][up/dw]_[SWIR/VNIR].dat (eg. "2021_03_29_11_07.Fup_SWIR.dat")
 
@@ -48,9 +49,10 @@ def get_info_from_filename(filename: str):
     return date_str, channel, direction
 
 
-def read_smart_raw(path: str, filename: str) -> Tuple[pd.DataFrame, str, str]:
+def read_smart_raw(path: str, filename: str) -> pd.DataFrame:
     """
     Read raw SMART data files
+
     Args:
         path: Path where to find file
         filename: Name of file
@@ -79,6 +81,7 @@ def read_smart_raw(path: str, filename: str) -> Tuple[pd.DataFrame, str, str]:
 def read_pixel_to_wavelength(path: str, spectrometer: str) -> pd.DataFrame:
     """
     Read file which maps each pixel to a certain wavelength for a specified spectrometer.
+
     Args:
         path: Path where to find file
         spectrometer: Which spectrometer to read in, refer to lookup table for possible spectrometers
@@ -95,6 +98,7 @@ def read_pixel_to_wavelength(path: str, spectrometer: str) -> pd.DataFrame:
 def find_pixel(df: pd.DataFrame, wavelength: float()) -> int:
     """
     Given the dataframe with the pixel to wavelength mapping, return the pixel closest to the requested wavelength.
+
     Args:
         df: Dataframe with column pixel and wavelength (from read_pixel_to_wavelength)
         wavelength: which wavelength are you interested in
@@ -110,6 +114,7 @@ def find_pixel(df: pd.DataFrame, wavelength: float()) -> int:
 def set_paths():
     """
     Read paths from the toml file according to the current working directory.
+
     Returns: Paths to measurements, pixel to wavelength calibration files, spectrometer calibration files.
 
     """
@@ -119,11 +124,12 @@ def set_paths():
         config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
 
     base_dir = config["base_dir"]
-    path = os.path.join(base_dir, config["measurement_data"])
+    raw_path = os.path.join(base_dir, config["raw_data"])
     pixel_wl_path = os.path.join(base_dir, config["pixel_to_wavelength"])
     calib_path = os.path.join(base_dir, config["calib_data"])
+    data_path = os.path.join(base_dir, config["data"])
 
-    return path, pixel_wl_path, calib_path
+    return raw_path, pixel_wl_path, calib_path, data_path
 
 
 def plot_dark_current(wavelenghts: Union[pd.Series, list],
@@ -131,6 +137,7 @@ def plot_dark_current(wavelenghts: Union[pd.Series, list],
                       spectrometer: str, channel: str, **kwargs):
     """
     Plot the dark current over the wavelengths from the specified spectrometer and channel.
+
     Args:
         wavelenghts: series or list of wavelengths corresponding with the pixel numbers from read_pixel_to_wavelength
         dark_current: series or list with mean dark current for each pixel
@@ -157,17 +164,21 @@ def plot_dark_current(wavelenghts: Union[pd.Series, list],
     plt.close()
 
 
-def get_dark_current(filename: str, option: int) -> pd.Series:
+def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, plt.figure]:
     """
     Get the corresponding dark current for the specified measurement file to correct the raw SMART measurement.
+
     Args:
         filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat")
         option: which option to use for VNIR, 1 or 2
+        kwargs:
+            plot (bool): show plot or not (default: True)
 
-    Returns: pandas Series with the mean dark current measurements over time for each pixel
+    Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
     """
-    path, pixel_wl_path, calib_path = set_paths()
+    plot = kwargs["plot"] if "plot" in kwargs else True
+    path, pixel_wl_path, calib_path, _ = set_paths()
     smart = read_smart_raw(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
     spectrometer = lookup[f"{direction}_{channel}"]
@@ -179,10 +190,11 @@ def get_dark_current(filename: str, option: int) -> pd.Series:
     if channel == "VNIR":
         if option == 1:
             last_dark_pixel = find_pixel(pixel_wl, 290)
-            dark_pixels = np.arange(1, last_dark_pixel+1)
+            dark_pixels = np.arange(1, last_dark_pixel + 1)
             dark_current = smart.loc[:, dark_pixels].mean()
             dark_wls = pixel_wl[pixel_wl["pixel"].isin(dark_pixels)]["wavelength"]
-            plot_dark_current(dark_wls, dark_current, spectrometer, channel)
+            if plot:
+                plot_dark_current(dark_wls, dark_current, spectrometer, channel)
         else:
             assert option == 2, "Option should be either 1 or 2!"
             # read in cali file
@@ -205,14 +217,16 @@ def get_dark_current(filename: str, option: int) -> pd.Series:
             dark_current = read_smart_raw(dark_dir, dark_file)
             dark_current = dark_current.iloc[:, 2:].mean()
             wls = pixel_wl["wavelength"]
-            plot_dark_current(wls, dark_current, spectrometer, channel)
+            if plot:
+                plot_dark_current(wls, dark_current, spectrometer, channel)
 
     elif channel == "SWIR":
         # check if the shutter flag was working: If all values are 1 -> shutter flag is probably not working
         if np.sum(smart.shutter == 1) != smart.shutter.shape[0]:
             dark_current = smart.where(smart.shutter == 0).mean().iloc[2:]
             wls = pixel_wl["wavelength"]
-            plot_dark_current(wls, dark_current, spectrometer, channel)
+            if plot:
+                plot_dark_current(wls, dark_current, spectrometer, channel)
         else:
             log.debug("Shutter flag is probably wrong")
     else:
@@ -222,21 +236,18 @@ def get_dark_current(filename: str, option: int) -> pd.Series:
     return dark_current
 
 
-def plot_mean_corrected_measurement(wavelength: list, measurement: Union[pd.Series, list],
-                               measurement_cor: Union[pd.Series, list],
-                               dark_current: Union[pd.Series, list, float],
-                               channel: str, spectrometer: str, option: int, date_str:str, **kwargs):
+def plot_mean_corrected_measurement(filename: str, measurement: Union[pd.Series, list],
+                                    measurement_cor: Union[pd.Series, list],
+                                    option: int, **kwargs):
     """
-    Plot the mean dark current corrected SMART measurement over time together with the raw measurement and the dark current.
+    Plot the mean dark current corrected SMART measurement over time together with the raw measurement and the dark
+    current.
+
     Args:
-        wavelength: wavelengths corresponding to each pixel from read_pixel_to_wavelength
+        filename: name of file
         measurement: raw SMART measurements for each pixel averaged over time
         measurement_cor: corrected SMART measurements for each pixel averaged over time
-        dark_current: dark current corresponding to the used spectrometer
-        channel: VNIR or SWIR
-        spectrometer: which spectrometer was used
         option: which option was used for VNIR correction
-        date_str: date of file
         **kwargs:
             save_fig (bool): save figure to current directory or just show it
 
@@ -244,6 +255,12 @@ def plot_mean_corrected_measurement(wavelength: list, measurement: Union[pd.Seri
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
+    _, pixel_path, _, _ = set_paths()
+    date_str, channel, direction = get_info_from_filename(filename)
+    spectrometer = lookup[f"{direction}_{channel}"]
+    dark_current = get_dark_current(filename, option, plot=False)
+    wavelength = read_pixel_to_wavelength(pixel_path, spectrometer)["wavelength"]
+
     if channel == "VNIR" and option == 1:
         plt.axhline(dark_current, label="Dark Current", color='k')
     else:
@@ -251,7 +268,7 @@ def plot_mean_corrected_measurement(wavelength: list, measurement: Union[pd.Seri
     plt.plot(wavelength, measurement, label="Measurement")
     plt.plot(wavelength, measurement_cor, label="Corrected Measurement")
     plt.grid()
-    plt.title(f"Corrected SMART Measurement {date_str.replace('_', '-')}\n"
+    plt.title(f"Mean Corrected SMART Measurement {date_str.replace('_', '-')}\n"
               f"Spectrometer {spectrometer}, Channel: {channel}, Option: {option}")
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Netto Counts")
@@ -263,13 +280,22 @@ def plot_mean_corrected_measurement(wavelength: list, measurement: Union[pd.Seri
     plt.close()
 
 
-def correct_smart_dark_current(smart_file, option):
-    path, pixel_wl_path, calib_path = set_paths()
+def correct_smart_dark_current(smart_file: str, option: int) -> pd.Series:
+    """
+    Correct the raw SMART measurement for the dark current of the spectrometer.
+    Only returns data when the shutter was open.
+
+    Args:
+        smart_file: filename of file to correct
+        option: which option should be used to get the dark current? Only relevant for channel "VNIR".
+
+    Returns: Series with corrected smart measurement
+
+    """
+    path, _, _, _ = set_paths()
     date_str, channel, direction = get_info_from_filename(smart_file)
-    spectrometer = lookup[f"{direction}_{channel}"]
     smart = read_smart_raw(path, smart_file)
-    pixel_wl = read_pixel_to_wavelength(pixel_wl_path, spectrometer)
-    dark_current = get_dark_current(smart_file, option)
+    dark_current = get_dark_current(smart_file, option, plot=False)
 
     if channel == "VNIR" and option == 1:
         dark_current = dark_current.mean()
@@ -316,5 +342,13 @@ if __name__ == '__main__':
     filename = "2021_03_29_11_07.Fup_VNIR.dat"
     smart_cor = correct_smart_dark_current(filename, option)
 
-    # plot_mean_corrected_measurement(wls, measurement, measurement_cor, dark_current, channel, spectrometer, option,
-    #                                 date_str)
+    # plot mean corrected smart measurement
+    data_path, _, _ = set_paths()
+    filename = "2021_03_29_11_07.Fup_VNIR.dat"
+    option = 2
+    smart = read_smart_raw(data_path, filename)
+    smart_cor = correct_smart_dark_current(filename, option=option)
+    measurement = smart.mean().iloc[2:]
+    measurement_cor = smart_cor.mean()
+    plot_mean_corrected_measurement(filename, measurement, measurement_cor, option)
+
