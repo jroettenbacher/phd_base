@@ -8,6 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import datetime
 
+
 # from pyLARDA.helpers
 def argnearest(array, value):
     """find the index of the nearest value in a sorted array
@@ -24,9 +25,24 @@ def argnearest(array, value):
     i = np.searchsorted(array, value) - 1
 
     if not i == array.shape[0] - 1:
-            if np.abs(array[i] - value) > np.abs(array[i + 1] - value):
-                i = i + 1
+        if np.abs(array[i] - value) > np.abs(array[i + 1] - value):
+            i = i + 1
     return i
+
+
+def make_dir(folder):
+    """
+    creates folder if it doesn't exist already
+    Args:
+        folder (str): folder name
+
+    Returns: nothing, but creates a new folder if possible
+
+    """
+    try:
+        os.makedirs(folder)
+    except FileExistsError:
+        pass
 
 
 # from pyLARDA.Transformations
