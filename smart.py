@@ -230,7 +230,11 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             for dirpath, dirs, files in os.walk(calib_path):
                 if re.search(f".*{instrument}.*dark.*", dirpath) is not None:
                     d = os.path.split(dirpath)[1]
-                    if inlet[1] in d:
+                    if instrument == "ASP_06" and inlet[1] in d:
+                        run = True
+                    elif instrument == "ASP_07":
+                        run = True
+                    if run:
                         i = 0
                         for file in files:
                             if re.search(f'.*.{direction}_{channel}.dat', file) is not None:
@@ -238,6 +242,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
                                 log.info(f"Calibration file used:\n{os.path.join(dark_dir, dark_file)}")
                                 assert i == 0, f"More than one possible file was found!\n Check {dirpath}!"
                                 i += 1
+
 
             dark_current = read_smart_raw(dark_dir, dark_file)
             dark_current = dark_current.iloc[:, 2:].mean()
