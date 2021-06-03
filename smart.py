@@ -21,8 +21,8 @@ log.addHandler(logging.StreamHandler())
 # inlet to spectrometer mapping and inlet to direction mapping and measurement to spectrometer mapping
 lookup = dict(ASP_06_J3="PGS_5_(ASP_06)", ASP_06_J4="VIS_6_(ASP_06)", ASP_06_J5="PGS_6_(ASP_06)",
               ASP_06_J6="VIS_7_(ASP_06)", ASP_07_J3="PGS_4_(ASP_07)", ASP_07_J4="VIS_8_(ASP_07)",
-              J3="up", J4="up", J5="dw", J6="dw",
-              Fup_SWIR="ASP_06_J3", Fup_VNIR="ASP_06_J4", Fdw_SWIR="ASP_06_J5", Fdw_VNIR="ASP_06_J6",
+              J3="dw", J4="dw", J5="up", J6="up",
+              Fdw_SWIR="ASP_06_J3", Fdw_VNIR="ASP_06_J4", Fup_SWIR="ASP_06_J5", Fup_VNIR="ASP_06_J6",
               Iup_SWIR="ASP_07_J3", Iup_VNIR="ASP_07_J4")
 
 
@@ -303,7 +303,7 @@ def plot_mean_corrected_measurement(filename: str, measurement: Union[pd.Series,
     plt.close()
 
 
-def correct_smart_dark_current(smart_file: str, option: int) -> pd.Series:
+def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Series:
     """
     Correct the raw SMART measurement for the dark current of the spectrometer.
     Only returns data when the shutter was open.
@@ -311,11 +311,14 @@ def correct_smart_dark_current(smart_file: str, option: int) -> pd.Series:
     Args:
         smart_file: filename of file to correct
         option: which option should be used to get the dark current? Only relevant for channel "VNIR".
+        kwargs:
+            path: path to file if not raw file path as given in config.toml
 
     Returns: Series with corrected smart measurement
 
     """
     path, _, _, _, _ = set_paths()
+    path = kwargs["path"] if "path" in kwargs else path
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = read_smart_raw(path, smart_file)
     dark_current = get_dark_current(smart_file, option, plot=False)
