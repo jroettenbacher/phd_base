@@ -26,7 +26,7 @@ lookup = dict(ASP_06_J3="PGS_5_(ASP_06)", ASP_06_J4="VIS_6_(ASP_06)", ASP_06_J5=
               Iup_SWIR="ASP_07_J3", Iup_VNIR="ASP_07_J4")
 
 
-def get_info_from_filename(filename: str):
+def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
     """
     Using regular expressions some information from the filename is extracted.
 
@@ -155,7 +155,7 @@ def set_paths():
     return raw_path, pixel_wl_path, calib_path, data_path, plot_path
 
 
-def plot_dark_current(wavelenghts: Union[pd.Series, list],
+def _plot_dark_current(wavelenghts: Union[pd.Series, list],
                       dark_current: Union[pd.Series, list],
                       spectrometer: str, channel: str, **kwargs):
     """
@@ -217,7 +217,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             dark_current = smart.loc[:, dark_pixels].mean()
             dark_wls = pixel_wl[pixel_wl["pixel"].isin(dark_pixels)]["wavelength"]
             if plot:
-                plot_dark_current(dark_wls, dark_current, spectrometer, channel)
+                _plot_dark_current(dark_wls, dark_current, spectrometer, channel)
         else:
             assert option == 2, "Option should be either 1 or 2!"
             # read in cali file
@@ -241,7 +241,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             dark_current = dark_current.iloc[:, 2:].mean()
             wls = pixel_wl["wavelength"]
             if plot:
-                plot_dark_current(wls, dark_current, spectrometer, channel)
+                _plot_dark_current(wls, dark_current, spectrometer, channel)
 
     elif channel == "SWIR":
         # check if the shutter flag was working: If all values are 1 -> shutter flag is probably not working
@@ -249,7 +249,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             dark_current = smart.where(smart.shutter == 0).mean().iloc[2:]
             wls = pixel_wl["wavelength"]
             if plot:
-                plot_dark_current(wls, dark_current, spectrometer, channel)
+                _plot_dark_current(wls, dark_current, spectrometer, channel)
         else:
             log.debug("Shutter flag is probably wrong")
     else:
@@ -419,17 +419,6 @@ if __name__ == '__main__':
 
     # find pixel closest to given wavelength
     pixel_nr, wavelength = find_pixel(pixel_wl, 525)
-
-    # plot netto counts time series
-    fig, ax = plt.subplots()
-    ax.plot(smart[pixel_nr])
-    ax.grid()
-    ax = jr.set_xticks_and_xlabels(ax, smart.index[-1] - smart.index[0])
-    ax.set_xlabel("Time [UTC]")
-    ax.set_ylabel("Netto Counts")
-    fig.autofmt_xdate()
-    plt.show()
-    plt.close()
 
     # input: spectrometer, filename, option
     option = 1
