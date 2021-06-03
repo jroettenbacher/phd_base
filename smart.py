@@ -230,9 +230,11 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             for dirpath, dirs, files in os.walk(calib_path):
                 if re.search(f".*{instrument}.*dark.*", dirpath) is not None:
                     d = os.path.split(dirpath)[1]
+                    # ASP_06 has 2 SWIR and 2 VNIR inlets thus search for the folder for the given inlet
                     if instrument == "ASP_06" and inlet[1] in d:
                         run = True
-                    elif instrument == "ASP_07":
+                    # ASP_07 has only one SWIR and VNIR inlet -> no need to search
+                    else:
                         run = True
                     if run:
                         i = 0
