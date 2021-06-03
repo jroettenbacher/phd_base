@@ -196,12 +196,14 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
         option: which option to use for VNIR, 1 or 2
         kwargs:
             plot (bool): show plot or not (default: True)
+            path (str): path to file if different from raw file path given in config.toml
 
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
     """
     plot = kwargs["plot"] if "plot" in kwargs else True
     path, pixel_wl_path, calib_path, _, _ = set_paths()
+    path = kwargs["path"] if "path" in kwargs else path
     smart = read_smart_raw(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
     spectrometer = lookup[f"{direction}_{channel}"]
@@ -321,7 +323,7 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
     path = kwargs["path"] if "path" in kwargs else path
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = read_smart_raw(path, smart_file)
-    dark_current = get_dark_current(smart_file, option, plot=False)
+    dark_current = get_dark_current(smart_file, option, plot=False, path=path)
 
     if channel == "VNIR" and option == 1:
         dark_current = dark_current.mean()
