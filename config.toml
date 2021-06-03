@@ -4,7 +4,7 @@
 [cirrus-hl.jr_local]
 base_dir = "C:/Users/Johannes/Documents/Doktor"
 pixel_to_wavelength = "instruments/SMART/pixel_wl"
-calib_data = "campaigns/CIRRUS-HL/SMART"
+calib_data = "campaigns/CIRRUS-HL/SMART/calib"
 raw_data = "campaigns/CIRRUS-HL/SMART/raw"
 data = "campaigns/CIRRUS-HL/SMART/data"
 plots = "campaigns/CIRRUS-HL/SMART/plots"
