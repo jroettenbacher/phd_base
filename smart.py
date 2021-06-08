@@ -155,6 +155,34 @@ def set_paths():
     return raw_path, pixel_wl_path, calib_path, data_path, plot_path
 
 
+def get_path(key: str) -> str:
+    """
+        Read paths from the toml file according to the current working directory.
+
+        Args:
+            key: which path to return, see function for possible values
+
+        Returns: Path to specified data
+
+    """
+    if os.getcwd().startswith("C"):
+        config = toml.load("config.toml")["cirrus-hl"]["jr_local"]
+    else:
+        config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
+
+    paths = dict()
+    base_dir = config["base_dir"]
+    paths["base"] = base_dir
+    paths["raw"] = os.path.join(base_dir, config["raw_data"])
+    paths["pixel_wl"] = os.path.join(base_dir, config["pixel_to_wavelength"])
+    paths["calib"] = os.path.join(base_dir, config["calib_data"])
+    paths["data"] = os.path.join(base_dir, config["data"])
+    paths["plot"] = os.path.join(base_dir, config["plots"])
+    paths["lamp"] = os.path.join(base_dir, config["lamp"])
+
+    return paths[key]
+
+
 def _plot_dark_current(wavelenghts: Union[pd.Series, list],
                       dark_current: Union[pd.Series, list],
                       spectrometer: str, channel: str, **kwargs):
