@@ -3,11 +3,13 @@
 
 [cirrus-hl.jr_local]
 base_dir = "C:/Users/Johannes/Documents/Doktor"
-pixel_to_wavelength = "instruments/SMART/pixel_wl"
-calib_data = "campaigns/CIRRUS-HL/SMART/calib"
-raw_data = "campaigns/CIRRUS-HL/SMART/raw"
-data = "campaigns/CIRRUS-HL/SMART/data"
+pixel_to_wavelength = "instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
+calib_data = "campaigns/CIRRUS-HL/SMART/calib"  # calibration measurements
+raw_data = "campaigns/CIRRUS-HL/SMART/raw"  # raw measurements as given by SMART and merged by merge_minutely_files.py
+data = "campaigns/CIRRUS-HL/SMART/data"  # dark current corrected data
 plots = "campaigns/CIRRUS-HL/SMART/plots"
+lamp = "campaigns/CIRRUS-HL/SMART/calib/lamp"  # lamp specification files
+calibrated_data = "campaigns/CIRRUS-HL/SMART/calibrated_data"  # calibrated and dark current corrected data
 # on LIM server
 [cirrus-hl.lim_server]
 base_dir = "/projekt_agmwend"
