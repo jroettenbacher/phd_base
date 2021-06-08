@@ -229,14 +229,16 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             # find right folder and right cali
             for dirpath, dirs, files in os.walk(calib_path):
                 if re.search(f".*{instrument}.*dark.*", dirpath) is not None:
-                    d = os.path.split(dirpath)[1]
+                    d_path, d = os.path.split(dirpath)
+                    # check if the date of the calibration matches the date of the file
+                    date_check = True if date_str.replace("_", "") in d_path else False
                     # ASP_06 has 2 SWIR and 2 VNIR inlets thus search for the folder for the given inlet
                     if instrument == "ASP_06" and inlet[1] in d:
                         run = True
                     # ASP_07 has only one SWIR and VNIR inlet -> no need to search
                     else:
                         run = True
-                    if run:
+                    if run and date_check:
                         i = 0
                         for file in files:
                             if re.search(f'.*.{direction}_{channel}.dat', file) is not None:
@@ -350,6 +352,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         filename: Standard SMART filename
         wavelength: list with either one or two wavelengths in nm or 'all'
         **kwargs:
+            path (str): give path to filename if not default from config.toml
             save_fig: save figure? (default: False)
             plot_path: where to save figure (default: given in config.toml)
 
@@ -358,6 +361,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
     """
     raw_path, pixel_wl_path, _, data_path, plot_path = set_paths()
     # read in keyword arguments
+    raw_path = kwargs["path"] if "path" in kwargs else raw_path
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
     plot_path = kwargs["plot_path"] if "plot_path" in kwargs else plot_path
     date_str, channel, direction = get_info_from_filename(filename)
@@ -384,7 +388,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         # join the measurement and pixel to wavelength data frames by pixel
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
         smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel="Netto Counts",
-                        title=f"Time Averaged SMART Measurement {title}\n {begin_dt} - {end_dt}")
+                        title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n {begin_dt} - {end_dt}")
         plt.grid()
         figname = filename.replace('.dat', f'{wl_str}.png')
     elif len(wavelength) == 1:
@@ -404,7 +408,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
         smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel="Netto Counts",
-                        title=f"Time Averaged SMART Measurement {title}\n "
+                        title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n "
                               f"{begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}")
         plt.grid()
         figname = filename.replace('.dat', f'_{wavelength}.png')
@@ -433,7 +437,7 @@ if __name__ == '__main__':
     pixel_nr, wavelength = find_pixel(pixel_wl, 525)
 
     # input: spectrometer, filename, option
-    option = 1
+    option = 2
     filename = "2021_03_29_11_07.Fup_VNIR.dat"
     filename = "2021_03_29_11_07.Fup_SWIR.dat"
     dark_current = get_dark_current(filename, option)
@@ -462,6 +466,13 @@ if __name__ == '__main__':
     # plot any smart measurement given a range of wavelengths, one specific one or all
     filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
     raw_file = "2021_03_29_11_07.Fup_VNIR.dat"
-    wavelength = [500]
+    wavelength = [525]
     plot_smart_data(filename, wavelength)
     plot_smart_data(raw_file, wavelength)
+
+    # working section
+    raw_file = "2021_06_04_13_07.Fup_VNIR.dat"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/20210604_transfer_cali_ASP06/dark"
+    plot_smart_data(raw_file, "all", path=path)
+
+
