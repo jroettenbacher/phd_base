@@ -3,6 +3,7 @@
 author: Johannes Röttenbacher and others
 """
 
+import os
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt

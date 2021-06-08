@@ -22,8 +22,10 @@ You can:
 * plot the mean corrected measurement
 * plot smart data either for one wavelength over time or for a range of or all wavelengths
 
+## 2. merge_minutely_files.py
+Script to merge minutely ASP07 files into one file per channel and folder.
 
-## 2. write_corrected_smart_file.py
+## 3. write_corrected_smart_file.py
 Script to correct a directory of raw smart measurements for the dark current.
 Set the input and output paths in `config.toml`.
 ### FAQ

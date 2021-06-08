@@ -179,6 +179,7 @@ def get_path(key: str) -> str:
     paths["data"] = os.path.join(base_dir, config["data"])
     paths["plot"] = os.path.join(base_dir, config["plots"])
     paths["lamp"] = os.path.join(base_dir, config["lamp"])
+    paths["calibrated"] = os.path.join(base_dir, config["calibrated_data"])
 
     return paths[key]
 
@@ -499,8 +500,16 @@ if __name__ == '__main__':
     plot_smart_data(raw_file, wavelength)
 
     # working section
-    raw_file = "2021_06_04_13_07.Fup_VNIR.dat"
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/20210604_transfer_cali_ASP06/dark"
+    raw_file = "2021_03_29_11_15.Fdw_SWIR.dat"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP_06_Calib_Lab_20210329/calib_J3_4"
     plot_smart_data(raw_file, "all", path=path)
-
+    smart = read_smart_raw(path, raw_file)
+    fig, ax = plt.subplots()
+    smart.iloc[2, 2:].plot(ax=ax, label="open")
+    smart.iloc[21, 2:].plot(ax=ax, label="dark")
+    (smart.iloc[2, 2:] - smart.iloc[21, 2:]).plot(ax=ax, label="diff")
+    plt.legend()
+    plt.grid()
+    plt.show()
+    plt.close()
 
