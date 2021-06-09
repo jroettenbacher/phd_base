@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Script to read in calibration files and calculate calibration factors for lab calibration and transfer calibrations
+"""Script to read in calibration files and calculate calibration factors for lab calibration of ASP07
 1. read in 1000W lamp file, plot it and save to data file
 2. set channel to work with
 3. set which folder pair to work with
