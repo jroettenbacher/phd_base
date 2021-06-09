@@ -11,18 +11,15 @@
 9. write dat file with all information
 author: Johannes Roettenbacher"""
 # %%
-# TODO: functionise read in functions
-# %%
 import smart
 from smart import lookup
 import os
-import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 from scipy.interpolate import interp1d
 
 # %% set paths
 raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
+
 # %% read lamp file
 lamp = smart.read_lamp_file()
 
@@ -30,7 +27,7 @@ lamp = smart.read_lamp_file()
 channel = "SWIR"  # set channel to work on (VNIR or SWIR)
 base = "ASP_06_Calib_Lab_20210329"
 folder_pairs = [["calib_J3_4", "Ulli_trans_J3_4"], ["calib_J5_6", "Ulli_trans_J5_6"]]
-folders = folder_pairs[1]  # which folder pair to work on (0 or 1)
+folders = folder_pairs[0]  # which folder pair to work on (0 or 1)
 dirpath = os.path.join(calib_path, base, folders[0])
 dirpath_ulli = os.path.join(calib_path, base, folders[1])
 lamp_measurement = [f for f in os.listdir(dirpath) if f.endswith(f"{channel}_cor.dat")]
@@ -65,6 +62,7 @@ lines, labels = ax.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax2.legend(lines + lines2, labels + labels2, loc=0)
 plt.grid()
+plt.tight_layout()
 plt.savefig(f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_lamp_lab_calib.png", dpi=100)
 plt.show()
 plt.close()
@@ -90,6 +88,7 @@ lines, labels = ax.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax2.legend(lines + lines2, labels + labels2, loc=0)
 plt.grid()
+plt.tight_layout()
 plt.savefig(f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_ulli_lab_calib.png", dpi=100)
 plt.show()
 plt.close()

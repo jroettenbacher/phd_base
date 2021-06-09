@@ -75,6 +75,7 @@ def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = T
         lamp.plot(x="Wavelength", y="Irradiance", ylabel="Irradiance $(W\\,m^{-2})$", xlabel="Wavelenght (nm)",
                   legend=False, title="1000W Lamp F-1587 interpolated on 1nm steps")
         plt.grid()
+        plt.tight_layout()
         if save_fig:
             plt.savefig(f"{plot_path}/1000W_Lamp_F1587_1nm_19.png", dpi=100)
         plt.show()

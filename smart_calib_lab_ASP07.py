@@ -11,11 +11,6 @@
 9. write dat file with all information
 author: Johannes Roettenbacher"""
 # %%
-# TODO: functionise tranfer calib read in
-# TODO: add plots to folder
-# TODO: functionise read in functions
-# TODO: save one file with pixel, c_field, etc in calib for each spectrometer
-# %%
 import smart
 from smart import lookup
 import os
