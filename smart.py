@@ -61,8 +61,8 @@ def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = T
 
     """
     # set paths
-    _, _, calib_path, _, plot_path = smart.set_paths()
-    lamp_path = smart.get_path("lamp")  # get path to lamp defined in config.toml
+    _, _, calib_path, _, plot_path = set_paths()
+    lamp_path = get_path("lamp")  # get path to lamp defined in config.toml
     # read in lamp file
     lamp_file = "F1587i01_19.std"
     names = ["Irradiance"]  # column name
