@@ -8,12 +8,10 @@
 6. plot lamp measurements
 7. read in ulli sphere measurements
 8. plot ulli measurements
-9. write dat file with all information"""
+9. write dat file with all information
+author: Johannes Roettenbacher"""
 # %%
-# TODO: functionise tranfer calib read in
-# TODO: add plots to folder
 # TODO: functionise read in functions
-# TODO: save one file with pixel, c_field, etc in calib for each spectrometer
 # %%
 import smart
 from smart import lookup
@@ -25,26 +23,8 @@ from scipy.interpolate import interp1d
 
 # %% set paths
 raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
-lamp_path = smart.get_path("lamp")
-
-# %% read in lamp file
-lamp_file = "F1587i01_19.std"
-names = ["Irradiance"]
-lamp = pd.read_csv(os.path.join(lamp_path, lamp_file), skiprows=1, header=None, names=names)
-lamp["Wavelength"] = np.arange(250, 2501)
-# convert from W/cm^2 to W/m^2; cm = m * 10^-2 => cm^2 = (m * 10^-2)^2 = m^2 * 10^-4 => W*10^4/m^2
-lamp["Irradiance"] = lamp["Irradiance"] * 10000
-
-# %% plot lamp calibration
-lamp.plot(x="Wavelength", y="Irradiance", ylabel="Irradiance $(W\\,m^{-2})$", xlabel="Wavelenght (nm)",
-          legend=False, title="1000W Lamp F-1587 interpolated on 1nm steps")
-plt.grid()
-# plt.savefig(f"{plot_path}/1000W_Lamp_F1587_1nm_19.png", dpi=100)
-plt.show()
-plt.close()
-
-# %% save lamp file in calib folder
-lamp.to_csv(f"{calib_path}/1000W_lamp_F1587_1nm_19.dat", index=False)
+# %% read lamp file
+lamp = smart.read_lamp_file()
 
 # %% read in ASP06/ASP07 dark current corrected lamp measurement data and relate pixel to wavelength
 channel = "SWIR"  # set channel to work on (VNIR or SWIR)
@@ -116,25 +96,3 @@ plt.close()
 
 # %% save lamp and ulli measurement from lab to file
 pixel_wl.to_csv(f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_lab_calib.dat", index=False)
-
-# %% read in Ulli transfer measurement from field
-field_folder = "ASP_06_transfer_calib_20210604"
-t_int = 500
-field_file = "2021_06_04_13_40.Fdw_VNIR_cor.dat"
-ulli_field = smart.read_smart_cor(f"{calib_path}/{field_folder}/Tint_{t_int}ms", field_file)
-ulli_field[ulli_field.values < 0] = 0  # set negative counts to 0
-pixel_wl["S_ulli_field"] = ulli_field.mean().reset_index(drop=True)  # take mean over time of calib measurement
-pixel_wl["c_field"] = pixel_wl["F_ulli"] / pixel_wl["S_ulli_field"]  # calculate field calibration factor
-
-# calculate relation between S_ulli_lab and S_ulli_field
-pixel_wl["rel_ulli"] = pixel_wl["S_ulli"] / pixel_wl["S_ulli_field"]
-
-# read in dark current corrected measurement files
-measurement = smart.read_smart_cor(f"{data_path}/flight_00", "2021_03_29_11_15.Fdw_VNIR_cor.dat")
-# set negative values to 0
-measurement[measurement.values < 0] = 0
-# convert to long format
-m_long = measurement.melt(var_name="pixel", value_name="counts", ignore_index=False)
-df = m_long.merge(pixel_wl.loc[:, ["pixel", "c_field"]], on="pixel", right_index=True)
-df["F_x"] = df["counts"] * df["c_field"]
-df.pivot(columns="pixel", values="F_x")

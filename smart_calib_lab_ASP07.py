@@ -8,7 +8,8 @@
 6. plot lamp measurements
 7. read in ulli sphere measurements
 8. plot ulli measurements
-9. write dat file with all information"""
+9. write dat file with all information
+author: Johannes Roettenbacher"""
 # %%
 # TODO: functionise tranfer calib read in
 # TODO: add plots to folder
@@ -25,26 +26,9 @@ from scipy.interpolate import interp1d
 
 # %% set paths
 raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
-lamp_path = smart.get_path("lamp")
 
 # %% read in lamp file
-lamp_file = "F1587i01_19.std"
-names = ["Irradiance"]
-lamp = pd.read_csv(os.path.join(lamp_path, lamp_file), skiprows=1, header=None, names=names)
-lamp["Wavelength"] = np.arange(250, 2501)
-# convert from W/cm^2 to W/m^2; cm = m * 10^-2 => cm^2 = (m * 10^-2)^2 = m^2 * 10^-4 => W*10^4/m^2
-lamp["Irradiance"] = lamp["Irradiance"] * 10000
-
-# %% plot lamp calibration
-lamp.plot(x="Wavelength", y="Irradiance", ylabel="Irradiance $(W\\,m^{-2})$", xlabel="Wavelenght (nm)",
-          legend=False, title="1000W Lamp F-1587 interpolated on 1nm steps")
-plt.grid()
-# plt.savefig(f"{plot_path}/1000W_Lamp_F1587_1nm_19.png", dpi=100)
-plt.show()
-plt.close()
-
-# %% save lamp file in calib folder
-lamp.to_csv(f"{calib_path}/1000W_lamp_F1587_1nm_19.dat", index=False)
+lamp = smart.read_lamp_file()
 
 # %% read in ASP06/ASP07 dark current corrected lamp measurement data and relate pixel to wavelength
 channel = "SWIR"  # set channel to work on (VNIR or SWIR)

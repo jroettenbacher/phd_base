@@ -49,6 +49,43 @@ def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
     return date_str, channel, direction
 
 
+def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = True) -> pd.DataFrame:
+    """
+    Read in the 1000W lamp specification file interpolated to 1nm steps. Converts W/cm^2 to W/m^2.
+    Args:
+        plot: plot lamp file?
+        save_fig: save figure to standard plot path defined in config.toml?
+        save_file: save lamp file to standard calib path deined in config.toml?
+
+    Returns: A data frame with the irradiance in W/m² and the corresponding wavelength in nm
+
+    """
+    # set paths
+    _, _, calib_path, _, plot_path = smart.set_paths()
+    lamp_path = smart.get_path("lamp")  # get path to lamp defined in config.toml
+    # read in lamp file
+    lamp_file = "F1587i01_19.std"
+    names = ["Irradiance"]  # column name
+    lamp = pd.read_csv(os.path.join(lamp_path, lamp_file), skiprows=1, header=None, names=names)
+    lamp["Wavelength"] = np.arange(250, 2501)
+    # convert from W/cm^2 to W/m^2; cm = m * 10^-2 => cm^2 = (m * 10^-2)^2 = m^2 * 10^-4 => W*10^4/m^2
+    lamp["Irradiance"] = lamp["Irradiance"] * 10000
+    if plot:
+        # plot lamp calibration
+        lamp.plot(x="Wavelength", y="Irradiance", ylabel="Irradiance $(W\\,m^{-2})$", xlabel="Wavelenght (nm)",
+                  legend=False, title="1000W Lamp F-1587 interpolated on 1nm steps")
+        plt.grid()
+        if save_fig:
+            plt.savefig(f"{plot_path}/1000W_Lamp_F1587_1nm_19.png", dpi=100)
+        plt.show()
+        plt.close()
+    if save_file:
+        # save lamp file in calib folder
+        lamp.to_csv(f"{calib_path}/1000W_lamp_F1587_1nm_19.dat", index=False)
+
+    return lamp
+
+
 def read_smart_raw(path: str, filename: str) -> pd.DataFrame:
     """
     Read raw SMART data files
