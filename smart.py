@@ -72,7 +72,7 @@ def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = T
     lamp["Irradiance"] = lamp["Irradiance"] * 10000
     if plot:
         # plot lamp calibration
-        lamp.plot(x="Wavelength", y="Irradiance", ylabel="Irradiance $(W\\,m^{-2})$", xlabel="Wavelenght (nm)",
+        lamp.plot(x="Wavelength", y="Irradiance", ylabel="Irradiance (W$\\,$m$^{-2}$)", xlabel="Wavelenght (nm)",
                   legend=False, title="1000W Lamp F-1587 interpolated on 1nm steps")
         plt.grid()
         plt.tight_layout()
@@ -218,6 +218,7 @@ def get_path(key: str) -> str:
     paths["plot"] = os.path.join(base_dir, config["plots"])
     paths["lamp"] = os.path.join(base_dir, config["lamp"])
     paths["calibrated"] = os.path.join(base_dir, config["calibrated_data"])
+    paths["panel"] = os.path.join(base_dir, config["panel"])
 
     return paths[key]
 
@@ -395,6 +396,7 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
     Returns: Series with corrected smart measurement
 
     """
+    # TODO: do not write empty rows (were shutter is closed)
     path, _, _, _, _ = set_paths()
     path = kwargs["path"] if "path" in kwargs else path
     date_str, channel, direction = get_info_from_filename(smart_file)
