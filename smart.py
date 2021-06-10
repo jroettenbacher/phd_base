@@ -164,7 +164,10 @@ def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     Returns: closest pixel number and wavelength corresponding to the given wavelength
 
     """
-    assert df["wavelength"].iloc[-1] >= wavelength >= df["wavelength"].iloc[0], "Given wavelength not in data frame!"
+    # find smallest and greatest wavelength in data frame and check if the given wavelength is in it
+    min_wl = df["wavelength"].min()
+    max_wl = df["wavelength"].max()
+    assert max_wl >= wavelength >= min_wl, "Given wavelength not in data frame!"
     idx = jr.argnearest(df["wavelength"], wavelength)
     pixel_nr, wavelength = df["pixel"].iloc[idx], df["wavelength"].iloc[idx]
     return pixel_nr, wavelength
@@ -437,7 +440,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
     date_str, channel, direction = get_info_from_filename(filename)
     if "calibrated" in filename:
         smart = read_smart_cor(data_path, filename)
-        title = "Corrected for Dark Current and Calibrated"
+        title = "\nCorrected for Dark Current and Calibrated"
         ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
     elif "cor" in filename:
         smart = read_smart_cor(data_path, filename)
@@ -465,7 +468,6 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
         smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel,
                         title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n {begin_dt} - {end_dt}")
-        plt.grid()
         figname = filename.replace('.dat', f'{wl_str}.png')
     elif len(wavelength) == 1:
         pixel_nr, wl = find_pixel(pixel_wl, wavelength[0])
@@ -474,9 +476,8 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         time_extend = end_dt - begin_dt
         fig, ax = plt.subplots()
         smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel=ylabel,
-                       title=f"SMART Time Series {title}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
+                       title=f"SMART Time Series {title} {direction} {channel}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
         ax = jr.set_xticks_and_xlabels(ax, time_extend)
-        ax.grid()
         figname = filename.replace('.dat', f'_{wl:.1f}nm.png')
     elif wavelength == "all":
         begin_dt, end_dt = smart.index[0], smart.index[-1]
@@ -486,13 +487,15 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel,
                         title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n "
                               f"{begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}")
-        plt.grid()
         figname = filename.replace('.dat', f'_{wavelength}.png')
     else:
         raise ValueError("wavelength has to be a list of length 1 or 2 or 'all'!")
 
+    plt.grid()
+    plt.tight_layout()
     if save_fig:
-        plt.savefig(f"{plot_path}/{figname}")
+        plt.savefig(f"{plot_path}/{figname}", dpi=100)
+        log.info(f"Saved {plot_path}/{figname}")
     else:
         plt.show()
     plt.close()

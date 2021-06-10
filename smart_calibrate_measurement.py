@@ -38,5 +38,5 @@ for file in files:
     # %% save wide format calibrated measurement
     df_out = df.pivot(columns="pixel", values=direction)  # convert to wide format (row=time, column=pixel)
     outfile = f"{outpath}/{file.replace('.dat', '_calibrated.dat')}"
-    df_out.to_csv(outfile)
+    df_out.to_csv(outfile, sep="\t")
     print(f"Saved {outfile}")

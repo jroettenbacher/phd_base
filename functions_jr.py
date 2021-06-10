@@ -21,8 +21,9 @@ def argnearest(array, value):
     Returns:
         index
     """
-    if type(array) == list:
+    if type(array) != np.ndarray:
         array = np.array(array)
+    array.sort()
     i = np.searchsorted(array, value) - 1
 
     if not i == array.shape[0] - 1:
