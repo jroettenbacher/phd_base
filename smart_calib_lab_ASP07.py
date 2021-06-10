@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """Script to read in calibration files and calculate calibration factors for lab calibration of ASP07
-1. read in 1000W lamp file, plot it and save to data file
+1. read in 1000W lamp file and reflectance panel file
 2. set channel to work with
-3. set which folder pair to work with
-4. read in calibration lamp measurements
-5. read in pixel to wavelength mapping and interpolate lamp output onto pixel/wavelength of spectrometer
-6. plot lamp measurements
-7. read in ulli sphere measurements
-8. plot ulli measurements
-9. write dat file with all information
+3. read in calibration lamp measurements
+4. interpolate lamp output onto pixel/wavelength of spectrometer
+5. plot lamp measurements
+6. read in ulli sphere measurements
+7. plot ulli measurements
+8. write dat file with all information
 author: Johannes Roettenbacher
 """
 # %%
@@ -47,7 +46,7 @@ lab_calib = smart.read_smart_cor(dirpath, filename)
 # set negative counts to 0
 lab_calib[lab_calib.values < 0] = 0
 
-# %% add counts, lamp irradiance and lamp irradiance multiplied with panel reflectance to data frame
+# %% add counts, lamp radiance and lamp radiance multiplied with panel reflectance to data frame
 spectrometer = lookup[f"{direction}_{channel}"]
 panel["S0"] = lab_calib.mean().reset_index(drop=True)  # take mean over time of calib measurement
 # interpolate lamp irradiance on pixel wavelength

@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 """Script to calculate field calibration factor and save a file for each PC and channel
+1. set user defined variables and list field calibration files and lab calibration files
+2. for each field cali file:
+    2.1 read field file and corresponding lab calibration file
+    2.2 calculate field calibration factor and the relation between lab and field counts of the ulli sphere
+    2.3 plot transfer calib measurements and save the plot
+    2.4 save transfer calibration file in calib folder
+
 author: Johannes Roettenbacher
 """
+
 # %% module import and set paths
 import smart
 from smart import lookup

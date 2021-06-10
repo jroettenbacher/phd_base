@@ -31,11 +31,11 @@ def argnearest(array, value):
     return i
 
 
-def make_dir(folder):
+def make_dir(folder: str) -> None:
     """
     creates folder if it doesn't exist already
     Args:
-        folder (str): folder name
+        folder: folder name
 
     Returns: nothing, but creates a new folder if possible
 
@@ -47,10 +47,7 @@ def make_dir(folder):
 
 
 # from pyLARDA.Transformations
-def set_xticks_and_xlabels(
-        ax: plt.axis,
-        time_extend: datetime.timedelta
-) -> plt.axis:
+def set_xticks_and_xlabels(ax: plt.axis, time_extend: datetime.timedelta) -> plt.axis:
     """This function sets the ticks and labels of the x-axis (only when the x-axis is time in UTC).
 
     Options:
