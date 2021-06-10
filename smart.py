@@ -431,16 +431,23 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
     raw_path, pixel_wl_path, _, data_path, plot_path = set_paths()
     # read in keyword arguments
     raw_path = kwargs["path"] if "path" in kwargs else raw_path
+    data_path = kwargs["path"] if "path" in kwargs else data_path
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
     plot_path = kwargs["plot_path"] if "plot_path" in kwargs else plot_path
     date_str, channel, direction = get_info_from_filename(filename)
-    if "cor" in filename:
+    if "calibrated" in filename:
+        smart = read_smart_cor(data_path, filename)
+        title = "Corrected for Dark Current and Calibrated"
+        ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
+    elif "cor" in filename:
         smart = read_smart_cor(data_path, filename)
         title = "Corrected for Dark Current"
+        ylabel = "Netto Counts"
     else:
         smart = read_smart_raw(raw_path, filename)
         smart = smart.iloc[:, 2:]  # remove columns t_int and shutter
         title = "Raw"
+        ylabel = "Netto Counts"
     pixel_wl = read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
     if len(wavelength) == 2:
         pixel_nr = []
@@ -456,7 +463,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))  # update the index to be numeric
         # join the measurement and pixel to wavelength data frames by pixel
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
-        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel="Netto Counts",
+        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel,
                         title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n {begin_dt} - {end_dt}")
         plt.grid()
         figname = filename.replace('.dat', f'{wl_str}.png')
@@ -466,7 +473,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]
         time_extend = end_dt - begin_dt
         fig, ax = plt.subplots()
-        smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel="Netto Counts",
+        smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel=ylabel,
                        title=f"SMART Time Series {title}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
         ax = jr.set_xticks_and_xlabels(ax, time_extend)
         ax.grid()
@@ -476,7 +483,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         smart_mean = smart.mean().to_frame()
         smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
-        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel="Netto Counts",
+        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel,
                         title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n "
                               f"{begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}")
         plt.grid()
