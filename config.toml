@@ -3,7 +3,7 @@
 
 [cirrus-hl.jr_local]
 base_dir = "C:/Users/Johannes/Documents/Doktor"
-raw_data = "campaigns/CIRRUS-HL/SMART/raw"  # raw measurements as given by SMART and merged by merge_minutely_files.py
+raw_data = "campaigns/CIRRUS-HL/SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
 calib_data = "campaigns/CIRRUS-HL/SMART/calib"  # calibration measurements
 data = "campaigns/CIRRUS-HL/SMART/data"  # dark current corrected data
 calibrated_data = "campaigns/CIRRUS-HL/SMART/calibrated_data"  # calibrated and dark current corrected data

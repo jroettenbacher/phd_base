@@ -13,10 +13,11 @@ import os
 import pandas as pd
 
 # combine minutely files from ASP_07 to one file
-_, _, calib_path, _, _ = set_paths()
+raw_path, _, calib_path, data_path, _ = set_paths()
+directory = calib_path
 folder = "ASP_07_transfer_calib_20210607"
 channels = ["SWIR", "VNIR"]
-for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
+for dirpath, dirs, files in os.walk(os.path.join(directory, folder)):
     for channel in channels:
         try:
             # channel = "VNIR"  # replace SWIR with VNIR and run again
