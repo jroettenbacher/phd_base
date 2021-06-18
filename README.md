@@ -17,8 +17,8 @@ the paths where the scripts expect to find files and where they will save the fi
 All SMART files should be in one folder with the following subfolders:
 
 * `calib`: raw calibration measurements in subfolders and processed calibration files on the top level.
-* `calibrated_data`: dark current corrected and calibrated measurement files in flight folders
-* `data`: dark current corrected measurement files in flight folders
+* `data_calibrated`: dark current corrected and calibrated measurement files in flight folders
+* `data_cor`: dark current corrected measurement files in flight folders
 * `lamp_F1587`: calibration lamp file
 * `panel_34816`: reflectance panel file for each spectrometer
 * `pixel_wl`: pixel to wavelength files for each spectrometer
