@@ -19,11 +19,11 @@ log.setLevel(logging.DEBUG)
 log.addHandler(logging.StreamHandler())
 
 # inlet to spectrometer mapping and inlet to direction mapping and measurement to spectrometer mapping
-lookup = dict(ASP_06_J3="PGS_5_(ASP_06)", ASP_06_J4="VIS_6_(ASP_06)", ASP_06_J5="PGS_6_(ASP_06)",
-              ASP_06_J6="VIS_7_(ASP_06)", ASP_07_J3="PGS_4_(ASP_07)", ASP_07_J4="VIS_8_(ASP_07)",
+lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
+              ASP06_J6="VIS_7_(ASP_06)", ASP07_J3="PGS_4_(ASP_07)", ASP07_J4="VIS_8_(ASP_07)",
               J3="dw", J4="dw", J5="up", J6="up",
-              Fdw_SWIR="ASP_06_J3", Fdw_VNIR="ASP_06_J4", Fup_SWIR="ASP_06_J5", Fup_VNIR="ASP_06_J6",
-              Iup_SWIR="ASP_07_J3", Iup_VNIR="ASP_07_J4")
+              Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4", Fup_SWIR="ASP06_J5", Fup_VNIR="ASP06_J6",
+              Iup_SWIR="ASP07_J3", Iup_VNIR="ASP07_J4")
 
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
@@ -268,6 +268,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
         kwargs:
             plot (bool): show plot or not (default: True)
             path (str): path to file if different from raw file path given in config.toml
+            date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
 
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
@@ -275,7 +276,9 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
     plot = kwargs["plot"] if "plot" in kwargs else True
     path, pixel_wl_path, calib_path, _, _ = set_paths()
     path = kwargs["path"] if "path" in kwargs else path
+    date = kwargs["date"] if "date" in kwargs else None
     smart = read_smart_raw(path, filename)
+    t_int = smart["t_int"][0]  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
     spectrometer = lookup[f"{direction}_{channel}"]
     pixel_wl = read_pixel_to_wavelength(pixel_wl_path, spectrometer)
@@ -295,7 +298,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
             assert option == 2, "Option should be either 1 or 2!"
             # read in cali file
             # get path depending on spectrometer and inlet
-            instrument = re.search(r'ASP_\d{2}', spectrometer)[0]
+            instrument = re.search(r'ASP\d{2}', spectrometer)[0]
             inlet = re.search(r'J\d{1}', spectrometer)[0]
             # find right folder and right cali
             for dirpath, dirs, files in os.walk(calib_path):
@@ -303,13 +306,18 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
                     d_path, d = os.path.split(dirpath)
                     # check if the date of the calibration matches the date of the file
                     date_check = True if date_str.replace("_", "") in d_path else False
-                    # ASP_06 has 2 SWIR and 2 VNIR inlets thus search for the folder for the given inlet
-                    if instrument == "ASP_06" and inlet[1] in d:
+                    # overwrite date check if date is given
+                    if date is not None:
+                        date_check = True if date in d_path else False
+                    # check for the right integration time in folder name
+                    t_int_check = str(t_int) in d
+                    # ASP06 has 2 SWIR and 2 VNIR inlets thus search for the folder for the given inlet
+                    if instrument == "ASP06" and inlet[1] in d:
                         run = True
-                    # ASP_07 has only one SWIR and VNIR inlet -> no need to search
+                    # ASP07 has only one SWIR and VNIR inlet -> no need to search
                     else:
                         run = True
-                    if run and date_check:
+                    if run and date_check and t_int_check:
                         i = 0
                         for file in files:
                             if re.search(f'.*.{direction}_{channel}.dat', file) is not None:
@@ -318,12 +326,14 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
                                 assert i == 0, f"More than one possible file was found!\n Check {dirpath}!"
                                 i += 1
 
-
-            dark_current = read_smart_raw(dark_dir, dark_file)
-            dark_current = dark_current.iloc[:, 2:].mean()
-            wls = pixel_wl["wavelength"]
-            if plot:
-                _plot_dark_current(wls, dark_current, spectrometer, channel)
+            try:
+                dark_current = read_smart_raw(dark_dir, dark_file)
+                dark_current = dark_current.iloc[:, 2:].mean()
+                wls = pixel_wl["wavelength"]
+                if plot:
+                    _plot_dark_current(wls, dark_current, spectrometer, channel)
+            except UnboundLocalError as e:
+                raise RuntimeError("No dark current file found for measurement!") from e
 
     elif channel == "SWIR":
         # check if the shutter flag was working: If all values are 1 -> shutter flag is probably not working
@@ -395,6 +405,8 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
         option: which option should be used to get the dark current? Only relevant for channel "VNIR".
         kwargs:
             path: path to file if not raw file path as given in config.toml
+            date: date from which the dark current measurement should be used for VNIR (necessary if no transfer
+                  calibration was made on a measurement day)
 
     Returns: Series with corrected smart measurement
 
@@ -402,9 +414,10 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
     # TODO: do not write empty rows (were shutter is closed)
     path, _, _, _, _ = set_paths()
     path = kwargs["path"] if "path" in kwargs else path
+    date = kwargs["date"] if "date" in kwargs else None
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = read_smart_raw(path, smart_file)
-    dark_current = get_dark_current(smart_file, option, plot=False, path=path)
+    dark_current = get_dark_current(smart_file, option, plot=False, path=path, date=date)
 
     if channel == "VNIR" and option == 1:
         dark_current = dark_current.mean()
@@ -501,15 +514,63 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
     plt.close()
 
 
+def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
+    """
+    Plot a spectra from a SMART calibrated measurement file for a given index (time step)
+    Args:
+        path: where the file can be found
+        filename: name of the file (standard SMART filename convention)
+        index: which row to plot
+        **kwargs:
+            save_fig: Save figure to plot path given in config.toml
+            plot_path: Where to save plot if not standard plot path
+
+    Returns: Shows and or saves a plot
+
+    """
+    save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
+    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else get_path("plot")
+    pixel_path = get_path("pixel_wl")
+    df = read_smart_cor(path, filename)
+    date_str, channel, direction = get_info_from_filename(filename)
+    spectrometer = lookup[f"{direction}_{channel}"]
+    pixel_wl = read_pixel_to_wavelength(pixel_path, spectrometer)
+    max_id = len(df) - 1
+    try:
+        df_sel = df.iloc[index, :]
+    except IndexError as e:
+        log.info(f"{e}\nGiven index '{index}' out-of-bounds! Using maximum index '{max_id}'!")
+        df_sel = df.iloc[max_id, :]
+
+    time_stamp = df_sel.name  # get time stamp which is selected
+    pixel_wl[f"{direction}"] = df_sel.reset_index(drop=True)
+    ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
+
+    fig, ax = plt.subplots()
+    ax.plot("wavelength", f"{direction}", data=pixel_wl, label=f"{direction}")
+    ax.set_title(f"SMART Spectra {spectrometer} {direction} {channel} \n {time_stamp:%Y-%m-%d %H:%M:%S}")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel(ylabel)
+    ax.grid()
+    plt.show()
+    if save_fig:
+        figname = filename.replace(".dat", f"_spectra_{time_stamp:%Y%m%d_%H%M%S}.png")
+        figpath = f"{plot_path}/{figname}"
+        plt.savefig(figpath, dpi=100)
+        log.info(f"Saved {figpath}")
+
+    plt.close()
+
+
 if __name__ == '__main__':
     # test read in functions
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/ASP_06_Calib_Lab_20210329/calib_J3_4"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/ASP06_Calib_Lab_20210329/calib_J3_4"
     filename = "2021_03_29_11_15.Fup_VNIR.dat"
     # filename = "2021_03_29_11_15.Fup_SWIR.dat"
     smart = read_smart_raw(path, filename)
 
     pixel_wl_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"
-    spectrometer = "ASP_06_J4"
+    spectrometer = "ASP06_J4"
     pixel_wl = read_pixel_to_wavelength(pixel_wl_path, spectrometer)
 
     # find pixel closest to given wavelength
@@ -549,9 +610,81 @@ if __name__ == '__main__':
     plot_smart_data(filename, wavelength)
     plot_smart_data(raw_file, wavelength)
 
+    # plot SMART spectra
+    file = "2021_06_04_13_40.Fdw_VNIR_cor_calibrated.dat"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calibrated_data/flight_00"
+    index = 500
+    plot_smart_spectra(path, file, index)#
+
+    # plot SMART spectra from both channels
+    def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
+        """
+        Plot a spectra from a SMART calibrated measurement file for a given index (time step)
+        Args:
+            path: where the file can be found
+            filename: name of the file (standard SMART filename convention)
+            index: which row to plot
+            **kwargs:
+                save_fig: Save figure to plot path given in config.toml
+                plot_path: Where to save plot if not standard plot path
+
+        Returns: Shows and or saves a plot
+
+        """
+        save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
+        plot_path = kwargs["plot_path"] if "plot_path" in kwargs else get_path("plot")
+        pixel_path = get_path("pixel_wl")
+        df1 = read_smart_cor(path, filename)
+        date_str, channel, direction = get_info_from_filename(filename)
+        if channel == "SWIR":
+            channel2 = "VNIR"
+        else:
+            channel2 = "SWIR"
+
+        filename2 = filename.replace(channel, channel2)
+        df2 = read_smart_cor(path, filename2)
+        spectrometer1 = lookup[f"{direction}_{channel}"]
+        spectrometer2 = lookup[f"{direction}_{channel2}"]
+        pixel_wl1 = read_pixel_to_wavelength(pixel_path, spectrometer1)
+        pixel_wl2 = read_pixel_to_wavelength(pixel_path, spectrometer2)
+        # merge pixel dfs and sort by wavelength
+        # pixel_wl = pixel_wl1.append(pixel_wl2, ignore_index=True).sort_values(by="wavelength", ignore_index=True)
+        max_id1 = len(df1) - 1
+        max_id2 = len(df2) - 1
+        try:
+            df_sel1 = df1.iloc[index, :]
+            df_sel2 = df2.iloc[index, :]
+        except IndexError as e:
+            log.info(f"{e}\nGiven index '{index}' out-of-bounds! Using maximum index '{max_id1}'!")
+            df_sel1 = df1.iloc[max_id1, :]
+            df_sel2 = df2.iloc[max_id2, :]
+
+        time_stamp = df_sel1.name  # get time stamp which is selected
+        pixel_wl1[f"{direction}"] = df_sel1.reset_index(drop=True)
+        pixel_wl2[f"{direction}"] = df_sel2.reset_index(drop=True)
+        ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
+
+        fig, ax = plt.subplots()
+        ax.plot("wavelength", f"{direction}", data=pixel_wl1, label=f"{channel}")
+        ax.plot("wavelength", f"{direction}", data=pixel_wl2, label=f"{channel2}")
+        ax.set_title(f"SMART Spectra {spectrometer} {direction} {channel} \n {time_stamp:%Y-%m-%d %H:%M:%S}")
+        ax.set_xlabel("Wavelength (nm)")
+        ax.set_ylabel(ylabel)
+        ax.grid()
+        plt.show()
+        if save_fig:
+            figname = filename.replace(".dat", f"_spectra_{time_stamp:%Y%m%d_%H%M%S}.dat")
+            figname = figname.replace(channel, channel2)
+            figpath = f"{plot_path}/{figname}"
+            plt.savefig(figpath, dpi=100)
+            log.info(f"Saved {figpath}")
+
+        plt.close()
+
+
     # working section
     raw_file = "2021_03_29_11_15.Fdw_SWIR.dat"
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP_06_Calib_Lab_20210329/calib_J3_4"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP06_Calib_Lab_20210329/calib_J3_4"
     plot_smart_data(raw_file, "all", path=path)
     smart = read_smart_raw(path, raw_file)
     fig, ax = plt.subplots()
