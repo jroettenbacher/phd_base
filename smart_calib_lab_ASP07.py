@@ -32,6 +32,8 @@ panels["SWIR"] = pd.read_csv(f"{panel_path}/panels_PGS_4_(ASP_07).dat", skiprows
                              header=None, sep="\s+")
 # %% read in ASP07 dark current corrected lamp measurement data and relate pixel to wavelength
 channel = "VNIR"  # set channel to work on (VNIR or SWIR)
+normalize = True  # normalize counts by integration time
+t_int = 200  # integration time of calibration measurement
 base = "ASP07_Calib_Lab_20210318"
 panel = panels[channel]
 panel["pixel"] = np.flip(panel.index + 1)
@@ -49,6 +51,11 @@ lab_calib[lab_calib.values < 0] = 0
 # %% add counts, lamp radiance and lamp radiance multiplied with panel reflectance to data frame
 spectrometer = lookup[f"{direction}_{channel}"]
 panel["S0"] = lab_calib.mean().reset_index(drop=True)  # take mean over time of calib measurement
+if normalize:
+    panel["S0"] = panel["S0"] / t_int  # normalize counts by integration time
+    ylabel2, norm = "Normalized Counts", "_norm"
+else:
+    ylabel2, norm = "Counts", ""
 # interpolate lamp irradiance on pixel wavelength
 lamp_func = interp1d(lamp["Wavelength"], lamp["Irradiance"], fill_value="extrapolate")
 panel["F0"] = lamp_func(panel["wavelength"])
@@ -65,14 +72,14 @@ ax.set_xlabel("Wavelength (nm)")
 ax.set_ylabel("Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)")
 ax2 = ax.twinx()
 ax2.plot(panel["wavelength"], panel["S0"], label="Counts")
-ax2.set_ylabel("Counts")
+ax2.set_ylabel(ylabel2)
 # ask matplotlib for the plotted objects and their labels
 lines, labels = ax.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax2.legend(lines + lines2, labels + labels2, loc=0)
 ax.grid()
 plt.tight_layout()
-figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_lamp_lab_calib.png"
+figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_lamp_lab_calib{norm}.png"
 plt.savefig(figname, dpi=100)
 print(f"Saved {figname}")
 plt.show()
@@ -83,6 +90,9 @@ ulli_file = ulli_measurement[0]
 ulli = smart.read_smart_cor(f"{calib_path}/{base}/{folders[1]}", ulli_file)
 ulli[ulli.values < 0] = 0  # set negative counts to 0
 panel["S_ulli"] = ulli.mean().reset_index(drop=True)  # take mean over time of calib measurement
+if normalize:
+    panel["S_ulli"] = panel["S_ulli"] / t_int
+
 panel["F_ulli"] = panel["S_ulli"] * panel["c_lab"]  # calculate radiance measured from Ulli
 
 # %% plot Ulli transfer measurement from laboratory
@@ -93,20 +103,20 @@ ax.set_xlabel("Wavelength (nm)")
 ax.set_ylabel("Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)")
 ax2 = ax.twinx()
 ax2.plot(panel["wavelength"], panel["S_ulli"], label="Counts")
-ax2.set_ylabel("Counts")
+ax2.set_ylabel(ylabel2)
 # ask matplotlib for the plotted objects and their labels
 lines, labels = ax.get_legend_handles_labels()
 lines2, labels2 = ax2.get_legend_handles_labels()
 ax2.legend(lines + lines2, labels + labels2, loc=0)
 ax.grid()
 plt.tight_layout()
-figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_ulli_lab_calib.png"
+figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_ulli_lab_calib{norm}.png"
 plt.savefig(figname, dpi=100)
 print(f"Saved {figname}")
 plt.show()
 plt.close()
 
 # %% save lamp and panel and ulli measurement from lab to file
-csvname = f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_lab_calib.dat"
+csvname = f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_lab_calib{norm}.dat"
 panel.to_csv(csvname, index=False)
 print(f"Saved {csvname}")
