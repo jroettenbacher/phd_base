@@ -31,8 +31,8 @@ panels["VNIR"] = pd.read_csv(f"{panel_path}/panels_VIS_8_(ASP_07).dat", skiprows
 panels["SWIR"] = pd.read_csv(f"{panel_path}/panels_PGS_4_(ASP_07).dat", skiprows=15, usecols=[0, 3], names=columns,
                              header=None, sep="\s+")
 # %% read in ASP07 dark current corrected lamp measurement data and relate pixel to wavelength
-channel = "SWIR"  # set channel to work on (VNIR or SWIR)
-base = "ASP_07_Calib_Lab_20210318"
+channel = "VNIR"  # set channel to work on (VNIR or SWIR)
+base = "ASP07_Calib_Lab_20210318"
 panel = panels[channel]
 panel["pixel"] = np.flip(panel.index + 1)
 folders = ["Cal_Plate", "Ulli_trans"]
