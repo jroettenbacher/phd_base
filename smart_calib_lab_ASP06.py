@@ -24,8 +24,8 @@ raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
 lamp = smart.read_lamp_file(plot=False, save_file=False, save_fig=False)
 
 # %% read in ASP06 dark current corrected lamp measurement data and relate pixel to wavelength
-channel = "SWIR"  # set channel to work on (VNIR or SWIR)
-base = "ASP_06_Calib_Lab_20210329"
+channel = "VNIR"  # set channel to work on (VNIR or SWIR)
+base = "ASP06_Calib_Lab_20210329"
 folder_pairs = [["calib_J3_4", "Ulli_trans_J3_4"], ["calib_J5_6", "Ulli_trans_J5_6"]]
 folders = folder_pairs[0]  # which folder pair to work on (0 or 1)
 dirpath = os.path.join(calib_path, base, folders[0])
