@@ -10,12 +10,15 @@ import smart
 from smart import lookup
 from functions_jr import make_dir
 
+# %% set user given parameters
 flight = "flight_00"  # set flight folder
-t_int_asp06 = 300  # give integration time of field measurement for ASP06
-t_int_asp07 = 300  # give integration time of field measurement for ASP07
+t_int_asp06 = 500  # give integration time of field measurement for ASP06
+t_int_asp07 = 200  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time
 # give date of transfer calib to use for calibrating measurement if not same as measurement date else set to ""
 date = "2021_06_16"
+
+# %% set paths
 norm = "_norm" if normalize else ""
 _, _, calib_path, data_path, _ = smart.set_paths()
 calibrated_path = smart.get_path("calibrated")
@@ -33,7 +36,7 @@ for file in files:
     measurement = smart.read_smart_cor(f"{data_path}/{flight}", file)
     measurement[measurement.values < 0] = 0  # set negative values to 0
 
-    # %% read in matching transfer calibration file from same day
+    # %% read in matching transfer calibration file from same day or from given day with matching t_int
     cali_file = f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
     print(f"Calibration file used:\n {cali_file}")
     cali = pd.read_csv(cali_file)
