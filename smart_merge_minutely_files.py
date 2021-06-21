@@ -12,6 +12,7 @@ from smart import set_paths
 import os
 import pandas as pd
 import logging
+from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
@@ -28,12 +29,12 @@ for dirpath, dirs, files in os.walk(os.path.join(directory, folder)):
         for channel in channels:
             try:
                 filename = [file for file in files if file.endswith(f"{prop}_{channel}_cor.dat")]
-                df = pd.concat([pd.read_csv(f"{dirpath}/{file}", sep="\t", header=None) for file in filename])
+                df = pd.concat([pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in tqdm(filename)])
                 # delete all minutely files
                 for file in filename:
                     os.remove(os.path.join(dirpath, file))
                 outname = f"{dirpath}/{filename[0]}"
-                df.to_csv(outname, sep="\t", index=False, header=False)
+                df.to_csv(outname, sep="\t")
                 log.info(f"Saved {outname}")
             except ValueError:
                 pass
