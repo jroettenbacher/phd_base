@@ -28,9 +28,9 @@ All SMART files should be in one folder with the following subfolders:
 
 **Workflow**
 
-After the raw files are copied from ASP06/07 into `raw_only` and `raw` the minutely files are merged to one file per
-folder and channel. 
-Then the files are corrected for the dark current and saved with the new ending `*_cor.dat` in `data_cor`. 
+After the raw files are copied from ASP06/07 into `raw_only` and `raw` the minutely files are corrected for the dark 
+current and saved with the new ending `*_cor.dat` in `data_cor`.
+Then the minutely files are merged to one file per folder and channel.
 The usual workflow is then to start with the laboratory calibrations, correct them for the dark current and calculate 
 the laboratory calibration factor `c_lab` of each spectrometer.
 This is saved to a file in the `calib` folder and only needs to be done once for each spectrometer.
@@ -57,17 +57,8 @@ You can:
 * plot the mean corrected measurement
 * plot smart data either for one wavelength over time or for a range of or all wavelengths
 
-### 1.2 smart_merge_minutely_files.py
 
-Script to merge minutely raw measurement files into one file per channel and folder.
-Deletes minutely files.
-
-**Required User Input:**
-
-* directory where to find given folder
-* folder which to loop through
-
-### 1.3 smart_write_dark_current_corrected_file.py
+### 1.2 smart_write_dark_current_corrected_file.py
 
 Script to correct a directory of raw smart measurements for the dark current. Set the input and output paths
 in `config.toml`.
@@ -76,6 +67,16 @@ Comment in the for loop to correct the calibration files.
 **Required User Input:**
 
 * flight folder in raw_path
+
+### 1.3 smart_merge_minutely_files.py
+
+Script to merge minutely dark current corrected measurement files into one file per channel and folder.
+Deletes minutely files.
+
+**Required User Input:**
+
+* directory where to find given folder
+* folder which to loop through
 
 ### 1.4 smart_calib_lab_ASP06
 
