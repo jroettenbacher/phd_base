@@ -15,7 +15,7 @@ import functions_jr as jr
 import matplotlib.pyplot as plt
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 log.addHandler(logging.StreamHandler())
 
 # inlet to spectrometer mapping and inlet to direction mapping and measurement to spectrometer mapping
@@ -454,7 +454,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
     if "calibrated" in filename:
         smart = read_smart_cor(data_path, filename)
         title = "\nCorrected for Dark Current and Calibrated"
-        ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
+        ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
     elif "cor" in filename:
         smart = read_smart_cor(data_path, filename)
         title = "Corrected for Dark Current"
@@ -544,7 +544,7 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
 
     time_stamp = df_sel.name  # get time stamp which is selected
     pixel_wl[f"{direction}"] = df_sel.reset_index(drop=True)
-    ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
+    ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
 
     fig, ax = plt.subplots()
     ax.plot("wavelength", f"{direction}", data=pixel_wl, label=f"{direction}")
@@ -562,10 +562,79 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
     plt.close()
 
 
+def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
+    """
+    Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)
+    Args:
+        path: where the file can be found
+        filename: name of the file (standard SMART filename convention)
+        index: which row to plot
+        **kwargs:
+            save_fig: Save figure to plot path given in config.toml
+            plot_path: Where to save plot if not standard plot path
+
+    Returns: Shows and or saves a plot
+
+    """
+    save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
+    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else get_path("plot")
+    pixel_path = get_path("pixel_wl")
+    df1 = read_smart_cor(path, filename)
+    date_str, channel, direction = get_info_from_filename(filename)
+    if channel == "SWIR":
+        channel2 = "VNIR"
+    else:
+        channel2 = "SWIR"
+
+    filename2 = filename.replace(channel, channel2)
+    df2 = read_smart_cor(path, filename2)
+    spectrometer1 = lookup[f"{direction}_{channel}"]
+    spectrometer2 = lookup[f"{direction}_{channel2}"]
+    pixel_wl1 = read_pixel_to_wavelength(pixel_path, spectrometer1)
+    pixel_wl2 = read_pixel_to_wavelength(pixel_path, spectrometer2)
+    # merge pixel dfs and sort by wavelength
+    # pixel_wl = pixel_wl1.append(pixel_wl2, ignore_index=True).sort_values(by="wavelength", ignore_index=True)
+    max_id1 = len(df1) - 1
+    max_id2 = len(df2) - 1
+    try:
+        df_sel1 = df1.iloc[index, :]
+        df_sel2 = df2.iloc[index, :]
+    except IndexError as e:
+        log.info(f"{e}\nGiven index '{index}' out-of-bounds! Using maximum index '{max_id1}'!")
+        df_sel1 = df1.iloc[max_id1, :]
+        df_sel2 = df2.iloc[max_id2, :]
+
+    time_stamp = df_sel1.name  # get time stamp which is selected
+    time_stamp2 = df_sel2.name
+    pixel_wl1[f"{direction}"] = df_sel1.reset_index(drop=True)
+    pixel_wl2[f"{direction}"] = df_sel2.reset_index(drop=True)
+    ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
+
+    fig, ax = plt.subplots()
+    ax.plot(pixel_wl1["wavelength"], pixel_wl1[f"{direction}"]*3, label=f"{channel}")
+    ax.plot(pixel_wl2["wavelength"], pixel_wl2[f"{direction}"]*5, label=f"{channel2}")
+    # ax.plot("wavelength", f"{direction}", data=pixel_wl1, label=f"{channel}")
+    # ax.plot("wavelength", f"{direction}", data=pixel_wl2, label=f"{channel2}")
+    ax.set_title(f"SMART Spectra {direction} {channel}/{channel2} \n {time_stamp:%Y-%m-%d %H:%M:%S}")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel(ylabel)
+    ax.grid()
+    ax.legend()
+    plt.show()
+    if save_fig:
+        figname = filename.replace(".dat", f"_spectra_{time_stamp:%Y%m%d_%H%M%S}.dat")
+        figname = figname.replace(channel, channel2)
+        figpath = f"{plot_path}/{figname}"
+        plt.savefig(figpath, dpi=100)
+        log.info(f"Saved {figpath}")
+
+    plt.close()
+
+
 if __name__ == '__main__':
     # test read in functions
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/ASP06_Calib_Lab_20210329/calib_J3_4"
-    filename = "2021_03_29_11_15.Fup_VNIR.dat"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/raw_only/ASP06_transfer_calib_20210616/Tint_500ms"
+    filename = "2021_06_16_07_20.Fdw_SWIR.dat"
     # filename = "2021_03_29_11_15.Fup_SWIR.dat"
     smart = read_smart_raw(path, filename)
 
@@ -614,73 +683,13 @@ if __name__ == '__main__':
     file = "2021_06_04_13_40.Fdw_VNIR_cor_calibrated.dat"
     path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calibrated_data/flight_00"
     index = 500
-    plot_smart_spectra(path, file, index)#
+    plot_smart_spectra(path, file, index)
 
-    # plot SMART spectra from both channels
-    def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
-        """
-        Plot a spectra from a SMART calibrated measurement file for a given index (time step)
-        Args:
-            path: where the file can be found
-            filename: name of the file (standard SMART filename convention)
-            index: which row to plot
-            **kwargs:
-                save_fig: Save figure to plot path given in config.toml
-                plot_path: Where to save plot if not standard plot path
-
-        Returns: Shows and or saves a plot
-
-        """
-        save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-        plot_path = kwargs["plot_path"] if "plot_path" in kwargs else get_path("plot")
-        pixel_path = get_path("pixel_wl")
-        df1 = read_smart_cor(path, filename)
-        date_str, channel, direction = get_info_from_filename(filename)
-        if channel == "SWIR":
-            channel2 = "VNIR"
-        else:
-            channel2 = "SWIR"
-
-        filename2 = filename.replace(channel, channel2)
-        df2 = read_smart_cor(path, filename2)
-        spectrometer1 = lookup[f"{direction}_{channel}"]
-        spectrometer2 = lookup[f"{direction}_{channel2}"]
-        pixel_wl1 = read_pixel_to_wavelength(pixel_path, spectrometer1)
-        pixel_wl2 = read_pixel_to_wavelength(pixel_path, spectrometer2)
-        # merge pixel dfs and sort by wavelength
-        # pixel_wl = pixel_wl1.append(pixel_wl2, ignore_index=True).sort_values(by="wavelength", ignore_index=True)
-        max_id1 = len(df1) - 1
-        max_id2 = len(df2) - 1
-        try:
-            df_sel1 = df1.iloc[index, :]
-            df_sel2 = df2.iloc[index, :]
-        except IndexError as e:
-            log.info(f"{e}\nGiven index '{index}' out-of-bounds! Using maximum index '{max_id1}'!")
-            df_sel1 = df1.iloc[max_id1, :]
-            df_sel2 = df2.iloc[max_id2, :]
-
-        time_stamp = df_sel1.name  # get time stamp which is selected
-        pixel_wl1[f"{direction}"] = df_sel1.reset_index(drop=True)
-        pixel_wl2[f"{direction}"] = df_sel2.reset_index(drop=True)
-        ylabel = "Irradiance (W$\\,$m$^{-2}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}$)"
-
-        fig, ax = plt.subplots()
-        ax.plot("wavelength", f"{direction}", data=pixel_wl1, label=f"{channel}")
-        ax.plot("wavelength", f"{direction}", data=pixel_wl2, label=f"{channel2}")
-        ax.set_title(f"SMART Spectra {spectrometer} {direction} {channel} \n {time_stamp:%Y-%m-%d %H:%M:%S}")
-        ax.set_xlabel("Wavelength (nm)")
-        ax.set_ylabel(ylabel)
-        ax.grid()
-        plt.show()
-        if save_fig:
-            figname = filename.replace(".dat", f"_spectra_{time_stamp:%Y%m%d_%H%M%S}.dat")
-            figname = figname.replace(channel, channel2)
-            figpath = f"{plot_path}/{figname}"
-            plt.savefig(figpath, dpi=100)
-            log.info(f"Saved {figpath}")
-
-        plt.close()
-
+    # plot a complete spectra from both channels
+    filename = "2021_06_21_08_41.Fdw_SWIR_cor_calibrated_norm.dat"
+    path = f"{get_path('calibrated')}/flight_00"
+    index = 5
+    plot_complete_smart_spectra(path, filename, index)
 
     # working section
     raw_file = "2021_03_29_11_15.Fdw_SWIR.dat"
