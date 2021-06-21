@@ -68,3 +68,5 @@ def make_dark_cur_cor_file(file: str, inpath: str, transfer_cali_date: str, outd
 
 # run job in parallel
 Parallel(n_jobs=cpu_count()-2)(delayed(make_dark_cur_cor_file)(file, inpath, transfer_cali_date, outdir) for file in files)
+
+print("Done with smart_write_dark_current_corrected_file.py")
