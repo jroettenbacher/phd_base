@@ -9,10 +9,15 @@ import pandas as pd
 import smart
 from smart import lookup
 from functions_jr import make_dir
+import logging
+
+log = logging.getLogger(__name__)
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.INFO)
 
 # %% set user given parameters
 flight = "flight_00"  # set flight folder
-t_int_asp06 = 500  # give integration time of field measurement for ASP06
+t_int_asp06 = 300  # give integration time of field measurement for ASP06
 t_int_asp07 = 200  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time
 # give date of transfer calib to use for calibrating measurement if not same as measurement date else set to ""
@@ -38,7 +43,7 @@ for file in files:
 
     # %% read in matching transfer calibration file from same day or from given day with matching t_int
     cali_file = f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
-    print(f"Calibration file used:\n {cali_file}")
+    log.info(f"Calibration file used:\n {cali_file}")
     cali = pd.read_csv(cali_file)
     # convert to long format
     m_long = measurement.melt(var_name="pixel", value_name="counts", ignore_index=False)
@@ -51,6 +56,7 @@ for file in files:
 
     # %% save wide format calibrated measurement
     df_out = df.pivot(columns="pixel", values=direction)  # convert to wide format (row=time, column=pixel)
-    outfile = f"{outpath}/{file.replace('.dat', '_calibrated.dat')}"
+    outname = "_calibrated_norm.dat" if normalize else "_calibrated.dat"
+    outfile = f"{outpath}/{file.replace('.dat', outname)}"
     df_out.to_csv(outfile, sep="\t")
-    print(f"Saved {outfile}")
+    log.info(f"Saved {outfile}")
