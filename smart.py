@@ -13,6 +13,10 @@ import numpy as np
 import toml
 import functions_jr as jr
 import matplotlib.pyplot as plt
+import holoviews as hv
+from holoviews import opts
+
+hv.extension('bokeh')
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.WARNING)
@@ -544,7 +548,7 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
 
     time_stamp = df_sel.name  # get time stamp which is selected
     pixel_wl[f"{direction}"] = df_sel.reset_index(drop=True)
-    ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
+    ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
 
     fig, ax = plt.subplots()
     ax.plot("wavelength", f"{direction}", data=pixel_wl, label=f"{direction}")
@@ -605,14 +609,15 @@ def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) 
         df_sel2 = df2.iloc[max_id2, :]
 
     time_stamp = df_sel1.name  # get time stamp which is selected
-    time_stamp2 = df_sel2.name
+    assert time_stamp == df_sel2.name, "Time stamps from VNIR and SWIR are not identical!"
+
     pixel_wl1[f"{direction}"] = df_sel1.reset_index(drop=True)
     pixel_wl2[f"{direction}"] = df_sel2.reset_index(drop=True)
-    ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in file else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
+    ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
 
     fig, ax = plt.subplots()
-    ax.plot(pixel_wl1["wavelength"], pixel_wl1[f"{direction}"]*3, label=f"{channel}")
-    ax.plot(pixel_wl2["wavelength"], pixel_wl2[f"{direction}"]*5, label=f"{channel2}")
+    ax.plot(pixel_wl1["wavelength"], pixel_wl1[f"{direction}"], label=f"{channel}")
+    ax.plot(pixel_wl2["wavelength"], pixel_wl2[f"{direction}"], label=f"{channel2}")
     # ax.plot("wavelength", f"{direction}", data=pixel_wl1, label=f"{channel}")
     # ax.plot("wavelength", f"{direction}", data=pixel_wl2, label=f"{channel2}")
     ax.set_title(f"SMART Spectra {direction} {channel}/{channel2} \n {time_stamp:%Y-%m-%d %H:%M:%S}")
@@ -620,15 +625,145 @@ def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) 
     ax.set_ylabel(ylabel)
     ax.grid()
     ax.legend()
-    plt.show()
     if save_fig:
-        figname = filename.replace(".dat", f"_spectra_{time_stamp:%Y%m%d_%H%M%S}.dat")
-        figname = figname.replace(channel, channel2)
+        figname = filename.replace(".dat", f"_spectra_{time_stamp:%Y%m%d_%H%M%S}.png")
+        figname = figname.replace(channel, "VNIR+SWIR")
         figpath = f"{plot_path}/{figname}"
         plt.savefig(figpath, dpi=100)
         log.info(f"Saved {figpath}")
 
+    plt.show()
     plt.close()
+
+
+def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int) -> hv.Overlay:
+    """
+    Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)
+    Args:
+        path: where the file can be found
+        filename: name of the file (standard SMART filename convention)
+        index: which row to plot
+
+    Returns: Shows and or saves a plot
+
+    """
+    pixel_path = get_path("pixel_wl")
+    df1 = read_smart_cor(path, filename)
+    date_str, channel, direction = get_info_from_filename(filename)
+    if channel == "SWIR":
+        channel2 = "VNIR"
+    else:
+        channel2 = "SWIR"
+
+    filename2 = filename.replace(channel, channel2)
+    df2 = read_smart_cor(path, filename2)
+    spectrometer1 = lookup[f"{direction}_{channel}"]
+    spectrometer2 = lookup[f"{direction}_{channel2}"]
+    pixel_wl1 = read_pixel_to_wavelength(pixel_path, spectrometer1)
+    pixel_wl2 = read_pixel_to_wavelength(pixel_path, spectrometer2)
+    # merge pixel dfs and sort by wavelength
+    # pixel_wl = pixel_wl1.append(pixel_wl2, ignore_index=True).sort_values(by="wavelength", ignore_index=True)
+    max_id1 = len(df1) - 1
+    max_id2 = len(df2) - 1
+    try:
+        df_sel1 = df1.iloc[index, :]
+        df_sel2 = df2.iloc[index, :]
+    except IndexError as e:
+        log.info(f"{e}\nGiven index '{index}' out-of-bounds! Using maximum index '{max_id1}'!")
+        df_sel1 = df1.iloc[max_id1, :]
+        df_sel2 = df2.iloc[max_id2, :]
+
+    time_stamp = df_sel1.name  # get time stamp which is selected
+    assert time_stamp == df_sel2.name, "Time stamps from VNIR and SWIR are not identical!"
+
+    pixel_wl1[f"{direction}"] = df_sel1.reset_index(drop=True)
+    pixel_wl2[f"{direction}"] = df_sel2.reset_index(drop=True)
+    ylabel = "Irradiance (W m^-2 nm^-1)" if "F" in filename else "Radiance (W sr^-1 m^-2 nm^-1)"
+
+    curve1 = hv.Curve(pixel_wl1, kdims=[("wavelength", "Wavelenght (nm)")], vdims=[(f"{direction}", ylabel)], label=f"{channel}")
+    curve2 = hv.Curve(pixel_wl2, kdims=[("wavelength", "Wavelenght (nm)")], vdims=[(f"{direction}", ylabel)], label=f"{channel2}")
+    overlay = curve1 * curve2
+    overlay.opts(
+        opts.Curve(height=400, width=900, fontsize=12))
+    overlay.opts(title=f"SMART Spectra {direction} {channel}/{channel2} {time_stamp:%Y-%m-%d %H:%M:%S.%f}",
+                 show_grid=True)
+    return overlay
+
+
+def plot_smart_data_interactive(filename: str, wavelength: Union[list, str], flight: str) -> hv.Curve:
+    """
+    Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
+    or a time series of one wavelength.
+
+    Args:
+        filename: Standard SMART filename
+        wavelength: list with either one or two wavelengths in nm or 'all'
+
+
+    Returns: Creates an interactive figure
+
+    """
+    raw_path, pixel_wl_path, _, data_path, plot_path = set_paths()
+    calibrated_path = get_path("calibrated")
+    date_str, channel, direction = get_info_from_filename(filename)
+    # make sure wavelength is a list
+    if type(wavelength) != list and wavelength != "all":
+        wavelength = [wavelength]
+    if "calibrated" in filename:
+        df = read_smart_cor(f"{calibrated_path}/{flight}", filename)
+        title = "\nCorrected for Dark Current and Calibrated"
+        ylabel = "Irradiance (W m^-2 nm^-1)" if "F" in filename else "Radiance (W sr^-1 m^-2 nm^-1)"
+    elif "cor" in filename:
+        df = read_smart_cor(f"{data_path}/{flight}", filename)
+        title = "Corrected for Dark Current"
+        ylabel = "Netto Counts"
+    else:
+        df = read_smart_raw(f"{raw_path}/{flight}", filename)
+        df = df.iloc[:, 2:]  # remove columns t_int and shutter
+        title = "Raw"
+        ylabel = "Netto Counts"
+    pixel_wl = read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+    if len(wavelength) == 2:
+        pixel_nr = []
+        for wl in wavelength:
+            pxl, wavel = find_pixel(pixel_wl, wl)
+            pixel_nr.append(pxl)
+        pixel_nr.sort()  # make sure wavelengths are in ascending order
+        smart_sel = df.loc[:, pixel_nr[0]:pixel_nr[1]]  # select range of wavelengths
+        begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]  # read out start and end time
+        smart_mean = smart_sel.mean(axis=0).to_frame()  # calculate mean over time and return a dataframe
+        smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))  # update the index to be numeric
+        # join the measurement and pixel to wavelength data frames by pixel
+        smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        smart_plot.columns = ["value", "pixel", "wavelength"]
+        curve = hv.Curve(smart_plot, kdims=[("wavelength", "Wavelength (nm)")], vdims=[("value", ylabel)])
+        title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n {begin_dt} - {end_dt}"
+    elif len(wavelength) == 1:
+        pixel_nr, wl = find_pixel(pixel_wl, wavelength[0])
+        smart_sel = df.loc[:, pixel_nr].to_frame()
+        begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]
+        time_extend = end_dt - begin_dt
+        smart_sel.reset_index(inplace=True)
+        smart_sel.columns = ["time", "value"]
+        curve = hv.Curve(smart_sel, kdims=[("time", "Time (UTC)")], vdims=[("value", ylabel)])
+        title=f"SMART Time Series {title} {direction} {channel}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}"
+    #         ax = jr.set_xticks_and_xlabels(ax, time_extend)
+    elif wavelength == "all":
+        begin_dt, end_dt = df.index[0], df.index[-1]
+        smart_mean = df.mean().to_frame()
+        smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))
+        smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        smart_plot.columns = ["value", "pixel", "wavelength"]
+        curve = hv.Curve(smart_plot, kdims=[("wavelength", "Wavelenght (nm)")], vdims=[("value", ylabel)])
+        title=f"Time Averaged SMART Measurement {title} {direction} {channel} {begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}"
+    else:
+        raise ValueError("wavelength has to be a list of length 1 or 2 or 'all'!")
+
+    curve.opts(
+        opts.Curve(height=300, width=900, fontsize=12))
+    curve.opts(title=title, show_grid=True)
+
+    return curve
 
 
 if __name__ == '__main__':
@@ -646,50 +781,51 @@ if __name__ == '__main__':
     pixel_nr, wavelength = find_pixel(pixel_wl, 525)
 
     # input: spectrometer, filename, option
-    option = 2
-    filename = "2021_03_29_11_07.Fup_VNIR.dat"
-    filename = "2021_03_29_11_07.Fup_SWIR.dat"
-    dark_current = get_dark_current(filename, option)
+    # option = 2
+    # filename = "2021_03_29_11_07.Fup_VNIR.dat"
+    # filename = "2021_03_29_11_07.Fup_SWIR.dat"
+    # dark_current = get_dark_current(filename, option)
 
-    # correct raw measurement with dark current
-    # input: smart measurement, option
-    option = 2
-    filename = "2021_03_29_11_07.Fup_VNIR.dat"
-    smart_cor = correct_smart_dark_current(filename, option)
-
-    # plot mean corrected smart measurement
-    raw_path, _, _, _, _ = set_paths()
-    filename = "2021_03_29_11_07.Fup_VNIR.dat"
-    option = 2
-    smart = read_smart_raw(raw_path, filename)
-    smart_cor = correct_smart_dark_current(filename, option=option)
-    measurement = smart.mean().iloc[2:]
-    measurement_cor = smart_cor.mean()
-    plot_mean_corrected_measurement(filename, measurement, measurement_cor, option)
-
-    # read corrected file
-    _, _, _, data_path, _ = set_paths()
-    filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
-    smart_cor = read_smart_cor(data_path, filename)
-
-    # plot any smart measurement given a range of wavelengths, one specific one or all
-    filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
-    raw_file = "2021_03_29_11_07.Fup_VNIR.dat"
-    wavelength = [525]
-    plot_smart_data(filename, wavelength)
-    plot_smart_data(raw_file, wavelength)
-
-    # plot SMART spectra
-    file = "2021_06_04_13_40.Fdw_VNIR_cor_calibrated.dat"
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calibrated_data/flight_00"
-    index = 500
-    plot_smart_spectra(path, file, index)
+    # # correct raw measurement with dark current
+    # # input: smart measurement, option
+    # option = 2
+    # filename = "2021_03_29_11_07.Fup_VNIR.dat"
+    # smart_cor = correct_smart_dark_current(filename, option)
+    #
+    # # plot mean corrected smart measurement
+    # raw_path, _, _, _, _ = set_paths()
+    # filename = "2021_03_29_11_07.Fup_VNIR.dat"
+    # option = 2
+    # smart = read_smart_raw(raw_path, filename)
+    # smart_cor = correct_smart_dark_current(filename, option=option)
+    # measurement = smart.mean().iloc[2:]
+    # measurement_cor = smart_cor.mean()
+    # plot_mean_corrected_measurement(filename, measurement, measurement_cor, option)
+    #
+    # # read corrected file
+    # _, _, _, data_path, _ = set_paths()
+    # filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
+    # smart_cor = read_smart_cor(data_path, filename)
+    #
+    # # plot any smart measurement given a range of wavelengths, one specific one or all
+    # filename = "2021_03_29_11_07.Fup_VNIR_cor.dat"
+    # raw_file = "2021_03_29_11_07.Fup_VNIR.dat"
+    # wavelength = [525]
+    # plot_smart_data(filename, wavelength)
+    # plot_smart_data(raw_file, wavelength)
+    #
+    # # plot SMART spectra
+    # file = "2021_06_04_13_40.Fdw_VNIR_cor_calibrated.dat"
+    # path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calibrated_data/flight_00"
+    # index = 500
+    # plot_smart_spectra(path, file, index)
 
     # plot a complete spectra from both channels
     filename = "2021_06_21_08_41.Fdw_SWIR_cor_calibrated_norm.dat"
     path = f"{get_path('calibrated')}/flight_00"
-    index = 5
-    plot_complete_smart_spectra(path, filename, index)
+    index = 500
+    plot_path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/plots/quicklooks/flight_00/spectra"
+    plot_complete_smart_spectra(path, filename, index, save_fig=True, plot_path=plot_path)
 
     # working section
     raw_file = "2021_03_29_11_15.Fdw_SWIR.dat"
