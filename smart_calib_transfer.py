@@ -20,9 +20,9 @@ import matplotlib.pyplot as plt
 raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
 
 # %% set variables
-# field_folder = "ASP06_transfer_calib_20210616"  # transfer calib folder
-field_folder = "ASP07_transfer_calib_20210616"  # transfer calib folder
-t_int = 300  # integration time of transfer calibration measurement
+field_folder = "ASP06_transfer_calib_20210616"  # transfer calib folder
+# field_folder = "ASP07_transfer_calib_20210616"  # transfer calib folder
+t_int = 500  # integration time of transfer calibration measurement
 normalize = True  # normalize counts by integration time
 norm = "_norm" if normalize else ""
 # list transfer calibration files
@@ -32,12 +32,12 @@ lab_cali_files = [f for f in os.listdir(calib_path) if f.endswith(f"lab_calib{no
 
 # %% read in Ulli transfer measurement from field
 for field_file in field_cali_files:
-    # field_file = "2021_06_04_13_40.Fdw_VNIR_cor.dat"
     date_str, channel, direction = smart.get_info_from_filename(field_file)
     ulli_field = smart.read_smart_cor(f"{calib_path}/{field_folder}/Tint_{t_int}ms", field_file)
     ulli_field[ulli_field.values < 0] = 0  # set negative counts to 0
     # read corresponding cali file
     lab_file = [f for f in lab_cali_files if f"{direction}_{channel}" in f][0]
+    print(f"Lab cali file used: {lab_file}")
     lab_df = pd.read_csv(f"{calib_path}/{lab_file}")
     lab_df["S_ulli_field"] = ulli_field.mean().reset_index(drop=True)  # take mean over time of field calib measurement
     if normalize:
@@ -68,7 +68,7 @@ for field_file in field_cali_files:
     ax.grid()
     plt.tight_layout()
     figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_ulli_transfer_calib{norm}.png"
-    # plt.savefig(figname, dpi=100)
+    plt.savefig(figname, dpi=100)
     plt.show()
     plt.close()
     print(f"Saved {figname}")

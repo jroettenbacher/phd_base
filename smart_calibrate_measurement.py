@@ -39,7 +39,7 @@ for file in files:
     spectrometer = lookup[f"{direction}_{channel}"]
     t_int = t_int_asp06 if "ASP06" in spectrometer else t_int_asp07  # select relevant integration time
     measurement = smart.read_smart_cor(f"{data_path}/{flight}", file)
-    measurement[measurement.values < 0] = 0  # set negative values to 0
+    # measurement[measurement.values < 0] = 0  # set negative values to 0
 
     # %% read in matching transfer calibration file from same day or from given day with matching t_int
     cali_file = f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
