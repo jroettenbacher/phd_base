@@ -10,26 +10,19 @@ import matplotlib.pyplot as plt
 import datetime
 
 
-# from pyLARDA.helpers
-def argnearest(array, value):
-    """find the index of the nearest value in a sorted array
-    for example time or range axis
-
-    Args:
-        array (np.array): sorted array with values, list will be converted to 1D array
-        value: value to find
-    Returns:
-        index
+def arg_nearest(array, value):
     """
-    if type(array) != np.ndarray:
-        array = np.array(array)
-    array.sort()
-    i = np.searchsorted(array, value) - 1
+    Find the index of the nearest value in an array.
+    Args:
+        array: Input has to be convertible to an ndarray
+        value: Value to search for
 
-    if not i == array.shape[0] - 1:
-        if np.abs(array[i] - value) > np.abs(array[i + 1] - value):
-            i = i + 1
-    return i
+    Returns: index of closest value
+
+    """
+    array = np.asarray(array)
+    idx = np.nanargmin(np.abs(array - value))
+    return idx
 
 
 def make_dir(folder: str) -> None:

@@ -153,6 +153,8 @@ def read_pixel_to_wavelength(path: str, spectrometer: str) -> pd.DataFrame:
     filename = f"pixel_wl_{lookup[spectrometer]}.dat"
     file = os.path.join(path, filename)
     df = pd.read_csv(file, sep="\s+", skiprows=7, header=None, names=["pixel", "wavelength"])
+    # sort df by the wavelength column and reset the index, necessary for the SWIR spectrometers
+    # df = df.sort_values(by="wavelength").reset_index(drop=True)
     return df
 
 
@@ -172,7 +174,7 @@ def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     min_wl = df["wavelength"].min()
     max_wl = df["wavelength"].max()
     assert max_wl >= wavelength >= min_wl, "Given wavelength not in data frame!"
-    idx = jr.argnearest(df["wavelength"], wavelength)
+    idx = jr.arg_nearest(df["wavelength"], wavelength)
     pixel_nr, wavelength = df["pixel"].iloc[idx], df["wavelength"].iloc[idx]
     return pixel_nr, wavelength
 
@@ -684,7 +686,7 @@ def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int
     curve2 = hv.Curve(pixel_wl2, kdims=[("wavelength", "Wavelenght (nm)")], vdims=[(f"{direction}", ylabel)], label=f"{channel2}")
     overlay = curve1 * curve2
     overlay.opts(
-        opts.Curve(height=400, width=900, fontsize=12))
+        opts.Curve(height=500, width=900, fontsize=12))
     overlay.opts(title=f"SMART Spectra {direction} {channel}/{channel2} {time_stamp:%Y-%m-%d %H:%M:%S.%f}",
                  show_grid=True)
     return overlay
@@ -760,10 +762,109 @@ def plot_smart_data_interactive(filename: str, wavelength: Union[list, str], fli
         raise ValueError("wavelength has to be a list of length 1 or 2 or 'all'!")
 
     curve.opts(
-        opts.Curve(height=300, width=900, fontsize=12))
+        opts.Curve(height=500, width=900, fontsize=12))
     curve.opts(title=title, show_grid=True)
 
     return curve
+
+
+def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, str], flight:str) -> hv.Overlay:
+    """
+    Plot upward and downward irradiance as a time averaged series over the wavelength or as a time series for one
+    wavelength.
+    Args:
+        filename: Standard SMART filename
+        wavelength: single or range of wavelength or "all"
+        flight: flight folder (flight_xx)
+
+    Returns: holoviews overlay plot with two curves
+
+    """
+    # make sure wavelength is a list
+    if type(wavelength) != list and wavelength != "all":
+        wavelength = [wavelength]
+    # get paths and define input path
+    calibrated_path, pixel_path = get_path("calibrated"), get_path("pixel_wl")
+    inpath = f"{calibrated_path}/{flight}"
+    date_str, channel, direction = get_info_from_filename(filename)
+    direction2 = "Fdw" if direction == "Fup" else "Fup"  # set opposite direction
+    filename2 = filename.replace(direction, direction2)
+    # read in both irradiance measurements
+    df1 = read_smart_cor(inpath, filename)
+    df2 = read_smart_cor(inpath, filename2)
+    # get spectrometers from lookup dictionary
+    spectro1, spectro2 = lookup[f"{direction}_{channel}"], lookup[f"{direction2}_{channel}"]
+    pixel_wl1 = read_pixel_to_wavelength(pixel_path, spectro1)
+    pixel_wl2 = read_pixel_to_wavelength(pixel_path, spectro2)
+    title = "Corrected for Dark Current and Calibrated"
+    ylabel = "Irradiance (W m^-2 nm^-1)"
+
+    if len(wavelength) == 2:
+        pixel_nr1 = []
+        pixel_nr2 = []
+        for wl in wavelength:
+            pxl, _ = find_pixel(pixel_wl1, wl)
+            pixel_nr1.append(pxl)
+            pxl, _ = find_pixel(pixel_wl2, wl)
+            pixel_nr2.append(pxl)
+        pixel_nr1.sort()  # make sure wavelengths are in ascending order
+        pixel_nr2.sort()
+        df1_sel = df1.loc[:, pixel_nr1[0]:pixel_nr1[1]]  # select range of wavelengths
+        df1_sel.sort()  # sort data frame
+        df2_sel = df2.loc[:, pixel_nr2[0]:pixel_nr2[1]]  # select range of wavelengths
+        df2_sel.sort()  # sort data frame
+        begin_dt, end_dt = df1_sel.index[0], df1_sel.index[-1]  # read out start and end time
+        df1_mean = df1_sel.mean(axis=0).to_frame()  # calculate mean over time and return a dataframe
+        df1_mean = df1_mean.set_index(pd.to_numeric(df1_mean.index))  # update the index to be numeric
+        df2_mean = df2_sel.mean(axis=0).to_frame()  # calculate mean over time and return a dataframe
+        df2_mean = df2_mean.set_index(pd.to_numeric(df2_mean.index))  # update the index to be numeric
+        # join the measurement and pixel to wavelength data frames by pixel
+        df1_plot = df1_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        df1_plot.columns = ["value", "pixel", "wavelength"]
+        df2_plot = df2_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        df2_plot.columns = ["value", "pixel", "wavelength"]
+        curve1 = hv.Curve(df1_plot, kdims=[("wavelength", "Wavelength (nm)")], vdims=[("value", ylabel)],
+                          label=direction)
+        curve2 = hv.Curve(df2_plot, kdims=[("wavelength", "Wavelength (nm)")], vdims=[("value", ylabel)],
+                          label=direction2)
+        title = f"Time Averaged SMART Measurement {title} {channel}\n {begin_dt} - {end_dt}"
+        overlay = curve1 * curve2
+    elif len(wavelength) == 1:
+        pixel_nr1, wl1 = find_pixel(pixel_wl1, wavelength[0])
+        df1_sel = df1.loc[:, pixel_nr1].to_frame()
+        pixel_nr2, wl2 = find_pixel(pixel_wl2, wavelength[0])
+        df2_sel = df2.loc[:, pixel_nr2].to_frame()
+        begin_dt, end_dt = df1_sel.index[0], df1_sel.index[-1]
+        df1_sel.reset_index(inplace=True)
+        df1_sel.columns = ["time", "value"]
+        df2_sel.reset_index(inplace=True)
+        df2_sel.columns = ["time", "value"]
+        curve1 = hv.Curve(df1_sel, kdims=[("time", "Time (UTC)")], vdims=[("value", ylabel)], label=direction)
+        curve2 = hv.Curve(df2_sel, kdims=[("time", "Time (UTC)")], vdims=[("value", ylabel)], label=direction2)
+        title = f"SMART Time Series {title} {channel}\n{wl1:.3f} nm {begin_dt:%Y-%m-%d}"
+        overlay = curve1 * curve2
+    elif wavelength == "all":
+        begin_dt, end_dt = df1.index[0], df1.index[-1]
+        df1_mean = df1.mean().to_frame()
+        df1_mean = df1_mean.set_index(pd.to_numeric(df1_mean.index))
+        df1_plot = df1_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        df1_plot.columns = ["value", "pixel", "wavelength"]
+        df2_mean = df2.mean().to_frame()
+        df2_mean = df2_mean.set_index(pd.to_numeric(df2_mean.index))
+        df2_plot = df2_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
+        df2_plot.columns = ["value", "pixel", "wavelength"]
+        curve1 = hv.Curve(df1_plot, kdims=[("wavelength", "Wavelenght (nm)")], vdims=[("value", ylabel)], label=direction)
+        curve2 = hv.Curve(df2_plot, kdims=[("wavelength", "Wavelenght (nm)")], vdims=[("value", ylabel)], label=direction2)
+        title = f"Time Averaged SMART Irradiance Measurement {title} {channel} {begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}"
+        overlay = curve1 * curve2
+    else:
+        raise ValueError("wavelength has to be a list of length 1 or 2 or 'all'!")
+
+    overlay.opts(
+        opts.Curve(height=500, width=900, fontsize=12))
+    overlay.opts(title=title, show_grid=True)
+
+    return overlay
 
 
 if __name__ == '__main__':
@@ -773,8 +874,8 @@ if __name__ == '__main__':
     # filename = "2021_03_29_11_15.Fup_SWIR.dat"
     smart = read_smart_raw(path, filename)
 
-    pixel_wl_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"
-    spectrometer = "ASP06_J4"
+    pixel_wl_path = get_path("pixel_wl")
+    spectrometer = "ASP06_J3"
     pixel_wl = read_pixel_to_wavelength(pixel_wl_path, spectrometer)
 
     # find pixel closest to given wavelength
