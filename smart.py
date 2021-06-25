@@ -284,7 +284,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
     path = kwargs["path"] if "path" in kwargs else path
     date = kwargs["date"] if "date" in kwargs else None
     smart = read_smart_raw(path, filename)
-    t_int = smart["t_int"][0]  # get integration time
+    t_int = int(smart["t_int"][0])  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
     spectrometer = lookup[f"{direction}_{channel}"]
     pixel_wl = read_pixel_to_wavelength(pixel_wl_path, spectrometer)
