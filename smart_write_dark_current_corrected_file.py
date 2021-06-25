@@ -50,6 +50,9 @@ def make_dark_cur_cor_file(file: str, inpath: str, transfer_cali_date: str, outd
     smart_cor.to_csv(outfile, sep="\t", float_format="%.0f")
     log.info(f"Saved {outfile}")
 
+# test one file
+# file = "2021_06_24_11_07.Fdw_VNIR.dat"
+# make_dark_cur_cor_file(file, inpath, transfer_cali_date, outdir)
 # run job in parallel
 Parallel(n_jobs=cpu_count()-2)(delayed(make_dark_cur_cor_file)(file, inpath, transfer_cali_date, outdir) for file in files)
 
