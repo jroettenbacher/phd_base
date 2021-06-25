@@ -13,12 +13,12 @@ from joblib import Parallel, delayed, cpu_count
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
-log.setLevel(logging.WARNING)
+log.setLevel(logging.INFO)
 
 # User input
-flight = "flight_00"  # which flight do the files in raw belong to?
+flight = "flight_01"  # which flight do the files in raw belong to?
 # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
-transfer_cali_date = "20210616"
+transfer_cali_date = "20210625"
 
 # Set paths in config.toml
 raw_path, _, calib_path, data_path, _ = smart.set_paths()
@@ -27,22 +27,6 @@ outdir = os.path.join(data_path, flight)
 make_dir(outdir)
 # create list of input files and add a progress bar to it
 files = tqdm([file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))])
-
-# # correct calibration files for dark current
-# folder = "flight_00"  # name specific folder if you only want to run this one, else set this to ""
-# for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
-#     for file in files:
-#         if file.endswith("IR.dat"):
-#             log.info(f"Working on {dirpath}/{file}")
-#
-#             if len(transfer_cali_date) > 0:
-#                 smart_cor = smart.correct_smart_dark_current(file, option=2, path=dirpath, date=transfer_cali_date)
-#             else:
-#                 smart_cor = smart.correct_smart_dark_current(file, option=2, path=dirpath)
-#
-#             outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
-#             smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
-#             log.info(f"Saved {outname}")
 
 
 def make_dark_cur_cor_file(file: str, inpath: str, transfer_cali_date: str, outdir: str) -> None:
