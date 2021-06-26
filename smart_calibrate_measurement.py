@@ -5,6 +5,7 @@ author: Johannes Roettenbacher
 
 # %% import modules and set paths
 import os
+import numpy as np
 import pandas as pd
 import smart
 from smart import lookup
@@ -16,12 +17,12 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set user given parameters
-flight = "flight_00"  # set flight folder
+flight = "flight_02"  # set flight folder
 t_int_asp06 = 300  # give integration time of field measurement for ASP06
-t_int_asp07 = 200  # give integration time of field measurement for ASP07
+t_int_asp07 = 300  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time
 # give date of transfer calib to use for calibrating measurement if not same as measurement date else set to ""
-date = "2021_06_16"
+date = ""
 
 # %% set paths
 norm = "_norm" if normalize else ""
@@ -55,6 +56,8 @@ for file in files:
     df[direction] = df["counts"] * df["c_field"]  # calculate calibrated radiance/irradiance
 
     # %% save wide format calibrated measurement
+    # remove rows where the index is nan
+    df = df[~np.isnan(df.index)]
     df_out = df.pivot(columns="pixel", values=direction)  # convert to wide format (row=time, column=pixel)
     outname = "_calibrated_norm.dat" if normalize else "_calibrated.dat"
     outfile = f"{outpath}/{file.replace('.dat', outname)}"

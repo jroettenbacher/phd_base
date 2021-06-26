@@ -433,10 +433,10 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
     return measurement_cor
 
 
-def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> None:
+def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> plt.axes:
     """
     Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
-    or a time series of one wavelength.
+    or a time series of one wavelength. Return an axes object to continue plotting or show it.
     TODO: add option to plot multiple files
 
     Args:
@@ -496,7 +496,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
         fig, ax = plt.subplots()
         smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel=ylabel,
                        title=f"SMART Time Series {title} {direction} {channel}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
-        ax = jr.set_xticks_and_xlabels(ax, time_extend)
+        # ax = jr.set_xticks_and_xlabels(ax, time_extend)
         figname = filename.replace('.dat', f'_{wl:.1f}nm.png')
     elif wavelength == "all":
         begin_dt, end_dt = smart.index[0], smart.index[-1]
@@ -515,9 +515,9 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> No
     if save_fig:
         plt.savefig(f"{plot_path}/{figname}", dpi=100)
         log.info(f"Saved {plot_path}/{figname}")
+        plt.close()
     else:
-        plt.show()
-    plt.close()
+        return ax
 
 
 def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
@@ -930,12 +930,14 @@ if __name__ == '__main__':
 
     # working section
     raw_file = "2021_03_29_11_15.Fdw_SWIR.dat"
-    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP06_Calib_Lab_20210329/calib_J3_4"
-    plot_smart_data(raw_file, "all", path=path)
-    smart = read_smart_raw(path, raw_file)
+    calibrated_file = "2021_06_24_10_28.Fdw_VNIR_cor_calibrated_norm.dat"
+    file = "2021_06_25_06_14.Iup_SWIR.dat"
+    path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP07_transfer_calib_20210625/dark_300ms"
+    plot_smart_data(file, "all", path=path)
+    smart = read_smart_raw(path, file)
     fig, ax = plt.subplots()
-    smart.iloc[2, 2:].plot(ax=ax, label="open")
-    smart.iloc[21, 2:].plot(ax=ax, label="dark")
+    smart.iloc[4:, 2:].plot(ax=ax)
+    smart.iloc[:, 2:].plot(ax=ax, label="dark")
     (smart.iloc[2, 2:] - smart.iloc[21, 2:]).plot(ax=ax, label="diff")
     plt.legend()
     plt.grid()
