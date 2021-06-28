@@ -21,7 +21,7 @@ log.setLevel(logging.INFO)
 # combine minutely files to one file
 raw_path, _, calib_path, data_path, _ = set_paths()
 directory = data_path
-folder = "flight_02"
+folder = "flight_03"
 channels = ["SWIR", "VNIR"]
 property = ["Iup", "Fup", "Fdw"]
 for dirpath, dirs, files in os.walk(os.path.join(directory, folder)):
