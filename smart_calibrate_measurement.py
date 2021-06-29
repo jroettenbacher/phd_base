@@ -17,7 +17,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set user given parameters
-flight = "flight_03"  # set flight folder
+flight = "flight_04"  # set flight folder
 t_int_asp06 = 300  # give integration time of field measurement for ASP06
 t_int_asp07 = 300  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time

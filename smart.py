@@ -228,6 +228,7 @@ def get_path(key: str) -> str:
     paths["lamp"] = os.path.join(base_dir, config["lamp"])
     paths["calibrated"] = os.path.join(base_dir, config["calibrated_data"])
     paths["panel"] = os.path.join(base_dir, config["panel"])
+    paths["horidata"] = os.path.join(base_dir, config["horidata"])
 
     return paths[key]
 

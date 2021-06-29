@@ -16,7 +16,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # User input
-flight = "flight_03"  # which flight do the files in raw belong to?
+flight = "flight_04"  # which flight do the files in raw belong to?
 # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
 transfer_cali_date = "20210627"
 
@@ -28,6 +28,7 @@ make_dir(outdir)
 # create list of input files and add a progress bar to it
 files = tqdm([file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))])
 files_debug = [file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))]
+
 
 def make_dark_cur_cor_file(file: str, inpath: str, transfer_cali_date: str, outdir: str) -> None:
     """

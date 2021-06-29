@@ -12,14 +12,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 raw_path, pixel_path, _, data_path, plot_path = smart.set_paths()
-flight = "flight_02"
+flight = "flight_04"
 ql_path = f"{plot_path}/quicklooks/{flight}"
 make_dir(ql_path)
 calibrated_path = smart.get_path("calibrated")
 # %% read in raw files
 inpath = f"{raw_path}/{flight}"
 raw_files = os.listdir(inpath)
-outpath = f"{ql_path}"
+outpath = f"{ql_path}/raw"
 make_dir(outpath)
 for file in raw_files:
     smart.plot_smart_data(file, "all", path=inpath, plot_path=outpath, save_fig=True)

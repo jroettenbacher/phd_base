@@ -11,6 +11,7 @@ plots = "campaigns/CIRRUS-HL/SMART/plots"
 pixel_to_wavelength = "instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
 lamp = "instruments/SMART/lamp_F1587"  # lamp specification files
 panel = "instruments/SMART/panel_34816"  # panel reflectivity files
+horidata = "campaigns/CIRRUS-HL/horidata"  # path to INS and stabilization data
 # on LIM server
 [cirrus-hl.lim_server]
 base_dir = "/projekt_agmwend"
