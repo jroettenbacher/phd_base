@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 raw_path, pixel_path, _, data_path, plot_path = smart.set_paths()
-flight = "flight_04"
+flight = "Flight_20210705a"
 ql_path = f"{plot_path}/quicklooks/{flight}"
 make_dir(ql_path)
 calibrated_path = smart.get_path("calibrated")

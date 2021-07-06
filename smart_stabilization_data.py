@@ -13,8 +13,8 @@ import smart
 hv.extension('bokeh')
 
 # %% Working section
-date = 20210625
-path = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/ASP04/HARPDATA/{date}"
+flight = "Flight_20210629a"
+path = f"{smart.get_path('horidata')}/{flight}"
 
 file = [f for f in os.listdir(path) if f.endswith('dat')]
 
@@ -25,7 +25,7 @@ fig, ax = plt.subplots()
 df.iloc[start_id:end_id].plot(y="TARGET3", ax=ax, label="Roll Target")
 df.iloc[start_id:end_id].plot(y="POSN3", ax=ax, label="Roll Position")
 plt.grid()
-plt.savefig(f"{path}/../plots/{date}_Roll_target-position.png", dpi=100)
+plt.savefig(f"{path}/../plots/{flight}_Roll_target-position.png", dpi=100)
 plt.show()
 plt.close()
 
@@ -33,7 +33,7 @@ fig, ax = plt.subplots()
 df.iloc[start_id:end_id].plot(y="TARGET4", ax=ax, label="Pitch Target")
 df.iloc[start_id:end_id].plot(y="POSN4", ax=ax, label="Pitch Position")
 plt.grid()
-plt.savefig(f"{path}/../plots/{date}_Pitch_target-position.png", dpi=100)
+plt.savefig(f"{path}/../plots/{flight}_Pitch_target-position.png", dpi=100)
 plt.show()
 plt.close()
 
@@ -63,9 +63,9 @@ def read_nav_data(nav_path: str) -> pd.DataFrame:
     return nav
 
 
-date = "20210626"  # User Input
+flight = "Flight_20210705b"  # User Input
 horipath = smart.get_path("horidata")
-nav_dir = os.path.join(horipath, f"NavCommand/{date}")
+nav_dir = os.path.join(horipath, flight)
 nav_file = [f for f in os.listdir(nav_dir) if "IMS" in f][0]
 nav_path = os.path.join(nav_dir, nav_file)
 nav_data = read_nav_data(nav_path)
@@ -83,17 +83,18 @@ layout = hv.Curve(nav_data, time, roll) + hv.Curve(nav_data, time, pitch) + hv.C
 layout.opts(
     opts.Curve(width=900, height=200, tools=["hover"], show_grid=True)
 )
-layout.opts(title=f"{date} INS Measurements")
+layout.opts(title=f"{flight} INS Measurements")
 layout.cols(1)
-outpath = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/horidata/plots"
-hv.save(layout, f"{outpath}/{date}_NavCommand.html")
+outpath = f"{horipath}/plots"
+hv.save(layout, f"{outpath}/{flight}_NavCommand.html")
 
 # %% Holoviews Dashboard of Stabilization Platform data
 
+flight = "Flight_20210705a"
 horipath = smart.get_path("horidata")
-hori_file = [f for f in os.listdir(horipath) if date[2:] in f and f.endswith("dat")][0]
-horidata = pd.read_csv(f"{horipath}/{hori_file}", skipinitialspace=True, sep="\t")
-file_date = pd.to_datetime(horidata["DATE"].iloc[0])
+hori_dir = os.path.join(horipath, flight)
+hori_file = [f for f in os.listdir(hori_dir) if f.endswith("dat")][0]
+horidata = pd.read_csv(f"{hori_dir}/{hori_file}", skipinitialspace=True, sep="\t")
 horidata["PCTIME"] = pd.to_datetime(horidata["DATE"] + " " + horidata["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
 horidata_hv = hv.Table(horidata)
 # annotate data
@@ -108,7 +109,7 @@ layout.opts(
     opts.Curve(width=900, height=300, show_grid=True, tools=["hover"]),
     opts.Overlay(legend_position="right", legend_offset=(0, 100))
 )
-layout.opts(title=f"{file_date:%Y-%m-%d} Stabilization Table Measurements")
+layout.opts(title=f"{flight} Stabilization Table Measurements")
 layout.cols(1)
-outpath = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/horidata/plots"
-hv.save(layout, f"{outpath}/{file_date:%Y%m%d}_horidata.html")
+outpath = f"{horipath}/plots"
+hv.save(layout, f"{outpath}/{flight}_horidata.html")

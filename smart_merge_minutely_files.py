@@ -20,8 +20,10 @@ log.setLevel(logging.INFO)
 
 # combine minutely files to one file
 raw_path, _, calib_path, data_path, _ = set_paths()
+# User input
 directory = data_path
-folder = "flight_04"
+folder = "Flight_20210705a"
+
 channels = ["SWIR", "VNIR"]
 property = ["Iup", "Fup", "Fdw"]
 corrected = True  # merge corrected files

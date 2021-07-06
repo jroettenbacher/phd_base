@@ -17,12 +17,13 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set user given parameters
-flight = "flight_04"  # set flight folder
+flight = "Flight_20210705a"  # set flight folder
 t_int_asp06 = 300  # give integration time of field measurement for ASP06
 t_int_asp07 = 300  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time
 # give date of transfer calib to use for calibrating measurement if not same as measurement date else set to ""
-date = "2021_06_27"
+transfer_date = smart.transfer_calibs[flight]
+date = f"{transfer_date[:4]}_{transfer_date[4:6]}_{transfer_date[6:]}"  # reformat date to match file name
 
 # %% set paths
 norm = "_norm" if normalize else ""
