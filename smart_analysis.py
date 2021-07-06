@@ -9,19 +9,21 @@ from smart import lookup
 import os
 import pandas as pd
 import numpy as np
+import xarray as xr
 import matplotlib.pyplot as plt
 
 # %% list files
-flight = "flight_03"
+flight = "flight_02"
 calibrated_path = smart.get_path("calibrated")
 pixel_wl_path = smart.get_path("pixel_wl")
+plot_path = f"{smart.get_path('base')}/campaigns/CIRRUS-HL/SMART/products/{flight}"
 inpath = os.path.join(calibrated_path, flight)
 all_files = os.listdir(inpath)
 fdw_files = [f for f in all_files if "Fdw" in f]
 fup_files = [f for f in all_files if "Fup" in f]
 
 # %% get pixel to wavelength file
-channel = "SWIR"
+channel = "VNIR"
 direction = "Fdw"
 pixel_wl = smart.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
 # %% read in files
@@ -38,23 +40,25 @@ fup_clean = fup[fup > 0]
 albedo = fup_clean / fdw_clean
 
 # %% select time range and wavelength
-begin = "2021-06-26 8:15"
-end = "2021-06-26 14:15"
+begin = "2021-06-25 11:15"
+end = "2021-06-25 16:15"
 wavelength = 1200
 albedo_sel = albedo[begin:end]
 fdw_sel = fdw_clean[begin:end]
 fup_sel = fup_clean[begin:end]
 pixel_nr, wl = smart.find_pixel(pixel_wl, wavelength)
 # %% plot spectral albedo time series
-fig, ax = plt.subplots()
-albedo_sel.plot(y=pixel_nr, ax=ax, title=f"Spectral Albedo (Fup / Fdw) at {wl} nm", label="Albedo", c="g")
+fig, ax = plt.subplots(figsize=(6, 4))
+albedo_sel.plot(y=pixel_nr, ax=ax, label="Albedo", c="g")
 ax.set_ylabel("Spectral Albedo")
 ax.set_xlabel("Time (UTC)")
 ax2 = ax.twinx()
 fdw_sel.plot(y=pixel_nr, ax=ax2, label="Fdw")
 fup_sel.plot(y=pixel_nr, ax=ax2, label="Fup")
 ax2.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
-plt.grid()
+plt.title(f"Time Series of Spectral Albedo (Fup / Fdw) at {wl} nm")
+ax.grid()
+plt.tight_layout()
 plt.show()
 plt.close()
 
@@ -62,7 +66,7 @@ plt.close()
 albedo_avg = albedo_sel.median(axis=1)
 fdw_avg = fdw_sel.median(axis=1)
 fup_avg = fup_sel.median(axis=1)
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(6, 4))
 albedo_avg.plot(ax=ax, title=f"{channel} Median Albedo (Fup / Fdw)", label="Albedo", c="g")
 ax.set_ylabel("Albedo")
 ax.set_xlabel("Time (UTC)")
@@ -72,23 +76,38 @@ fup_avg.plot(ax=ax2, label="Fup")
 fdw_avg.plot(ax=ax2, label="Fdw")
 ax2.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 ax2.legend()
-plt.grid()
+ax.grid()
+plt.tight_layout()
 plt.show()
 plt.close()
 
 # %% plot spectral albedo
-timestep = "2021-06-26 12:00:58.84"
-wavelengths = pixel_wl["wavelength"]
-fig, ax = plt.subplots()
-ax.plot(wavelengths, albedo.loc[timestep], label="Albedo", c="g")
+timestep = "2021-06-25 14:38:27.35"
+wavelengths = pixel_wl["wavelength"].iloc[]
+fig, ax = plt.subplots(figsize=(6, 3))
+ax.plot(wavelengths, albedo.loc[timestep], label="Albedo", c="k")
 ax.set_ylabel("Albedo")
 ax.set_xlabel("Wavelength (nm)")
+ax.set_ylim((0, 1))
 ax.legend()
 ax2 = ax.twinx()
-ax2.plot(wavelengths, fdw.loc[timestep], label="Fdw")
-ax2.plot(wavelengths, fup.loc[timestep], label="Fup")
+ax2.plot(wavelengths, fdw_clean.loc[timestep], label="Fdw")
+ax2.plot(wavelengths, fup_clean.loc[timestep], label="Fup")
 ax2.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 ax2.legend()
 ax.grid()
+plt.title(f"{channel} Spectrum and Albedo for {timestep}\nDark Current Corrected and Calibrated")
+plt.tight_layout()
+timestep_name = timestep.replace(' ', '_').replace(':', '-')
+plt.savefig(f"{plot_path}/{timestep_name}_{channel}_spectrum_albedo.png", dpi=100)
+plt.show()
+plt.close()
+
+# %% read in BAHAMAS
+inpath = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/BAHAMAS/{flight}"
+file = [f for f in os.listdir(inpath) if f.endswith(".nc")]
+
+bahamas = xr.open_dataset(f"{inpath}/{file}")
+bahamas["H"].plot()
 plt.show()
 plt.close()
