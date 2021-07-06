@@ -29,6 +29,11 @@ lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PG
               Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4", Fup_SWIR="ASP06_J5", Fup_VNIR="ASP06_J6",
               Iup_SWIR="ASP07_J3", Iup_VNIR="ASP07_J4")
 
+# transfer calibrations to each flight
+transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625", Flight_20210626a="20210627",
+                       Flight_20210628a="20210629", Flight_20210629a="20210630", Flight_20210629b="20210630",
+                       Flight_20210701a="20210702", Flight_20210705a="20210702")
+
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
     """
@@ -229,6 +234,7 @@ def get_path(key: str) -> str:
     paths["calibrated"] = os.path.join(base_dir, config["calibrated_data"])
     paths["panel"] = os.path.join(base_dir, config["panel"])
     paths["horidata"] = os.path.join(base_dir, config["horidata"])
+    paths["bahamas"] = os.path.join(base_dir, config["bahamas"])
 
     return paths[key]
 
