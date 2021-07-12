@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 raw_path, pixel_path, _, data_path, plot_path = smart.set_paths()
-flight = "Flight_20210705a"
+flight = "Flight_20210629a"
 ql_path = f"{plot_path}/quicklooks/{flight}"
 make_dir(ql_path)
 calibrated_path = smart.get_path("calibrated")
@@ -55,41 +55,59 @@ for file in calib_files:
         # plot a time series of 1500 nm
         smart.plot_smart_data(file, [1200], path=inpath, plot_path=outpath, save_fig=True)
 
-# %% plot Fdw with yaw angle - read in and prepare data
+# %% plot Fdw with IMS and stabbi angles - read in and prepare data
 
+flight = "Flight_20210628a"
 path = smart.get_path("calibrated")
-nav_path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/ASP04/NavCommand/20210625"
-nav_file = "Nav_IMS0000.Asc"
-flight = "flight_02"
-inpath = f"{path}/{flight}"
-nav_inpath = f"{nav_path}/{nav_file}"
-file = "2021_06_25_10_08.Fdw_VNIR_cor_calibrated_norm.dat"
-df = smart.read_smart_cor(inpath, file)
-with open(nav_inpath) as f:
-    time_info = f.readlines()[1]
-start_time = pd.to_datetime(time_info[11:31], format="%m/%d/%Y %H:%M:%S")
-start_date = pd.Timestamp(year=start_time.year, month=start_time.month, day=start_time.day)
-header = ["marker", "seconds", "roll", "pitch", "yaw", "AccS_X", "AccS_Y", "AccS_Z", "OmgS_X", "OmgS_Y", "OmgS_Z"]
-nav = pd.read_csv(nav_inpath, sep="\s+", skiprows=13, header=None, names=header)
-nav["time"] = pd.to_datetime(nav["seconds"], origin=start_date, unit="s")
-nav = nav.set_index("time")
-nav = nav.resample("S").mean()
-# nav["yaw"] = nav["yaw"] * 100
+horipath = smart.get_path("horidata")
+hori_dir = os.path.join(horipath, flight)
+hori_file = [f for f in os.listdir(hori_dir) if f.endswith("dat")][0]  # select stabbi file
+# read stabbi data and make PCTIME a datetime column and set it as index
+horidata = pd.read_csv(f"{hori_dir}/{hori_file}", skipinitialspace=True, sep="\t")
+horidata["PCTIME"] = pd.to_datetime(horidata["DATE"] + " " + horidata["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
+horidata.set_index("PCTIME", inplace=True)
+nav_file = [f for f in os.listdir(hori_dir) if "IMS" in f][0]  # select IMS file
+nav_df = smart.read_nav_data(f"{hori_dir}/{nav_file}")
+nav_df = nav_df.resample("S").mean()  # resample IMS data to one second to save RAM
+inpath = f"{path}/{flight}"  # get inpath for SMART data
+file = [f for f in os.listdir(inpath) if "Fdw_VNIR" in f][0]  # select Fdw VNIR file
+# get info from filename and select pixel to wavelength file
+date_str, channel, direction = smart.get_info_from_filename(file)
+pixel_wl = smart.read_pixel_to_wavelength(smart.get_path("pixel_wl"), smart.lookup[f"{direction}_{channel}"])
+pixel_nr, wl = smart.find_pixel(pixel_wl, 550)
+# read in SMART data and select specified wavelength
+df = smart.read_smart_cor(inpath, file).iloc[:, pixel_nr]
 
-# %% plot Fdw with yaw angle
-# ax = smart.plot_smart_data(file, wavelength=[550], path=inpath)
-fig, ax = plt.subplots()
-time_range = df["2021-06-25 11:30":"2021-06-25 13:00"].index
-nav_plot = nav[time_range[0]:time_range[-1]]
-df.iloc[:, 550][time_range].plot(ax=ax, label="Fdw Irradiance")
+# %% read in BACARDI simulated stuff
+bacardi_path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/simulations/Flight_20210628a/BBR_Fdn_clear_sky_Flight_20210628a_R0_ds_high.dat"
+bacardi = pd.read_csv(bacardi_path, sep="\s+", skiprows=34)
+bacardi["time"] = pd.to_datetime(bacardi["sod"], origin="2021-06-28", unit="s")
+bacardi.set_index("time", inplace=True)
+
+# %% plot Fdw with angles
+date_str = date_str.replace("_", "-")
+fig, ax = plt.subplots(figsize=(7, 5))
+# select a specific time range
+time_range = df[f"{date_str} 09:30":f"{date_str} 11:30"].index
+nav_plot = nav_df[time_range[0]:time_range[-1]]
+df_plot = df.loc[time_range]
+hori_plot = horidata.loc[time_range[0]:time_range[-1]]
+bacardi_plot = bacardi.loc[time_range[0]:time_range[-1]]
+df_plot.plot(ax=ax, label="Fdw Irradiance")
+# ax.plot(bacardi_plot["F_dw"]/1000, label="Fdw broadband / 100")
 ax.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 ax2 = ax.twinx()
-ax2.plot(nav_plot.index, nav_plot["yaw"], label="IMS yaw", c="red")
-ax2.set_ylabel("Yaw Angle [deg]")
+ax2.plot(nav_plot.index, nav_plot["roll"], label="IMS roll", c="red")
+# ax2.plot(nav_plot.index, nav_plot["pitch"], label="IMS pitch", c="red")
+ax2.plot(nav_plot.index, nav_plot["yaw"]/10, label="IMS yaw / 10", c="orange")
+ax2.plot(hori_plot["POSN3"], label="Stabilization Roll", c="pink")
+# ax2.plot(hori_plot["POSN4"], label="Stabilization Pitch", c="pink")
+ax2.set_ylabel("Roll Angle [deg]")
 ax.grid()
-ax.legend()
-ax2.legend()
-plt.title("2021-06-25 Calibrated Irradiance measurement and IMS yaw angle")
+ax.legend(loc=1)
+ax2.legend(loc=2)
+plt.title(f"{date_str} Calibrated Irradiance measurement and position angles")
 plt.tight_layout()
-plt.savefig("20210625_smart_fdw_yaw_zoom.png", dpi=100)
+# plt.show()
+plt.savefig(f"{horipath}/plots/troubleshooting/{date_str}_smart_{direction}_angles.png", dpi=100)
 plt.close()
