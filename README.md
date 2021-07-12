@@ -23,7 +23,7 @@ All SMART files should be in one folder with the following subfolders:
 * `panel_34816`: reflectance panel file for each spectrometer
 * `pixel_wl`: pixel to wavelength files for each spectrometer
 * `plots`: plots and quicklooks
-* `raw`: merged raw measurement files in flight folders
+* `raw`: raw measurement files in flight folders
 * `raw_only`: raw measurement files as written by ASP06/07, do not work on those files, but copy them into `raw`
 
 **Workflow**
@@ -42,7 +42,8 @@ Finally, the measurement files are corrected for the dark current and calibrated
 These are functions in relation with the SMART instrument.
 "_" denotes internal functions which are called inside other functions. There is also a lookup dictionary to look up
 which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part
-belongs to which channel. The functions are explained in their docstring and they can be tested using the main frame.
+belongs to which channel. Another dictionary relates each measurement with the date of the transfer calibration for that
+measurement. The functions are explained in their docstring and they can be tested using the main frame.
 You can:
 
 * read in raw and processed SMART data
@@ -56,6 +57,7 @@ You can:
 * correct the raw measurement by the dark current
 * plot the mean corrected measurement
 * plot smart data either for one wavelength over time or for a range of or all wavelengths
+* use the holoviews functions to create a dynamic map for interactive quicklooks in a jupyter notebook
 
 
 ### 1.2 smart_write_dark_current_corrected_file.py
@@ -129,3 +131,9 @@ Reads in dark current corrected measurement file and corresponding transfer cali
 * What do negative measurements in the dark current mean?
 
 Answer: The conversion of the analog signal to a digital can lead to this.
+
+
+## 2. BAHAMAS
+
+These scripts work with the BAHAMAS system from HALO.
+BAHAMAS gives in situ and flight data like altitude, temperature, wind speed and other parameters.

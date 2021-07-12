@@ -2,7 +2,6 @@
 
 # %% library import
 import os
-import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.pyplot as plt
 import holoviews as hv
@@ -33,7 +32,7 @@ fig, ax = plt.subplots()
 df.iloc[start_id:end_id].plot(y="TARGET4", ax=ax, label="Pitch Target")
 df.iloc[start_id:end_id].plot(y="POSN4", ax=ax, label="Pitch Position")
 plt.grid()
-plt.savefig(f"{path}/../plots/{flight}_Pitch_target-position.png", dpi=100)
+# plt.savefig(f"{path}/../plots/{flight}_Pitch_target-position.png", dpi=100)
 plt.show()
 plt.close()
 
@@ -63,7 +62,7 @@ def read_nav_data(nav_path: str) -> pd.DataFrame:
     return nav
 
 
-flight = "Flight_20210705b"  # User Input
+flight = "Flight_20210701a"  # User Input
 horipath = smart.get_path("horidata")
 nav_dir = os.path.join(horipath, flight)
 nav_file = [f for f in os.listdir(nav_dir) if "IMS" in f][0]
@@ -90,7 +89,7 @@ hv.save(layout, f"{outpath}/{flight}_NavCommand.html")
 
 # %% Holoviews Dashboard of Stabilization Platform data
 
-flight = "Flight_20210705a"
+# flight = "Flight_20210628a"
 horipath = smart.get_path("horidata")
 hori_dir = os.path.join(horipath, flight)
 hori_file = [f for f in os.listdir(hori_dir) if f.endswith("dat")][0]

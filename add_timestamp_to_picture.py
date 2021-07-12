@@ -1,5 +1,5 @@
 #!\usr\bin\env python
-"""Add the timstamp to a picture
+"""Add the timstamp to a picture (run on Ubuntu)
 author: Johannes Röttenbacher
 """
 

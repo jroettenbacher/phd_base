@@ -15,7 +15,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # User input
-folder = "ASP07_transfer_calib_20210702"
+folder = "ASP06_transfer_calib_20210706"
 
 # Set paths in config.toml
 calib_path = smart.get_path("calib")

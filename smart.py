@@ -32,7 +32,7 @@ lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PG
 # transfer calibrations to each flight
 transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625", Flight_20210626a="20210627",
                        Flight_20210628a="20210629", Flight_20210629a="20210630", Flight_20210629b="20210630",
-                       Flight_20210701a="20210702", Flight_20210705a="20210702")
+                       Flight_20210701a="20210702", Flight_20210705a="20210706", Flight_20210705b="20210706")
 
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
@@ -161,6 +161,29 @@ def read_pixel_to_wavelength(path: str, spectrometer: str) -> pd.DataFrame:
     # sort df by the wavelength column and reset the index, necessary for the SWIR spectrometers
     # df = df.sort_values(by="wavelength").reset_index(drop=True)
     return df
+
+
+def read_nav_data(nav_path: str) -> pd.DataFrame:
+    """
+    Reader function for Navigation data file from the INS
+    Args:
+        nav_path: path to file including filename
+
+    Returns: pandas DataFrame with headers and a DateTimeIndex
+
+    """
+    # read out the time start time information given in the file
+    with open(nav_path) as f:
+        time_info = f.readlines()[1]
+    start_time = pd.to_datetime(time_info[11:31], format="%m/%d/%Y %H:%M:%S")
+    # define the start date of the measurement
+    start_date = pd.Timestamp(year=start_time.year, month=start_time.month, day=start_time.day)
+    header = ["marker", "seconds", "roll", "pitch", "yaw", "AccS_X", "AccS_Y", "AccS_Z", "OmgS_X", "OmgS_Y", "OmgS_Z"]
+    nav = pd.read_csv(nav_path, sep="\s+", skiprows=13, header=None, names=header)
+    nav["time"] = pd.to_datetime(nav["seconds"], origin=start_date, unit="s")
+    nav = nav.set_index("time")
+
+    return nav
 
 
 def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
