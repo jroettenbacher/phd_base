@@ -32,7 +32,9 @@ lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PG
 # transfer calibrations to each flight
 transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625", Flight_20210626a="20210627",
                        Flight_20210628a="20210629", Flight_20210629a="20210630", Flight_20210629b="20210630",
-                       Flight_20210701a="20210702", Flight_20210705a="20210706", Flight_20210705b="20210706")
+                       Flight_20210701a="20210702", Flight_20210705a="20210706", Flight_20210705b="20210706",
+                       Flight_20210707a="20210708", Flight_20210707b="20210708", Flight_20210708a="20210709",
+                       Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713")
 
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
