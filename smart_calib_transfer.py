@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
 
 # %% set variables
-field_folder = "ASP07_transfer_calib_20210713"  # transfer calib folder
+field_folder = "ASP06_transfer_calib_20210714"  # transfer calib folder
 t_int = 300  # integration time of transfer calibration measurement
 normalize = True  # normalize counts by integration time
 norm = "_norm" if normalize else ""

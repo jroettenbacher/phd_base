@@ -3,7 +3,7 @@
 author: Johannes Roettenbacher
 """
 
-# %% import modules and set paths
+# %% import modules
 import os
 from functions_jr import make_dir
 import smart
@@ -11,8 +11,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+# %%  set paths
 raw_path, pixel_path, _, data_path, plot_path = smart.set_paths()
-flight = "Flight_20210707b"
+flight = "Flight_20210715b"
 ql_path = f"{plot_path}/quicklooks/{flight}"
 make_dir(ql_path)
 calibrated_path = smart.get_path("calibrated")
@@ -40,7 +41,7 @@ for file in data_files:
     except AssertionError:
         smart.plot_smart_data(file, [1200], path=inpath, plot_path=outpath, save_fig=True)
 
-# %% read in calibrated files
+# read in calibrated files
 inpath = f"{calibrated_path}/{flight}"
 calib_files = os.listdir(inpath)
 outpath = f"{ql_path}/calibrated"

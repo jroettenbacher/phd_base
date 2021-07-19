@@ -22,7 +22,7 @@ log.setLevel(logging.INFO)
 raw_path, _, calib_path, data_path, _ = set_paths()
 # User input
 directory = data_path
-folder = "Flight_20210708a"
+folder = "Flight_20210715b"
 
 channels = ["SWIR", "VNIR"]
 property = ["Iup", "Fup", "Fdw"]

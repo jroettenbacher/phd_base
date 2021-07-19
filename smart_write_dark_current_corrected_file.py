@@ -16,7 +16,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # User input
-flight = "Flight_20210708a"  # which flight do the files in raw belong to?
+flight = "Flight_20210715b"  # which flight do the files in raw belong to?
 # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
 transfer_cali_date = smart.transfer_calibs[flight]
 
@@ -55,7 +55,7 @@ def make_dark_cur_cor_file(file: str, inpath: str, transfer_cali_date: str, outd
 # test one file
 # file = files_debug[0]
 # make_dark_cur_cor_file(file, inpath, transfer_cali_date, outdir)
-# for file in files_debug[500:]:
+# for file in files_debug:
 #     make_dark_cur_cor_file(file, inpath, transfer_cali_date, outdir)
 # run job in parallel
 Parallel(n_jobs=cpu_count()-2)(delayed(make_dark_cur_cor_file)(file, inpath, transfer_cali_date, outdir) for file in files)
