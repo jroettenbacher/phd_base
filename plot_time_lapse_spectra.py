@@ -12,11 +12,12 @@ import pandas as pd
 import smart
 from smart import lookup
 from functions_jr import make_dir
+from tqdm import tqdm
 from joblib import Parallel, delayed, cpu_count
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
+log.setLevel(logging.WARNING)
 
 # %% select flight and set paths
 date = 20210707
@@ -109,4 +110,4 @@ def plot_timelapse_spectra(wavelengths: list, albedo: pd.DataFrame, fdw: pd.Data
 # plot_timelapse_spectra(wavelengths, albedo, fdw_sel, fup_sel, gopro_times, 0, channel, plot_path)
 Parallel(n_jobs=cpu_count()-2)(delayed(plot_timelapse_spectra)
                                (wavelengths, albedo, fdw_sel, fup_sel, gopro_times, idx, channel, plot_path)
-                               for idx in range(len(gopro_times)))
+                               for idx in tqdm(range(len(gopro_times))))

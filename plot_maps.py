@@ -19,7 +19,7 @@ from joblib import Parallel, cpu_count, delayed
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
+log.setLevel(logging.WARNING)
 
 # %% set paths
 date = 20210707
