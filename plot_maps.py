@@ -5,6 +5,7 @@ author: Johannes Röttenbacher
 """
 
 # %% import libraries
+import logging
 import os
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,6 +16,10 @@ import cartopy.crs as ccrs
 import cartopy
 from tqdm import tqdm
 from joblib import Parallel, cpu_count, delayed
+
+log = logging.getLogger(__name__)
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.INFO)
 
 # %% set paths
 date = 20210707
@@ -38,7 +43,6 @@ urcrnlat = lat.max(skipna=True) + pad
 urcrnlon = lon.max(skipna=True) + pad
 extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
 
-
 # %% select lon and lat values corresponding with the picture timestamps
 # get first and last bahamas time step
 first_ts, last_ts = pd.to_datetime(bahamas.TIME[0].values), pd.to_datetime(bahamas.TIME[-1].values)
@@ -49,7 +53,7 @@ timestamps = pd.read_csv(f"{gopro_dir}/{date}_timestamps.csv", index_col="dateti
 # select range of timestamps
 ts_sel = timestamps.between_time(first_ts, last_ts)
 # write out pictures used
-ts_sel.to_csv(f"{gopro_dir}/{date}_timestamps_sel.csv", index_label="datetime")
+ts_sel.to_csv(f"{gopro_dir}/{flight}_timestamps_sel.csv", index_label="datetime")
 
 # %% select corresponding lat and lon values
 lon_sel = bahamas.IRS_LON.sel(TIME=ts_sel.index)
@@ -77,7 +81,7 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
 
     """
     bahamas_dir = smart.get_path("bahamas")
-    outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots/{flight}/time_lapse"
+    outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots/time_lapse/{flight}"
     make_dir(outpath)
     airport = kwargs["airport"] if "airport" in kwargs else None
     font = {'weight': 'bold', 'size': 26}
@@ -111,7 +115,9 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     # add the corresponding colorbar
     plt.colorbar(points, ax=ax, pad=0.01, orientation="horizontal", label="Height (km)")
     ax.legend(loc=1)
-    plt.savefig(f"{outpath}/{flight}_map_{number:04}.png", dpi=100, bbox_inches="tight")
+    fig_name = f"{outpath}/{flight}_map_{number:04}.png"
+    plt.savefig(fig_name, dpi=100, bbox_inches="tight")
+    log.info(f"Saved {fig_name}")
     plt.close()
 
 
