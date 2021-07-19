@@ -12,6 +12,7 @@ import pandas as pd
 import smart
 from smart import lookup
 from functions_jr import make_dir
+from joblib import Parallel, delayed, cpu_count
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
@@ -56,27 +57,56 @@ albedo = fup_sel.divide(fdw_sel)
 # %% plot spectral albedo, fdw and fup
 plot_path = f"{smart.get_path('plot')}/time_lapse/{flight}"
 make_dir(plot_path)
-number = gopro_times.number[0]
-timestep = fdw_sel.index[number]
-font = {'weight': 'bold', 'size': 26}
-matplotlib.rc('font', **font)
-fig, ax = plt.subplots(figsize=(13, 6))
-l_albedo = ax.plot(wavelengths, albedo.loc[timestep], label="Albedo", c="k", linewidth=5)
-ax.set_ylabel("Albedo")
-ax.set_xlabel("Wavelength (nm)")
-ax.set_ylim((0, 1))
-ax2 = ax.twinx()
-l_fdw = ax2.plot(wavelengths, fdw_sel.loc[timestep], label="Fdw", linewidth=5)
-l_fup = ax2.plot(wavelengths, fup_sel.loc[timestep], label="Fup", linewidth=5)
-ax2.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
-ax2.set_ylim((-0.1, 2.5))
-lns = l_albedo + l_fdw + l_fup
-labs = [line.get_label() for line in lns]
-ax.legend(lns, labs, loc=2)
-ax.grid()
-plt.title(f"{channel} Spectrum and Albedo for {timestep}\nDark Current Corrected and Calibrated")
-timestep_name = timestep.strftime("%Y%m%d")
-fig_name = f"{plot_path}/{timestep_name}_{channel}_spectrum_albedo_{number:04}.png"
-plt.savefig(fig_name, dpi=100, bbox_inches="tight")
-log.info(f"Saved {fig_name}")
-plt.close()
+
+
+def plot_timelapse_spectra(wavelengths: list, albedo: pd.DataFrame, fdw: pd.DataFrame, fup: pd.DataFrame,
+                           gopro_times: pd.DataFrame, idx: int, channel: str, plot_path: str):
+    """
+    Plot the upward and downward irradiance together with the albedo
+    Args:
+        wavelengths: array with wavelengths corresponding to each pixel of the spectrometer
+        albedo: calculated albedo
+        fdw: calibrated downward irradiance
+        fup: calibrated upward irradiance
+        gopro_times: data frame with gopro times and picture numbers used in plot_maps.py
+        idx: which timestep (index) to plot
+        channel: VNIR or SWIR (only for plot title at the moment, should come from script above)
+        plot_path: where to save figure
+
+    Returns: Saves a figure
+
+    """
+    number = gopro_times.number[idx]  # get image number for outfile name
+    timestep = fdw_sel.index[idx]  # get timestep to select corresponding spectra
+    # set plot properties
+    font = {'weight': 'bold', 'size': 26}
+    matplotlib.rc('font', **font)
+
+    fig, ax = plt.subplots(figsize=(13, 6))
+    l_albedo = ax.plot(wavelengths, albedo.loc[timestep], label="Albedo", c="k", linewidth=5)  # plot albedo
+    ax.set_ylabel("Albedo")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylim((0, 1))
+    ax2 = ax.twinx()
+    # plot irradiance
+    l_fdw = ax2.plot(wavelengths, fdw.loc[timestep], label="Fdw", linewidth=5)
+    l_fup = ax2.plot(wavelengths, fup.loc[timestep], label="Fup", linewidth=5)
+    ax2.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
+    ax2.set_ylim((-0.1, 2.5))
+    # create legend
+    lns = l_albedo + l_fdw + l_fup
+    labs = [line.get_label() for line in lns]
+    ax.legend(lns, labs, loc=2)
+    ax.grid()
+    plt.title(f"{channel} Spectrum and Albedo for {timestep}\nDark Current Corrected and Calibrated")
+    timestep_name = timestep.strftime("%Y%m%d")
+    fig_name = f"{plot_path}/{timestep_name}_{channel}_spectrum_albedo_{number:04}.png"
+    plt.savefig(fig_name, dpi=100, bbox_inches="tight")
+    log.info(f"Saved {fig_name}")
+    plt.close()
+
+
+# plot_timelapse_spectra(wavelengths, albedo, fdw_sel, fup_sel, gopro_times, 0, channel, plot_path)
+Parallel(n_jobs=cpu_count()-2)(delayed(plot_timelapse_spectra)
+                               (wavelengths, albedo, fdw_sel, fup_sel, gopro_times, idx, channel, plot_path)
+                               for idx in range(len(gopro_times)))

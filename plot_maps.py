@@ -121,7 +121,7 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     plt.close()
 
 
-plot_bahamas_map(flight, lon, lat, extent, lon_sel[0], lat_sel[0], ts_sel.number.values[0], airport="Keflavik")
-# Parallel(n_jobs=cpu_count()-2)(delayed(plot_bahamas_map)
-#                                (bahamas_dir, flight, lon, lat, extent, lon1, lat1, number)
-#                                for lon1, lat1, number in zip(tqdm(lon_sel), lat_sel, ts_sel.number.values))
+# plot_bahamas_map(flight, lon, lat, extent, lon_sel[0], lat_sel[0], ts_sel.number.values[0], airport="Keflavik")
+Parallel(n_jobs=cpu_count()-2)(delayed(plot_bahamas_map)
+                               (flight, lon, lat, extent, lon1, lat1, number, airport="Keflavik")
+                               for lon1, lat1, number in zip(tqdm(lon_sel), lat_sel, ts_sel.number.values))

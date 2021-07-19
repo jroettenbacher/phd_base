@@ -41,4 +41,4 @@ ts_dt_cor = ts_dt - pd.to_timedelta(gopro_offsets[f"Flight_{date}"], unit="s")
 # %% create a pandas data frame and write to csv
 df = pd.DataFrame(dict(number=pic_num), index=ts_dt_cor)\
     .to_csv(f"{path}/../{date}_timestamps.csv", index_label="datetime")
-
+print(f"Done with {date}")
