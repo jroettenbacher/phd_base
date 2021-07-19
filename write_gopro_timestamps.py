@@ -1,13 +1,18 @@
 #!/usr/bin/env python
-"""Read out timestamps from GoPro images and write to a text file
+"""Read out timestamps from GoPro images and write to a text file (run on Ubuntu)
+* use exiftool to get timestamps of GoPro images
+* write the output to a textfile
+* read the textfile line by line and extract the picture number and datetime
+* convert to pd.datetime and correct for the time offset to BAHAMAS
+* create DataFrame and save to csv
 author: Johannes Röttenbacher
 """
 
-# TODO: correct for time shift in GoPro image
 # %% module import
 from subprocess import run
 import re
 import pandas as pd
+from smart import gopro_offsets
 
 # %% set paths
 date = 20210707
@@ -30,7 +35,10 @@ with open(f"{path}/../{date}_timestamps.txt", "r") as ts:
         else:
             pass
 
+# %% convert to timestamps to datetime and correct for the GoPro time offset
 ts_dt = pd.to_datetime(timestamps, format="%Y:%m:%d %H:%M:%S")
-df = pd.DataFrame(dict(number=pic_num), index=ts_dt)\
+ts_dt_cor = ts_dt - pd.to_timedelta(gopro_offsets[f"Flight_{date}"], unit="s")
+# %% create a pandas data frame and write to csv
+df = pd.DataFrame(dict(number=pic_num), index=ts_dt_cor)\
     .to_csv(f"{path}/../{date}_timestamps.csv", index_label="datetime")
 
