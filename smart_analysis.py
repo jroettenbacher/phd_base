@@ -83,7 +83,7 @@ plt.close()
 
 # %% plot spectral albedo
 timestep = "2021-06-25 14:38:27.35"
-wavelengths = pixel_wl["wavelength"].iloc[]
+wavelengths = pixel_wl["wavelength"]
 fig, ax = plt.subplots(figsize=(6, 3))
 ax.plot(wavelengths, albedo.loc[timestep], label="Albedo", c="k")
 ax.set_ylabel("Albedo")

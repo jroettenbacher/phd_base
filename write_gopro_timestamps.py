@@ -3,6 +3,7 @@
 author: Johannes Röttenbacher
 """
 
+# TODO: correct for time shift in GoPro image
 # %% module import
 from subprocess import run
 import re
