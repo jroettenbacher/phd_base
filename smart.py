@@ -8,6 +8,7 @@ import re
 import logging
 import sys
 import pandas as pd
+import xarray as xr
 from typing import Tuple, Union
 import numpy as np
 import toml
@@ -33,9 +34,16 @@ lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PG
 transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625", Flight_20210626a="20210627",
                        Flight_20210628a="20210629", Flight_20210629a="20210630", Flight_20210629b="20210630",
                        Flight_20210701a="20210702", Flight_20210705a="20210706", Flight_20210705b="20210706",
-                       Flight_20210707a="20210708", Flight_20210707b="20210708", Flight_20210708a="20210709",
-                       Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713")
+                       Flight_20210707a="20210708", Flight_20210707b="20210708", Flight_20210708a="20210708",
+                       Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713",
+                       Flight_20210715a="20210714", Flight_20210715b="20210714")
 
+
+# GoPro time offsets from bahamas in seconds
+gopro_offsets = dict(Flight_20210707=59, Flight_20210712=90)
+
+# coordinates for map plots (lon, lat)
+coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976))
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
     """
@@ -188,6 +196,20 @@ def read_nav_data(nav_path: str) -> pd.DataFrame:
     return nav
 
 
+def read_bahamas(bahamas_path: str) -> xr.Dataset:
+    """
+    Reader function for netcdf BAHAMAS data
+    Args:
+        bahamas_path: full path to netcdf file
+
+    Returns: xr.DataSet with BAHAMAS data and Time as dimension
+
+    """
+    ds = xr.open_dataset(bahamas_path)
+    ds = ds.swap_dims({"tid": "TIME"})
+    return ds
+
+
 def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     """
     Given the dataframe with the pixel to wavelength mapping, return the pixel and wavelength closest to the requested
@@ -242,8 +264,11 @@ def get_path(key: str) -> str:
         Returns: Path to specified data
 
     """
-    if os.getcwd().startswith("C"):
+    wk_dir = os.getcwd()
+    if wk_dir.startswith("C"):
         config = toml.load("config.toml")["cirrus-hl"]["jr_local"]
+    elif wk_dir.startswith("/mnt"):
+        config = toml.load("config.toml")["cirrus-hl"]["jr_ubuntu"]
     else:
         config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
 
@@ -260,6 +285,7 @@ def get_path(key: str) -> str:
     paths["panel"] = os.path.join(base_dir, config["panel"])
     paths["horidata"] = os.path.join(base_dir, config["horidata"])
     paths["bahamas"] = os.path.join(base_dir, config["bahamas"])
+    paths["gopro"] = os.path.join(config["gopro"])
 
     return paths[key]
 
