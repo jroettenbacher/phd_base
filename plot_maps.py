@@ -11,6 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import smart
+from smart import stop_over_locations
 from functions_jr import make_dir
 import cartopy.crs as ccrs
 import cartopy
@@ -22,13 +23,15 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.WARNING)
 
 # %% set paths
-date = 20210707
+date = 20210625
 flight = f"Flight_{date}a"
 bahamas_dir = smart.get_path("bahamas")
 bahamas_path = f"{bahamas_dir}/{flight}"
 gopro_dir = f"C:/Users/Johannes/Documents/Gopro"
 # find bahamas file
 file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
+# select second airport for map plot according to flight
+airport = stop_over_locations[flight] if flight in stop_over_locations else None
 # %% read in bahamas data
 bahamas = smart.read_bahamas(f"{bahamas_path}/{file}")
 # select only position data
@@ -75,7 +78,7 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
         number: GoPro picture number corresponding with the BAHAMAS time step of the HALO position
         **kwargs:
             outpath (str): where to save plot
-             airport (str): second airport to label on map
+            airport (str): second airport to label on map
 
     Returns: Saves a png file
 
@@ -87,8 +90,7 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     font = {'weight': 'bold', 'size': 26}
     matplotlib.rc('font', **font)
 
-    fig = plt.figure(figsize=(11, 8))
-    ax = plt.axes(projection=ccrs.PlateCarree())
+    fig, ax = plt.subplots(figsize=(11, 8), subplot_kw={"projection": ccrs.PlateCarree()})
     ax.stock_img()
     ax.coastlines()
     ax.add_feature(cartopy.feature.BORDERS)
@@ -98,30 +100,35 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     gl.left_labels = False
     # plot a way point every 30 minutes = 1800 seconds
     for long, lati, nr in zip(lon[18000::18000], lat[18000::18000], range(len(lat[18000::18000]))):
-        ax.annotate(nr+1, (long, lati), fontsize=16)
+        ax.annotate(nr + 1, (long, lati), fontsize=16)
         ax.plot(long, lati, '.r', markersize=10)
     # plot an airplane marker for HALO
     ax.plot(lon1, lat1, c="k", marker="$\u2708$", markersize=28, label="HALO")
     # get the coordinates for EDMO and ad a label
     x_edmo, y_edmo = smart.coordinates["EDMO"]
     ax.plot(x_edmo, y_edmo, 'ok')
-    ax.text(x_edmo+0.1, y_edmo+0.1, "EDMO", fontsize=16)
+    ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=16)
     # plot a second airport label if given
     if airport is not None:
         x2, y2 = smart.coordinates[airport]
-        ax.text(x2+0.1, y2+0.1, airport, fontsize=16)
+        ax.text(x2 + 0.1, y2 + 0.1, airport, fontsize=16)
     # plot flight track and color by flight altitude
     points = ax.scatter(lon, lat, c=bahamas.IRS_ALT/1000, s=10)
     # add the corresponding colorbar
-    plt.colorbar(points, ax=ax, pad=0.01, orientation="horizontal", label="Height (km)")
+    plt.colorbar(points, ax=ax, pad=0.01, orientation="horizontal", label="Height (km)", shrink=0.89)
     ax.legend(loc=1)
+    plt.tight_layout(pad=0.1)
     fig_name = f"{outpath}/{flight}_map_{number:04}.png"
-    plt.savefig(fig_name, dpi=100, bbox_inches="tight")
+    plt.savefig(fig_name, dpi=100)
     log.info(f"Saved {fig_name}")
     plt.close()
 
 
-# plot_bahamas_map(flight, lon, lat, extent, lon_sel[0], lat_sel[0], ts_sel.number.values[0], airport="Keflavik")
+# %% loop through timesteps
+# lon1 = lon[0]
+# lat1 = lat[0]
+# number = 0
+# plot_bahamas_map(flight, lon, lat, extent, lon1, lat1, number, airport="EDMO")
 Parallel(n_jobs=cpu_count()-2)(delayed(plot_bahamas_map)
-                               (flight, lon, lat, extent, lon1, lat1, number, airport="Keflavik")
+                               (flight, lon, lat, extent, lon1, lat1, number, airport=airport)
                                for lon1, lat1, number in zip(tqdm(lon_sel), lat_sel, ts_sel.number.values))
