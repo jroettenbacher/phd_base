@@ -12,10 +12,9 @@ author: Johannes Röttenbacher
 from subprocess import run
 import re
 import pandas as pd
-from smart import gopro_offsets
 
 # %% set paths
-date = 20210707
+date = 20210625
 path = f"/mnt/c/Users/Johannes/Documents/Gopro/{date}"
 # file = f"{path}/{date}_Gopro_0001.jpg"
 
@@ -35,10 +34,10 @@ with open(f"{path}/../{date}_timestamps.txt", "r") as ts:
         else:
             pass
 
-# %% convert to timestamps to datetime and correct for the GoPro time offset
+# %% convert timestamps to datetime
 ts_dt = pd.to_datetime(timestamps, format="%Y:%m:%d %H:%M:%S")
-ts_dt_cor = ts_dt - pd.to_timedelta(gopro_offsets[f"Flight_{date}"], unit="s")
+
 # %% create a pandas data frame and write to csv
-df = pd.DataFrame(dict(number=pic_num), index=ts_dt_cor)\
+df = pd.DataFrame(dict(number=pic_num), index=ts_dt)\
     .to_csv(f"{path}/../{date}_timestamps.csv", index_label="datetime")
 print(f"Done with {date}")
