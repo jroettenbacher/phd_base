@@ -270,12 +270,13 @@ def set_paths():
     return raw_path, pixel_wl_path, calib_path, data_path, plot_path
 
 
-def get_path(key: str) -> str:
+def get_path(key: str, flight: str = None) -> str:
     """
         Read paths from the toml file according to the current working directory.
 
         Args:
             key: which path to return, see function for possible values
+            flight: for which flight should the path be provided (eg. Flight_20210625a)
 
         Returns: Path to specified data
 
@@ -288,20 +289,16 @@ def get_path(key: str) -> str:
     else:
         config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
 
+    flight = "" if flight is None else flight
     paths = dict()
     base_dir = config["base_dir"]
     paths["base"] = base_dir
-    paths["raw"] = os.path.join(base_dir, config["raw_data"])
-    paths["pixel_wl"] = os.path.join(base_dir, config["pixel_to_wavelength"])
-    paths["calib"] = os.path.join(base_dir, config["calib_data"])
-    paths["data"] = os.path.join(base_dir, config["data"])
-    paths["plot"] = os.path.join(base_dir, config["plots"])
-    paths["lamp"] = os.path.join(base_dir, config["lamp"])
-    paths["calibrated"] = os.path.join(base_dir, config["calibrated_data"])
-    paths["panel"] = os.path.join(base_dir, config["panel"])
-    paths["horidata"] = os.path.join(base_dir, config["horidata"])
-    paths["bahamas"] = os.path.join(base_dir, config["bahamas"])
-    paths["gopro"] = os.path.join(config["gopro"])
+    config.pop("base_dir")
+    for key in config:
+        paths[key] = os.path.join(base_dir, flight, config[key])
+    if wk_dir.startswith("/projekt"):
+        for key in ["calib", "pixel_wl", "lamp", "panel"]:
+            paths[key] = config[key]
 
     return paths[key]
 
