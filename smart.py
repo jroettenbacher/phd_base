@@ -36,14 +36,30 @@ transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625",
                        Flight_20210701a="20210702", Flight_20210705a="20210706", Flight_20210705b="20210706",
                        Flight_20210707a="20210708", Flight_20210707b="20210708", Flight_20210708a="20210708",
                        Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713",
-                       Flight_20210715a="20210714", Flight_20210715b="20210714")
+                       Flight_20210715a="20210714", Flight_20210715b="20210714", Flight_20210719a="20210720",
+                       Flight_20210719b="20210720", Flight_20210721a="20210722", Flight_20210721b="20210722")
 
+# GoPro time stamp in LT
+gopro_lt = dict(Flight_20210627=True, Flight_20210628=True, Flight_20210629=True, Flight_20210701=True,
+                Flight_20210703=True, Flight_20210705=True, Flight_20210707=True, Flight_20210708=True,
+                Flight_20210710=True, Flight_20210712=True, Flight_20210713=True)
 
 # GoPro time offsets from bahamas in seconds
-gopro_offsets = dict(Flight_20210707=59, Flight_20210712=90)
+gopro_offsets = dict(Flight_20210625=-1, Flight_20210626=6, Flight_20210628=4, Flight_20210705=47, Flight_20210707=59,
+                     Flight_20210708=66, Flight_20210712=90, Flight_20210713=98, Flight_20210719=0, Flight_20210721=-1)
+
+# stop over locations for each flight
+stop_over_locations = dict(Flight_20210629a="Bergen", Flight_20210629b="Bergen",
+                           Flight_20210705a="Kiruna", Flight_20210705b="Kiruna",
+                           Flight_20210707a="Keflavik", Flight_20210707b="Keflavik",
+                           Flight_20210712a="Keflavik", Flight_20210712b="Keflavik",
+                           Flight_20210715a="Santiago", Flight_20210715b="Santiago",
+                           Flight_20210719a="Bergen", Flight_20210719b="Bergen",
+                           Flight_20210721a="Santiago", Flight_20210721b="Santiago")
 
 # coordinates for map plots (lon, lat)
-coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976))
+coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.336, 67.821), Santiago=(-8.418, 42.898))
+
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
     """
