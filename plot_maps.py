@@ -25,16 +25,16 @@ log.setLevel(logging.WARNING)
 # %% set paths
 date = 20210701
 flight = f"Flight_{date}a"
-bahamas_dir = smart.get_path("bahamas")
+bahamas_dir = smart.get_path("bahamas", flight)
 bahamas_path = f"{bahamas_dir}/{flight}"
 gopro_dir = smart.get_path("gopro")
 # find bahamas file
-file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
+file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
 # select second airport for map plot according to flight
 airport = stop_over_locations[flight] if flight in stop_over_locations else None
 
 # %% read in bahamas data
-bahamas = smart.read_bahamas(f"{bahamas_path}/{file}")
+bahamas = smart.read_bahamas(f"{bahamas_dir}/{file}")
 # select only position data
 lon = bahamas["IRS_LON"]
 lat = bahamas["IRS_LAT"]
@@ -84,7 +84,7 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     Returns: Saves a png file
 
     """
-    bahamas_dir = smart.get_path("bahamas")
+    bahamas_dir = smart.get_path("bahamas", flight)
     outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots/time_lapse"
     make_dir(outpath)
     airport = kwargs["airport"] if "airport" in kwargs else None
@@ -139,6 +139,6 @@ plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1,
 # lat1 = lat[0]
 # number = 0
 # plot_bahamas_map(flight, lon, lat, extent, lon1, lat1, number, airport=airport)
-Parallel(n_jobs=cpu_count()-2)(delayed(plot_bahamas_map)
+Parallel(n_jobs=cpu_count()-4)(delayed(plot_bahamas_map)
                                (flight, lon, lat, extent, lon1, lat1, number, airport=airport)
                                for lon1, lat1, number in zip(tqdm(lon_sel), lat_sel, ts_sel.number.values))
