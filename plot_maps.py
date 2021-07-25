@@ -23,7 +23,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.WARNING)
 
 # %% set paths
-date = 20210628
+date = 20210629
 flight = f"Flight_{date}a"
 bahamas_dir = smart.get_path("bahamas")
 bahamas_path = f"{bahamas_dir}/{flight}"
@@ -33,10 +33,6 @@ file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
 # select second airport for map plot according to flight
 airport = stop_over_locations[flight] if flight in stop_over_locations else None
 
-# %% set plotting options for each flight
-plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1, l_loc=1),
-                  Flight_20210626a=dict(figsize=(9.5, 8), cb_loc="bottom", shrink=0.9, l_loc=4),
-                  Flight_20210628a=dict(figsize=(10, 9), cb_loc="left", shrink=1, l_loc=4))
 # %% read in bahamas data
 bahamas = smart.read_bahamas(f"{bahamas_path}/{file}")
 # select only position data
@@ -131,11 +127,16 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     plt.close()
 
 
+# %% set plotting options for each flight
+plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1, l_loc=1),
+                  Flight_20210626a=dict(figsize=(9.5, 8), cb_loc="bottom", shrink=0.9, l_loc=4),
+                  Flight_20210628a=dict(figsize=(10, 9), cb_loc="left", shrink=1, l_loc=4),
+                  Flight_20210629a=dict(figsize=(9, 8.2), cb_loc="bottom", shrink=1, l_loc=1))
 # %% loop through timesteps
 # lon1 = lon[0]
 # lat1 = lat[0]
 # number = 0
 # plot_bahamas_map(flight, lon, lat, extent, lon1, lat1, number, airport=airport)
-# Parallel(n_jobs=cpu_count()-2)(delayed(plot_bahamas_map)
-#                                (flight, lon, lat, extent, lon1, lat1, number, airport=airport)
-#                                for lon1, lat1, number in zip(tqdm(lon_sel), lat_sel, ts_sel.number.values))
+Parallel(n_jobs=cpu_count()-2)(delayed(plot_bahamas_map)
+                               (flight, lon, lat, extent, lon1, lat1, number, airport=airport)
+                               for lon1, lat1, number in zip(tqdm(lon_sel), lat_sel, ts_sel.number.values))
