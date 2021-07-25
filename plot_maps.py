@@ -23,8 +23,8 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.WARNING)
 
 # %% set paths
-date = 20210629
-flight = f"Flight_{date}b"
+date = 20210701
+flight = f"Flight_{date}a"
 bahamas_dir = smart.get_path("bahamas")
 bahamas_path = f"{bahamas_dir}/{flight}"
 gopro_dir = smart.get_path("gopro")
@@ -132,7 +132,8 @@ plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1,
                   Flight_20210626a=dict(figsize=(9.5, 8), cb_loc="bottom", shrink=0.9, l_loc=4),
                   Flight_20210628a=dict(figsize=(10, 9), cb_loc="left", shrink=1, l_loc=4),
                   Flight_20210629a=dict(figsize=(9, 8.2), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210629b=dict(figsize=(8, 8), cb_loc="left", shrink=1, l_loc=3))
+                  Flight_20210629b=dict(figsize=(8, 8), cb_loc="left", shrink=1, l_loc=3),
+                  Flight_20210701a=dict(figsize=(9, 8), cb_loc="bottom", shrink=1, l_loc=2))
 # %% loop through timesteps
 # lon1 = lon[0]
 # lat1 = lat[0]
