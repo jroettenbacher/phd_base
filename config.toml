@@ -2,31 +2,31 @@
 [cirrus-hl]
 
 [cirrus-hl.jr_local]
-base_dir = "C:/Users/Johannes/Documents/Doktor"
-raw = "campaigns/CIRRUS-HL/SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
-calib = "campaigns/CIRRUS-HL/SMART/calib"  # calibration measurements
-data = "campaigns/CIRRUS-HL/SMART/data_cor"  # dark current corrected data
-calibrated = "campaigns/CIRRUS-HL/SMART/data_calibrated"  # calibrated and dark current corrected data
-plot = "campaigns/CIRRUS-HL/SMART/plots"
-pixel_wl = "instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
-lamp = "instruments/SMART/lamp_F1587"  # lamp specification files
-panel = "instruments/SMART/panel_34816"  # panel reflectivity files
-horidata = "campaigns/CIRRUS-HL/horidata"  # path to INS and stabilization data
-bahamas = "campaigns/CIRRUS-HL/BAHAMAS"  # path to BAHAMAS measurement files
+base_dir = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/"
+raw = "SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
+calib = "SMART/calib"  # calibration measurements
+data = "SMART/data_cor"  # dark current corrected data
+calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
+plot = "SMART/plots"
+horidata = "horidata"  # path to INS and stabilization data
+bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+pixel_wl = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
+lamp = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
+panel = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/panel_34816"  # panel reflectivity files
 gopro = "C:/Users/Johannes/Documents/Gopro"  # directory of GoPro time lapse pictures
 
 [cirrus-hl.jr_ubuntu]
-base_dir = "/mnt/c/Users/Johannes/Documents/Doktor"
-raw = "campaigns/CIRRUS-HL/SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
-calib = "campaigns/CIRRUS-HL/SMART/calib"  # calibration measurements
-data = "campaigns/CIRRUS-HL/SMART/data_cor"  # dark current corrected data
-calibrated = "campaigns/CIRRUS-HL/SMART/data_calibrated"  # calibrated and dark current corrected data
-plot = "campaigns/CIRRUS-HL/SMART/plots"
-pixel_wl = "instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
-lamp = "instruments/SMART/lamp_F1587"  # lamp specification files
-panel = "instruments/SMART/panel_34816"  # panel reflectivity files
-horidata = "campaigns/CIRRUS-HL/horidata"  # path to INS and stabilization data
-bahamas = "campaigns/CIRRUS-HL/BAHAMAS"  # path to BAHAMAS measurement files
+base_dir = "/mnt/c/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL"
+raw = "SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
+calib = "SMART/calib"  # calibration measurements
+data = "SMART/data_cor"  # dark current corrected data
+calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
+plot = "SMART/plots"
+horidata = "horidata"  # path to INS and stabilization data
+bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+pixel_wl = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
+lamp = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
+panel = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/panel_34816"  # panel reflectivity files
 gopro = "/mnt/c/Users/Johannes/Documents/Gopro"  # directory of GoPro time lapse pictures
 
 # on LIM server

@@ -298,9 +298,8 @@ def get_path(key: str, flight: str = None) -> str:
     config.pop("base_dir")
     for k in config:
         paths[k] = os.path.join(base_dir, flight, config[k])
-    if wk_dir.startswith("/projekt"):
-        for k in ["calib", "pixel_wl", "lamp", "panel"]:
-            paths[k] = config[k]
+    for k in ["calib", "pixel_wl", "lamp", "panel"]:
+        paths[k] = config[k]
 
     return paths[key]
 
