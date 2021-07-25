@@ -37,7 +37,8 @@ transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625",
                        Flight_20210707a="20210708", Flight_20210707b="20210708", Flight_20210708a="20210708",
                        Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713",
                        Flight_20210715a="20210714", Flight_20210715b="20210714", Flight_20210719a="20210720",
-                       Flight_20210719b="20210720", Flight_20210721a="20210722", Flight_20210721b="20210722")
+                       Flight_20210719b="20210720", Flight_20210721a="20210722", Flight_20210721b="20210722",
+                       Flight_20210723a="20210725")
 
 # GoPro time stamp in LT
 gopro_lt = dict(Flight_20210627=True, Flight_20210628=True, Flight_20210629=True, Flight_20210701=True,
@@ -58,7 +59,8 @@ stop_over_locations = dict(Flight_20210629a="Bergen", Flight_20210629b="Bergen",
                            Flight_20210721a="Santiago", Flight_20210721b="Santiago")
 
 # coordinates for map plots (lon, lat)
-coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.336, 67.821), Santiago=(-8.418, 42.898))
+coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.336, 67.821), Santiago=(-8.418, 42.898),
+                   Bergen=(5.218, 60.293))
 
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
