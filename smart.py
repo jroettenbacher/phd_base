@@ -261,11 +261,11 @@ def set_paths():
         config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
 
     base_dir = config["base_dir"]
-    raw_path = os.path.join(base_dir, config["raw_data"])
-    pixel_wl_path = os.path.join(base_dir, config["pixel_to_wavelength"])
-    calib_path = os.path.join(base_dir, config["calib_data"])
+    raw_path = os.path.join(base_dir, config["raw"])
+    pixel_wl_path = os.path.join(base_dir, config["pixel_wl"])
+    calib_path = os.path.join(base_dir, config["calib"])
     data_path = os.path.join(base_dir, config["data"])
-    plot_path = os.path.join(base_dir, config["plots"])
+    plot_path = os.path.join(base_dir, config["plot"])
 
     return raw_path, pixel_wl_path, calib_path, data_path, plot_path
 
@@ -294,11 +294,11 @@ def get_path(key: str, flight: str = None) -> str:
     base_dir = config["base_dir"]
     paths["base"] = base_dir
     config.pop("base_dir")
-    for key in config:
-        paths[key] = os.path.join(base_dir, flight, config[key])
+    for k in config:
+        paths[k] = os.path.join(base_dir, flight, config[k])
     if wk_dir.startswith("/projekt"):
-        for key in ["calib", "pixel_wl", "lamp", "panel"]:
-            paths[key] = config[key]
+        for k in ["calib", "pixel_wl", "lamp", "panel"]:
+            paths[k] = config[k]
 
     return paths[key]
 
