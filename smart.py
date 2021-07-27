@@ -98,7 +98,8 @@ def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = T
 
     """
     # set paths
-    _, _, calib_path, _, plot_path = set_paths()
+    calib_path = get_path("calib")
+    plot_path = get_path("plot")
     lamp_path = get_path("lamp")  # get path to lamp defined in config.toml
     # read in lamp file
     lamp_file = "F1587i01_19.std"
@@ -313,25 +314,26 @@ def _plot_dark_current(wavelenghts: Union[pd.Series, list],
     plt.close()
 
 
-def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, plt.figure]:
+def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union[pd.Series, plt.figure]:
     """
     Get the corresponding dark current for the specified measurement file to correct the raw SMART measurement.
 
     Args:
+        flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat")
         option: which option to use for VNIR, 1 or 2
         kwargs:
             plot (bool): show plot or not (default: True)
-            path (str): path to file if different from raw file path given in config.toml
             date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
 
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
     """
     plot = kwargs["plot"] if "plot" in kwargs else True
-    path, pixel_wl_path, calib_path, _, _ = set_paths()
-    path = kwargs["path"] if "path" in kwargs else path
     date = kwargs["date"] if "date" in kwargs else None
+    path = get_path("raw", flight)
+    pixel_wl_path = get_path("pixel_wl")
+    calib_path = get_path("calib")
     smart = read_smart_raw(path, filename)
     t_int = int(smart["t_int"][0])  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
@@ -406,7 +408,7 @@ def get_dark_current(filename: str, option: int, **kwargs) -> Union[pd.Series, p
     return dark_current
 
 
-def plot_mean_corrected_measurement(filename: str, measurement: Union[pd.Series, list],
+def plot_mean_corrected_measurement(flight: str, filename: str, measurement: Union[pd.Series, list],
                                     measurement_cor: Union[pd.Series, list],
                                     option: int, **kwargs):
     """
@@ -414,6 +416,7 @@ def plot_mean_corrected_measurement(filename: str, measurement: Union[pd.Series,
     current.
 
     Args:
+        flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: name of file
         measurement: raw SMART measurements for each pixel averaged over time
         measurement_cor: corrected SMART measurements for each pixel averaged over time
@@ -425,10 +428,11 @@ def plot_mean_corrected_measurement(filename: str, measurement: Union[pd.Series,
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-    _, pixel_path, _, _, _ = set_paths()
+    pixel_path = get_path("pixel_wl")
     date_str, channel, direction = get_info_from_filename(filename)
+    path = get_path("raw", flight)
     spectrometer = lookup[f"{direction}_{channel}"]
-    dark_current = get_dark_current(filename, option, plot=False)
+    dark_current = get_dark_current(path, filename, option, plot=False)
     wavelength = read_pixel_to_wavelength(pixel_path, spectrometer)["wavelength"]
 
     if channel == "VNIR" and option == 1:
@@ -450,12 +454,13 @@ def plot_mean_corrected_measurement(filename: str, measurement: Union[pd.Series,
     plt.close()
 
 
-def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Series:
+def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwargs) -> pd.Series:
     """
     Correct the raw SMART measurement for the dark current of the spectrometer.
     Only returns data when the shutter was open.
 
     Args:
+        flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         smart_file: filename of file to correct
         option: which option should be used to get the dark current? Only relevant for channel "VNIR".
         kwargs:
@@ -467,12 +472,12 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
 
     """
     # TODO: do not write empty rows (were shutter is closed)
-    path, _, _, _, _ = set_paths()
+    path = get_path("raw", flight)
     path = kwargs["path"] if "path" in kwargs else path
     date = kwargs["date"] if "date" in kwargs else None
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = read_smart_raw(path, smart_file)
-    dark_current = get_dark_current(smart_file, option, plot=False, path=path, date=date)
+    dark_current = get_dark_current(flight, smart_file, option, plot=False, path=path, date=date)
 
     if channel == "VNIR" and option == 1:
         dark_current = dark_current.mean()
@@ -482,13 +487,14 @@ def correct_smart_dark_current(smart_file: str, option: int, **kwargs) -> pd.Ser
     return measurement_cor
 
 
-def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> plt.axes:
+def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **kwargs) -> plt.axes:
     """
     Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
     or a time series of one wavelength. Return an axes object to continue plotting or show it.
     TODO: add option to plot multiple files
 
     Args:
+        flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: Standard SMART filename
         wavelength: list with either one or two wavelengths in nm or 'all'
         **kwargs:
@@ -499,7 +505,11 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> pl
     Returns: Shows a figure or saves it to disc.
 
     """
-    raw_path, pixel_wl_path, _, data_path, plot_path = set_paths()
+    raw_path = get_path("raw", flight)
+    pixel_wl_path = get_path("pixel_wl")
+    data_path = get_path("data", flight)
+    calibrated_path = get_path("calibrated", flight)
+    plot_path = get_path("plot")
     # read in keyword arguments
     raw_path = kwargs["path"] if "path" in kwargs else raw_path
     data_path = kwargs["path"] if "path" in kwargs else data_path
@@ -507,7 +517,7 @@ def plot_smart_data(filename: str, wavelength: Union[list, str], **kwargs) -> pl
     plot_path = kwargs["plot_path"] if "plot_path" in kwargs else plot_path
     date_str, channel, direction = get_info_from_filename(filename)
     if "calibrated" in filename:
-        smart = read_smart_cor(data_path, filename)
+        smart = read_smart_cor(calibrated_path, filename)
         title = "\nCorrected for Dark Current and Calibrated"
         ylabel = "Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)" if "F" in filename else "Radiance (W$\\,$sr$^{-1}\\,$m$^{-2}\\,$nm$^{-1}$)"
     elif "cor" in filename:
@@ -741,12 +751,13 @@ def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int
     return overlay
 
 
-def plot_smart_data_interactive(filename: str, wavelength: Union[list, str], flight: str) -> hv.Curve:
+def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[list, str]) -> hv.Curve:
     """
     Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
     or a time series of one wavelength.
 
     Args:
+        flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: Standard SMART filename
         wavelength: list with either one or two wavelengths in nm or 'all'
 
@@ -754,22 +765,24 @@ def plot_smart_data_interactive(filename: str, wavelength: Union[list, str], fli
     Returns: Creates an interactive figure
 
     """
-    raw_path, pixel_wl_path, _, data_path, plot_path = set_paths()
-    calibrated_path = get_path("calibrated")
+    raw_path = get_path("raw", flight)
+    pixel_wl_path = get_path("pixel_wl")
+    data_path = get_path("data", flight)
+    calibrated_path = get_path("calibrated", flight)
     date_str, channel, direction = get_info_from_filename(filename)
     # make sure wavelength is a list
     if type(wavelength) != list and wavelength != "all":
         wavelength = [wavelength]
     if "calibrated" in filename:
-        df = read_smart_cor(f"{calibrated_path}/{flight}", filename)
+        df = read_smart_cor(calibrated_path, filename)
         title = "\nCorrected for Dark Current and Calibrated"
         ylabel = "Irradiance (W m^-2 nm^-1)" if "F" in filename else "Radiance (W sr^-1 m^-2 nm^-1)"
     elif "cor" in filename:
-        df = read_smart_cor(f"{data_path}/{flight}", filename)
+        df = read_smart_cor(data_path, filename)
         title = "Corrected for Dark Current"
         ylabel = "Netto Counts"
     else:
-        df = read_smart_raw(f"{raw_path}/{flight}", filename)
+        df = read_smart_raw(raw_path, filename)
         df = df.iloc[:, 2:]  # remove columns t_int and shutter
         title = "Raw"
         ylabel = "Netto Counts"
@@ -982,7 +995,7 @@ if __name__ == '__main__':
     calibrated_file = "2021_06_24_10_28.Fdw_VNIR_cor_calibrated_norm.dat"
     file = "2021_06_25_06_14.Iup_SWIR.dat"
     path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP07_transfer_calib_20210625/dark_300ms"
-    plot_smart_data(file, "all", path=path)
+    plot_smart_data("Flight_20210625a", file, "all", path=path)
     smart = read_smart_raw(path, file)
     fig, ax = plt.subplots()
     smart.iloc[4:, 2:].plot(ax=ax)
