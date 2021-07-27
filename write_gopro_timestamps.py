@@ -12,10 +12,11 @@ author: Johannes Röttenbacher
 from subprocess import run
 import re
 import pandas as pd
+from smart import get_path
 
 # %% set paths
-date = 20210625
-path = f"/mnt/c/Users/Johannes/Documents/Gopro/{date}"
+date = 20210719
+path = f"{get_path('gopro')}/{date}"
 # file = f"{path}/{date}_Gopro_0001.jpg"
 
 # write meta data info to file
