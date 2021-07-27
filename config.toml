@@ -2,28 +2,28 @@
 [cirrus-hl]
 
 [cirrus-hl.jr_local]
-base_dir = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/"
+base_dir = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/01_Flights"
 raw = "SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
-calib = "SMART/calib"  # calibration measurements
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
 plot = "SMART/plots"
-horidata = "horidata"  # path to INS and stabilization data
-bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+horidata = "horidata"  # INS and stabilization data
+bahamas = "BAHAMAS"  # BAHAMAS measurement files
+calib = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/03_Calibration"  # calibration measurements
 pixel_wl = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
 lamp = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
 panel = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/panel_34816"  # panel reflectivity files
 gopro = "C:/Users/Johannes/Documents/Gopro"  # directory of GoPro time lapse pictures
 
 [cirrus-hl.jr_ubuntu]
-base_dir = "/mnt/c/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL"
+base_dir = "/mnt/c/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/01_Flights"
 raw = "SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
-calib = "SMART/calib"  # calibration measurements
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
 plot = "SMART/plots"
-horidata = "horidata"  # path to INS and stabilization data
-bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+horidata = "horidata"  # INS and stabilization data
+bahamas = "BAHAMAS"  # BAHAMAS measurement files
+calib = "/mnt/c/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/03_Calibration"  # calibration measurements
 pixel_wl = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
 lamp = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
 panel = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/panel_34816"  # panel reflectivity files

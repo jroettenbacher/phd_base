@@ -16,12 +16,13 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # User input
-flight = "Flight_20210721b"  # which flight do the files in raw belong to?
+flight = "Flight_20210723a"  # which flight do the files in raw belong to?
 # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
 transfer_cali_date = smart.transfer_calibs[flight]
 
 # Set paths in config.toml
-raw_path, _, calib_path, data_path, _ = smart.set_paths()
+raw_path = smart.get_path("raw", flight)
+data_path = smart.get_path("data", flight)
 inpath = os.path.join(raw_path, flight)
 outdir = os.path.join(data_path, flight)
 make_dir(outdir)

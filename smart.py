@@ -249,29 +249,6 @@ def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     return pixel_nr, wavelength
 
 
-def set_paths():
-    """
-    Read paths from the toml file according to the current working directory.
-
-    Returns: Paths to measurements, pixel to wavelength calibration files, spectrometer calibration files,
-    processed files and plots.
-
-    """
-    if os.getcwd().startswith("C"):
-        config = toml.load("config.toml")["cirrus-hl"]["jr_local"]
-    else:
-        config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
-
-    base_dir = config["base_dir"]
-    raw_path = os.path.join(base_dir, config["raw"])
-    pixel_wl_path = os.path.join(base_dir, config["pixel_wl"])
-    calib_path = os.path.join(base_dir, config["calib"])
-    data_path = os.path.join(base_dir, config["data"])
-    plot_path = os.path.join(base_dir, config["plot"])
-
-    return raw_path, pixel_wl_path, calib_path, data_path, plot_path
-
-
 def get_path(key: str, flight: str = None) -> str:
     """
         Read paths from the toml file according to the current working directory.
