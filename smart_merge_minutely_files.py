@@ -8,7 +8,7 @@ This script
 author: Johannes Röttenbacher
 """
 
-from smart import set_paths
+from smart import get_path
 import os
 import pandas as pd
 import logging
@@ -19,16 +19,17 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # combine minutely files to one file
-raw_path, _, calib_path, data_path, _ = set_paths()
 # User input
+flight = "Flight_20210723a"
+data_path = get_path("data", flight=flight)  # dark current corrected files
+# calibrated_path = get_path("calibrated", flight=flight)  # dark current corrected files
 directory = data_path
-folder = "Flight_20210721b"
 
 channels = ["SWIR", "VNIR"]
 property = ["Iup", "Fup", "Fdw"]
 corrected = True  # merge corrected files
 cor = "_cor" if corrected else ""
-for dirpath, dirs, files in os.walk(os.path.join(directory, folder)):
+for dirpath, dirs, files in os.walk(directory):
     for prop in property:
         for channel in channels:
             try:
