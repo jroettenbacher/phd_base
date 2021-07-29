@@ -17,10 +17,11 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
 
 # %% set variables
-field_folder = "ASP06_transfer_calib_20210714"  # transfer calib folder
+field_folder = "ASP07_transfer_calib_20210729"  # transfer calib folder
+calib_path = smart.get_path("calib")
+plot_path = smart.get_path("plot")
 t_int = 300  # integration time of transfer calibration measurement
 normalize = True  # normalize counts by integration time
 norm = "_norm" if normalize else ""
