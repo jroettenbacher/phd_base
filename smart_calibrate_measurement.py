@@ -17,7 +17,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set user given parameters
-flight = "Flight_20210721b"  # set flight folder
+flight = "Flight_20210728a"  # set flight folder
 t_int_asp06 = 300  # give integration time of field measurement for ASP06
 t_int_asp07 = 300  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time
@@ -27,10 +27,11 @@ date = f"{transfer_date[:4]}_{transfer_date[4:6]}_{transfer_date[6:]}"  # reform
 
 # %% set paths
 norm = "_norm" if normalize else ""
-_, _, calib_path, data_path, _ = smart.set_paths()
-calibrated_path = smart.get_path("calibrated")
-inpath = f"{data_path}/{flight}"
-outpath = f"{calibrated_path}/{flight}"
+calib_path = smart.get_path("calib")
+data_path = smart.get_path("data", flight)
+calibrated_path = smart.get_path("calibrated", flight)
+inpath = data_path
+outpath = calibrated_path
 make_dir(outpath)  # create outpath if necessary
 
 # %% read in dark current corrected measurement files
@@ -40,7 +41,7 @@ for file in files:
     date_str = date if len(date) > 0 else date_str  # overwrite date_str if date is given
     spectrometer = lookup[f"{direction}_{channel}"]
     t_int = t_int_asp06 if "ASP06" in spectrometer else t_int_asp07  # select relevant integration time
-    measurement = smart.read_smart_cor(f"{data_path}/{flight}", file)
+    measurement = smart.read_smart_cor(data_path, file)
     # measurement[measurement.values < 0] = 0  # set negative values to 0
 
     # %% read in matching transfer calibration file from same day or from given day with matching t_int
