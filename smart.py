@@ -47,7 +47,8 @@ gopro_lt = dict(Flight_20210627=True, Flight_20210628=True, Flight_20210629=True
 
 # GoPro time offsets from bahamas in seconds
 gopro_offsets = dict(Flight_20210625=-1, Flight_20210626=6, Flight_20210628=4, Flight_20210705=47, Flight_20210707=59,
-                     Flight_20210708=66, Flight_20210712=90, Flight_20210713=98, Flight_20210719=0, Flight_20210721=-1)
+                     Flight_20210708=66, Flight_20210712=90, Flight_20210713=98, Flight_20210719=0, Flight_20210721=-1,
+                     Flight_20210723=14, Flight_20210728=14)
 
 # stop over locations for each flight
 stop_over_locations = dict(Flight_20210629a="Bergen", Flight_20210629b="Bergen",
@@ -323,6 +324,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
         filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat")
         option: which option to use for VNIR, 1 or 2
         kwargs:
+            path (str): path if not standard path from config.toml
             plot (bool): show plot or not (default: True)
             date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
 
@@ -332,6 +334,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     plot = kwargs["plot"] if "plot" in kwargs else True
     date = kwargs["date"] if "date" in kwargs else None
     path = get_path("raw", flight)
+    path = kwargs["path"] if "path" in kwargs else path
     pixel_wl_path = get_path("pixel_wl")
     calib_path = get_path("calib")
     smart = read_smart_raw(path, filename)

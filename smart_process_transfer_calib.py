@@ -15,7 +15,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # User input
-folder = "ASP06_transfer_calib_20210714"
+folder = "ASP06_transfer_calib_20210729"
 
 # Set paths in config.toml
 calib_path = smart.get_path("calib")
@@ -45,7 +45,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
     for file in files:
         if file.endswith("IR.dat"):
             log.info(f"Working on {dirpath}/{file}")
-            smart_cor = smart.correct_smart_dark_current(file, option=2, path=dirpath)
+            smart_cor = smart.correct_smart_dark_current("", file, option=2, path=dirpath)
             outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
             smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
             log.info(f"Saved {outname}")
