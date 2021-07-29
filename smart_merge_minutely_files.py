@@ -20,7 +20,7 @@ log.setLevel(logging.INFO)
 
 # combine minutely files to one file
 # User input
-flight = "Flight_20210723a"
+flight = "Flight_20210728a"
 data_path = get_path("data", flight=flight)  # dark current corrected files
 # calibrated_path = get_path("calibrated", flight=flight)  # dark current corrected files
 directory = data_path
