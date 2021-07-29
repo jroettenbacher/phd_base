@@ -12,10 +12,10 @@ from subprocess import run, Popen
 from smart import gopro_lt, gopro_offsets, get_path
 
 # user input
-flight = "Flight_20210719"
-correct_time = False
+flight = "Flight_20210728"
+correct_time = True
 start_file = 0
-file = "/mnt/c/Users/Johannes/Documents/Gopro/20210715_Gopro_0001.JPG"
+file = "/mnt/c/Users/Johannes/Documents/Gopro/20210728/20210728_Gopro_0510.JPG"
 
 path = f"{get_path('gopro')}/{flight[7:]}"
 sync_to_bahamas = True if flight in gopro_offsets else False
@@ -35,7 +35,7 @@ if correct_time:
     delta = datetime.timedelta(hours=abs(correction))
     sign = "-" if correction > 0 else "+"
     cor_str = str(delta)
-    run(['exiftool', '-m', '-progress', '-overwrite_original', f'-DateTimeOriginal{sign}={cor_str}', path])
+    run(['exiftool', '-m', '-progress', '-overwrite_original', f'-DateTimeOriginal{sign}={cor_str}', file])
 
 # %% add the time stamp from the exif meta data in the right lower corner
 for f in tqdm(files, desc="Add Time Stamp"):
@@ -44,6 +44,5 @@ for f in tqdm(files, desc="Add Time Stamp"):
     if len(processes) >= max_processes:
         os.wait()
         processes.difference_update([p for p in processes if p.poll() is not None])
-
 
 print(f"Done with all files in {path}")

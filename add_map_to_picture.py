@@ -13,8 +13,8 @@ import smart
 from functions_jr import make_dir
 
 # %% set paths
-date = "20210715"
-number = "b"
+date = "20210728"
+number = "a"
 flight = f"Flight_{date}{number}"
 gopro_dir = smart.get_path('gopro')
 gopro_path = f"{gopro_dir}/{date}"
@@ -33,7 +33,7 @@ max_processes = 10
 for picture, map in zip(tqdm(files, desc="Add Map"), maps):
     outfile = picture.replace(gopro_path, outpath)
     processes.add(Popen(['convert', picture,
-                         map, '-geometry', '+3000+0',
+                         map, '-geometry', '+3100+0',
                          '-composite', outfile]))
     if len(processes) >= max_processes:
         os.wait()

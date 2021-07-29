@@ -22,8 +22,8 @@ smart_spectra = [os.path.join(smart_path, f) for f in os.listdir(smart_path) if 
 processes = set()
 max_processes = 10
 
-# %% add map to the right upper corner of the picture
-for picture, smart_plot in zip(tqdm(files, desc="Add Map"), smart_spectra):
+# %% add spectra to the left upper corner of the picture
+for picture, smart_plot in zip(tqdm(files, desc="Add Spectra"), smart_spectra):
     processes.add(Popen(['convert', picture,
                          smart_plot, '-geometry', '+0+0',
                          '-composite', picture]))

@@ -15,7 +15,7 @@ import pandas as pd
 from smart import get_path
 
 # %% set paths
-date = 20210719
+date = 20210728
 path = f"{get_path('gopro')}/{date}"
 # file = f"{path}/{date}_Gopro_0001.jpg"
 

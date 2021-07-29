@@ -47,8 +47,7 @@ fdw_sel = fdw.iloc[idxs, :].set_index(gopro_times.index)
 idxs = [fup.index.get_loc(value, method="nearest") for value in gopro_times.index.values]
 fup_sel = fup.iloc[idxs, :].set_index(gopro_times.index)
 
-# %% process SMART data
-# set values < 0 to 0
+# %% set values < 0 to 0
 fdw_sel[fdw_sel < 0] = 0
 fup_sel[fup_sel < 0] = 0
 
@@ -111,3 +110,36 @@ def plot_timelapse_spectra(wavelengths: list, albedo: pd.DataFrame, fdw: pd.Data
 Parallel(n_jobs=cpu_count()-2)(delayed(plot_timelapse_spectra)
                                (wavelengths, albedo, fdw_sel, fup_sel, gopro_times, idx, channel, plot_path)
                                for idx in tqdm(range(len(gopro_times))))
+
+# %% plot timeseries with moving marker
+plot_path = f"{smart.get_path('plot')}/time_lapse_ts/{flight}"
+make_dir(plot_path)
+wl = 550
+nr, wl = smart.find_pixel(pixel_wl, wl)
+number = gopro_times.number[idx]  # get image number for outfile name
+# set plot properties
+font = {'weight': 'bold', 'size': 26}
+matplotlib.rc('font', **font)
+
+fig, ax = plt.subplots(figsize=(13, 6))
+l_albedo = ax.plot(albedo.iloc[:, nr], label="Albedo", c="k", linewidth=5)  # plot albedo
+ax.set_ylabel("Albedo")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylim((0, 1))
+ax2 = ax.twinx()
+# plot irradiance
+l_fdw = ax2.plot(fdw.iloc[:, nr], label="Fdw", linewidth=5)
+l_fup = ax2.plot(fup.iloc[:, nr], label="Fup", linewidth=5)
+ax2.set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
+ax2.set_ylim((-0.1, 2.5))
+# create legend
+lns = l_albedo + l_fdw + l_fup
+labs = [line.get_label() for line in lns]
+ax.legend(lns, labs, loc=2)
+ax.grid()
+plt.title(f"{channel} Spectrum and Albedo for {timestep}\nDark Current Corrected and Calibrated")
+timestep_name = timestep.strftime("%Y%m%d")
+fig_name = f"{plot_path}/{timestep_name}_{channel}_spectrum_albedo_{number:04}.png"
+plt.savefig(fig_name, dpi=100, bbox_inches="tight")
+log.info(f"Saved {fig_name}")
+plt.close()
