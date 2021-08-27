@@ -12,49 +12,49 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # %%  set paths
-raw_path, pixel_path, _, data_path, plot_path = smart.set_paths()
-flight = "Flight_20210721b"
+flight = "Flight_20210728a"
+raw_path = smart.get_path("raw", flight)
+pixel_path = smart.get_path("pixel_wl")
+data_path = smart.get_path("data", flight)
+calibrated_path = smart.get_path("calibrated", flight)
+plot_path = smart.get_path("plot")
 ql_path = f"{plot_path}/quicklooks/{flight}"
 make_dir(ql_path)
-calibrated_path = smart.get_path("calibrated")
 # %% read in raw files
-inpath = f"{raw_path}/{flight}"
-raw_files = os.listdir(inpath)
+raw_files = os.listdir(raw_path)
 outpath = f"{ql_path}/raw"
 make_dir(outpath)
 for file in raw_files:
-    smart.plot_smart_data(file, "all", path=inpath, plot_path=outpath, save_fig=True)
+    smart.plot_smart_data(file, "all", path=raw_path, plot_path=outpath, save_fig=True)
     try:
-        smart.plot_smart_data(file, [500], path=inpath, plot_path=outpath, save_fig=True)
+        smart.plot_smart_data(file, [500], path=raw_path, plot_path=outpath, save_fig=True)
     except AssertionError:
-        smart.plot_smart_data(file, [1500], path=inpath, plot_path=outpath, save_fig=True)
+        smart.plot_smart_data(file, [1500], path=raw_path, plot_path=outpath, save_fig=True)
 
 # %% read in dark current corrected files
-inpath = f"{data_path}/{flight}"
-data_files = os.listdir(inpath)
+data_files = os.listdir(data_path)
 outpath = f"{ql_path}"
 make_dir(outpath)
 for file in data_files:
-    smart.plot_smart_data(file, "all", path=inpath, plot_path=outpath, save_fig=True)
+    smart.plot_smart_data(flight, file, "all", path=data_path, plot_path=outpath, save_fig=True)
     try:
-        smart.plot_smart_data(file, [550], path=inpath, plot_path=outpath, save_fig=True)
+        smart.plot_smart_data(flight, file, [550], path=data_path, plot_path=outpath, save_fig=True)
     except AssertionError:
-        smart.plot_smart_data(file, [1200], path=inpath, plot_path=outpath, save_fig=True)
+        smart.plot_smart_data(flight, file, [1200], path=data_path, plot_path=outpath, save_fig=True)
 
 # read in calibrated files
-inpath = f"{calibrated_path}/{flight}"
-calib_files = os.listdir(inpath)
+calib_files = os.listdir(calibrated_path)
 outpath = f"{ql_path}/calibrated"
 make_dir(outpath)
 for file in calib_files:
     # plot the time average of the flight
-    smart.plot_smart_data(file, "all", path=inpath, plot_path=outpath, save_fig=True)
+    smart.plot_smart_data(flight, file, "all", path=calibrated_path, plot_path=outpath, save_fig=True)
     try:
         # plot a time series of 500 nm
-        smart.plot_smart_data(file, [550], path=inpath, plot_path=outpath, save_fig=True)
+        smart.plot_smart_data(flight, file, [550], path=calibrated_path, plot_path=outpath, save_fig=True)
     except AssertionError:
         # plot a time series of 1500 nm
-        smart.plot_smart_data(file, [1200], path=inpath, plot_path=outpath, save_fig=True)
+        smart.plot_smart_data(flight, file, [1200], path=calibrated_path, plot_path=outpath, save_fig=True)
 
 # %% plot Fdw with IMS and stabbi angles - read in and prepare data
 
