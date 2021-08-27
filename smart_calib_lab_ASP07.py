@@ -12,7 +12,7 @@ author: Johannes Roettenbacher
 """
 # %%
 import smart
-from smart import lookup
+from smart import lookup, get_path
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -20,8 +20,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 # %% set paths
-raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
-panel_path = smart.get_path("panel")
+calib_path, plot_path, panel_path = get_path("calib"), get_path("plot"), get_path("panel")
+
 # %% read in lamp and panel files
 lamp = smart.read_lamp_file(plot=False, save_file=False, save_fig=False)
 columns = ["wavelength", "reflectance"]
@@ -31,10 +31,10 @@ panels["VNIR"] = pd.read_csv(f"{panel_path}/panels_VIS_8_(ASP_07).dat", skiprows
 panels["SWIR"] = pd.read_csv(f"{panel_path}/panels_PGS_4_(ASP_07).dat", skiprows=15, usecols=[0, 3], names=columns,
                              header=None, sep="\s+")
 # %% read in ASP07 dark current corrected lamp measurement data and relate pixel to wavelength
-channel = "VNIR"  # set channel to work on (VNIR or SWIR)
+channel = "SWIR"  # set channel to work on (VNIR or SWIR)
 normalize = True  # normalize counts by integration time
 t_int = 200  # integration time of calibration measurement
-base = "ASP07_Calib_Lab_20210318"
+base = "ASP07_Calib_Lab_20210809"
 panel = panels[channel]
 panel["pixel"] = np.flip(panel.index + 1)
 folders = ["Cal_Plate", "Ulli_trans"]
