@@ -14,28 +14,50 @@ the paths where the scripts expect to find files and where they will save the fi
 
 **Folder Structure**
 
-All SMART files should be in one folder with the following subfolders:
+SMART data is organized by flight. 
+Each flight folder has one `SMART` folder with the following subfolders:
 
-* `calib`: raw calibration measurements in subfolders and processed calibration files on the top level.
-* `data_calibrated`: dark current corrected and calibrated measurement files in flight folders
-* `data_cor`: dark current corrected measurement files in flight folders
+* `data_calibrated`: dark current corrected and calibrated measurement files
+* `data_cor`: dark current corrected measurement files
+* `raw`: raw measurement files
+
+  In the calibration folder each calibration is saved in its own folder.
+  Each calibration is used to generate one calibration file, which is corrected for dark current.
+
+  A few more folders needed are:
+
+* `raw_only`: raw measurement files as written by ASP06/07, do not work on those files, but copy them into `raw`
 * `lamp_F1587`: calibration lamp file
 * `panel_34816`: reflectance panel file for each spectrometer
 * `pixel_wl`: pixel to wavelength files for each spectrometer
 * `plots`: plots and quicklooks
-* `raw`: raw measurement files in flight folders
-* `raw_only`: raw measurement files as written by ASP06/07, do not work on those files, but copy them into `raw`
 
 **Workflow**
 
-After the raw files are copied from ASP06/07 into `raw_only` and `raw` the minutely files are corrected for the dark 
+There are two workflows:
+1. Calibration files
+2. Measurement files
+
+Both workflows start with the correction of the dark current. 
+After the raw files are copied from ASP06/07 into `raw_only` and `raw` the minutely files are corrected for the dark
 current and saved with the new ending `*_cor.dat` in `data_cor`.
 Then the minutely files are merged to one file per folder and channel.
-The usual workflow is then to start with the laboratory calibrations, correct them for the dark current and calculate 
-the laboratory calibration factor `c_lab` of each spectrometer.
-This is saved to a file in the `calib` folder and only needs to be done once for each spectrometer.
-Then the transfer calibrations are corrected for the dark current and related to the laboratory calibration and another file is saved to `calib`. 
-Finally, the measurement files are corrected for the dark current and calibrated with the transfer calibration.
+
+**Calibration files**
+
+Use `smart_process_transfer_calib.py` or `smart_process_lab_calib.py` to correct the calibration files for the 
+dark current and merge the minutely files.
+Then run `smart_calib_lab_ASP06/07.py` for the lab calibrations or `smart_calib_transfer.py` for the transfer 
+calibration.
+Each script returns a file in the `calib` folder with the calibration factor.
+
+**Measurement files**
+
+Use `smart_write_dark_currented_corrected_file.py` to correct one flight for the dark current.
+Merge the resulting minutely files with `smart_merge_minutely_files.py`.
+Finally calibrate the measurement with `smart_calibrate_measurment.py`.
+The resulting calibrated files are saved in the `data_calibrated` folder.
+
 
 ### 1.1 smart.py
 
@@ -51,7 +73,6 @@ You can:
 * read in the lamp standard file
 * find the closest pixel and wavelength to any given wavelength for the given wavelength calibration file
 * get information (date, measured property, channel) from the filename
-* set the paths according to the `config.toml` file
 * get the path to a specified key defined in `config.toml`
 * get the dark current for a specified measurement file with either option 1 or 2 and optionally plot it
 * correct the raw measurement by the dark current
@@ -59,8 +80,25 @@ You can:
 * plot smart data either for one wavelength over time or for a range of or all wavelengths
 * use the holoviews functions to create a dynamic map for interactive quicklooks in a jupyter notebook
 
+### 1.2 smart_process_lab_calib.py
 
-### 1.2 smart_write_dark_current_corrected_file.py
+**TODO:** make it work for 2021-03-19/29
+
+Script to correct the lab calibration files for the dark current and merge the minutely corrected files into one file.
+
+**Required User Input:**
+* calibration folder
+
+### 1.3 smart_process_transfer_calib.py
+
+Script to correct SMART transfer calibration measurement for dark current and save it to a new file and merge 
+the minutely files.
+
+**Required User Input:**
+* calibration folder
+
+
+### 1.4 smart_write_dark_current_corrected_file.py
 
 Script to correct a directory of raw smart measurements for the dark current. Set the input and output paths
 in `config.toml`.
@@ -70,7 +108,7 @@ Comment in the for loop to correct the calibration files.
 
 * flight folder in raw_path
 
-### 1.3 smart_merge_minutely_files.py
+### 1.5 smart_merge_minutely_files.py
 
 Script to merge minutely dark current corrected measurement files into one file per channel and folder.
 Deletes minutely files.
@@ -80,7 +118,7 @@ Deletes minutely files.
 * directory where to find given folder
 * folder which to loop through
 
-### 1.4 smart_calib_lab_ASP06
+### 1.6 smart_calib_lab_ASP06.py
 
 Calculates the lab calibration factor `c_lab` (unit: W/m^2/count).
 Creates a lab calibration file with the irradiance measurements from the lamp and the calibrated Ulli transfer measurements. 
@@ -93,7 +131,7 @@ Needs to be run once for each spectrometer.
 * base directory of lab calibration -> should be found in calib folder
 * whether to normalize the measurement by the integration time or not
 
-### 1.5 smart_calib_lab_ASP07
+### 1.7 smart_calib_lab_ASP07.py
 
 Calculates the lab calibration factor `c_lab` (unit: W/sr/m^2/count).
 Creates a lab calibration file with the radiance measurements from the reflectance panel and the calibrated Ulli transfer measurements. 
@@ -105,7 +143,7 @@ Needs to be run once for each channel (SWIR and VNIR).
 * base directory of lab calibration -> should be found in calib folder
 * whether to normalize the measurement by the integration time or not
 
-### 1.6 smart_calib_transfer
+### 1.8 smart_calib_transfer.py
 
 Calculates the field calibration factor `c_field`.
 Creates a transfer calibration file with the radiance/irradiance measurements from the lab and the calibrated measurements from the field.
@@ -115,7 +153,7 @@ Creates a transfer calibration file with the radiance/irradiance measurements fr
 * integration time of transfer calibration (T_int) in ms
 * whether to normalize the measurement by the integration time or not
 
-### 1.7 smart_calibrate_measurment
+### 1.9 smart_calibrate_measurment.py
 
 Reads in dark current corrected measurement file and corresponding transfer calibration to calibrate measurement files.
 
@@ -137,3 +175,66 @@ Answer: The conversion of the analog signal to a digital can lead to this.
 
 These scripts work with the BAHAMAS system from HALO.
 BAHAMAS gives in situ and flight data like altitude, temperature, wind speed and other parameters.
+
+## 3. GoPro Time Lapse quicklooks
+
+During the flight a GoPro was attached to the second window on the left side of HALO.
+Using the time lapse function a picture was taken every 5 seconds.
+Together with BAHAMAS position data (and SMART spectra measurements) a time lapse video is created.
+The GoPro was set to UTC time but cannot be synchronized to BAHAMAS.
+At one point it reset its internal time to local time, so the meta data for some flights had to be corrected.
+See the `README.md` in the GoPro Folder for details.
+There a list which tracks the processing status can be found.
+
+Due to the offset from the BAHAMAS time an offset correction has to be applied to each timestamp.
+
+### 3.1 add_timestamp_to_picture.py
+
+Run on Linux (Ubuntu)
+
+**Input:**
+* flight (User input)
+* correct_time flag (User input)
+* filename for a test file (User input)
+* path with all GoPro pictures
+
+**Output:**
+* overwrites meta data in original file with UTC time from BAHAMAS
+* adds a time stamp to the right bottom of the original file
+
+This script reads out the DateTimeOriginal meta data tag of each file and corrects it for the LT to UTC and BAHAMAS offset if necessary.
+It overwrites the original meta data tag and places a time stamp to the right bottom of the file.
+One can test the time correction by replacing `path` with `file` in `run()` (\~line 38).
+
+### 3.2 write_gopro_timestamps.py
+
+Run on Linux (Ubuntu)
+
+**Input:** 
+* flight date (User input)
+* GoPro images
+
+**Output:**
+* txt file with `exiftool` output
+* csv file with datetime from picture meta data and picture number
+
+Reads the metadata time stamps and saves them together with the picture number in a csv file.
+
+### 3.3 plot_maps.py
+
+**Input:**
+* date of flight (User input)
+* flight number (User input)
+* csv file with time stamp and GoPro picture number
+* BAHAMAS nc file
+
+**Output:**
+* csv file with selected GoPro picture numbers and timestamps which are used for the time lapse video
+* map for each GoPro picture
+
+Reads in the BAHAMAS latitude and longitude data and selects only the time steps which correspond with a GoPro picture.
+In the `plot_props` dictionary the map layout properties for each flight are defined.
+For testing the first four lines of the last cell can be uncommented and the Parallel call can be commented.
+It makes sense to run this script on the server to utilize more cores and increase processing speed.
+
+### 3.4 
