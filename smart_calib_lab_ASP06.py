@@ -12,13 +12,13 @@
 author: Johannes Roettenbacher"""
 # %%
 import smart
-from smart import lookup
+from smart import lookup, get_path
 import os
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 # %% set paths
-raw_path, pixel_path, calib_path, data_path, plot_path = smart.set_paths()
+pixel_path, calib_path, plot_path = get_path("pixel_wl"), get_path("calib"), get_path("plot")
 
 # %% read lamp file
 lamp = smart.read_lamp_file(plot=False, save_file=False, save_fig=False)
@@ -26,8 +26,8 @@ lamp = smart.read_lamp_file(plot=False, save_file=False, save_fig=False)
 # %% read in ASP06 dark current corrected lamp measurement data and relate pixel to wavelength
 channel = "SWIR"  # set channel to work on (VNIR or SWIR)
 normalize = True  # normalize counts to integration time
-t_int = 500  # integration time of calibration measurement
-base = "ASP06_Calib_Lab_20210329"
+t_int = 300  # integration time of calibration measurement
+base = "ASP06_Calib_Lab_20210809"
 folder_pairs = [["calib_J3_4", "Ulli_trans_J3_4"], ["calib_J5_6", "Ulli_trans_J5_6"]]
 folders = folder_pairs[1]  # which folder pair to work on (0 or 1)
 dirpath = os.path.join(calib_path, base, folders[0])
@@ -72,8 +72,8 @@ ax2.legend(lines + lines2, labels + labels2, loc=0)
 ax.grid()
 plt.tight_layout()
 figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_lamp_lab_calib{norm}.png"
-# plt.savefig(figname, dpi=100)
-# print(f"Saved {figname}")
+plt.savefig(figname, dpi=100)
+print(f"Saved {figname}")
 plt.show()
 plt.close()
 
