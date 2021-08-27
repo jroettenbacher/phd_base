@@ -38,7 +38,7 @@ transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625",
                        Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713",
                        Flight_20210715a="20210714", Flight_20210715b="20210714", Flight_20210719a="20210720",
                        Flight_20210719b="20210720", Flight_20210721a="20210722", Flight_20210721b="20210722",
-                       Flight_20210723a="20210725", Flight_20210728a="20210729")
+                       Flight_20210723a="20210725", Flight_20210728a="20210729", Flight_20210729a="20210730")
 
 # GoPro time stamp in LT
 gopro_lt = dict(Flight_20210627=True, Flight_20210628=True, Flight_20210629=True, Flight_20210701=True,

@@ -12,8 +12,8 @@ from subprocess import run, Popen
 from smart import gopro_lt, gopro_offsets, get_path
 
 # user input
-flight = "Flight_20210728"
-correct_time = True
+flight = "Flight_20210730"
+correct_time = False
 start_file = 0
 file = "/mnt/c/Users/Johannes/Documents/Gopro/20210728/20210728_Gopro_0510.JPG"
 
