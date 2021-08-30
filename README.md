@@ -170,13 +170,27 @@ Reads in dark current corrected measurement file and corresponding transfer cali
 
 Answer: The conversion of the analog signal to a digital can lead to this.
 
+## 2. BACARDI
 
-## 2. BAHAMAS
+BACARDI is a broadband radiometer mounted on the bottom and the top of HALO.
+The data is initially processed by DLR and then Anna Luebke used the scripts provided by André Ehrlich to process the
+data further.
+
+### 2.1 Radiosonde data
+
+In order to simulate the clear sky broadband irradiance along the flight path and calculate the direct and diffuse
+fraction radiosonde data is used. 
+The data is downloaded from the [University Wyoming website](http://weather.uwyo.edu/upperair/sounding.html) by copying
+the HTML site into a text file.
+Then an IDL script from Kevin Wolf is used to extract the necessary data for libRadTran. 
+It can be found here: `/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_prepare_radiosonde_jr.pro`
+
+## 3. BAHAMAS
 
 These scripts work with the BAHAMAS system from HALO.
 BAHAMAS gives in situ and flight data like altitude, temperature, wind speed and other parameters.
 
-## 3. GoPro Time Lapse quicklooks
+## 4. GoPro Time Lapse quicklooks
 
 During the flight a GoPro was attached to the second window on the left side of HALO.
 Using the time lapse function a picture was taken every 5 seconds.
