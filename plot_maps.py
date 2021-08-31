@@ -1,5 +1,5 @@
 #!\usr\bin\env python
-"""Plotting script for map plots
+"""Plotting script for map plots to be used in time lapse videos of GoPro
 1. Plot a map of the flight track together with a marker for HALO
 author: Johannes Röttenbacher
 """
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import smart
 from smart import stop_over_locations
+from bahamas import plot_props
 from functions_jr import make_dir
 import cartopy.crs as ccrs
 import cartopy
@@ -27,7 +28,6 @@ date = 20210728
 number = "a"
 flight = f"Flight_{date}{number}"
 bahamas_dir = smart.get_path("bahamas", flight)
-bahamas_path = f"{bahamas_dir}/{flight}"
 gopro_dir = smart.get_path("gopro")
 # find bahamas file
 file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
@@ -128,29 +128,6 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     plt.close()
 
 
-# %% set plotting options for each flight
-plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1, l_loc=1),
-                  Flight_20210626a=dict(figsize=(9.5, 8), cb_loc="bottom", shrink=0.9, l_loc=4),
-                  Flight_20210628a=dict(figsize=(10, 9), cb_loc="left", shrink=1, l_loc=4),
-                  Flight_20210629a=dict(figsize=(9, 8.2), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210629b=dict(figsize=(8, 8), cb_loc="left", shrink=1, l_loc=3),
-                  Flight_20210701a=dict(figsize=(9, 8), cb_loc="bottom", shrink=1, l_loc=2),
-                  Flight_20210705a=dict(figsize=(8, 8), cb_loc="left", shrink=1, l_loc=4),
-                  Flight_20210705b=dict(figsize=(9, 8), cb_loc="left", shrink=1, l_loc=3),
-                  Flight_20210707a=dict(figsize=(10, 7), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210707b=dict(figsize=(10, 7), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210708a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210712a=dict(figsize=(11, 8), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210712b=dict(figsize=(10.5, 8), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210713a=dict(figsize=(9, 9), cb_loc="left", shrink=1, l_loc=1),
-                  Flight_20210715a=dict(figsize=(10, 7), cb_loc="bottom", shrink=1, l_loc=4),
-                  Flight_20210715b=dict(figsize=(10, 7), cb_loc="bottom", shrink=1, l_loc=2),
-                  Flight_20210719a=dict(figsize=(9, 7.3), cb_loc="bottom", shrink=1, l_loc=3),
-                  Flight_20210719b=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=3),
-                  Flight_20210721a=dict(figsize=(10, 5), cb_loc="bottom", shrink=1, l_loc=2),
-                  Flight_20210721b=dict(figsize=(10, 5), cb_loc="bottom", shrink=1, l_loc=4),
-                  Flight_20210723a=dict(figsize=(9, 8.5), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210728a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1))
 # %% loop through timesteps
 # lon1 = lon_sel[0]
 # lat1 = lat_sel[0]
