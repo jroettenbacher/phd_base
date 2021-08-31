@@ -29,5 +29,6 @@ lat_min = ds.IRS_LAT.min().compute().values
 lat_max = ds.IRS_LAT.max().compute().values
 lon_min = ds.IRS_LON.min().compute().values
 lon_max = ds.IRS_LON.max().compute().values
+alt_max = ds.IRS_ALT.max().compute().values
 print(f"Minumum Latitude: {lat_min}°N\nMaximum Latitude: {lat_max}°N\nMinumum Longitude: {lon_min}°E"
-      f"\nMaximum Longitude: {lon_max}°E")
+      f"\nMaximum Longitude: {lon_max}°E\nMaximum Altitutde: {alt_max}m")
