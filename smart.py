@@ -251,13 +251,14 @@ def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     return pixel_nr, wavelength
 
 
-def get_path(key: str, flight: str = None) -> str:
+def get_path(key: str, flight: str = None, instrument: str = None) -> str:
     """
         Read paths from the toml file according to the current working directory.
 
         Args:
             key: which path to return, see function for possible values
             flight: for which flight should the path be provided (eg. Flight_20210625a)
+            instrument: if key=all which instrument to generate the path to? (e.g. BAHAMAS)
 
         Returns: Path to specified data
 
@@ -279,6 +280,8 @@ def get_path(key: str, flight: str = None) -> str:
         paths[k] = os.path.join(base_dir, flight, config[k])
     for k in ["calib", "pixel_wl", "lamp", "panel"]:
         paths[k] = config[k]
+    if key == 'all':
+        paths['all'] = os.path.join(base_dir, config[key], instrument)
 
     return paths[key]
 
