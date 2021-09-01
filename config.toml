@@ -2,8 +2,8 @@
 [cirrus-hl]
 
 [cirrus-hl.jr_local]
-base_dir = "C:/Users/Johannes/Documents/campaigns/CIRRUS-HL/01_Flights"
-raw = "SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
+base_dir = "E:/CIRRUS-HL/01_Flights"
+raw = "SMART/raw"  # raw measurements as given by SMART
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
 quicklooks = "quicklooks"  # quicklook path
@@ -18,8 +18,8 @@ panel = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/panel_34816"  # pa
 gopro = "C:/Users/Johannes/Documents/Gopro"  # directory of GoPro time lapse pictures
 
 [cirrus-hl.jr_ubuntu]
-base_dir = "/mnt/c/Users/Johannes/Documents/campaigns/CIRRUS-HL/01_Flights"
-raw = "SMART/raw"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
+base_dir = "/mnt/e/CIRRUS-HL/01_Flights"
+raw = "SMART/raw"  # raw measurements as given by SMART
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
 quicklooks = "quicklooks"  # quicklook path
@@ -35,14 +35,14 @@ gopro = "/mnt/c/Users/Johannes/Documents/Gopro"  # directory of GoPro time lapse
 # on LIM server
 [cirrus-hl.lim_server]
 base_dir = "/projekt_agmwend/data/Cirrus_HL/01_Flights"
-calib = "/projekt_agmwend/data/Cirrus_HL/03_Calibration"  # calibration measurements
-pixel_wl = "/projekt_agmwend/kalibration/Spektros/pixel_wl"  # pixel to wavelength mapping files
-lamp = "/projekt_agmwend/kalibration/Lamps/FEL-1587"  # lamp specification files
-panel = "/projekt_agmwend/kalibration/Panels/34816"  # panel reflectivity files
-gopro = "/projekt_agmwend/data/Cirrus_HL/04_Gopro"  # directory of GoPro timestamps files
-raw = "SMART"  # raw measurements as given by SMART and merged by smart_merge_minutely_files.py
+raw = "SMART/raw"  # raw measurements as given by SMART
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
 quicklooks = "quicklooks"
 horidata = "horidata"  # path to INS and stabilization data
 bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+calib = "/projekt_agmwend/data/Cirrus_HL/03_Calibration"  # calibration measurements
+pixel_wl = "/projekt_agmwend/kalibration/Spektros/pixel_wl"  # pixel to wavelength mapping files
+lamp = "/projekt_agmwend/kalibration/Lamps/FEL-1587"  # lamp specification files
+panel = "/projekt_agmwend/kalibration/Panels/34816"  # panel reflectivity files
+gopro = "/projekt_agmwend/data/Cirrus_HL/04_Gopro"  # directory of GoPro timestamps files
