@@ -5,7 +5,7 @@ author: Johannes Röttenbacher
 
 # %% import libraries
 import smart
-from smart import lookup
+from cirrus_hl import lookup
 import os
 import pandas as pd
 import numpy as np

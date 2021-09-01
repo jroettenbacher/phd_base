@@ -9,7 +9,8 @@ import os
 import datetime
 from tqdm import tqdm
 from subprocess import run, Popen
-from smart import gopro_lt, gopro_offsets, get_path
+from smart import get_path
+from cirrus_hl import gopro_lt, gopro_offsets
 
 # user input
 flight = "Flight_20210730"

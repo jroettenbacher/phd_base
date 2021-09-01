@@ -6,7 +6,7 @@ author: Johannes Röttenbacher
 import matplotlib
 import matplotlib.pyplot as plt
 import smart
-from smart import stop_over_locations
+from cirrus_hl import stop_over_locations, coordinates
 from functions_jr import make_dir
 import os
 import cartopy.crs as ccrs
@@ -43,7 +43,7 @@ plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1,
 
 
 def plot_bahamas_flight_track(flight: str, **kwargs):
-    f"""
+    """
     Plot a map of the flight track from BAHAMAS data with the location of HALO.
     Args:
         flight: Flight name (eg. Flight_20210707a)
@@ -91,12 +91,12 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
         ax.plot(long, lati, '.r', markersize=10)
 
     # get the coordinates for EDMO and ad a label
-    x_edmo, y_edmo = smart.coordinates["EDMO"]
+    x_edmo, y_edmo = coordinates["EDMO"]
     ax.plot(x_edmo, y_edmo, 'ok')
     ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=16)
     # plot a second airport label if given
     if airport is not None:
-        x2, y2 = smart.coordinates[airport]
+        x2, y2 = coordinates[airport]
         ax.text(x2 + 0.1, y2 + 0.1, airport, fontsize=16)
     # plot flight track and color by flight altitude
     points = ax.scatter(lon, lat, c=altitude/1000, s=10)

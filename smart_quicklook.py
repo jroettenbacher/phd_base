@@ -7,6 +7,7 @@ author: Johannes Roettenbacher
 import os
 from functions_jr import make_dir
 import smart
+from cirrus_hl import lookup
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -74,7 +75,7 @@ inpath = f"{path}/{flight}"  # get inpath for SMART data
 file = [f for f in os.listdir(inpath) if "Fdw_VNIR" in f][0]  # select Fdw VNIR file
 # get info from filename and select pixel to wavelength file
 date_str, channel, direction = smart.get_info_from_filename(file)
-pixel_wl = smart.read_pixel_to_wavelength(smart.get_path("pixel_wl"), smart.lookup[f"{direction}_{channel}"])
+pixel_wl = smart.read_pixel_to_wavelength(smart.get_path("pixel_wl"), lookup[f"{direction}_{channel}"])
 pixel_nr, wl = smart.find_pixel(pixel_wl, 550)
 # read in SMART data and select specified wavelength
 df = smart.read_smart_cor(inpath, file).iloc[:, pixel_nr]

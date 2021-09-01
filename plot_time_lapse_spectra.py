@@ -10,7 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import smart
-from smart import lookup
+from cirrus_hl import lookup
 from functions_jr import make_dir
 from tqdm import tqdm
 from joblib import Parallel, delayed, cpu_count

@@ -8,7 +8,7 @@ import os
 import numpy as np
 import pandas as pd
 import smart
-from smart import lookup
+from cirrus_hl import lookup, transfer_calibs
 from functions_jr import make_dir
 import logging
 
@@ -22,7 +22,7 @@ t_int_asp06 = 300  # give integration time of field measurement for ASP06
 t_int_asp07 = 300  # give integration time of field measurement for ASP07
 normalize = True  # normalize counts with integration time
 # give date of transfer calib to use for calibrating measurement if not same as measurement date else set to ""
-transfer_date = smart.transfer_calibs[flight]
+transfer_date = transfer_calibs[flight]
 date = f"{transfer_date[:4]}_{transfer_date[4:6]}_{transfer_date[6:]}"  # reformat date to match file name
 
 # %% set paths

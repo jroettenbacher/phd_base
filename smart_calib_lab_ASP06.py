@@ -12,7 +12,8 @@
 author: Johannes Roettenbacher"""
 # %%
 import smart
-from smart import lookup, get_path
+from smart import get_path
+from cirrus_hl import lookup
 import os
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d

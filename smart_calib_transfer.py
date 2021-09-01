@@ -12,7 +12,7 @@ author: Johannes Roettenbacher
 
 # %% module import and set paths
 import smart
-from smart import lookup
+from cirrus_hl import lookup
 import os
 import pandas as pd
 import matplotlib.pyplot as plt

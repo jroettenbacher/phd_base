@@ -11,7 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import smart
-from smart import stop_over_locations
+from cirrus_hl import stop_over_locations, coordinates
 from bahamas import plot_props
 from functions_jr import make_dir
 import cartopy.crs as ccrs
@@ -109,12 +109,12 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     # plot an airplane marker for HALO
     ax.plot(lon1, lat1, c="k", marker="$\u2708$", markersize=28, label="HALO")
     # get the coordinates for EDMO and ad a label
-    x_edmo, y_edmo = smart.coordinates["EDMO"]
+    x_edmo, y_edmo = coordinates["EDMO"]
     ax.plot(x_edmo, y_edmo, 'ok')
     ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=16)
     # plot a second airport label if given
     if airport is not None:
-        x2, y2 = smart.coordinates[airport]
+        x2, y2 = coordinates[airport]
         ax.text(x2 + 0.1, y2 + 0.1, airport, fontsize=16)
     # plot flight track and color by flight altitude
     points = ax.scatter(lon, lat, c=bahamas.IRS_ALT/1000, s=10)
