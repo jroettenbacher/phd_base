@@ -96,3 +96,9 @@ def set_xticks_and_xlabels(ax: plt.axis, time_extend: datetime.timedelta) -> plt
         ax.xaxis.set_minor_locator(matplotlib.dates.SecondLocator(interval=10))
 
     return ax
+
+
+def set_cb_friendly_colors():
+    # set new colorblind friendly color cycle
+    CB_color_cycle = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
+    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=CB_color_cycle)
