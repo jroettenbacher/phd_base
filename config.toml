@@ -43,6 +43,7 @@ calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected da
 quicklooks = "quicklooks"
 horidata = "horidata"  # path to INS and stabilization data
 bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+bacardi = "BACARDI"  # BACARDI measurement files
 calib = "/projekt_agmwend/data/Cirrus_HL/03_Calibration"  # calibration measurements
 pixel_wl = "/projekt_agmwend/kalibration/Spektros/pixel_wl"  # pixel to wavelength mapping files
 lamp = "/projekt_agmwend/kalibration/Lamps/FEL-1587"  # lamp specification files
