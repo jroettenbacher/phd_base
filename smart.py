@@ -483,6 +483,9 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
     plot_path = kwargs["plot_path"] if "plot_path" in kwargs else plot_path
     ax = kwargs["ax"] if "ax" in kwargs else None
+    fig = plt.figure()
+    if ax is None:
+        ax = fig.add_subplot(111)
     date_str, channel, direction = get_info_from_filename(filename)
     if "calibrated" in filename:
         smart = read_smart_cor(calibrated_path, filename)
@@ -512,7 +515,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))  # update the index to be numeric
         # join the measurement and pixel to wavelength data frames by pixel
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
-        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel,
+        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel, ax=ax,
                         title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n {begin_dt} - {end_dt}")
         figname = filename.replace('.dat', f'{wl_str}.png')
     elif len(wavelength) == 1:
@@ -520,9 +523,6 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         smart_sel = smart.loc[:, pixel_nr].to_frame()
         begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]
         time_extend = end_dt - begin_dt
-        fig = plt.figure()
-        if ax is None:
-            ax = fig.add_subplot(111)
         smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel=ylabel,
                        title=f"SMART Time Series {title} {direction} {channel}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
         jr.set_xticks_and_xlabels(ax, time_extend)
@@ -532,14 +532,14 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         smart_mean = smart.mean().to_frame()
         smart_mean = smart_mean.set_index(pd.to_numeric(smart_mean.index))
         smart_plot = smart_mean.join(pixel_wl.set_index(pixel_wl["pixel"]))
-        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel,
+        smart_plot.plot(x="wavelength", y=0, legend=False, xlabel="Wavelength (nm)", ylabel=ylabel, ax=ax,
                         title=f"Time Averaged SMART Measurement {title} {direction} {channel}\n "
                               f"{begin_dt:%Y-%m-%d %H:%M:%S} - {end_dt:%Y-%m-%d %H:%M:%S}")
         figname = filename.replace('.dat', f'_{wavelength}.png')
     else:
         raise ValueError("wavelength has to be a list of length 1 or 2 or 'all'!")
 
-    plt.grid()
+    ax.grid()
     plt.tight_layout()
     if save_fig:
         plt.savefig(f"{plot_path}/{figname}", dpi=100)
