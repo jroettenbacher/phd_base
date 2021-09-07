@@ -482,6 +482,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
     data_path = kwargs["path"] if "path" in kwargs else data_path
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
     plot_path = kwargs["plot_path"] if "plot_path" in kwargs else plot_path
+    ax = kwargs["ax"] if "ax" in kwargs else None
     date_str, channel, direction = get_info_from_filename(filename)
     if "calibrated" in filename:
         smart = read_smart_cor(calibrated_path, filename)
@@ -519,10 +520,12 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         smart_sel = smart.loc[:, pixel_nr].to_frame()
         begin_dt, end_dt = smart_sel.index[0], smart_sel.index[-1]
         time_extend = end_dt - begin_dt
-        fig, ax = plt.subplots()
+        fig = plt.figure()
+        if ax is None:
+            ax = fig.add_subplot(111)
         smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel=ylabel,
                        title=f"SMART Time Series {title} {direction} {channel}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
-        # ax = jr.set_xticks_and_xlabels(ax, time_extend)
+        jr.set_xticks_and_xlabels(ax, time_extend)
         figname = filename.replace('.dat', f'_{wl:.1f}nm.png')
     elif wavelength == "all":
         begin_dt, end_dt = smart.index[0], smart.index[-1]
