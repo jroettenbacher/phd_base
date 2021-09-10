@@ -174,6 +174,10 @@ bbr_sim = read_libradtran(flight, libradtran_file)
 bbr_sim_ter = read_libradtran(flight, libradtran_file_ter)
 bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
 
+# %% get mean values for all fluxes
+bbr_sim.mean()
+bbr_sim_ter.mean()
+bacardi_ds.mean()
 # %% plot libradtran simulations together with BACARDI measurements (solar + terrestrial)
 plt.rcdefaults()
 set_cb_friendly_colors()
