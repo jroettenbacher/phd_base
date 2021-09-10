@@ -48,7 +48,6 @@ end_dt = pd.Timestamp(2021, 6, 29, 11, 54)
 below_cloud = (start_dt, pd.Timestamp(2021, 6, 29, 10, 15))
 in_cloud = (pd.Timestamp(2021, 6, 29, 10, 15), pd.Timestamp(2021, 6, 29, 11, 54))
 above_cloud = (pd.Timestamp(2021, 6, 29, 11, 54), pd.Timestamp(2021, 6, 29, 12, 5))
-set_cb_friendly_colors()
 
 # %% find bahamas file and read in bahamas data
 file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
@@ -80,6 +79,7 @@ font = {'weight': 'bold', 'size': 26}
 matplotlib.rc('font', **font)
 # get plot properties
 props = plot_props[flight]
+set_cb_friendly_colors()
 
 # %% plot bahamas map with highlighted below and above cloud sections and sat image
 fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
@@ -175,12 +175,13 @@ bbr_sim_ter = read_libradtran(flight, libradtran_file_ter)
 bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
 
 # %% plot libradtran simulations together with BACARDI measurements (solar + terrestrial)
+plt.rcdefaults()
 set_cb_friendly_colors()
 plt.rc('font', size=20)
 plt.rc('lines', linewidth=3)
-# ,
+
 x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
-fig, ax = plt.subplots(figsize=(12, 9))
+fig, ax = plt.subplots(figsize=(13, 9))
 # solar radiation
 bacardi_ds.F_up_solar.plot(x="time", label="F_up BACARDI", ax=ax, c="#6699CC", ls="-")
 bacardi_ds.F_down_solar.plot(x="time", label="F_down BACARDI", ax=ax, c="#117733", ls="-")
@@ -214,7 +215,7 @@ handles.insert(5, Patch(color='none', label=legend_column_headers[1]))
 # add dummy legend entries to get the right amount of rows per column
 handles.append(Patch(color='none', label=""))
 handles.append(Patch(color='none', label=""))
-ax.legend(handles=handles, bbox_to_anchor=(0.05, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
+ax.legend(handles=handles, bbox_to_anchor=(0.1, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
 plt.subplots_adjust(bottom=0.4)
 plt.tight_layout()
 # plt.show()
@@ -303,24 +304,47 @@ plot_fdw = pd.concat([plot_fdw_vnir, plot_fdw_swir], ignore_index=True)
 plot_fup.sort_values(by="wavelength", inplace=True)
 plot_fdw.sort_values(by="wavelength", inplace=True)
 
+# %% remove 800 - 950 nm from fup -> calibration problem
+plot_fup.iloc[:, 2:] = plot_fup.iloc[:, 2:].where(~plot_fup["wavelength"].between(850, 950), np.nan)
+
+# %% calculate albedo below and above cloud
+albedo = plot_fup.loc[:, ("pixel", "wavelength")].copy()
+albedo["albedo_below_cloud"] = np.abs(plot_fup["fup_below_cloud"] / plot_fdw["fdw_below_cloud"])
+albedo["albedo_above_cloud"] = np.abs(plot_fup["fup_above_cloud"] / plot_fdw["fdw_above_cloud"])
+albedo = albedo.rename(columns={"fup_below_cloud": "albedo_below_cloud", "fup_above_cloud": "albedo_above_cloud"})
+albedo = albedo[albedo["wavelength"] < 2180]
+
 # %% plot averaged spectra F_up and F_dw
 plt.rcParams.update({'font.size': 14})
-fig, axs = plt.subplots(nrows=2)
+set_cb_friendly_colors()
+fig, axs = plt.subplots(figsize=(8, 6), nrows=2)
 plot_fup.plot(x='wavelength', y='fup_below_cloud', ax=axs[0], label="F_up below cloud", linewidth=2)
 plot_fup.plot(x='wavelength', y='fup_above_cloud', ax=axs[0], label="F_up above cloud", linewidth=2)
-axs[0].fill_between(plot_fup.wavelength, 0.1, 0.6, where=(plot_fup.wavelength.between(800, 1000)),
-                    label="Calibration offset", color="grey")
-axs[0].set_ylabel("")
+# axs[0].fill_between(plot_fup.wavelength, 0.1, 0.6, where=(plot_fup.wavelength.between(800, 1000)),
+#                     label="Calibration offset", color="grey")
+axs[0].set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 axs[0].set_xlabel("")
 axs[0].grid()
 axs[0].legend()
-plot_fdw.plot(x='wavelength', y='fdw_below_cloud', ax=axs[1], label="F_down below cloud", linewidth=2)
-plot_fdw.plot(x='wavelength', y='fdw_above_cloud', ax=axs[1], label="F_down above cloud", linewidth=2)
-axs[1].set_ylabel("")
+
+# plot f_dw
+# plot_fdw.plot(x='wavelength', y='fdw_below_cloud', ax=axs[1], label="F_down below cloud", linewidth=2)
+# plot_fdw.plot(x='wavelength', y='fdw_above_cloud', ax=axs[1], label="F_down above cloud", linewidth=2)
+# axs[1].set_ylabel("")
+# axs[1].set_xlabel("")
+# axs[1].grid()
+# axs[1].legend()
+
+# plot albedo
+albedo.plot(x='wavelength', y='albedo_below_cloud', ax=axs[1], label="Albedo below cloud", linewidth=2)
+albedo.plot(x='wavelength', y='albedo_above_cloud', ax=axs[1], label="Albedo above cloud", linewidth=2)
+axs[1].set_ylabel("Albedo")
 axs[1].set_xlabel("")
 axs[1].grid()
 axs[1].legend()
-fig.supylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
+axs[1].set_ylim((0, 1))
+
+# fig.supylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 fig.supxlabel("Wavelength (nm)")
 plt.tight_layout(pad=0.5)
 # plt.show()
