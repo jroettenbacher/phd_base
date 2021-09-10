@@ -17,6 +17,7 @@ from functions_jr import make_dir, set_cb_friendly_colors, set_xticks_and_xlabel
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
+from matplotlib.patches import Patch
 import cartopy
 import cartopy.crs as ccrs
 import xarray as xr
@@ -80,7 +81,7 @@ matplotlib.rc('font', **font)
 # get plot properties
 props = plot_props[flight]
 
-# %% plot bahamas map with highlighted below and above cloud sections
+# %% plot bahamas map with highlighted below and above cloud sections and sat image
 fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
 # ax.stock_img()
 show(sat_ds, ax=ax)
@@ -174,16 +175,27 @@ bbr_sim = read_libradtran(flight, libradtran_file)
 bbr_sim_ter = read_libradtran(flight, libradtran_file_ter)
 bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
 
-# %% plot libradtran simulations together with BACARDI measurements (solar)
+# %% plot libradtran simulations together with BACARDI measurements (solar + terrestrial)
 set_cb_friendly_colors()
-# "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"
-x_sel = (pd.Timestamp(2021, 6, 29, 9), pd.Timestamp(2021, 6, 29, 13))
-fig, ax = plt.subplots()
-bacardi_ds.F_up_solar.plot(x="time", label="F_up solar BACARDI", ax=ax, c="#6699CC", ls="-")
-bacardi_ds.F_down_solar.plot(x="time", label="F_dw solar BACARDI", ax=ax, c="#117733", ls="-")
-bbr_sim.plot(y="F_up", ax=ax, label="F_up solar libRadtran", c="#6699CC", ls="--")
-bbr_sim.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_dw solar libRadtran",
-             c="#117733", ls="--")
+plt.rc('font', size=20)
+plt.rc('lines', linewidth=3)
+# ,
+x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+fig, ax = plt.subplots(figsize=(12, 9))
+# solar radiation
+bacardi_ds.F_up_solar.plot(x="time", label="F_up BACARDI", ax=ax, c="#6699CC", ls="-")
+bacardi_ds.F_down_solar.plot(x="time", label="F_down BACARDI", ax=ax, c="#117733", ls="-")
+bbr_sim.plot(y="F_up", ax=ax, label="F_up libRadtran", c="#6699CC", ls="--",
+             path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+bbr_sim.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_down libRadtran",
+             c="#117733", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+# terrestrial radiation
+bacardi_ds.F_up_terrestrial.plot(x="time", label="F_up BACARDI", ax=ax, c="#CC6677", ls="-")
+bacardi_ds.F_down_terrestrial.plot(x="time", label="F_down BACARDI", ax=ax, c="#f89c20", ls="-")
+bbr_sim_ter.plot(y="F_up", ax=ax, label="F_up libRadtran", c="#CC6677", ls="--",
+                 path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_down libRadtran",
+                 c="#f89c20", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
 ax.set_xlabel("Time (UTC)")
 ax.set_xlim(x_sel)
 set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
@@ -196,11 +208,18 @@ ax.fill_between(bbr_sim.index, 0, 1, where=((in_cloud[0] < bbr_sim.index) & (bbr
                 transform=ax.get_xaxis_transform(), label="inside cloud", color="pink", alpha=0.5)
 ax.fill_between(bbr_sim.index, 0, 1, where=((above_cloud[0] < bbr_sim.index) & (bbr_sim.index < above_cloud[1])),
                 transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
-ax.legend(bbox_to_anchor=(0.05, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
-plt.subplots_adjust(bottom=0.3)
+handles, labels = ax.get_legend_handles_labels()
+legend_column_headers = ["Solar", "Terrestrial"]
+handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+handles.insert(5, Patch(color='none', label=legend_column_headers[1]))
+# add dummy legend entries to get the right amount of rows per column
+handles.append(Patch(color='none', label=""))
+handles.append(Patch(color='none', label=""))
+ax.legend(handles=handles, bbox_to_anchor=(0.05, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
+plt.subplots_adjust(bottom=0.4)
 plt.tight_layout()
 # plt.show()
-plt.savefig(f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance_solar.png", dpi=100)
+plt.savefig(f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance.png", dpi=100)
 plt.close()
 
 # %% plot libradtran simulations together with BACARDI measurements (terrestrial)
