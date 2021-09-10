@@ -168,18 +168,22 @@ plt.close()
 
 # %% read ind libradtran and bacardi files
 libradtran_file = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high.dat"
+libradtran_file_ter = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high_ter.dat"
 bacardi_file = "CIRRUS_HL_F05_20210629a_ADLR_BACARDI_BroadbandFluxes_R0.nc"
 bbr_sim = read_libradtran(flight, libradtran_file)
+bbr_sim_ter = read_libradtran(flight, libradtran_file_ter)
 bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
 
-# %% plot libradtran simulations together with BACARDI measurements
+# %% plot libradtran simulations together with BACARDI measurements (solar)
 set_cb_friendly_colors()
+# "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"
 x_sel = (pd.Timestamp(2021, 6, 29, 9), pd.Timestamp(2021, 6, 29, 13))
 fig, ax = plt.subplots()
-bacardi_ds.F_up_solar.plot(x="time", label="F_up solar BACARDI", ax=ax)
-bacardi_ds.F_down_solar.plot(x="time", label="F_dw solar BACARDI", ax=ax)
-bbr_sim.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_dw solar libRadtran")
-bbr_sim.plot(y="F_up", ax=ax, label="F_up solar libRadtran")
+bacardi_ds.F_up_solar.plot(x="time", label="F_up solar BACARDI", ax=ax, c="#6699CC", ls="-")
+bacardi_ds.F_down_solar.plot(x="time", label="F_dw solar BACARDI", ax=ax, c="#117733", ls="-")
+bbr_sim.plot(y="F_up", ax=ax, label="F_up solar libRadtran", c="#6699CC", ls="--")
+bbr_sim.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_dw solar libRadtran",
+             c="#117733", ls="--")
 ax.set_xlabel("Time (UTC)")
 ax.set_xlim(x_sel)
 set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
@@ -195,6 +199,112 @@ ax.fill_between(bbr_sim.index, 0, 1, where=((above_cloud[0] < bbr_sim.index) & (
 ax.legend(bbox_to_anchor=(0.05, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
 plt.subplots_adjust(bottom=0.3)
 plt.tight_layout()
-plt.show()
-# plt.savefig(f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance.png", dpi=100)
+# plt.show()
+plt.savefig(f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance_solar.png", dpi=100)
+plt.close()
+
+# %% plot libradtran simulations together with BACARDI measurements (terrestrial)
+x_sel = (pd.Timestamp(2021, 6, 29, 9), pd.Timestamp(2021, 6, 29, 13))
+fig, ax = plt.subplots()
+bacardi_ds.F_up_terrestrial.plot(x="time", label="F_up BACARDI", ax=ax)
+bacardi_ds.F_down_terrestrial.plot(x="time", label="F_dw BACARDI", ax=ax)
+bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_dw libRadtran")
+bbr_sim_ter.plot(y="F_up", ax=ax, label="F_up libRadtran")
+ax.set_xlabel("Time (UTC)")
+ax.set_xlim(x_sel)
+set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
+ax.grid()
+# ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
+#                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
+ax.fill_between(bbr_sim.index, 0, 1, where=((below_cloud[0] < bbr_sim.index) & (bbr_sim.index < below_cloud[1])),
+                transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+ax.fill_between(bbr_sim.index, 0, 1, where=((in_cloud[0] < bbr_sim.index) & (bbr_sim.index < in_cloud[1])),
+                transform=ax.get_xaxis_transform(), label="inside cloud", color="pink", alpha=0.5)
+ax.fill_between(bbr_sim.index, 0, 1, where=((above_cloud[0] < bbr_sim.index) & (bbr_sim.index < above_cloud[1])),
+                transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+ax.legend(bbox_to_anchor=(0.1, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
+plt.subplots_adjust(bottom=0.3)
+plt.tight_layout()
+# plt.show()
+plt.savefig(f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance_terrestrial.png", dpi=100)
+plt.close()
+
+# %% read in SMART data
+smart_files = [f for f in os.listdir(smart_dir)]
+smart_files.sort()
+fdw_swir = smart.read_smart_cor(smart_dir, smart_files[2])
+fdw_vnir = smart.read_smart_cor(smart_dir, smart_files[3])
+fup_swir = smart.read_smart_cor(smart_dir, smart_files[4])
+fup_vnir = smart.read_smart_cor(smart_dir, smart_files[5])
+
+# %% average smart spectra over different flight sections
+below_cloud_mean_fdw_vnir = fdw_vnir[below_cloud[0]:below_cloud[1]].mean()
+below_cloud_mean_fup_vnir = fup_vnir[below_cloud[0]:below_cloud[1]].mean()
+below_cloud_mean_fdw_swir = fdw_swir[below_cloud[0]:below_cloud[1]].mean()
+below_cloud_mean_fup_swir = fup_swir[below_cloud[0]:below_cloud[1]].mean()
+
+above_cloud_mean_fdw_vnir = fdw_vnir[above_cloud[0]:above_cloud[1]].mean()
+above_cloud_mean_fup_vnir = fup_vnir[above_cloud[0]:above_cloud[1]].mean()
+above_cloud_mean_fdw_swir = fdw_swir[above_cloud[0]:above_cloud[1]].mean()
+above_cloud_mean_fup_swir = fup_swir[above_cloud[0]:above_cloud[1]].mean()
+
+# %% get pixel to wavelength mapping for each spectrometer
+pixel_wl_dict = dict()
+for filename in smart_files[2:]:
+    date_str, channel, direction = smart.get_info_from_filename(filename)
+    name = f"{direction}_{channel}"
+    spectrometer = smart.lookup[name]
+    pixel_wl_dict[name.casefold()] = smart.read_pixel_to_wavelength(get_path("pixel_wl"), spectrometer)
+
+# %% prepare data frame for plotting VNIR
+plot_fup_vnir = pixel_wl_dict["fup_vnir"]
+plot_fup_vnir["fup_below_cloud"] = below_cloud_mean_fup_vnir.reset_index(drop=True)
+plot_fup_vnir["fup_above_cloud"] = above_cloud_mean_fup_vnir.reset_index(drop=True)
+plot_fdw_vnir = pixel_wl_dict["fdw_vnir"]
+plot_fdw_vnir["fdw_below_cloud"] = below_cloud_mean_fdw_vnir.reset_index(drop=True)
+plot_fdw_vnir["fdw_above_cloud"] = above_cloud_mean_fdw_vnir.reset_index(drop=True)
+
+# filter wrong calibrated wavelengths
+min_wl, max_wl = 385, 900
+plot_fup_vnir = plot_fup_vnir[plot_fup_vnir["wavelength"].between(min_wl, max_wl)]
+plot_fdw_vnir = plot_fdw_vnir[plot_fdw_vnir["wavelength"].between(min_wl, max_wl)]
+
+# %% prepare data frame for plotting SWIR
+plot_fup_swir = pixel_wl_dict["fup_swir"]
+plot_fup_swir["fup_below_cloud"] = below_cloud_mean_fup_swir.reset_index(drop=True)
+plot_fup_swir["fup_above_cloud"] = above_cloud_mean_fup_swir.reset_index(drop=True)
+plot_fdw_swir = pixel_wl_dict["fdw_swir"]
+plot_fdw_swir["fdw_below_cloud"] = below_cloud_mean_fdw_swir.reset_index(drop=True)
+plot_fdw_swir["fdw_above_cloud"] = above_cloud_mean_fdw_swir.reset_index(drop=True)
+
+# %% merge VNIR and SWIR data
+plot_fup = pd.concat([plot_fup_vnir, plot_fup_swir], ignore_index=True)
+plot_fdw = pd.concat([plot_fdw_vnir, plot_fdw_swir], ignore_index=True)
+
+# %% sort dataframes by wavelength
+plot_fup.sort_values(by="wavelength", inplace=True)
+plot_fdw.sort_values(by="wavelength", inplace=True)
+
+# %% plot averaged spectra F_up and F_dw
+plt.rcParams.update({'font.size': 14})
+fig, axs = plt.subplots(nrows=2)
+plot_fup.plot(x='wavelength', y='fup_below_cloud', ax=axs[0], label="F_up below cloud", linewidth=2)
+plot_fup.plot(x='wavelength', y='fup_above_cloud', ax=axs[0], label="F_up above cloud", linewidth=2)
+axs[0].fill_between(plot_fup.wavelength, 0.1, 0.6, where=(plot_fup.wavelength.between(800, 1000)),
+                    label="Calibration offset", color="grey")
+axs[0].set_ylabel("")
+axs[0].set_xlabel("")
+axs[0].grid()
+axs[0].legend()
+plot_fdw.plot(x='wavelength', y='fdw_below_cloud', ax=axs[1], label="F_down below cloud", linewidth=2)
+plot_fdw.plot(x='wavelength', y='fdw_above_cloud', ax=axs[1], label="F_down above cloud", linewidth=2)
+axs[1].set_ylabel("")
+axs[1].set_xlabel("")
+axs[1].grid()
+axs[1].legend()
+fig.supylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
+fig.supxlabel("Wavelength (nm)")
+plt.tight_layout(pad=0.5)
+# plt.show()
+plt.savefig(f"{outpath}/{flight}_SMART_average_spectra.png", dpi=100)
 plt.close()
