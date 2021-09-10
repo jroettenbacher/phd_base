@@ -5,6 +5,7 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
+import numpy as np
 from smart import get_path
 import logging
 from bahamas import plot_props
@@ -15,10 +16,13 @@ import smart
 from functions_jr import make_dir, set_cb_friendly_colors, set_xticks_and_xlabels
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import patheffects
 import cartopy
 import cartopy.crs as ccrs
 import xarray as xr
 import pandas as pd
+import rasterio
+from rasterio.plot import show
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
@@ -31,6 +35,8 @@ log.setLevel(logging.INFO)
 flight = "Flight_20210629a"
 bahamas_dir = get_path("bahamas", flight)
 bacardi_dir = get_path("bacardi", flight)
+smart_dir = get_path("calibrated", flight)
+sat_image = "/projekt_agmwend/data/Cirrus_HL/01_Flights/Flight_20210629a/satellite/snapshot-2021-06-29T00_00_00Z.tiff"
 if os.getcwd().startswith("C:"):
     outpath = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/case_studies/{flight}"
 else:
@@ -40,12 +46,20 @@ start_dt = pd.Timestamp(2021, 6, 29, 10, 10)
 end_dt = pd.Timestamp(2021, 6, 29, 11, 54)
 below_cloud = (start_dt, pd.Timestamp(2021, 6, 29, 10, 15))
 in_cloud = (pd.Timestamp(2021, 6, 29, 10, 15), pd.Timestamp(2021, 6, 29, 11, 54))
-over_cloud = (pd.Timestamp(2021, 6, 29, 11, 54), pd.Timestamp(2021, 6, 29, 12, 5))
-
+above_cloud = (pd.Timestamp(2021, 6, 29, 11, 54), pd.Timestamp(2021, 6, 29, 12, 5))
+set_cb_friendly_colors()
 
 # %% find bahamas file and read in bahamas data
 file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
 bahamas = smart.read_bahamas(f"{bahamas_dir}/{file}")
+
+# %% read in satellite picture
+sat_ds = rasterio.open(sat_image)
+
+# %% select flight sections for plotting
+bahamas_belowcloud = (below_cloud[0] < bahamas.TIME) & (bahamas.TIME < below_cloud[1])
+bahamas_abovecloud = (above_cloud[0] < bahamas.TIME) & (bahamas.TIME < above_cloud[1])
+bahamas_incloud = (in_cloud[0] < bahamas.TIME) & (bahamas.TIME < in_cloud[1])
 
 # %% select further points to plot
 x_edmo, y_edmo = coordinates["EDMO"]
@@ -53,10 +67,8 @@ airport = stop_over_locations[flight] if flight in stop_over_locations else None
 x2, y2 = coordinates[airport]
 torshavn_x, torshavn_y = coordinates["Torshavn"]
 
-# %% select position and time data
+# %% select position and time data and set extent
 lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["TIME"]
-
-# %% set plotting options
 pad = 2
 llcrnlat = lat.min(skipna=True) - pad
 llcrnlon = lon.min(skipna=True) - pad
@@ -68,34 +80,52 @@ matplotlib.rc('font', **font)
 # get plot properties
 props = plot_props[flight]
 
-# %% start plotting
-fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": ccrs.PlateCarree()})
-ax.stock_img()
-ax.coastlines()
-ax.add_feature(cartopy.feature.BORDERS)
+# %% plot bahamas map with highlighted below and above cloud sections
+fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
+# ax.stock_img()
+show(sat_ds, ax=ax)
+ax.coastlines(linewidth=3)
+ax.add_feature(cartopy.feature.BORDERS, linewidth=3)
 ax.set_extent(extent)
 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
 gl.bottom_labels = False
 gl.left_labels = False
 # plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
 for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
-    ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=10)
-    ax.plot(long, lati, '.r', markersize=10)
+    ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=16,
+                path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    ax.plot(long, lati, '.k', markersize=10)
 
-# plot points with labels
+# plot points with labels and white line around text
 ax.plot(x_edmo, y_edmo, 'ok')
-ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=16)
+ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=22,
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 ax.plot(x2, y2, 'ok')
-ax.text(x2 + 0.1, y2 + 0.1, airport, fontsize=16)
+ax.text(x2 + 0.1, y2 + 0.1, airport, fontsize=22,
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 ax.plot(torshavn_x, torshavn_y, 'ok')
-ax.text(torshavn_x + 0.1, torshavn_y + 0.1, "Torshavn", fontsize=16)
+ax.text(torshavn_x + 0.1, torshavn_y + 0.1, "Torshavn", fontsize=22,
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
 # plot flight track and color by flight altitude
-points = ax.scatter(lon, lat, c=altitude / 1000, s=10)
+points = ax.scatter(lon, lat, c="grey", s=10)
 # add the corresponding colorbar and decide whether to plot it horizontally or vertically
-plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+# plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+# plot in and below cloud points for case study
+lon_incloud = bahamas["IRS_LON"].where(bahamas_incloud, drop=True)
+lat_incloud = bahamas["IRS_LAT"].where(bahamas_incloud, drop=True)
+ax.scatter(lon_incloud, lat_incloud, c="pink", s=10, label="inside cloud")
+lon_below = bahamas["IRS_LON"].where(bahamas_belowcloud, drop=True)
+lat_below = bahamas["IRS_LAT"].where(bahamas_belowcloud, drop=True)
+ax.scatter(lon_below, lat_below, c="green", s=10, label="below cloud")
+lon_above = bahamas["IRS_LON"].where(bahamas_abovecloud, drop=True)
+lat_above = bahamas["IRS_LAT"].where(bahamas_abovecloud, drop=True)
+ax.scatter(lon_above, lat_above, c="red", s=10, label="above cloud")
+
+ax.legend(loc=3, fontsize=18, markerscale=6)
 plt.tight_layout(pad=0.1)
 fig_name = f"{outpath}/{flight}_bahamas_track.png"
+# plt.show()
 plt.savefig(fig_name, dpi=100)
 log.info(f"Saved {fig_name}")
 plt.close()
@@ -118,7 +148,7 @@ for ax, ylabel in zip(axs, ylabels):
                     transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
     ax.fill_between(bahamas.TIME, 0, 1, where=((in_cloud[0] < bahamas.TIME) & (bahamas.TIME < in_cloud[1])),
                     transform=ax.get_xaxis_transform(), label="inside cloud", color="pink", alpha=0.5)
-    ax.fill_between(bahamas.TIME, 0, 1, where=((over_cloud[0] < bahamas.TIME) & (bahamas.TIME < over_cloud[1])),
+    ax.fill_between(bahamas.TIME, 0, 1, where=((above_cloud[0] < bahamas.TIME) & (bahamas.TIME < above_cloud[1])),
                     transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
 
 axs[2].set_xlabel("Time (UTC)")
@@ -160,7 +190,7 @@ ax.fill_between(bbr_sim.index, 0, 1, where=((below_cloud[0] < bbr_sim.index) & (
                 transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
 ax.fill_between(bbr_sim.index, 0, 1, where=((in_cloud[0] < bbr_sim.index) & (bbr_sim.index < in_cloud[1])),
                 transform=ax.get_xaxis_transform(), label="inside cloud", color="pink", alpha=0.5)
-ax.fill_between(bbr_sim.index, 0, 1, where=((over_cloud[0] < bbr_sim.index) & (bbr_sim.index < over_cloud[1])),
+ax.fill_between(bbr_sim.index, 0, 1, where=((above_cloud[0] < bbr_sim.index) & (bbr_sim.index < above_cloud[1])),
                 transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
 ax.legend(bbox_to_anchor=(0.05, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
 plt.subplots_adjust(bottom=0.3)
