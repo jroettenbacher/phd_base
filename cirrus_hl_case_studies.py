@@ -174,10 +174,21 @@ bbr_sim = read_libradtran(flight, libradtran_file)
 bbr_sim_ter = read_libradtran(flight, libradtran_file_ter)
 bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
 
-# %% get mean values for all fluxes
-bbr_sim.mean()
-bbr_sim_ter.mean()
-bacardi_ds.mean()
+# %% select flight sections for libRadtran simulations and BACARDI measurements
+bbr_belowcloud = ((below_cloud[0] < bbr_sim.index) & (bbr_sim.index < below_cloud[1]))
+bbr_ter_belowcloud = ((below_cloud[0] < bbr_sim_ter.index) & (bbr_sim_ter.index < below_cloud[1]))
+bacardi_belowcloud = ((below_cloud[0] < bacardi_ds.time) & (bacardi_ds.time < below_cloud[1]))
+bbr_abovecloud = ((above_cloud[0] < bbr_sim.index) & (bbr_sim.index < above_cloud[1]))
+bbr_ter_abovecloud = ((above_cloud[0] < bbr_sim_ter.index) & (bbr_sim_ter.index < above_cloud[1]))
+bacardi_abovecloud = ((above_cloud[0] < bacardi_ds.time) & (bacardi_ds.time < above_cloud[1]))
+
+# %% get mean values for flight sections
+bbr_sim[bbr_belowcloud].mean()
+bbr_sim_ter[bbr_ter_belowcloud].mean()
+bacardi_ds.sel(time=bacardi_belowcloud).mean()
+bbr_sim[bbr_abovecloud].mean()
+bbr_sim_ter[bbr_ter_abovecloud].mean()
+bacardi_ds.sel(time=bacardi_abovecloud).mean()
 # %% plot libradtran simulations together with BACARDI measurements (solar + terrestrial)
 plt.rcdefaults()
 set_cb_friendly_colors()
@@ -206,11 +217,11 @@ set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
 ax.grid()
 # ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
 #                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
-ax.fill_between(bbr_sim.index, 0, 1, where=((below_cloud[0] < bbr_sim.index) & (bbr_sim.index < below_cloud[1])),
+ax.fill_between(bbr_sim.index, 0, 1, where=bbr_belowcloud,
                 transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
 ax.fill_between(bbr_sim.index, 0, 1, where=((in_cloud[0] < bbr_sim.index) & (bbr_sim.index < in_cloud[1])),
                 transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
-ax.fill_between(bbr_sim.index, 0, 1, where=((above_cloud[0] < bbr_sim.index) & (bbr_sim.index < above_cloud[1])),
+ax.fill_between(bbr_sim.index, 0, 1, where=bbr_abovecloud,
                 transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
 handles, labels = ax.get_legend_handles_labels()
 legend_column_headers = ["Solar", "Terrestrial"]
@@ -239,11 +250,11 @@ set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
 ax.grid()
 # ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
 #                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
-ax.fill_between(bbr_sim.index, 0, 1, where=((below_cloud[0] < bbr_sim.index) & (bbr_sim.index < below_cloud[1])),
+ax.fill_between(bbr_sim.index, 0, 1, where=bbr_belowcloud,
                 transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
 ax.fill_between(bbr_sim.index, 0, 1, where=((in_cloud[0] < bbr_sim.index) & (bbr_sim.index < in_cloud[1])),
                 transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
-ax.fill_between(bbr_sim.index, 0, 1, where=((above_cloud[0] < bbr_sim.index) & (bbr_sim.index < above_cloud[1])),
+ax.fill_between(bbr_sim.index, 0, 1, where=bbr_abovecloud,
                 transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
 ax.legend(bbox_to_anchor=(0.1, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
 plt.subplots_adjust(bottom=0.3)
