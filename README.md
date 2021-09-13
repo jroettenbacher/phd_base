@@ -172,9 +172,22 @@ Answer: The conversion of the analog signal to a digital can lead to this.
 
 ## 2. BACARDI
 
-BACARDI is a broadband radiometer mounted on the bottom and the top of HALO.
+**TODO:** 
+* switch radiosonde station according to HALO position
+* set ozone concentration according to date and closest ozone sonde measurement
+* set the albedo according to the land use (Sea surface -> Taylor, land -> average land)
+
+BACARDI is a broadband radiometer mounted on the bottom and top of HALO.
 The data is initially processed by DLR and then Anna Luebke used the scripts provided by André Ehrlich to process the
 data further.
+During the processing libRadtran simulations of cloud free conditions are done along the flight track of HALO.
+For details of the BACARDI post processing see [2.3 BACARDI processing](#23-bacardi-processing).
+
+**Workflow**
+
+* download and process the radiosonde data (needs to be done once for each station)
+* run [libRadtran simulation](#22-libradtran-simulation) for whole flight
+* run [BACARDI processing](#23-bacardi-processing)
 
 ### 2.1 Radiosonde data
 
@@ -184,6 +197,74 @@ The data is downloaded from the [University Wyoming website](http://weather.uwyo
 the HTML site into a text file.
 Then an IDL script from Kevin Wolf is used to extract the necessary data for libRadTran. 
 It can be found here: `/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_prepare_radiosonde_jr.pro`
+
+#### 00_prepare_radiosonde_jr.pro
+
+**Required User Input:**
+
+* station number (select station closest to flight path)
+* quicklook flag
+* month
+* radiosonde file
+
+Run like this:
+```shell
+# cd into script folder
+cd /projekt_agmwend/data/Cirrus_HL/00_Tools/02_soundings
+# start idl
+idl
+# run script
+idl> .r 00_prepare_radiosonde_jr
+```
+
+### 2.2 libRadtran simulation
+
+Run libRadtran simulation along flight track with specified radiosonde data as input.
+
+#### 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+
+**Current settings:**
+* Albedo from Taylor et al. 1996
+
+**Required User Input:**
+
+* Flight date
+* sonde date (mmdd)
+* sounding station (stationname_stationnumber)
+
+Run like this:
+
+```shell
+# cd into script folder
+cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+# start IDL
+idl
+# run script
+idl> .r 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+```
+
+### 2.3 BACARDI processing
+
+For details see the processing script.
+
+#### 00_process_bacardi_V20210903.pro
+
+**Required User Input:**
+
+* Flight date
+* Flight number (Fxx)
+
+Run like this:
+
+```shell
+# cd into script folder
+cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+# start IDL
+idl
+# run script
+idl> .r 00_process_bacardi_V20210903.pro
+```
+
 
 ## 3. BAHAMAS
 
@@ -252,3 +333,11 @@ For testing the first four lines of the last cell can be uncommented and the Par
 It makes sense to run this script on the server to utilize more cores and increase processing speed.
 
 ### 3.4 
+
+## 5. libRadtran
+
+[libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model radiative fluxes
+spectrally resolved.
+
+
+
