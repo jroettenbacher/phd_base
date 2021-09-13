@@ -219,7 +219,8 @@ idl> .r 00_prepare_radiosonde_jr
 
 ### 2.2 libRadtran simulation
 
-Run libRadtran simulation along flight track with specified radiosonde data as input.
+Run libRadtran simulation for solar and terrestrial wavelengths along flight track with specified radiosonde data as 
+input.
 
 #### 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
 
@@ -241,6 +242,28 @@ cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
 idl
 # run script
 idl> .r 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+```
+
+#### 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+
+**Current settings:**
+* Albedo from Taylor et al. 1996
+
+**Required User Input:**
+
+* Flight date
+* sonde date (mmdd)
+* sounding station (stationname_stationnumber)
+
+Run like this:
+
+```shell
+# cd into script folder
+cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+# start IDL
+idl
+# run script
+idl> .r 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
 ```
 
 ### 2.3 BACARDI processing
