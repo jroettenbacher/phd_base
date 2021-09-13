@@ -2,6 +2,9 @@
 """Collects information about the cirrus-hl campaign
 author: Johannes Röttenbacher
 """
+
+from pandas import Timestamp as ts
+
 # inlet to spectrometer mapping and inlet to direction mapping and measurement to spectrometer mapping
 lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
               ASP06_J6="VIS_7_(ASP_06)", ASP07_J3="PGS_4_(ASP_07)", ASP07_J4="VIS_8_(ASP_07)",
@@ -43,3 +46,15 @@ coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.
                    Bergen=(5.218, 60.293), Torshavn=(-6.76, 62.01), München_Oberschleissheim=(11.55, 48.25),
                    Meiningen=(10.38, 50.56), Lerwick=(-1.18, 60.13), Ittoqqortoormiit=(-21.95, 70.48),
                    Tasiilaq=(-37.63, 65.60))
+
+# above, below and in cloud intervals for each flight
+flight_sections = dict(
+    Flight_20210629a=dict(
+        above=[(ts(2021, 6, 29, 11, 54), ts(2021, 6, 29, 12, 5)), (ts(2021, 6, 19, 12, 36), ts(2021, 6, 29, 14, 20))],
+        below=[(ts(2021, 6, 29, 10, 10), ts(2021, 6, 29, 10, 14))],
+        inside=[(ts(2021, 6, 29, 10, 15), ts(2021, 6, 29, 11, 54)), (ts(2021, 6, 29, 12, 8), ts(2021, 6, 29, 12, 25))]),
+    Flight_20210719a=dict(
+        above=[(ts(2021, 7, 19, 10, 20), ts(2021, 7, 19, 12, 5))],
+        below=[(ts(2021, 7, 19, 8, 25), ts(2021, 7, 19, 8, 33)), (ts(2021, 7, 19, 8, 43), ts(2021, 7, 19, 8, 48))],
+        inside=[(ts(2021, 7, 19, 8, 35), ts(2021, 7, 19, 8, 42)), (ts(2021, 7, 19, 8, 48), ts(2021, 7, 19, 10, 9))]
+    ))
