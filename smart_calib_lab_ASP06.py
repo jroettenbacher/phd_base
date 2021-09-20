@@ -91,7 +91,8 @@ pixel_wl["F_ulli"] = pixel_wl["S_ulli"] * pixel_wl["c_lab"]  # calculate irradia
 # %% plot Ulli transfer measurement from laboratory
 fig, ax = plt.subplots()
 ax.plot(pixel_wl["wavelength"], pixel_wl["F_ulli"], color="orange", label="Irradiance")
-ax.set_title(f"Ulli Transfer Sphere Laboratory Calibration \n{spectrometer} {direction} {channel}")
+ax.set_title(f"Ulli Transfer Sphere Laboratory Calibration \n"
+             f"{date_str.replace('_', '-')} {spectrometer} {direction} {channel}")
 ax.set_xlabel("Wavelength (nm)")
 ax.set_ylabel("Irradiance (W$\\,$m$^{-2}$)")
 ax2 = ax.twinx()
