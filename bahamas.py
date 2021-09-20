@@ -6,6 +6,7 @@ author: Johannes Röttenbacher
 import matplotlib
 import matplotlib.pyplot as plt
 import smart
+import xarray as xr
 from cirrus_hl import stop_over_locations, coordinates
 from functions_jr import make_dir
 import os
@@ -59,7 +60,7 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     # find bahamas file
     file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
     # read in bahamas data
-    bahamas = smart.read_bahamas(f"{bahamas_dir}/{file}")
+    bahamas = read_bahamas(f"{bahamas_dir}/{file}")
     # select second airport for map plot according to flight
     airport = stop_over_locations[flight] if flight in stop_over_locations else None
     # select position and time data
@@ -107,6 +108,20 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     plt.savefig(fig_name, dpi=100)
     log.info(f"Saved {fig_name}")
     plt.close()
+
+
+def read_bahamas(bahamas_path: str) -> xr.Dataset:
+    """
+    Reader function for netcdf BAHAMAS data
+    Args:
+        bahamas_path: full path to netcdf file
+
+    Returns: xr.DataSet with BAHAMAS data and Time as dimension
+
+    """
+    ds = xr.open_dataset(bahamas_path)
+    ds = ds.swap_dims({"tid": "TIME"})
+    return ds
 
 
 if __name__ == "__main__":

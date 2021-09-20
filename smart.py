@@ -177,20 +177,6 @@ def read_nav_data(nav_path: str) -> pd.DataFrame:
     return nav
 
 
-def read_bahamas(bahamas_path: str) -> xr.Dataset:
-    """
-    Reader function for netcdf BAHAMAS data
-    Args:
-        bahamas_path: full path to netcdf file
-
-    Returns: xr.DataSet with BAHAMAS data and Time as dimension
-
-    """
-    ds = xr.open_dataset(bahamas_path)
-    ds = ds.swap_dims({"tid": "TIME"})
-    return ds
-
-
 def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     """
     Given the dataframe with the pixel to wavelength mapping, return the pixel and wavelength closest to the requested
