@@ -17,18 +17,21 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 # %% set variables
-field_folder = "ASP07_transfer_calib_20210729"  # transfer calib folder
+field_folder = "ASP06_transfer_calib_20210729"  # transfer calib folder
+lab_cali_date = "2021_03_29"  # set lab calib to relate measurement to
 calib_path = smart.get_path("calib")
 plot_path = smart.get_path("plot")
 t_int = 300  # integration time of transfer calibration measurement
 normalize = True  # normalize counts by integration time
 norm = "_norm" if normalize else ""
+# # loop through all transfer calib folders
+# field_folders = [d for d in next(os.walk(calib_path))[1] if "transfer_calib" in d]
+# for field_folder in field_folders[20:]:
 # list transfer calibration files
 field_cali_files = [f for f in os.listdir(f"{calib_path}/{field_folder}/Tint_{t_int}ms") if f.endswith("cor.dat")]
 # list lab calibration files for selecting the right one
-lab_cali_files = [f for f in os.listdir(calib_path) if f.endswith(f"lab_calib{norm}.dat")]
+lab_cali_files = [f for f in os.listdir(calib_path) if f.endswith(f"lab_calib{norm}.dat") and lab_cali_date in f]
 
 # %% read in Ulli transfer measurement from field
 for field_file in field_cali_files:
@@ -61,6 +64,7 @@ for field_file in field_cali_files:
     ax2 = ax.twinx()
     ax2.plot(lab_df["wavelength"], lab_df["rel_ulli"], label="Lab / Field", color="green")
     ax2.set_ylabel("$S_{ulli, lab} / S_{ulli, field}$")
+    ax2.set_ylim((0, lab_df["rel_ulli"].median() + 3))
     # ask matplotlib for the plotted objects and their labels
     lines, labels = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
