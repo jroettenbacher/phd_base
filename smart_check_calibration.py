@@ -9,8 +9,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from cirrus_hl import lookup
-from smart import get_path
+from bahamas import read_bahamas
+from cirrus_hl import lookup, transfer_calibs
+from smart import get_path, plot_smart_data, read_smart_raw
+from functions_jr import set_cb_friendly_colors
+import logging
+
+log = logging.getLogger("smart")
+log.setLevel(logging.INFO)
 
 # %% set paths
 calib_path = get_path("calib")
@@ -48,12 +54,17 @@ df = df.reset_index(drop=True)
 colors = plt.cm.tab20.colors  # get tab20 colors
 plt.rc('axes', prop_cycle=(mpl.cycler('color', colors)))  # Set the default color cycle
 plt.rc('font', family="serif", size=14)
+zoom = False  # zoom in on y axis
 
 fig, ax = plt.subplots(figsize=(10, 6))
 for date_str in date_strs:
     df[df["date"] == date_str].sort_values(["wavelength"]).plot(x="wavelength", y="rel_ulli", label=date_str, ax=ax)
 
-ax.set_ylim((0, 10))
+if zoom:
+    ax.set_ylim((0, 10))
+    zoom = "_zoom"
+else:
+    zoom = ""
 ax.set_ylabel("$S_{ulli, lab} / S_{ulli, field}$")
 ax.set_xlabel("Wavenlength (nm)")
 ax.set_title(f"Relation between Lab Calib measurement \nand Transfer Calib measurement - {prop}")
@@ -61,7 +72,7 @@ ax.grid()
 ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
 plt.tight_layout()
 # plt.show()
-plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{prop}.png", dpi=100)
+plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{prop}{zoom}.png", dpi=100)
 plt.close()
 
 # %% take the average over n pixels and prepare data frame for plotting
@@ -90,4 +101,53 @@ ax.legend()
 plt.tight_layout()
 # plt.show()
 plt.savefig(f"{plot_path}/SMART_calib_factors_{prop}.png", dpi=100)
+plt.close()
+
+# %% investigate the last four days in more detail because they look wrong, plot calibration files
+mpl.rcdefaults()  # set default plotting options
+flight = "Flight_20210719a"  # "Flight_20210721a"  # "Flight_20210721b" "Flight_20210723a" "Flight_20210728a" "Flight_20210729a"
+transfer_cali_date = transfer_calibs[flight]
+instrument = lookup[prop][:5]
+calibration = f"{instrument}_transfer_calib_{transfer_cali_date}"
+trans_calib_path = f"{calib_path}/{calibration}/Tint_300ms"
+trans_calib_path_dark = f"{calib_path}/{calibration}/dark_300ms"
+trans_calib_files = [f for f in os.listdir(trans_calib_path) if prop in f]
+trans_calib_files_dark = [f for f in os.listdir(trans_calib_path_dark) if prop in f]
+plot_paths = [plot_path, f"{plot_path}/dark"]
+for path, filenames, p_path in zip([trans_calib_path, trans_calib_path_dark],
+                                   [trans_calib_files, trans_calib_files_dark], plot_paths):
+    for filename in filenames:
+        log.info(f"Plotting {path}/{filename}")
+        plot_smart_data(flight, filename, wavelength="all", path=path, plot_path=p_path, save_fig=True)
+
+# %% plot mean dark current over flight; read in all raw files
+flight = "Flight_20210729a"
+props = ["Fdw_SWIR", "Fup_SWIR"]
+dfs, dfs_plot, files_dict = dict(), dict(), dict()
+raw_path = get_path("raw", flight)
+bahamas_path = get_path("bahamas", flight)
+bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
+bahamas_ds = read_bahamas(f"{bahamas_path}/{bahamas_file}")
+for prop in props:
+    files_dict[prop] = [f for f in os.listdir(raw_path) if prop in f]
+    dfs[prop] = pd.concat([read_smart_raw(raw_path, file) for file in files_dict[prop]])
+    # select only rows where the shutter is closed and take mean over all pixels
+    dfs_plot[prop] = dfs[prop][dfs[prop]["shutter"] == 0].iloc[:, 2:].mean(axis=1)
+
+# %% plot mean dark current over flight; take mean over all wavelengths and select only shutter closed rows
+set_cb_friendly_colors()
+fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
+for prop in props:
+    dfs_plot[prop].plot(ax=axs[0], ylabel="Netto Counts", label=f"{prop}")
+bahamas_ds["IRS_ALT_km"] = bahamas_ds["IRS_ALT"] / 1000
+bahamas_ds["IRS_ALT_km"].plot(ax=axs[1], label="BAHAMAS Altitude", color="#DDCC77")
+axs[0].set_ylim((1500, 4000))
+axs[1].set_ylabel("Altitude (km)")
+axs[1].set_xlabel("Time (UTC)")
+for ax in axs:
+    ax.legend()
+    ax.grid()
+fig.suptitle(f"{flight} - Mean Dark Current")
+# plt.show()
+plt.savefig(f"{plot_path}/{flight}_SWIR_mean_dark_current.png", dpi=100)
 plt.close()
