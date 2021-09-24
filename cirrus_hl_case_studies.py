@@ -8,7 +8,7 @@ author: Johannes Röttenbacher
 import numpy as np
 from smart import get_path
 import logging
-from bahamas import plot_props
+from bahamas import plot_props, read_bahamas
 from libradtran import read_libradtran
 from cirrus_hl import stop_over_locations, coordinates
 import os
@@ -29,9 +29,9 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
-#######################################################################################################################
-# 20210629
-#######################################################################################################################
+# %% 20210629
+print(20210629)
+
 # %% set paths
 flight = "Flight_20210629a"
 bahamas_dir = get_path("bahamas", flight)
@@ -51,7 +51,7 @@ above_cloud = (pd.Timestamp(2021, 6, 29, 11, 54), pd.Timestamp(2021, 6, 29, 12, 
 
 # %% find bahamas file and read in bahamas data
 file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
-bahamas = smart.read_bahamas(f"{bahamas_dir}/{file}")
+bahamas = read_bahamas(f"{bahamas_dir}/{file}")
 
 # %% read in satellite picture
 sat_ds = rasterio.open(sat_image)
@@ -166,7 +166,7 @@ plt.savefig(f"{outpath}/{flight}_bahamas_overview.png", dpi=100)
 plt.close()
 
 
-# %% read ind libradtran and bacardi files
+# %% read in libradtran and bacardi files
 libradtran_file = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high.dat"
 libradtran_file_ter = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high_ter.dat"
 bacardi_file = "CIRRUS_HL_F05_20210629a_ADLR_BACARDI_BroadbandFluxes_R0.nc"
@@ -332,7 +332,7 @@ albedo = albedo[albedo["wavelength"] < 2180]
 # %% plot averaged spectra F_up and F_dw
 plt.rcParams.update({'font.size': 14})
 set_cb_friendly_colors()
-fig, axs = plt.subplots(figsize=(8, 6), nrows=2)
+fig, axs = plt.subplots(figsize=(10, 8), nrows=3)
 plot_fup.plot(x='wavelength', y='fup_below_cloud', ax=axs[0], label="F_up below cloud", linewidth=2)
 plot_fup.plot(x='wavelength', y='fup_above_cloud', ax=axs[0], label="F_up above cloud", linewidth=2)
 # axs[0].fill_between(plot_fup.wavelength, 0.1, 0.6, where=(plot_fup.wavelength.between(800, 1000)),
@@ -343,25 +343,104 @@ axs[0].grid()
 axs[0].legend()
 
 # plot f_dw
-# plot_fdw.plot(x='wavelength', y='fdw_below_cloud', ax=axs[1], label="F_down below cloud", linewidth=2)
-# plot_fdw.plot(x='wavelength', y='fdw_above_cloud', ax=axs[1], label="F_down above cloud", linewidth=2)
-# axs[1].set_ylabel("")
-# axs[1].set_xlabel("")
-# axs[1].grid()
-# axs[1].legend()
-
-# plot albedo
-albedo.plot(x='wavelength', y='albedo_below_cloud', ax=axs[1], label="Albedo below cloud", linewidth=2)
-albedo.plot(x='wavelength', y='albedo_above_cloud', ax=axs[1], label="Albedo above cloud", linewidth=2)
-axs[1].set_ylabel("Albedo")
+plot_fdw.plot(x='wavelength', y='fdw_below_cloud', ax=axs[1], label="F_down below cloud", linewidth=2)
+plot_fdw.plot(x='wavelength', y='fdw_above_cloud', ax=axs[1], label="F_down above cloud", linewidth=2)
+axs[1].set_ylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 axs[1].set_xlabel("")
 axs[1].grid()
 axs[1].legend()
-axs[1].set_ylim((0, 1))
+
+# plot albedo
+albedo.plot(x='wavelength', y='albedo_below_cloud', ax=axs[2], label="Albedo below cloud", linewidth=2)
+albedo.plot(x='wavelength', y='albedo_above_cloud', ax=axs[2], label="Albedo above cloud", linewidth=2)
+axs[2].set_ylabel("Albedo")
+axs[2].set_xlabel("")
+axs[2].grid()
+axs[2].legend()
+axs[2].set_ylim((0, 1))
 
 # fig.supylabel("Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 fig.supxlabel("Wavelength (nm)")
 plt.tight_layout(pad=0.5)
 # plt.show()
-plt.savefig(f"{outpath}/{flight}_SMART_average_spectra.png", dpi=100)
+plt.savefig(f"{outpath}/{flight}_SMART_average_spectra_albedo.png", dpi=100)
+plt.close()
+
+# %% 20210625 - Radiation Square
+print("20210625 - Radiation Square")
+# 90° = W, 180° = S, usw.
+rs_start = pd.Timestamp(2021, 6, 25, 11, 30)
+rs_end = pd.Timestamp(2021, 6, 25, 12, 30)
+
+# %% set paths
+flight = "Flight_20210625a"
+bahamas_dir = get_path("bahamas", flight)
+bacardi_dir = get_path("bacardi", flight)
+smart_dir = get_path("calibrated", flight)
+sat_dir = get_path("satellite", flight)
+if os.getcwd().startswith("C:"):
+    outpath = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/case_studies/{flight}"
+else:
+    outpath = f"/projekt_agmwend/home_rad/jroettenbacher/case_studies/{flight}"
+make_dir(outpath)
+
+# %% find bahamas file and read in bahamas data and satellite picture
+file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+bahamas = read_bahamas(f"{bahamas_dir}/{file}")
+sat_image = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
+sat_ds = rasterio.open(f"{sat_dir}/{sat_image}")
+
+# %% BAHAMAS: select position and time data and set extent
+x_edmo, y_edmo = coordinates["EDMO"]
+lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["TIME"]
+pad = 2
+llcrnlat = lat.min(skipna=True) - pad
+llcrnlon = lon.min(skipna=True) - pad
+urcrnlat = lat.max(skipna=True) + pad
+urcrnlon = lon.max(skipna=True) + pad
+extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+font = {'weight': 'bold', 'size': 26}
+matplotlib.rc('font', **font)
+# get plot properties
+props = plot_props[flight]
+set_cb_friendly_colors()
+
+# %% plot bahamas map with sat image
+fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
+# ax.stock_img()
+show(sat_ds, ax=ax)
+ax.coastlines(linewidth=3)
+ax.add_feature(cartopy.feature.BORDERS, linewidth=3)
+ax.set_extent(extent)
+gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+gl.bottom_labels = False
+gl.left_labels = False
+
+# plot flight track
+points = ax.scatter(lon, lat, c=bahamas["IRS_HDG"], linewidth=6)
+# add the corresponding colorbar and decide whether to plot it horizontally or vertically
+plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Heading (°)", shrink=props["shrink"])
+
+# plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
+for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
+    ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=16,
+                path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    ax.plot(long, lati, '.k', markersize=10)
+
+# plot points with labels and white line around text
+ax.plot(x_edmo, y_edmo, 'ok')
+ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=22,
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+plt.tight_layout(pad=0.1)
+fig_name = f"{outpath}/{flight}_bahamas_track_with_sat.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+# %% plot BAHAMAS data for Radiation Square
+matplotlib.rcdefaults()
+bahamas_subset = bahamas.sel(TIME=slice(rs_start, rs_end))
+fig, ax = plt.subplots(subplot_kw={"projection": 'polar'})
+ax.scatter(bahamas_subset["IRS_HDG"], bahamas_subset["TIME"], c=bahamas_subset["TIME"])
+plt.show()
 plt.close()
