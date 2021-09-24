@@ -120,8 +120,8 @@ for path, filenames, p_path in zip([trans_calib_path, trans_calib_path_dark],
         log.info(f"Plotting {path}/{filename}")
         plot_smart_data(flight, filename, wavelength="all", path=path, plot_path=p_path, save_fig=True)
 
-# %% plot mean dark current over flight; read in all raw files
-flight = "Flight_20210729a"
+# %% plot mean dark current for SWIR over flight; read in all raw files
+flight = "Flight_20210728a"
 props = ["Fdw_SWIR", "Fup_SWIR"]
 dfs, dfs_plot, files_dict = dict(), dict(), dict()
 raw_path = get_path("raw", flight)
@@ -134,7 +134,7 @@ for prop in props:
     # select only rows where the shutter is closed and take mean over all pixels
     dfs_plot[prop] = dfs[prop][dfs[prop]["shutter"] == 0].iloc[:, 2:].mean(axis=1)
 
-# %% plot mean dark current over flight; take mean over all wavelengths and select only shutter closed rows
+# plot mean dark current over flight
 set_cb_friendly_colors()
 fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
 for prop in props:
@@ -150,4 +150,36 @@ for ax in axs:
 fig.suptitle(f"{flight} - Mean Dark Current")
 # plt.show()
 plt.savefig(f"{plot_path}/{flight}_SWIR_mean_dark_current.png", dpi=100)
+plt.close()
+
+# %% plot mean dark current for VNIR over flight; read in all raw files
+flight = "Flight_20210723a"
+props = ["Fdw_VNIR", "Fup_VNIR"]
+dfs, dfs_plot, files_dict = dict(), dict(), dict()
+raw_path = get_path("raw", flight)
+bahamas_path = get_path("bahamas", flight)
+bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
+bahamas_ds = read_bahamas(f"{bahamas_path}/{bahamas_file}")
+for prop in props:
+    files_dict[prop] = [f for f in os.listdir(raw_path) if prop in f]
+    dfs[prop] = pd.concat([read_smart_raw(raw_path, file) for file in files_dict[prop]])
+    # select only columns where no signal is measured in the VNIR, drop t_int and shutter column
+    dfs_plot[prop] = dfs[prop].iloc[:, 2:150].mean(axis=1)
+
+# plot mean dark current over flight VNIR
+set_cb_friendly_colors()
+fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
+for prop in props:
+    dfs_plot[prop].plot(ax=axs[0], ylabel="Netto Counts", label=f"{prop}")
+bahamas_ds["IRS_ALT_km"] = bahamas_ds["IRS_ALT"] / 1000
+bahamas_ds["IRS_ALT_km"].plot(ax=axs[1], label="BAHAMAS Altitude", color="#DDCC77")
+axs[0].set_ylim((90, 230))
+axs[1].set_ylabel("Altitude (km)")
+axs[1].set_xlabel("Time (UTC)")
+for ax in axs:
+    ax.legend()
+    ax.grid()
+fig.suptitle(f"{flight} - Mean Dark Current")
+# plt.show()
+plt.savefig(f"{plot_path}/{flight}_VNIR_mean_dark_current.png", dpi=100)
 plt.close()
