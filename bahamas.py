@@ -40,7 +40,8 @@ plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1,
                   Flight_20210721a=dict(figsize=(10, 5), cb_loc="bottom", shrink=1, l_loc=2),
                   Flight_20210721b=dict(figsize=(10, 5), cb_loc="bottom", shrink=1, l_loc=4),
                   Flight_20210723a=dict(figsize=(9, 8.5), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210728a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1))
+                  Flight_20210728a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1),
+                  Flight_20210729a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1))
 
 
 def plot_bahamas_flight_track(flight: str, **kwargs):

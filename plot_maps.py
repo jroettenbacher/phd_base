@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import smart
 from cirrus_hl import stop_over_locations, coordinates
-from bahamas import plot_props
+from bahamas import plot_props, read_bahamas
 from functions_jr import make_dir
 import cartopy.crs as ccrs
 import cartopy
@@ -24,7 +24,7 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.WARNING)
 
 # %% set paths
-date = 20210728
+date = 20210729
 number = "a"
 flight = f"Flight_{date}{number}"
 bahamas_dir = smart.get_path("bahamas", flight)
@@ -35,7 +35,7 @@ file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
 airport = stop_over_locations[flight] if flight in stop_over_locations else None
 
 # %% read in bahamas data
-bahamas = smart.read_bahamas(f"{bahamas_dir}/{file}")
+bahamas = read_bahamas(f"{bahamas_dir}/{file}")
 # select only position data
 lon = bahamas["IRS_LON"]
 lat = bahamas["IRS_LAT"]

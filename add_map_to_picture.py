@@ -13,7 +13,7 @@ import smart
 from functions_jr import make_dir
 
 # %% set paths
-date = "20210728"
+date = "20210729"
 number = "a"
 flight = f"Flight_{date}{number}"
 gopro_dir = smart.get_path('gopro')

@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 # %% set paths
-flight = "Flight_20210707a"
+flight = "Flight_20210729a"
 bahamas_dir = get_path("bahamas", flight)
 bacardi_dir = get_path("bacardi", flight)
 smart_dir = get_path("calibrated", flight)
