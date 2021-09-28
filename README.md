@@ -21,14 +21,14 @@ Each flight folder has one `SMART` folder with the following subfolders:
 * `data_cor`: dark current corrected measurement files
 * `raw`: raw measurement files
 
-  In the calibration folder each calibration is saved in its own folder.
-  Each calibration is used to generate one calibration file, which is corrected for dark current.
+In the calibration folder each calibration is saved in its own folder.
+Each calibration is used to generate one calibration file, which is corrected for dark current.
 
-  A few more folders needed are:
+A few more folders needed are:
 
 * `raw_only`: raw measurement files as written by ASP06/07, do not work on those files, but copy them into `raw`
 * `lamp_F1587`: calibration lamp file
-* `panel_34816`: reflectance panel file for each spectrometer
+* `panel_34816`: reflectance panel file
 * `pixel_wl`: pixel to wavelength files for each spectrometer
 * `plots`: plots and quicklooks
 
@@ -177,8 +177,9 @@ Answer: The conversion of the analog signal to a digital can lead to this.
 * set ozone concentration according to date and closest ozone sonde measurement
 * set the albedo according to the land use (Sea surface -> Taylor, land -> average land)
 
-BACARDI is a broadband radiometer mounted on the bottom and top of HALO.
-The data is initially processed by DLR and then Anna Luebke used the scripts provided by André Ehrlich to process the
+BACARDI is a broadband radiometer mounted on the bottom and top of HALO. 
+The data is initially processed by DLR and then
+Anna Luebke used the scripts provided by André Ehrlich and written by Kevin Wolf to process the
 data further.
 During the processing libRadtran simulations of cloud free conditions are done along the flight track of HALO.
 For details of the BACARDI post processing see [2.3 BACARDI processing](#23-bacardi-processing).
@@ -195,16 +196,17 @@ In order to simulate the clear sky broadband irradiance along the flight path an
 fraction radiosonde data is used. 
 The data is downloaded from the [University Wyoming website](http://weather.uwyo.edu/upperair/sounding.html) by copying
 the HTML site into a text file.
+Data can only be downloaded in monthly chunks.
 Then an IDL script from Kevin Wolf is used to extract the necessary data for libRadTran. 
 It can be found here: `/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_prepare_radiosonde_jr.pro`
 
 #### 00_prepare_radiosonde_jr.pro
 
-**Required User Input:**
+**Input:**
 
-* station number (select station closest to flight path)
-* quicklook flag
-* month
+* station name and number (select station closest to flight path) (User input)
+* quicklook flag (User input)
+* month (User input)
 * radiosonde file
 
 Run like this:
@@ -221,50 +223,8 @@ idl> .r 00_prepare_radiosonde_jr
 
 Run libRadtran simulation for solar and terrestrial wavelengths along flight track with specified radiosonde data as 
 input.
-
-#### 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
-
-**Current settings:**
-* Albedo from Taylor et al. 1996
-
-**Required User Input:**
-
-* Flight date
-* sonde date (mmdd)
-* sounding station (stationname_stationnumber)
-
-Run like this:
-
-```shell
-# cd into script folder
-cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
-# start IDL
-idl
-# run script
-idl> .r 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
-```
-
-#### 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
-
-**Current settings:**
-* Albedo from Taylor et al. 1996
-
-**Required User Input:**
-
-* Flight date
-* sonde date (mmdd)
-* sounding station (stationname_stationnumber)
-
-Run like this:
-
-```shell
-# cd into script folder
-cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
-# start IDL
-idl
-# run script
-idl> .r 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
-```
+This is then used in the BACARDI processing.
+See libRadtran section for details.
 
 ### 2.3 BACARDI processing
 
@@ -288,7 +248,6 @@ idl
 idl> .r 00_process_bacardi_V20210903.pro
 ```
 
-
 ## 3. BAHAMAS
 
 These scripts work with the BAHAMAS system from HALO.
@@ -306,7 +265,7 @@ There a list which tracks the processing status can be found.
 
 Due to the offset from the BAHAMAS time an offset correction has to be applied to each timestamp.
 
-### 3.1 add_timestamp_to_picture.py
+### 4.1 add_timestamp_to_picture.py
 
 Run on Linux (Ubuntu)
 
@@ -324,7 +283,7 @@ This script reads out the DateTimeOriginal meta data tag of each file and correc
 It overwrites the original meta data tag and places a time stamp to the right bottom of the file.
 One can test the time correction by replacing `path` with `file` in `run()` (\~line 38).
 
-### 3.2 write_gopro_timestamps.py
+### 4.2 write_gopro_timestamps.py
 
 Run on Linux (Ubuntu)
 
@@ -338,7 +297,7 @@ Run on Linux (Ubuntu)
 
 Reads the metadata time stamps and saves them together with the picture number in a csv file.
 
-### 3.3 plot_maps.py
+### 4.3 plot_maps.py
 
 **Input:**
 * date of flight (User input)
@@ -355,12 +314,84 @@ In the `plot_props` dictionary the map layout properties for each flight are def
 For testing the first four lines of the last cell can be uncommented and the Parallel call can be commented.
 It makes sense to run this script on the server to utilize more cores and increase processing speed.
 
-### 3.4 
+### 4.4 add_map_to_picture.py
+
+**Input:**
+* date of flight (User input)
+* flight number (User input)
+* maps
+* map numbers from csv file
+
+**Output:**
+* new GoPro picture with map in the upper right corner and timestamp in the lower right corner
+
+Adds the BAHAMAS plot onto the GoPro picture but only for pictures, which were taken in flight, according to the csv file
+from `plot_maps.py`. Saves those pictures in a new folder: `Flight_{yyyymmdda/b}`
 
 ## 5. libRadtran
 
 [libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model radiative fluxes
 spectrally resolved.
 
+The following two scripts are needed in order to prepare the BACARDI processing.
+
+#### 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+
+**TODO:**
+* use specific total column ozone concentrations from OMI 
+  * can be downloaded [here](https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura)
+  * you need a Earth Data account and [add the application to your profile](https://disc.gsfc.nasa.gov/earthdata-login)
+  * checkout the instructions for command line download [here](https://disc.gsfc.nasa.gov/data-access#windows_wget)
+ 
+**Current settings:**
+* Albedo from Taylor et al. 1996
+
+**Required User Input:**
+
+* Flight date
+* sonde date (mmdd)
+* sounding station (stationname_stationnumber)
+* time interval for modelling (time_step)
+
+Run like this:
+
+```shell
+# cd into script folder
+cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+# start IDL
+idl
+# start logging to a file
+idl> journal, 'filename.log'
+# run script
+idl> .r 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+# stop logging
+idl> journal
+```
+
+#### 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+
+**Current settings:**
+* Albedo from Taylor et al. 1996
+
+**Required User Input:**
+
+* Flight date
+* sonde date (mmdd)
+* sounding station (stationname_stationnumber)
+
+Run like this:
+
+```shell
+# cd into script folder
+cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+# start IDL
+idl
+# start logging to a file
+idl> journal, 'filename.log'
+# run script
+idl> .r 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+# stop logging
+idl> journal
+```
 
 
