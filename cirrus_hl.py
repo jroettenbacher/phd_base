@@ -3,7 +3,8 @@
 author: Johannes Röttenbacher
 """
 
-from pandas import Timestamp as ts
+from pandas import Timestamp as Ts
+from pandas import Timedelta as Td
 
 # inlet to spectrometer mapping and inlet to direction mapping and measurement to spectrometer mapping
 lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
@@ -50,11 +51,17 @@ coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.
 # above, below and in cloud intervals for each flight
 flight_sections = dict(
     Flight_20210629a=dict(
-        above=[(ts(2021, 6, 29, 11, 54), ts(2021, 6, 29, 12, 5)), (ts(2021, 6, 19, 12, 36), ts(2021, 6, 29, 14, 20))],
-        below=[(ts(2021, 6, 29, 10, 10), ts(2021, 6, 29, 10, 14))],
-        inside=[(ts(2021, 6, 29, 10, 15), ts(2021, 6, 29, 11, 54)), (ts(2021, 6, 29, 12, 8), ts(2021, 6, 29, 12, 25))]),
+        above=[(Ts(2021, 6, 29, 11, 54), Ts(2021, 6, 29, 12, 5)), (Ts(2021, 6, 19, 12, 36), Ts(2021, 6, 29, 14, 20))],
+        below=[(Ts(2021, 6, 29, 10, 10), Ts(2021, 6, 29, 10, 14))],
+        inside=[(Ts(2021, 6, 29, 10, 15), Ts(2021, 6, 29, 11, 54)), (Ts(2021, 6, 29, 12, 8), Ts(2021, 6, 29, 12, 25))]),
     Flight_20210719a=dict(
-        above=[(ts(2021, 7, 19, 10, 20), ts(2021, 7, 19, 11, 42))],
-        below=[(ts(2021, 7, 19, 8, 25), ts(2021, 7, 19, 8, 33)), (ts(2021, 7, 19, 8, 43), ts(2021, 7, 19, 8, 48))],
-        inside=[(ts(2021, 7, 19, 8, 35), ts(2021, 7, 19, 8, 42)), (ts(2021, 7, 19, 8, 48), ts(2021, 7, 19, 10, 9))]
+        above=[(Ts(2021, 7, 19, 10, 20), Ts(2021, 7, 19, 11, 42))],
+        below=[(Ts(2021, 7, 19, 8, 25), Ts(2021, 7, 19, 8, 33)), (Ts(2021, 7, 19, 8, 43), Ts(2021, 7, 19, 8, 48))],
+        inside=[(Ts(2021, 7, 19, 8, 35), Ts(2021, 7, 19, 8, 42)), (Ts(2021, 7, 19, 8, 48), Ts(2021, 7, 19, 10, 9))]
     ))
+
+# flight hours
+flight_hours = [Td("05:47:00"), Td("07:27:00"), Td("07:33:00"), Td("07:53:00"), Td("02:50:00"), Td("05:07:00"),
+                Td("04:15:00"), Td("07:05:00"), Td("06:16:00"), Td("04:47:00"), Td("04:51:00"), Td("04:58:00"),
+                Td("06:18:00"), Td("05:14:00"), Td("04:07:00"), Td("06:15:00"), Td("06:22:00"), Td("04:27:00"),
+                Td("05:00:00"), Td("05:08:00"), Td("08:02:00"), Td("06:49:00"), Td("04:16:00")]
