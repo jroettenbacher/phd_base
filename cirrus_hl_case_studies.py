@@ -9,6 +9,7 @@ import numpy as np
 from smart import get_path
 import logging
 from bahamas import plot_props, read_bahamas
+from bacardi import fdw_attitude_correction
 from libradtran import read_libradtran
 from cirrus_hl import stop_over_locations, coordinates
 import os
@@ -24,6 +25,7 @@ import xarray as xr
 import pandas as pd
 import rasterio
 from rasterio.plot import show
+from scipy.interpolate import interp1d
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
@@ -369,8 +371,8 @@ plt.close()
 # %% 20210625 - Radiation Square
 print("20210625 - Radiation Square")
 # 90° = W, 180° = S, usw.
-rs_start = pd.Timestamp(2021, 6, 25, 11, 30)
-rs_end = pd.Timestamp(2021, 6, 25, 12, 30)
+rs_start = pd.Timestamp(2021, 6, 25, 11, 45)
+rs_end = pd.Timestamp(2021, 6, 25, 12, 27)
 
 # %% set paths
 flight = "Flight_20210625a"
@@ -389,6 +391,8 @@ file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
 bahamas = read_bahamas(f"{bahamas_dir}/{file}")
 sat_image = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
 sat_ds = rasterio.open(f"{sat_dir}/{sat_image}")
+bahamas_subset = bahamas.sel(TIME=slice(rs_start, rs_end))  # select subset of radiation square
+bahamas_rs = bahamas_subset.where(np.abs(bahamas_subset["IRS_PHI"]) < 1)  # select only sections with roll < 1°
 
 # %% BAHAMAS: select position and time data and set extent
 x_edmo, y_edmo = coordinates["EDMO"]
@@ -439,8 +443,219 @@ log.info(f"Saved {fig_name}")
 plt.close()
 # %% plot BAHAMAS data for Radiation Square
 matplotlib.rcdefaults()
-bahamas_subset = bahamas.sel(TIME=slice(rs_start, rs_end))
-fig, ax = plt.subplots(subplot_kw={"projection": 'polar'})
-ax.scatter(bahamas_subset["IRS_HDG"], bahamas_subset["TIME"], c=bahamas_subset["TIME"])
+fig, axs = plt.subplots(nrows=1)
+axs.plot(bahamas_subset["TIME"], bahamas_subset["IRS_HDG"], label="Heading")
+axs.set_ylabel("Heading (°) 0=N")
+axs.set_xlabel("Time (UTC)")
+axs.set_ylim((0, 360))
+axs.grid()
+axs2 = axs.twinx()
+axs2.plot(bahamas_subset["TIME"], bahamas_subset["IRS_PHI"], color="red", label="Roll")
+axs2.set_ylabel("Roll Angle (°)")
+axs2.set_ylim((-1.5, 1.5))
+axs.set_title(f"BAHAMAS Aircraft Data - {flight}")
+fig.legend(loc=2)
+fig.autofmt_xdate()
+# plt.show()
+fig_name = f"{outpath}/{flight}_roll_heading_rad_square.png"
+plt.savefig(fig_name)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% select only the relevant flight sections, removing the turns and plot it
+matplotlib.rcdefaults()
+fig, axs = plt.subplots(nrows=1)
+axs.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+axs.set_ylabel("Heading (°) 0=N")
+axs.set_xlabel("Time (UTC)")
+axs.set_ylim((0, 360))
+axs.grid()
+axs2 = axs.twinx()
+axs2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_PHI"], color="red", label="Roll")
+axs2.set_ylabel("Roll Angle (°)")
+axs2.set_ylim((-1.5, 1.5))
+axs.set_title(f"BAHAMAS Aircraft Data - {flight}")
+fig.legend(loc=2)
+fig.autofmt_xdate()
+fig_name = f"{outpath}/{flight}_roll_heading_rad_square_filtered.png"
+# plt.show()
+plt.savefig(fig_name)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% read in uncorrected and corrected BACARDI data and check for offsets
+bacardi_ds = xr.open_dataset(f"{bacardi_dir}/CIRRUS_HL_F02_20210625a_ADLR_BACARDI_BroadbandFluxes_R0.nc")
+bacardi_rs = bacardi_ds.sel(time=slice(rs_start, rs_end))  # select only radiation square data
+bacardi_nooffset = xr.open_dataset(f"{bacardi_dir}/CIRRUS_HL_F02_20210625a_ADLR_BACARDI_BroadbandFluxes_R0_0offset.nc")
+bacardi_nooffset_rs = bacardi_nooffset.sel(time=slice(rs_start, rs_end))
+bacardi_uncor = xr.open_dataset(f"{bacardi_dir}/CIRRUS_HL_F02_20210625a_ADLR_BACARDI_BroadbandFluxes_R0_noattcor.nc")
+bacardi_uncor_rs = bacardi_uncor.sel(time=slice(rs_start, rs_end))
+ylims = (1120, 1200)
+
+# %% plot all radiation square BACARDI data
+plt.rc('font', size=14)
+plt.rc('lines', linewidth=3)
+plt.rc('font', family="serif")
+fig, ax = plt.subplots(figsize=(9, 5.5))
+# solar radiation
+bacardi_rs.F_up_solar.plot(x="time", label=r"$F_{\uparrow}$ BACARDI", ax=ax, c="#6699CC", ls="-")
+bacardi_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI", ax=ax, c="#117733", ls="-")
+# terrestrial radiation
+bacardi_rs.F_up_terrestrial.plot(x="time", label=r"$F_{\uparrow}$ BACARDI", ax=ax, c="#CC6677", ls="-")
+bacardi_rs.F_down_terrestrial.plot(x="time", label=r"$F_{\downarrow}$ BACARDI", ax=ax, c="#f89c20", ls="-")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_rs.time[-1]-bacardi_rs.time[0]).values))
+ax.grid()
+handles, labels = ax.get_legend_handles_labels()
+legend_column_headers = ["Solar", "Terrestrial"]
+handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+handles.insert(3, Patch(color='none', label=legend_column_headers[1]))
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
+plt.subplots_adjust(bottom=0.31)
+plt.tight_layout()
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_broadband_irradiance.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% plot F_dw radiation square BACARDI data old EUREC4A offsets
+plt.rc('font', size=14)
+plt.rc('lines', linewidth=3)
+plt.rc('font', family="serif")
+fig, ax = plt.subplots(figsize=(9, 5.5))
+# solar radiation
+bacardi_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI (0.3, 2.55)", ax=ax, c="#117733", ls="-")
+ax2 = ax.twinx()
+heading = ax2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+saa = bacardi_rs.saa.plot(x="time", label="Solar Azimuth Angle")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+ax.set_ylim(ylims)  # fix y limits for better comparison
+ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_rs.time[-1]-bacardi_rs.time[0]).values))
+ax.grid(axis='x')
+ax2.grid()
+handles, labels = ax.get_legend_handles_labels()
+legend_column_headers = ["Solar (Roll offset, Pitch offset)", "Terrestrial"]
+handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+handles.insert(2, heading[0])
+handles.insert(3, saa[0])
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
+plt.subplots_adjust(bottom=0.26)
+plt.tight_layout()
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% plot BACARDI data which has been attitude corrected with no offset
+plt.rc('font', size=14)
+plt.rc('lines', linewidth=3)
+plt.rc('font', family="serif")
+fig, ax = plt.subplots(figsize=(9, 5.5))
+# solar radiation
+bacardi_nooffset_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI (0, 0)", ax=ax, c="#117733", ls="-")
+ax2 = ax.twinx()
+heading = ax2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+saa = bacardi_nooffset_rs.saa.plot(x="time", label="Solar Azimuth Angle")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+ax.set_ylim(ylims)  # fix y limits for better comparison
+ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_nooffset_rs.time[-1]-bacardi_nooffset_rs.time[0]).values))
+ax.grid(axis='x')
+ax2.grid()
+handles, labels = ax.get_legend_handles_labels()
+legend_column_headers = ["Solar (Roll offset, Pitch offset)", "Terrestrial"]
+handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+handles.insert(2, heading[0])
+handles.insert(3, saa[0])
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
+plt.subplots_adjust(bottom=0.26)
+plt.tight_layout()
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading_no_offset.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% plot BACARDI data with no attitude correction
+plt.rc('font', size=14)
+plt.rc('lines', linewidth=3)
+plt.rc('font', family="serif")
+fig, ax = plt.subplots(figsize=(9, 5.5))
+# solar radiation
+bacardi_uncor_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI (None, None)", ax=ax, c="#117733", ls="-")
+ax2 = ax.twinx()
+heading = ax2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+saa = bacardi_uncor_rs.saa.plot(x="time", label="Solar Azimuth Angle")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+ax.set_ylim(ylims)  # fix y limits for better comparison
+ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_uncor_rs.time[-1]-bacardi_uncor_rs.time[0]).values))
+ax.grid(axis='x')
+ax2.grid()
+handles, labels = ax.get_legend_handles_labels()
+legend_column_headers = ["Solar (Roll offset, Pitch offset)", "Terrestrial"]
+handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+handles.insert(2, heading[0])
+handles.insert(3, saa[0])
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
+plt.subplots_adjust(bottom=0.26)
+plt.tight_layout()
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading_no_att_cor.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% vary roll and pitch offsets and correct F_dw
+roll_offset = 1
+pitch_offset = 3
+dirdiff = read_libradtran(flight, "BBR_DirectFraction_Flight_20210625a_R0_ds_high.dat")
+dirdiff_rs = dirdiff.loc[rs_start:rs_end]
+# interpolate f_dir on bacardi time
+f_dir_func = interp1d(dirdiff_rs.index.values.astype(float), dirdiff_rs.f_dir, fill_value="extrapolate")
+f_dir_inp = f_dir_func(bahamas_rs.TIME.values.astype(float))
+F_down_solar_att = fdw_attitude_correction(bacardi_uncor_rs.F_down_solar.values,
+                                           roll=bahamas_rs.IRS_PHI.values, pitch=bahamas_rs.IRS_THE.values,
+                                           yaw=bahamas_rs.IRS_HDG.values, sza=bacardi_uncor_rs.sza.values,
+                                           saa=bacardi_uncor_rs.sza.values, fdir=f_dir_inp,
+                                           r_off=roll_offset, p_off=pitch_offset)
+
+# %% plot new attitude corrected downward solar irradiance
+plt.rc('font', size=14)
+plt.rc('lines', linewidth=3)
+plt.rc('font', family="serif")
+fig, ax = plt.subplots(figsize=(9, 5.5))
+# solar radiation
+bacardi_uncor_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI (None, None)", ax=ax, c="#117733", ls="-")
+ax.plot(bahamas_rs["TIME"], F_down_solar_att, label=f"F_dw BACARDI ({roll_offset}, {pitch_offset})", ls="-",
+        c="#CC6677")
+ax2 = ax.twinx()
+heading = ax2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+saa = bacardi_uncor_rs.saa.plot(x="time", label="Solar Azimuth Angle")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+ax.set_ylim(ylims)  # fix y limits for better comparison
+ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_uncor_rs.time[-1]-bacardi_uncor_rs.time[0]).values))
+ax.grid(axis='x')
+ax2.grid()
+handles, labels = ax.get_legend_handles_labels()
+legend_column_headers = ["Solar (Roll offset, Pitch offset)", "Terrestrial"]
+handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+handles.insert(3, heading[0])
+handles.insert(4, saa[0])
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
+plt.subplots_adjust(bottom=0.31)
+plt.tight_layout()
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading_new_att_corr.png"
 plt.show()
+# plt.savefig(fig_name, dpi=100)
+# log.info(f"Saved {fig_name}")
 plt.close()
