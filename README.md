@@ -256,18 +256,16 @@ BAHAMAS gives in situ and flight data like altitude, temperature, wind speed and
 ## 4. GoPro Time Lapse quicklooks
 
 During the flight a GoPro was attached to the second window on the left side of HALO.
-Using the time lapse function a picture was taken every 5 seconds.
-Together with BAHAMAS position data (and SMART spectra measurements) a time lapse video is created.
+Using the time-lapse function a picture was taken every 5 seconds.
+Together with BAHAMAS position data (and SMART spectra measurements) a time-lapse video is created.
 The GoPro was set to UTC time but cannot be synchronized to BAHAMAS.
-At one point it reset its internal time to local time, so the meta data for some flights had to be corrected.
+At one point it reset its internal time to local time, so the metadata for some flights had to be corrected.
 See the `README.md` in the GoPro Folder for details.
-There a list which tracks the processing status can be found.
+A list which tracks the processing status can be found there.
 
 Due to the offset from the BAHAMAS time an offset correction has to be applied to each timestamp.
 
 ### 4.1 add_timestamp_to_picture.py
-
-Run on Linux (Ubuntu)
 
 **Input:**
 * flight (User input)
@@ -282,10 +280,9 @@ Run on Linux (Ubuntu)
 This script reads out the DateTimeOriginal meta data tag of each file and corrects it for the LT to UTC and BAHAMAS offset if necessary.
 It overwrites the original meta data tag and places a time stamp to the right bottom of the file.
 One can test the time correction by replacing `path` with `file` in `run()` (\~line 38).
+Run on Linux.
 
 ### 4.2 write_gopro_timestamps.py
-
-Run on Linux (Ubuntu)
 
 **Input:** 
 * flight date (User input)
@@ -296,6 +293,7 @@ Run on Linux (Ubuntu)
 * csv file with datetime from picture meta data and picture number
 
 Reads the metadata time stamps and saves them together with the picture number in a csv file.
+Run on Linux.
 
 ### 4.3 plot_maps.py
 
@@ -326,12 +324,30 @@ It makes sense to run this script on the server to utilize more cores and increa
 * new GoPro picture with map in the upper right corner and timestamp in the lower right corner
 
 Adds the BAHAMAS plot onto the GoPro picture but only for pictures, which were taken in flight, according to the csv file
-from `plot_maps.py`. Saves those pictures in a new folder: `Flight_{yyyymmdda/b}`
+from `plot_maps.py`. Saves those pictures in a new folder: `Flight_{yyyymmdda/b}`.
+Run on Linux.
+
+### 4.5 make_video_from_pictures.sh
+
+**Input:**
+* date of flight (User input)
+* number of flight (User input)
+* framerate [12, 24] (User input)
+* start_number, number in filename of first picture in folder (User input)
+* GoPro pictures with map and timestamp
+
+**Output:**
+* video (slow or fast) of flight from GoPro pictures
+
+Uses ffmpeg to create a stop motion video of the GoPro pictures.
+Run on Linux.
 
 ## 5. libRadtran
 
 [libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model radiative fluxes
 spectrally resolved.
+
+### 5.1 BACARDI processing
 
 The following two scripts are needed in order to prepare the BACARDI processing.
 
