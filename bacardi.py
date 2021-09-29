@@ -12,6 +12,46 @@ from matplotlib.patches import Patch
 from functions_jr import set_xticks_and_xlabels
 from libradtran import read_libradtran
 import pandas as pd
+import numpy as np
+
+# %% functions
+
+
+def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float = 0, p_off: float = 0):
+    """
+    Attitude Correction for downward irradiance
+    corrects downward irradiance for misalignment of the sensor (deviation from hoizontal alignment)
+    - only direct fraction of irradiance can be corrected by the equation, therefore a direct fraction (fdir) has to be provided
+    - please check correct definition of the attitude angle
+    - for differences between the sensor attitude and the attitude given by an INS the offset angles (p_off and r_off) can be defined.
+
+    Args:
+        fdw: downward irradiance [W m-2] or [W m-2 nm-1]
+        roll: roll angle [deg]      		  - defined positive for left wing up
+        pitch: pitch angle [deg]	  		  - defined positive for nose down
+        yaw: yaw angle [deg]		  		  - defined clockwise with North=0°
+        sza: solar zenith angle [deg]
+        saa: solar azimuth angle [deg]	  - defined clockwise with North=0°
+        r_off: roll offset angle between INS and sensor [deg]   - defined positive for left wing up
+        p_off: pitch offset angle between INS and sensor [deg]  - defined positive for nose down
+        fdir: fraction of direct radiation [0..1]# 0=pure diffuse, 1=pure direct
+
+    Returns: corrected downward irradiance [W m-2] or [W m-2 nm-1]
+
+    """
+    r = np.deg2rad(roll + r_off)
+    p = np.deg2rad(pitch + p_off)
+    h0 = np.deg2rad(90. - sza)
+
+    factor = np.sin(h0) / \
+             (np.cos(h0) * np.sin(r) * np.sin(np.deg2rad(saa - yaw)) +
+              np.cos(h0) * np.sin(p) * np.cos(r) * np.cos(np.deg2rad(saa - yaw)) +
+              np.sin(h0) * np.cos(p) * np.cos(r))
+
+    fdw_cor = fdir * fdw * factor + (1 - fdir) * fdw
+
+    return fdw_cor
+
 
 # %% set paths
 flight = "Flight_20210719a"
