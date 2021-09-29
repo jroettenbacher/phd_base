@@ -13,6 +13,10 @@ lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PG
               Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4", Fup_SWIR="ASP06_J5", Fup_VNIR="ASP06_J6",
               Iup_SWIR="ASP07_J3", Iup_VNIR="ASP07_J4")
 
+# BACARDI pitch and roll offset of upward facing sensor
+roll_offset = 0.3
+pitch_offset = 2.55
+
 # transfer calibrations to each flight
 transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625", Flight_20210626a="20210627",
                        Flight_20210628a="20210629", Flight_20210629a="20210630", Flight_20210629b="20210630",
