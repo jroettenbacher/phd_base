@@ -9,7 +9,7 @@ from smart import get_path
 import logging
 from bahamas import plot_props, read_bahamas, plot_bahamas_flight_track
 from libradtran import read_libradtran
-from cirrus_hl import stop_over_locations, coordinates
+from cirrus_hl import stop_over_locations, coordinates, flight_hours
 import os
 import smart
 from functions_jr import make_dir, set_cb_friendly_colors, set_xticks_and_xlabels
@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 # %% set paths
-flight = "Flight_20210729a"
+flight = "Flight_20210629b"
 bahamas_dir = get_path("bahamas", flight)
 bacardi_dir = get_path("bacardi", flight)
 smart_dir = get_path("calibrated", flight)
@@ -41,3 +41,6 @@ bahamas = read_bahamas(f"{bahamas_dir}/{file}")
 
 # %% plot bahamas flight track
 plot_bahamas_flight_track(flight, outpath=outpath)
+
+# %% calculate total flight hours
+total_flight_hours = np.sum(flight_hours).total_seconds() / 60 / 60
