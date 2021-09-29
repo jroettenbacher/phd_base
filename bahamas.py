@@ -13,6 +13,7 @@ import os
 import cartopy.crs as ccrs
 import cartopy
 import logging
+import pandas as pd
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
@@ -66,6 +67,8 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     airport = stop_over_locations[flight] if flight in stop_over_locations else None
     # select position and time data
     lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["TIME"]
+    # calculate flight duration
+    flight_duration = pd.Timedelta((times[-1] - times[0]).values).to_pytimedelta()
     # set extent of plot
     pad = 2
     llcrnlat = lat.min(skipna=True) - pad
@@ -104,6 +107,8 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     points = ax.scatter(lon, lat, c=altitude/1000, s=10)
     # add the corresponding colorbar and decide whether to plot it horizontally or vertically
     plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+    # write the flight duration in the lower left corner of the map
+    ax.text(0, 0.01, f"Duration: {str(flight_duration)[:4]} (hr:min)", transform=ax.transAxes, fontsize=14)
     plt.tight_layout(pad=0.1)
     fig_name = f"{outpath}/{flight}_bahamas_track.png"
     plt.savefig(fig_name, dpi=100)
