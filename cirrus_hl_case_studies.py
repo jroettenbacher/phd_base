@@ -167,7 +167,6 @@ plt.tight_layout()
 plt.savefig(f"{outpath}/{flight}_bahamas_overview.png", dpi=100)
 plt.close()
 
-
 # %% read in libradtran and bacardi files
 libradtran_file = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high.dat"
 libradtran_file_ter = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high_ter.dat"
@@ -215,7 +214,7 @@ bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)",
                  c="#f89c20", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
 ax.set_xlabel("Time (UTC)")
 ax.set_xlim(x_sel)
-set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
+set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
 ax.grid()
 # ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
 #                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
@@ -248,7 +247,7 @@ bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)",
 bbr_sim_ter.plot(y="F_up", ax=ax, label="F_up libRadtran")
 ax.set_xlabel("Time (UTC)")
 ax.set_xlim(x_sel)
-set_xticks_and_xlabels(ax, x_sel[1]-x_sel[0])
+set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
 ax.grid()
 # ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
 #                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
@@ -505,7 +504,7 @@ bacardi_rs.F_up_terrestrial.plot(x="time", label=r"$F_{\uparrow}$ BACARDI", ax=a
 bacardi_rs.F_down_terrestrial.plot(x="time", label=r"$F_{\downarrow}$ BACARDI", ax=ax, c="#f89c20", ls="-")
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
-set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_rs.time[-1]-bacardi_rs.time[0]).values))
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_rs.time[-1] - bacardi_rs.time[0]).values))
 ax.grid()
 handles, labels = ax.get_legend_handles_labels()
 legend_column_headers = ["Solar", "Terrestrial"]
@@ -534,7 +533,7 @@ ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
 ax.set_ylim(ylims)  # fix y limits for better comparison
 ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
-set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_rs.time[-1]-bacardi_rs.time[0]).values))
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_rs.time[-1] - bacardi_rs.time[0]).values))
 ax.grid(axis='x')
 ax2.grid()
 handles, labels = ax.get_legend_handles_labels()
@@ -565,7 +564,7 @@ ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
 ax.set_ylim(ylims)  # fix y limits for better comparison
 ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
-set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_nooffset_rs.time[-1]-bacardi_nooffset_rs.time[0]).values))
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_nooffset_rs.time[-1] - bacardi_nooffset_rs.time[0]).values))
 ax.grid(axis='x')
 ax2.grid()
 handles, labels = ax.get_legend_handles_labels()
@@ -596,7 +595,7 @@ ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
 ax.set_ylim(ylims)  # fix y limits for better comparison
 ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
-set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_uncor_rs.time[-1]-bacardi_uncor_rs.time[0]).values))
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_uncor_rs.time[-1] - bacardi_uncor_rs.time[0]).values))
 ax.grid(axis='x')
 ax2.grid()
 handles, labels = ax.get_legend_handles_labels()
@@ -626,24 +625,30 @@ F_down_solar_att = fdw_attitude_correction(bacardi_uncor_rs.F_down_solar.values,
                                            yaw=bahamas_rs.IRS_HDG.values, sza=bacardi_uncor_rs.sza.values,
                                            saa=bacardi_uncor_rs.sza.values, fdir=f_dir_inp,
                                            r_off=roll_offset, p_off=pitch_offset)
+# TODO: add quality check from idl script
 
 # %% plot new attitude corrected downward solar irradiance
+roll_offset = -0.15
+pitch_offset = 3.1
+bacardi_1 = xr.open_dataset(f"{bacardi_dir}/"
+                            f"CIRRUS_HL_F02_20210625a_ADLR_BACARDI_BroadbandFluxes_R0_{roll_offset}_{pitch_offset}.nc")
+bacardi_1_rs = bacardi_1.sel(time=slice(rs_start, rs_end))
 plt.rc('font', size=14)
 plt.rc('lines', linewidth=3)
 plt.rc('font', family="serif")
 fig, ax = plt.subplots(figsize=(9, 5.5))
 # solar radiation
 bacardi_uncor_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI (None, None)", ax=ax, c="#117733", ls="-")
-ax.plot(bahamas_rs["TIME"], F_down_solar_att, label=f"F_dw BACARDI ({roll_offset}, {pitch_offset})", ls="-",
-        c="#CC6677")
+bacardi_1_rs.F_down_solar.plot(x="time", label=f"F_dw BACARDI ({roll_offset}, {pitch_offset})", ax=ax, ls="-",
+                               c="#CC6677")
 ax2 = ax.twinx()
 heading = ax2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
 saa = bacardi_uncor_rs.saa.plot(x="time", label="Solar Azimuth Angle")
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
-ax.set_ylim(ylims)  # fix y limits for better comparison
+ax.set_ylim(ylims)  # fix y limits for better comparison (1140, 1170)
 ax2.set_ylabel("Heading (°) 0=N, Solar Azimuth Angle")
-set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_uncor_rs.time[-1]-bacardi_uncor_rs.time[0]).values))
+set_xticks_and_xlabels(ax, pd.to_timedelta((bacardi_uncor_rs.time[-1] - bacardi_uncor_rs.time[0]).values))
 ax.grid(axis='x')
 ax2.grid()
 handles, labels = ax.get_legend_handles_labels()
@@ -654,8 +659,8 @@ handles.insert(4, saa[0])
 ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
 plt.subplots_adjust(bottom=0.31)
 plt.tight_layout()
-fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading_new_att_corr.png"
-plt.show()
-# plt.savefig(fig_name, dpi=100)
-# log.info(f"Saved {fig_name}")
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading_new_att_corr_{roll_offset}_{pitch_offset}.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
 plt.close()
