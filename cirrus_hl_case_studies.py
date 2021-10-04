@@ -664,3 +664,199 @@ fig_name = f"{outpath}/CIRRUS_HL_{flight}_bacardi_fdw_saa_heading_new_att_corr_{
 plt.savefig(fig_name, dpi=100)
 log.info(f"Saved {fig_name}")
 plt.close()
+
+# %% 20210712 First day with SMART fixed
+print("20210712 SMART fixed")
+rs_start = pd.Timestamp(2021, 7, 12, 13, 15)
+rs_end = pd.Timestamp(2021, 7, 12, 15, 15)
+flight = "Flight_20210712b"
+bahamas_dir = get_path("bahamas", flight)
+bacardi_dir = get_path("bacardi", flight)
+smart_dir = get_path("calibrated", flight)
+sat_dir = get_path("satellite", flight)
+if os.getcwd().startswith("C:"):
+    outpath = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/case_studies/{flight}"
+else:
+    outpath = f"/projekt_agmwend/home_rad/jroettenbacher/case_studies/{flight}"
+make_dir(outpath)
+# %% find bahamas file and read in bahamas data and satellite picture
+file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+bahamas = read_bahamas(f"{bahamas_dir}/{file}")
+sat_image = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
+sat_ds = rasterio.open(f"{sat_dir}/{sat_image}")
+bahamas_rs = bahamas.sel(TIME=slice(rs_start, rs_end))  # select subset of radiation square
+# bahamas_rs = bahamas_subset.where(np.abs(bahamas_subset["IRS_PHI"]) < 1)  # select only sections with roll < 1°
+
+# %% BAHAMAS: select position and time data and set extent
+x_edmo, y_edmo = coordinates["EDMO"]
+lon, lat, altitude, times = bahamas_rs["IRS_LON"], bahamas_rs["IRS_LAT"], bahamas_rs["IRS_ALT"], bahamas_rs["TIME"]
+pad = 2
+llcrnlat = lat.min(skipna=True) - pad
+llcrnlon = lon.min(skipna=True) - pad
+urcrnlat = lat.max(skipna=True) + pad
+urcrnlon = lon.max(skipna=True) + pad
+extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+font = {'weight': 'bold', 'size': 26}
+matplotlib.rc('font', **font)
+# get plot properties
+props = plot_props[flight]
+set_cb_friendly_colors()
+
+# %% plot bahamas map with sat image
+fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
+# ax.stock_img()
+show(sat_ds, ax=ax)
+ax.coastlines(linewidth=3)
+ax.add_feature(cartopy.feature.BORDERS, linewidth=3)
+ax.set_extent(extent)
+gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+gl.bottom_labels = False
+gl.left_labels = False
+
+# plot flight track
+points = ax.scatter(lon, lat, c=bahamas_rs["IRS_ALT"]/1000, linewidth=6)
+# add the corresponding colorbar and decide whether to plot it horizontally or vertically
+plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+
+# plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
+for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
+    ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=16,
+                path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    ax.plot(long, lati, '.k', markersize=10)
+
+# plot points with labels and white line around text
+# ax.plot(x_edmo, y_edmo, 'ok')
+# ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=22,
+#         path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+plt.tight_layout(pad=0.1)
+fig_name = f"{outpath}/{flight}_bahamas_track_with_sat.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% 20210715 Spain flight for contrail outbreak and Radiation Square candidate
+print("20210715 SMART fixed - contrail outbreak over Spain - Radiation Square")
+rs_start = pd.Timestamp(2021, 7, 15, 8, 0)
+rs_end = pd.Timestamp(2021, 7, 15, 10, 0)
+flight = "Flight_20210715a"
+bahamas_dir = get_path("bahamas", flight)
+bacardi_dir = get_path("bacardi", flight)
+smart_dir = get_path("calibrated", flight)
+sat_dir = get_path("satellite", flight)
+if os.getcwd().startswith("C:"):
+    outpath = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/case_studies/{flight}"
+else:
+    outpath = f"/projekt_agmwend/home_rad/jroettenbacher/case_studies/{flight}"
+make_dir(outpath)
+
+# %% find files and read them in
+bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+bahamas = read_bahamas(f"{bahamas_dir}/{bahamas_file}")
+bacardi_file = [f for f in os.listdir(bacardi_dir) if f.endswith("R0.nc")][0]
+bacardi = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
+bacardi_rs = bacardi.sel(time=slice(rs_start, rs_end))
+sat_image = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
+sat_ds = rasterio.open(f"{sat_dir}/{sat_image}")
+bahamas_rs = bahamas.sel(TIME=slice(rs_start, rs_end))  # select subset of radiation square
+smart_fdw_vnir_file = [f for f in os.listdir(smart_dir) if "Fdw_VNIR" in f][0]
+smart_fdw_vnir = smart.read_smart_cor(smart_dir, smart_fdw_vnir_file)
+smart_fdw_vnir_rs = smart_fdw_vnir.loc[rs_start:rs_end]
+
+# %% BAHAMAS: select position and time data and set extent
+x_santiago, y_santiago = coordinates["Santiago"]
+lon, lat, altitude, times = bahamas_rs["IRS_LON"], bahamas_rs["IRS_LAT"], bahamas_rs["IRS_ALT"], bahamas_rs["TIME"]
+pad = 2
+llcrnlat = lat.min(skipna=True) - pad
+llcrnlon = lon.min(skipna=True) - pad
+urcrnlat = lat.max(skipna=True) + pad
+urcrnlon = lon.max(skipna=True) + pad
+extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+font = {'weight': 'bold', 'size': 26}
+matplotlib.rc('font', **font)
+# get plot properties
+props = plot_props[flight]
+set_cb_friendly_colors()
+
+# %% plot bahamas map with sat image
+fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
+# ax.stock_img()
+show(sat_ds, ax=ax)
+ax.coastlines(linewidth=3)
+ax.add_feature(cartopy.feature.BORDERS, linewidth=3)
+ax.set_extent(extent)
+gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+gl.bottom_labels = False
+gl.left_labels = False
+
+# plot flight track
+points = ax.scatter(lon, lat, c=bahamas_rs["IRS_ALT"]/1000, linewidth=6)
+# add the corresponding colorbar and decide whether to plot it horizontally or vertically
+plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+
+# plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
+for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
+    ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=16,
+                path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    ax.plot(long, lati, '.k', markersize=10)
+
+# plot points with labels and white line around text
+ax.plot(x_santiago, y_santiago, 'ok')
+ax.text(x_santiago + 0.1, y_santiago + 0.1, "Santiago", fontsize=22,
+        path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+plt.tight_layout(pad=0.1)
+fig_name = f"{outpath}/{flight}_bahamas_track_with_sat.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% plot BAHAMAS data for Radiation Square
+matplotlib.rcdefaults()
+set_cb_friendly_colors()
+fig, axs = plt.subplots(nrows=1)
+axs.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+axs.set_ylabel("Heading (°) 0=N")
+axs.set_xlabel("Time (UTC)")
+axs.set_ylim((0, 360))
+axs.grid()
+axs2 = axs.twinx()
+axs2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_PHI"], label="Roll", c="#117733")
+axs2.set_ylabel("Roll Angle (°)")
+axs2.set_ylim((-1.5, 1.5))
+axs.set_title(f"BAHAMAS Aircraft Data - {flight}")
+fig.legend(loc=2)
+fig.autofmt_xdate()
+fig_name = f"{outpath}/{flight}_roll_heading_rad_square.png"
+plt.show()
+# plt.savefig(fig_name)
+# log.info(f"Saved {fig_name}")
+plt.close()
+# %% remove high roll angles and add solar azimuth angle to plot
+bahamas_rs = bahamas_rs.where(np.abs(bahamas_rs["IRS_PHI"]) < 1)  # select only sections with roll < 1°
+matplotlib.rcdefaults()
+fig, ax = plt.subplots(nrows=1)
+ax.plot(bahamas_rs["TIME"], bahamas_rs["IRS_HDG"], label="Heading")
+bacardi_rs.saa.plot(x="time", label="Solar Azimuth Angle", ax=ax)
+ax.set_ylabel("Angle (°) 0=N")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylim((0, 360))
+ax.grid()
+ax2 = ax.twinx()
+roll = ax2.plot(bahamas_rs["TIME"], bahamas_rs["IRS_PHI"], color="#117733", label="Roll")
+ax2.set_ylabel("Roll Angle (°)")
+ax2.set_ylim((-1.5, 1.5))
+ax.set_title(f"BAHAMAS Aircraft Data - {flight}")
+handles, labels = ax.get_legend_handles_labels()
+handles.insert(2, roll[0])
+ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=3, bbox_transform=fig.transFigure)
+fig.autofmt_xdate()
+plt.tight_layout()
+fig_name = f"{outpath}/{flight}_roll_heading_saa_rad_square_filtered.png"
+# plt.show()
+plt.savefig(fig_name)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% plot SMART data and libRadtran simulation for Radiation Square
+
