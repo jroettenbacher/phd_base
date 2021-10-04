@@ -13,8 +13,22 @@ from functions_jr import set_xticks_and_xlabels
 from libradtran import read_libradtran
 import pandas as pd
 import numpy as np
+import os
+import re
 
 # %% functions
+
+
+def read_bacardi_raw(filename: str, path: str):
+    filepath = os.path.join(path, filename)
+    date = re.search(r"\d{8}", filename)[0]
+    ds = xr.open_dataset(filepath)
+    ds = ds.rename({"TIME": "time"})
+    ds = ds.swap_dims({"tid": "time"})  # make time the dimension
+    # overwrite TIME to make a datetime index
+    ds = ds.assign({"time": pd.to_datetime(ds.time, unit='ms', origin=pd.to_datetime(date, format="%Y%m%d"))})
+
+    return ds
 
 
 def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float = 0, p_off: float = 0):
@@ -41,7 +55,7 @@ def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float 
     """
     r = np.deg2rad(roll + r_off)
     p = np.deg2rad(pitch + p_off)
-    h0 = np.deg2rad(90. - sza)
+    h0 = np.deg2rad(90 - sza)
 
     factor = np.sin(h0) / \
              (np.cos(h0) * np.sin(r) * np.sin(np.deg2rad(saa - yaw)) +
@@ -50,7 +64,7 @@ def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float 
 
     fdw_cor = fdir * fdw * factor + (1 - fdir) * fdw
 
-    return fdw_cor
+    return fdw_cor, factor
 
 
 # %% set paths
