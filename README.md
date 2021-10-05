@@ -202,6 +202,9 @@ It can be found here: `/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_
 
 #### 00_prepare_radiosonde_jr.pro
 
+**TODO:**
+* Check what radiosonde input is necessary for libRadtran. Simple interpolation yields negative relative humidity at lowest levels. (case: 21.7.21)
+
 **Input:**
 
 * station name and number (select station closest to flight path) (User input)
@@ -356,11 +359,20 @@ The following two scripts are needed in order to prepare the BACARDI processing.
 **TODO:**
 * use specific total column ozone concentrations from OMI 
   * can be downloaded [here](https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura)
-  * you need a Earth Data account and [add the application to your profile](https://disc.gsfc.nasa.gov/earthdata-login)
+  * you need an Earth Data account and [add the application to your profile](https://disc.gsfc.nasa.gov/earthdata-login)
   * checkout the instructions for command line download [here](https://disc.gsfc.nasa.gov/data-access#windows_wget)
- 
+* change atmosphere file
+  * CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
+* use self made surface_type_map for simulations in the Arctic
+* use sur_temperature for thermal infrared calculations (input from VELOX)
+* use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
+* use ocean or land albedo according to land sea mask
+* 
+
+
 **Current settings:**
 * Albedo from Taylor et al. 1996
+* atmosphere file: afglt.dat -> tropical atmosphere
 
 **Required User Input:**
 
