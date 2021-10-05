@@ -8,8 +8,16 @@ import matplotlib.pyplot as plt
 from smart import get_path
 import datetime
 import pandas as pd
+import numpy as np
+from cirrus_hl import coordinates, radiosonde_stations
+from geopy.distance import geodesic
+import logging
 
-# %% reader function
+log = logging.getLogger(__name__)
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.INFO)
+
+# %% functions
 
 
 def read_libradtran(flight: str, filename: str) -> pd.DataFrame:
@@ -30,4 +38,29 @@ def read_libradtran(flight: str, filename: str) -> pd.DataFrame:
     bbr_sim = bbr_sim.set_index("time")  # set it as index
 
     return bbr_sim
+
+
+def find_closest_radiosonde_station(latitude: float, longitude: float):
+    """
+    Given longitude and latitude, find the closest radiosonde station from the campaign dictionary
+    Args:
+        latitude: in decimal degrees (N=positive)
+        longitude: in decimal degrees (E=positive)
+
+    Returns: Name of the closest radiosonde station
+
+    """
+    distances = dict()
+    station_names = [station[:-6] for station in radiosonde_stations]  # read out station names from list
+    # loop through stations and save distance in km
+    for station_name in station_names:
+        lon_lat = coordinates[station_name]
+        distances[station_name] = geodesic((lon_lat[1], lon_lat[0]), (latitude, longitude)).km
+
+    min_distance = min(distances.values())  # get minimum distance
+    log.info(f"Closest Radiosonde station is {min_distance} km away")
+    closest_station = [s for s in station_names if distances[s] == min_distance][0]
+    closest_station = [s for s in radiosonde_stations if closest_station in s][0]  # get complete station name
+
+    return closest_station
 
