@@ -58,9 +58,9 @@ def find_closest_radiosonde_station(latitude: float, longitude: float):
         distances[station_name] = geodesic((lon_lat[1], lon_lat[0]), (latitude, longitude)).km
 
     min_distance = min(distances.values())  # get minimum distance
-    log.info(f"Closest Radiosonde station is {min_distance} km away")
     closest_station = [s for s in station_names if distances[s] == min_distance][0]
     closest_station = [s for s in radiosonde_stations if closest_station in s][0]  # get complete station name
+    log.info(f"Closest Radiosonde station {closest_station} is {min_distance:.3f} km away.")
 
     return closest_station
 
