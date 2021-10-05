@@ -2,9 +2,11 @@
 """Script to keep functions to work with BAHAMAS data
 author: Johannes Röttenbacher
 """
-
+import datetime
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+
 import smart
 import xarray as xr
 from cirrus_hl import stop_over_locations, coordinates
@@ -14,6 +16,7 @@ import cartopy.crs as ccrs
 import cartopy
 import logging
 import pandas as pd
+from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler())
@@ -128,6 +131,27 @@ def read_bahamas(bahamas_path: str) -> xr.Dataset:
     ds = xr.open_dataset(bahamas_path)
     ds = ds.swap_dims({"tid": "TIME"})
     return ds
+
+
+def get_position(flight: str,
+                 timestamp: Union[datetime.datetime, pd.Timestamp]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Given the flight and the exact time, get HALOs position
+
+    Args:
+        flight: Which flight to read in
+        timestamp: exact time
+
+    Returns: latitude (deg), longitude (deg), altitude (m)
+
+    """
+    bahamas_dir = smart.get_path("bahamas", flight)
+    bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+    bahamas_ds = read_bahamas(f"{bahamas_dir}/{bahamas_file}")
+    # convert given datetime to pd.Timestamp and remove any timezone information
+    ts = pd.to_datetime(timestamp).tz_convert(None)
+    bahamas_ds_sel = bahamas_ds.sel(TIME=ts)
+
+    return bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values
 
 
 if __name__ == "__main__":
