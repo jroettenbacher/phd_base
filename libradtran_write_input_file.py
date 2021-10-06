@@ -8,6 +8,7 @@ author: Johannes Röttenbacher
 # %% module import
 import datetime
 import numpy as np
+import pandas as pd
 from smart import get_path
 from functions_jr import make_dir
 from pysolar.solar import get_altitude
@@ -16,7 +17,7 @@ from libradtran import find_closest_radiosonde_station
 
 # %% user input
 flight = "Flight_20210715a"
-time_step = datetime.timedelta(minutes=120)
+time_step = pd.Timedelta(minutes=2)
 
 bahamas_ds = read_bahamas(flight)
 timestamp = bahamas_ds.time[0]
@@ -36,17 +37,17 @@ while timestamp < bahamas_ds.time[-1]:
     _radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran/"
     _solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
     _input_path = f"{_libradtran_dir}/input"
-    _input_filename = f"{timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
+    _input_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
     _input_filepath = f"{_input_path}/{_input_filename}"
     _output_path = f"{_libradtran_dir}/output"
-    _output_filename = f"{timestamp:%Y%m%d_%H%M%S}_libRadtran.out"
+    _output_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.out"
     _output_filepath = f"{_output_path}/{_output_filename}"
     make_dir(_input_path)  # create directories
     make_dir(_output_path)
 
     # %% set options for libRadtran run - atmospheric shell
     atmos_settings = dict(
-        albedo=calc_albedo,
+        albedo=f"{calc_albedo:.4f}",
         altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
         atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",
         data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
@@ -54,8 +55,8 @@ while timestamp < bahamas_ds.time[-1]:
         longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
         mol_file=None,  # page 104
         mol_modify="O3 300 DU",  # page 105
-        radiosonde=f"{_radiosonde_path}/{radiosonde_station}/{timestamp:%m%d}_12.dat H2O RH",  # page 114
-        time=f"{timestamp:%Y %m %d %H %M %S}",  # page 123
+        radiosonde=f"{_radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
+        time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
         source=f"solar {_solar_source_path}/NewGuey2003_BBR.dat",  # page 119
         wavelength="179 2222",  # SMART wavelength range
         zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
