@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Create an input file for libRadtran and run uvspec. Save output to file.
+"""Create an input file for libRadtran
 * behind some options you find the page number of the manual, where the option is explained in more detail
 * set options to "None" if you don't want to use them
 * Variables which start with "_" are for internal use only and will not be used as a option for the input file.
@@ -7,6 +7,7 @@ author: Johannes Röttenbacher
 """
 # %% module import
 import datetime
+import logging
 import numpy as np
 import pandas as pd
 from smart import get_path
@@ -14,6 +15,10 @@ from functions_jr import make_dir
 from pysolar.solar import get_altitude
 from bahamas import read_bahamas
 from libradtran import find_closest_radiosonde_station
+
+log = logging.getLogger()
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.WARNING)
 
 # %% user input
 flight = "Flight_20210715a"
@@ -28,8 +33,10 @@ while timestamp < bahamas_ds.time[-1]:
     radiosonde_station = find_closest_radiosonde_station(lat, lon)
     # need to create a time zone aware datetime object to calculate the solar azimuth angle
     dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
-    cos_sza = np.cos(np.deg2rad(get_altitude(lat, lon, dt_timestamp)))
+    # sun altitude measures from ground up -> 90 - sun altitude = sza
+    cos_sza = np.cos(np.deg2rad(90 - get_altitude(lat, lon, dt_timestamp)))
     calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)  # calculate albedo after Taylor et al 1996 for sea surface
+    sza_libradtran = 90 - get_altitude(lat, lon, dt_timestamp, elevation=alt)
 
     # %% internal variables
     _base_dir = get_path("base")
@@ -58,7 +65,9 @@ while timestamp < bahamas_ds.time[-1]:
         radiosonde=f"{_radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
         time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
         source=f"solar {_solar_source_path}/NewGuey2003_BBR.dat",  # page 119
-        wavelength="179 2222",  # SMART wavelength range
+        # sza=f"{sza_libradtran:.4f}",  # page 122
+        # verbose="",  # page 123
+        wavelength="179.5 2225",  # SMART wavelength range
         zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
     )
     # set options for libRadtran run - radiative transfer equation solver
