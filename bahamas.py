@@ -6,7 +6,6 @@ import datetime
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
 import smart
 import xarray as xr
 from cirrus_hl import stop_over_locations, coordinates
@@ -119,17 +118,24 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     plt.close()
 
 
-def read_bahamas(bahamas_path: str) -> xr.Dataset:
+def read_bahamas(flight: str, bahamas_path: str = None) -> xr.Dataset:
     """
-    Reader function for netcdf BAHAMAS data
+    Reader function for netcdf BAHAMAS data. Uses flight argument to build path to BAHAMAS data unless bahamas_path is
+    provided.
     Args:
-        bahamas_path: full path to netcdf file
+        flight: flight identifier (e.g. Flight_20210715a)
+        bahamas_path (optional): full path of netcdf file, overwrites standard path
 
-    Returns: xr.DataSet with BAHAMAS data and Time as dimension
+    Returns: xr.DataSet with BAHAMAS data and time as dimension
 
     """
+    bahamas_dir = smart.get_path("bahamas", flight)
+    bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+    bahamas_path = f"{bahamas_dir}/{bahamas_file}" if bahamas_path is None else bahamas_path
     ds = xr.open_dataset(bahamas_path)
     ds = ds.swap_dims({"tid": "TIME"})
+    ds = ds.rename({"TIME": "time"})
+
     return ds
 
 
