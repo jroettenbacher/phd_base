@@ -14,8 +14,6 @@ from geopy.distance import geodesic
 import logging
 
 log = logging.getLogger(__name__)
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
 
 # %% functions
 
