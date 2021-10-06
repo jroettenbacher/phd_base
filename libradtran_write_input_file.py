@@ -43,20 +43,16 @@ while timestamp < bahamas_ds.time[-1]:
     _libradtran_dir = get_path("libradtran", flight)
     _radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran/"
     _solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
-    _input_path = f"{_libradtran_dir}/input"
+    _input_path = f"{_libradtran_dir}/wkdir"
     _input_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
     _input_filepath = f"{_input_path}/{_input_filename}"
-    _output_path = f"{_libradtran_dir}/output"
-    _output_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.out"
-    _output_filepath = f"{_output_path}/{_output_filename}"
-    make_dir(_input_path)  # create directories
-    make_dir(_output_path)
+    make_dir(_input_path)  # create directory
 
     # %% set options for libRadtran run - atmospheric shell
     atmos_settings = dict(
         albedo=f"{calc_albedo:.4f}",
         altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
-        atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",
+        # atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
         data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
         latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
         longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
