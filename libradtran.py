@@ -65,7 +65,7 @@ def find_closest_radiosonde_station(latitude: float, longitude: float):
     return closest_station
 
 
-def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Timestamp(), List[str]]:
+def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Timestamp, List[str]]:
     """
     Open a libradtran input file and read out some information.
     Args:
