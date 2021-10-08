@@ -11,6 +11,8 @@ import pandas as pd
 import numpy as np
 from cirrus_hl import coordinates, radiosonde_stations
 from geopy.distance import geodesic
+import re
+from typing import Tuple, List
 import logging
 
 log = logging.getLogger(__name__)
@@ -61,4 +63,42 @@ def find_closest_radiosonde_station(latitude: float, longitude: float):
     log.info(f"Closest Radiosonde station {closest_station} is {min_distance:.3f} km away.")
 
     return closest_station
+
+
+def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Timestamp(), List[str]]:
+    """
+    Open a libradtran input file and read out some information.
+    Args:
+        filepath: path to file
+
+    Returns: Some variables (latitude, longitude, time, header of output file)
+
+    """
+    with open(filepath, "r") as ifile:
+        lines = ifile.readlines()
+
+    for line in lines:
+        if line.startswith("latitude"):
+            match = re.search(r"(?P<direction>[NS]) (?P<value>[0-9]+\.?[0-9]*)", line)
+            if match.group("direction") == "N":
+                latitude = float(match.group("value"))
+            else:
+                assert match.group("direction") == "S", "Direction is not 'N' or 'S'! Check input"
+                latitude = -float(match.group("value"))
+
+        if line.startswith("longitude"):
+            match = re.search(r"(?P<direction>[EW]) (?P<value>[0-9]+\.?[0-9]*)", line)
+            if match.group("direction") == "E":
+                longitude = float(match.group("value"))
+            else:
+                assert match.group("direction") == "W", "Direction is not 'W' or 'E'! Check input"
+                longitude = -float(match.group("value"))
+
+        if line.startswith("time"):
+            time_stamp = pd.to_datetime(line[5:-1], format="%Y %m %d %H %M %S")
+
+        if line.startswith("output_user"):
+            header = line[12:-1].split()
+
+    return latitude, longitude, time_stamp, header
 
