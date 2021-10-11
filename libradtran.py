@@ -71,7 +71,7 @@ def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Time
     Args:
         filepath: path to file
 
-    Returns: Some variables (latitude, longitude, time, header of output file, wavelength range)
+    Returns: Some variables (latitude, longitude, time, header of output file, wavelength range, integrate flag)
 
     """
     with open(filepath, "r") as ifile:
@@ -104,7 +104,7 @@ def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Time
             wavelengths = line[11:].split()
 
         if line.startswith("output_process"):
-            integrate_flag = True if line[15:] == "integrate" else False
+            integrate_flag = True if line[15:].strip() == "integrate" else False
 
     return latitude, longitude, time_stamp, header, wavelengths, integrate_flag
 
