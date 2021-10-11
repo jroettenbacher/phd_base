@@ -73,7 +73,7 @@ while timestamp < bahamas_ds.time[-1]:
 
     # set options for libRadtran run - post-processing
     postprocess_settings = dict(
-        output_user="lambda sza edir edn eup",  # page 109
+        output_user="sza albedo zout edir edn eup",  # page 109
         output_process="integrate",  # page 108
     )
 
