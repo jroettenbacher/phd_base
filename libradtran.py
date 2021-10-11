@@ -67,11 +67,11 @@ def find_closest_radiosonde_station(latitude: float, longitude: float):
 
 def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Timestamp, List[str]]:
     """
-    Open a libradtran input file and read out some information.
+    Open a libRadtran input file and read out some information.
     Args:
         filepath: path to file
 
-    Returns: Some variables (latitude, longitude, time, header of output file)
+    Returns: Some variables (latitude, longitude, time, header of output file, wavelength range)
 
     """
     with open(filepath, "r") as ifile:
@@ -100,5 +100,11 @@ def get_info_from_libradtran_input(filepath: str) -> Tuple[float, float, pd.Time
         if line.startswith("output_user"):
             header = line[12:-1].split()
 
-    return latitude, longitude, time_stamp, header
+        if line.startswith("wavelength"):
+            wavelengths = line[11:].split()
+
+        if line.startswith("output_process"):
+            integrate_flag = True if line[15:] == "integrate" else False
+
+    return latitude, longitude, time_stamp, header, wavelengths, integrate_flag
 
