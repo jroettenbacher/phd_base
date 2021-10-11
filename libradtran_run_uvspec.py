@@ -49,7 +49,7 @@ for infile, outfile, log_file in zip(tqdm(input_files, desc="libRadtran simulati
 latitudes, longitudes, time_stamps = list(), list(), list()
 
 for infile in input_files:
-    lat, lon, ts, header = get_info_from_libradtran_input(infile)
+    lat, lon, ts, header, wavelengths, integrate_flag = get_info_from_libradtran_input(infile)
     latitudes.append(lat)
     longitudes.append(lon)
     time_stamps.append(ts)
@@ -59,12 +59,36 @@ output = output.assign(latitude=latitudes)
 output = output.assign(longitude=longitudes)
 output = output.assign(time=time_stamps)
 output = output.set_index(["time"])
+# calculate direct fraction
+output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
 # convert mW/m2 to W/m2 (see page 43 of manual)
 output["edir"] = output["edir"] / 1000
 output["eup"] = output["eup"] / 1000
 output["edn"] = output["edn"] / 1000
 # convert output altitude to m
 output["zout"] = output["zout"] * 1000
+# set up some metadata
+integrate_str = "integrated " if integrate_flag else ""
+wavelenght_str = f"wavelength range {wavelengths[0]} - {wavelengths[1]} nm"
+
+var_attrs = dict(
+    albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
+    altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
+    direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance"),
+    edir=dict(units="W m-2", long_name=f"{integrate_str}direct beam irradiance",
+              standard_name="direct_downwelling_shortwave_flux_in_air",
+              comment=wavelenght_str),
+    edn=dict(units="W m-2", long_name=f"{integrate_str}diffuse downward irradiance",
+             standard_name="diffuse_downwelling_shortwave_flux_in_air_assuming_clear_sky",
+             comment=wavelenght_str),
+    eup=dict(units="W m-2", long_name=f"{integrate_str}diffuse upward irradiance",
+             standard_name="surface_upwelling_shortwave_flux_in_air_assuming_clear_sky",
+             comment=wavelenght_str),
+    latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
+    longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
+    sza=dict(units="degree", long_name="solar zenith angle", standard_name="solar_zenith_angle",
+             comment="0 deg = zenith"),
+)
 
 attributes = dict(
     comment=f'CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}',
@@ -78,20 +102,6 @@ attributes = dict(
 )
 
 encoding = dict(time=dict(units='seconds since 2021-01-01'))
-
-var_attrs = dict(
-    albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
-    altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
-    edir=dict(units="W m-2", long_name="direct beam irradiance",
-              standard_name="direct_downwelling_shortwave_flux_in_air"),
-    edn=dict(units="W m-2", long_name="diffuse downward irradiance",
-             standard_name="diffuse_downwelling_shortwave_flux_in_air_assuming_clear_sky"),
-    eup=dict(units="W m-2", long_name="diffuse upward irradiance",
-             standard_name="surface_upwelling_shortwave_flux_in_air_assuming_clear_sky"),
-    latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
-    longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
-    sza=dict(units="degree", long_name="solar zenith angle", standard_name="solar_zenith_angle"),
-)
 
 ds = output.to_xarray()
 ds.attrs = attributes  # assign global attributes
