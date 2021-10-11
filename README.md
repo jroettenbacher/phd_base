@@ -82,11 +82,13 @@ You can:
 
 ### 1.2 smart_process_lab_calib.py
 
-**TODO:** make it work for 2021-03-19/29
+**TODO:** 
+- [x] make it work for 2021-03-19/29
 
 Script to correct the lab calibration files for the dark current and merge the minutely corrected files into one file.
 
 **Required User Input:**
+
 * calibration folder
 
 ### 1.3 smart_process_transfer_calib.py
@@ -95,6 +97,7 @@ Script to correct SMART transfer calibration measurement for dark current and sa
 the minutely files.
 
 **Required User Input:**
+
 * calibration folder
 
 
@@ -173,9 +176,9 @@ Answer: The conversion of the analog signal to a digital can lead to this.
 ## 2. BACARDI
 
 **TODO:** 
-* switch radiosonde station according to HALO position
-* set ozone concentration according to date and closest ozone sonde measurement
-* set the albedo according to the land use (Sea surface -> Taylor, land -> average land)
+- [x] switch radiosonde station according to HALO position
+- [ ] set ozone concentration according to date and closest ozone sonde measurement
+- [ ] set the albedo according to the land use (Sea surface -> Taylor, land -> average land)
 
 BACARDI is a broadband radiometer mounted on the bottom and top of HALO. 
 The data is initially processed by DLR and then
@@ -350,24 +353,63 @@ Run on Linux.
 [libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model radiative fluxes
 spectrally resolved.
 
+### 5.0 libRadtran simulations along flight path
+
+The following scripts use the BAHAMAS data to create libRadtran input files to simulate fluxes along the flightpath.
+
+**TODO:**
+- [ ] use specific total column ozone concentrations from OMI
+  * can be downloaded [here](https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura)
+  * you need an Earth Data account and [add the application to your profile](https://disc.gsfc.nasa.gov/earthdata-login)
+  * checkout the instructions for command line download [here](https://disc.gsfc.nasa.gov/data-access#windows_wget)
+- [x] change atmosphere file according to location -> uvspec does this automatically when lat, lon and time are supplied 
+  - [x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
+- [ ] use self made surface_type_map for simulations in the Arctic
+- [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
+- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
+- [ ] use ocean or land albedo according to land sea mask
+
+#### libradtran_write_input_file.py
+
+Here one can set all options needed in the libRadtran input file.
+Given the flight and time step, one input file will then be created for every time step with the fitting lat and lon values
+along the flight track.
+
+**Required User Input:**
+
+* flight (e.g. 'Flight_202170715a')
+* time_step (e.g. 'minutes=2')
+
+#### libradtran_run_uvspec.py
+
+Given the flight and the path to `uvspec`, this script calls `uvspec` for each input file and writes a log and output file.
+It does so in parallel, checking how many CPUs are available.
+After that the output files are merged into one data frame and information from the input file is added to write one netCDF file.
+
+**Required User Input:**
+
+* flight (e.g. 'Flight_20210715a')
+* path to uvspec.exe
+* name of netCDF file (optional)
+
 ### 5.1 BACARDI processing
 
-The following two scripts are needed in order to prepare the BACARDI processing.
+The following two scripts ~~are needed~~ were used in order to prepare the BACARDI processing.
 
 #### 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
 
 **TODO:**
-* use specific total column ozone concentrations from OMI 
+- [ ] use specific total column ozone concentrations from OMI 
   * can be downloaded [here](https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura)
   * you need an Earth Data account and [add the application to your profile](https://disc.gsfc.nasa.gov/earthdata-login)
   * checkout the instructions for command line download [here](https://disc.gsfc.nasa.gov/data-access#windows_wget)
-* change atmosphere file
-  * CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
-* use self made surface_type_map for simulations in the Arctic
-* use sur_temperature for thermal infrared calculations (input from VELOX)
-* use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
-* use ocean or land albedo according to land sea mask
-* 
+- [x] change atmosphere file
+  - [x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
+- [ ] use self made surface_type_map for simulations in the Arctic
+- [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
+- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
+- [ ] use ocean or land albedo according to land sea mask
+- [ ] 
 
 
 **Current settings:**

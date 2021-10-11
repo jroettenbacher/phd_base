@@ -9,8 +9,9 @@ import os
 from subprocess import Popen
 from tqdm import tqdm
 from joblib import cpu_count
-from datetime import datetime
+import datetime as dt
 from libradtran import get_info_from_libradtran_input
+from pysolar.solar import get_azimuth
 import logging
 
 log = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ for infile, outfile, log_file in zip(tqdm(input_files, desc="libRadtran simulati
 
 # %% merge output files and write a netCDF file
 
-latitudes, longitudes, time_stamps = list(), list(), list()
+latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
 
 # read input files and extract information from it
 for infile in input_files:
@@ -53,12 +54,16 @@ for infile in input_files:
     latitudes.append(lat)
     longitudes.append(lon)
     time_stamps.append(ts)
+    # convert timestamp to datetime object with timezone information
+    dt_ts = ts.to_pydatetime().astimezone(dt.timezone.utc)
+    saa.append(get_azimuth(lat, lon, dt_ts))  # calculate solar azimuth angle
 
 # merge all output files and add information from input files
 output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+") for file in output_files])
 output = output.assign(latitude=latitudes)
 output = output.assign(longitude=longitudes)
 output = output.assign(time=time_stamps)
+output = output.assign(saa=saa)
 output = output.set_index(["time"])
 # calculate direct fraction
 output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
@@ -66,6 +71,8 @@ output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
 output["edir"] = output["edir"] / 1000
 output["eup"] = output["eup"] / 1000
 output["edn"] = output["edn"] / 1000
+# calculate broadband solar clear sky downward
+output["fdw"] = output["edir"] + output["edn"]
 # convert output altitude to m
 output["zout"] = output["zout"] * 1000
 # set up some metadata
@@ -86,8 +93,12 @@ var_attrs = dict(
     eup=dict(units="W m-2", long_name=f"{integrate_str}diffuse upward irradiance",
              standard_name="surface_upwelling_shortwave_flux_in_air_assuming_clear_sky",
              comment=wavelenght_str),
+    fdw=dict(units="W m-2", longname=f"{integrate_str}total solar downward irradiance",
+             standard_name="solar_irradiance", comment=wavelenght_str),
     latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
     longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
+    saa=dict(units="degree", long_name="solar azimuth angle", standard_name="soalr_azimuth_angle",
+             comment="clockwise from north"),
     sza=dict(units="degree", long_name="solar zenith angle", standard_name="solar_zenith_angle",
              comment="0 deg = zenith"),
 )
@@ -97,7 +108,7 @@ attributes = dict(
     comment=f'CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}',
     contact='PI: m.wendisch@uni-leipzig.de, Data: johannes.roettenbacher@uni-leipzig.de',
     Conventions='CF-1.9',
-    history=f'Created {datetime.utcnow():%c} UTC',
+    history=f'Created {dt.datetime.utcnow():%c} UTC',
     institution='Leipzig Institute for Meteorology, Leipzig University, Stephanstr.3, 04103 Leipzig, Germany',
     references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
     source='libRadtran 2.0',
