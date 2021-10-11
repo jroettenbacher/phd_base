@@ -44,16 +44,17 @@ for infile, outfile, log_file in zip(tqdm(input_files, desc="libRadtran simulati
         processes.difference_update([p for p in processes if p.poll() is not None])
 
 # %% merge output files and write a netCDF file
-# read input file and extract header and lat lon from it
 
 latitudes, longitudes, time_stamps = list(), list(), list()
 
+# read input files and extract information from it
 for infile in input_files:
     lat, lon, ts, header, wavelengths, integrate_flag = get_info_from_libradtran_input(infile)
     latitudes.append(lat)
     longitudes.append(lon)
     time_stamps.append(ts)
 
+# merge all output files and add information from input files
 output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+") for file in output_files])
 output = output.assign(latitude=latitudes)
 output = output.assign(longitude=longitudes)
@@ -71,6 +72,7 @@ output["zout"] = output["zout"] * 1000
 integrate_str = "integrated " if integrate_flag else ""
 wavelenght_str = f"wavelength range {wavelengths[0]} - {wavelengths[1]} nm"
 
+# set up meta data dictionaries
 var_attrs = dict(
     albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
     altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
@@ -90,6 +92,7 @@ var_attrs = dict(
              comment="0 deg = zenith"),
 )
 
+# set up global attributes
 attributes = dict(
     comment=f'CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}',
     contact='PI: m.wendisch@uni-leipzig.de, Data: johannes.roettenbacher@uni-leipzig.de',
@@ -109,6 +112,7 @@ ds = ds.rename({"zout": "altitude"})
 # set attributes of each variable
 for var in ds:
     ds[var].attrs = var_attrs[var]
+# save file
 nc_filepath = f"/projekt_agmwend/data/Cirrus_HL/01_Flights/{flight}/libRadtran/{flight}_libRadtran_clearsky_smart_bb_simulation.nc"
 ds.to_netcdf(nc_filepath, encoding=encoding)
 log.info(f"Saved {nc_filepath}")
