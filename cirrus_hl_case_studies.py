@@ -639,7 +639,7 @@ plt.rc('font', family="serif")
 fig, ax = plt.subplots(figsize=(9, 5.5))
 # solar radiation
 bacardi_uncor_rs.F_down_solar.plot(x="time", label=r"$F_{\downarrow}$ BACARDI (None, None)", ax=ax, c="#117733", ls="-")
-bacardi_uncor_rs.F_down_solar_sim.plot(x="time", label=r"$F_{\downarrow}$ simulated", ax=ax, ls="-", c="#332288")
+bacardi_uncor_rs.F_down_solar_sim.plot(x="time", label=r"$F_{\downarrow}$ simulated clear sky", ax=ax, ls="-", c="#332288")
 ax.plot(bacardi_uncor_rs.time, F_down_solar_att, label=f"F_dw BACARDI ({roll_offset}, {pitch_offset})", ls="-",
         c="#CC6677")
 ax2 = ax.twinx()
@@ -689,7 +689,7 @@ bahamas = read_bahamas(flight)
 sat_image = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
 sat_ds = rasterio.open(f"{sat_dir}/{sat_image}")
 # bahamas_rs = bahamas_subset.where(np.abs(bahamas_subset["IRS_PHI"]) < 1)  # select only sections with roll < 1°
-bahamas_rs = bahamas.sel(TIME=slice(rs_start, rs_end))  # select subset of radiation square
+bahamas_rs = bahamas.sel(time=slice(rs_start, rs_end))  # select subset of radiation square
 
 # %% BAHAMAS: select position and time data and set extent
 x_edmo, y_edmo = coordinates["EDMO"]
@@ -892,7 +892,7 @@ plt.rc('font', family="serif")
 fig, ax = plt.subplots(figsize=(9, 5.5))
 # solar radiation
 smart_fdw_rs_filtered.plot(label=r"$F_{\downarrow}$ SMART integrated (None, None)", ax=ax, c="#117733", ls="-")
-fdw_sim_rs.fdw.plot(x="time", label=r"$F_{\downarrow}$ simulated", ax=ax, ls="-", c="#332288")
+fdw_sim_rs.fdw.plot(x="time", label=r"$F_{\downarrow}$ simulated clear sky", ax=ax, ls="-", c="#332288")
 ax2 = ax.twinx()
 heading = ax2.plot(bahamas_rs["time"], bahamas_rs_filtered["IRS_HDG"], label="Heading")
 saa = fdw_sim_rs.saa.plot(x="time", label="Solar Azimuth Angle", ax=ax2)
@@ -936,8 +936,8 @@ F_down_att_no_offset, factor = fdw_attitude_correction(smart_fdw_df["F_down"].va
 smart_fdw_df["F_down_att_no"] = F_down_att_no_offset
 
 # %% vary roll and pitch offset and attitude correct f_dw
-roll_offset = -0.1
-pitch_offset = 2.5
+roll_offset = -0.5
+pitch_offset = 3.5
 F_down_att, factor = fdw_attitude_correction(smart_fdw_df["F_down"].values,
                                              roll=bahamas_inp.IRS_PHI.values, pitch=-bahamas_inp.IRS_THE.values,
                                              yaw=bahamas_inp.IRS_HDG.values, sza=fdw_sim_inp.sza.values,
@@ -952,18 +952,23 @@ smart_fdw_df_rs_filtered = smart_fdw_df_rs.loc[roll_filter_smart.values]
 plt.rc('font', size=14)
 plt.rc('lines', linewidth=3)
 plt.rc('font', family="serif")
+zoom = True
+zoom_str = "_zoom" if zoom else ""
 fig, ax = plt.subplots(figsize=(9, 5.5))
 # solar radiation
 smart_fdw_df_rs_filtered.F_down.plot(label=r"$F_{\downarrow}$ SMART (None, None)", ax=ax, c="#117733", ls="-")
-smart_fdw_df_rs_filtered.F_down_att_no.plot(label=r"$F_{\downarrow}$ SMART (0, 0)", ax=ax, c="#D55E00", ls="-")
-smart_fdw_df_rs_filtered.F_down_att.plot(label=f"F_dw SMART ({roll_offset}, {pitch_offset})", ls="-", c="#CC6677")
-fdw_sim_rs.fdw.plot(x="time", label=r"$F_{\downarrow}$ simulated", ax=ax, ls="-", c="#332288")
+# smart_fdw_df_rs_filtered.F_down_att_no.plot(label=r"$F_{\downarrow}$ SMART (0, 0)", ax=ax, c="#D55E00", ls="-")
+smart_fdw_df_rs_filtered.F_down_att.plot(label=r"$F_{\downarrow}$" + f" SMART ({roll_offset}, {pitch_offset})", ls="-", c="#CC6677")
+fdw_sim_rs.fdw.plot(x="time", label=r"$F_{\downarrow}$ simulated clear sky", ax=ax, ls="-", c="#332288")
 ax2 = ax.twinx()
 heading = bahamas_rs_filtered.IRS_HDG.plot(x="time", label="Heading", ax=ax2)
 ats = angle_towards_sun.plot(x="time", label="Angle towards Sun", ax=ax2)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
-ax.set_ylim(ylims)  # fix y limits for better comparison (1140, 1170)
+if zoom:
+    ax.set_ylim((700, 900))
+else:
+    ax.set_ylim(ylims)  # fix y limits for better comparison (1140, 1170)
 ax2.set_ylabel("Angle (°)")
 set_xticks_and_xlabels(ax, pd.to_timedelta((bahamas_rs.time[-1] - bahamas_rs.time[0]).values))
 ax.grid(axis='x')
@@ -972,12 +977,33 @@ handles, labels = ax.get_legend_handles_labels()
 handles.insert(0, Patch(color='none', label="Solar (Roll offset, Pitch offset)"))
 handles.insert(4, Patch(color='none'))
 handles.insert(6, heading[0])
-handles.insert(7, saa[0])
+handles.insert(7, ats[0])
 ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, bbox_transform=fig.transFigure)
 plt.subplots_adjust(bottom=0.37)
 plt.tight_layout()
-fig_name = f"{outpath}/CIRRUS_HL_{flight}_smart_fdw_saa_heading_new_att_corr_{roll_offset}_{pitch_offset}.png"
-plt.show()
-# plt.savefig(fig_name, dpi=100)
-# log.info(f"Saved {fig_name}")
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_smart_fdw_saa_heading_new_att_corr_{roll_offset}_{pitch_offset}{zoom_str}.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
+plt.close()
+
+# %% plot difference between simulation and measurement
+fdw_diff = smart_fdw_df_rs.F_down_att - fdw_sim_inp["fdw"].sel(time=slice(rs_start, rs_end))
+fdw_diff_pc = np.abs(fdw_diff / smart_fdw_df_rs.F_down_att) * 100
+fdw_diff_pc_filtered = fdw_diff_pc.loc[roll_filter_smart.values]
+plt.rc('font', size=14)
+plt.rc('lines', linewidth=3)
+plt.rc('font', family="serif")
+fig, ax = plt.subplots(figsize=(9, 5.5))
+fdw_diff_pc_filtered.plot(ax=ax)
+ax.set_ylabel("Difference (%)")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylim((0, 4))
+ax.grid()
+ax.set_title(f"Difference between corrected measurement and clear sky simulation\n"
+             f"Roll offset: {roll_offset}; Pitch offset: {pitch_offset}")
+fig_name = f"{outpath}/CIRRUS_HL_{flight}_difference_smart_cor_simulation_{roll_offset}_{pitch_offset}.png"
+# plt.show()
+plt.savefig(fig_name, dpi=100)
+log.info(f"Saved {fig_name}")
 plt.close()
