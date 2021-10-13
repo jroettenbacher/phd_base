@@ -89,7 +89,7 @@ while timestamp < bahamas_ds.time[-1]:
 
     # %% write input file
     with open(_input_filepath, "w") as ifile:
-        ifile.write(f"# libRadtran input file generated with libradtran_run_uvspec.py "
+        ifile.write(f"# libRadtran input file generated with libradtran_write_input_file.py "
                     f"({datetime.datetime.utcnow():%c UTC})\n")
         for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                   ["Atmospheric", "RTE", "Post Process"]):
