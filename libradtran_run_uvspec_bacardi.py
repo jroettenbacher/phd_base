@@ -24,7 +24,7 @@ all_flights = [key for key in transfer_calibs.keys()]  # get all flights from di
 # all_flights = all_flights[15]  # select single flight if needed
 
 uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-solar_flag = False
+solar_flag = True
 
 for flight in all_flights:
 
@@ -34,11 +34,6 @@ for flight in all_flights:
     input_files.sort()  # sort input files -> output files will be sorted as well
     output_files = [f.replace(".inp", ".out") for f in input_files]
     error_logs = [f.replace(".out", ".log") for f in output_files]
-
-    # %% call uvspec for one file
-    # index = 0
-    # with open(input_files[index], "r") as ifile, open(output_files[index], "w") as ofile, open(error_logs[index], "w") as lfile:
-    #     Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile)
 
     # %% call uvspec for all files
 
@@ -56,6 +51,27 @@ for flight in all_flights:
         # this will remove elements of the set which are also in the list
         # the list has only terminated processes in it, p.poll returns a non None value if the process is still running
         processes.difference_update([p for p in processes if p.poll() is not None])
+
+    # %% check if all simulations created an output and rerun them if not
+    file_check = sum([os.path.getsize(file) == 0 for file in output_files])
+    # if file size is 0 -> file is empty
+    while file_check > 0:
+        files_to_rerun = [f for f in input_files if os.path.getsize(f.replace(".inp", ".out")) == 0]
+        # rerun simulations
+        for infile in tqdm(files_to_rerun, desc="redo libRadtran simulations"):
+            with open(infile, "r") as ifile, \
+                    open(infile.replace(".inp", ".out"), "w") as ofile, \
+                    open(infile.replace(".inp", ".log"), "w") as lfile:
+                processes.add(Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile))
+            if len(processes) >= max_processes:
+                os.wait()
+                processes.difference_update([p for p in processes if p.poll() is not None])
+
+        # wait for all simulations to finish
+        while len(processes) > 0:
+            processes.difference_update([p for p in processes if p.poll() is not None])
+        # update file_check
+        file_check = sum([os.path.getsize(file) == 0 for file in output_files])
 
     # %% merge output files and write a netCDF file
 
