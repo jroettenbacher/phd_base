@@ -19,10 +19,11 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set options and get files
-flight = "Flight_20210715a"
+flight = "Flight_20210625a"
 uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-libradtran_dir = get_path("libradtran", flight)
-input_files = [os.path.join(libradtran_dir, "wkdir", f) for f in os.listdir(f"{libradtran_dir}/wkdir")
+libradtran_base_dir = get_path("libradtran", flight)
+libradtran_dir = os.path.join(libradtran_base_dir, "wkdir")
+input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                if f.endswith(".inp")]
 input_files.sort()  # sort input files -> output files will be sorted as well
 output_files = [f.replace(".inp", ".out") for f in input_files]
