@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""Create an input file for libRadtran
+"""Create an input file for libRadtran simulation to be used in BACARDI processing
 * behind some options you find the page number of the manual, where the option is explained in more detail
 * set options to "None" if you don't want to use them
-* Variables which start with "_" are for internal use only and will not be used as a option for the input file.
+* Variables which start with "_" are for internal use
 author: Johannes Röttenbacher
 """
 # %% module import
@@ -24,6 +24,15 @@ log.setLevel(logging.WARNING)
 # %% user input
 flight = "Flight_20210715a"
 time_step = pd.Timedelta(minutes=2)
+solar_flag = True  # True for solar wavelength range, False for terrestrial wavelength range
+
+# %% set paths
+_base_dir = get_path("base")
+_libradtran_dir = get_path("libradtran", flight)
+input_path = f"{_libradtran_dir}/wkdir/{'solar' if solar_flag else 'thermal'}"
+make_dir(input_path)  # create directory
+radiosonde_dir = f"{_base_dir}/../02_Soundings/RS_for_libradtran/"
+solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran/NewGuey2003_BBR.dat"  # set solar source file
 
 bahamas_ds = read_bahamas(flight)
 timestamp = bahamas_ds.time[0]
@@ -42,18 +51,12 @@ while timestamp < bahamas_ds.time[-1]:
         cos_sza = np.cos(np.deg2rad(90 - get_altitude(lat, lon, dt_timestamp)))
         calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)  # calculate albedo after Taylor et al 1996 for sea surface
 
-    # provide libRadtran with sza (libRadtran calculates it itself as well)
+    # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
     sza_libradtran = 90 - get_altitude(lat, lon, dt_timestamp, elevation=alt)
 
-    # %% internal variables
-    _base_dir = get_path("base")
-    _libradtran_dir = get_path("libradtran", flight)
-    _radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran/"
-    _solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
-    _input_path = f"{_libradtran_dir}/wkdir"
+    # %% create input file
     _input_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
-    _input_filepath = f"{_input_path}/{_input_filename}"
-    make_dir(_input_path)  # create directory
+    _input_filepath = f"{input_path}/{_input_filename}"
 
     # %% set options for libRadtran run - atmospheric shell
     atmos_settings = dict(
@@ -65,14 +68,17 @@ while timestamp < bahamas_ds.time[-1]:
         longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
         mol_file=None,  # page 104
         mol_modify="O3 300 DU",  # page 105
-        radiosonde=f"{_radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
+        radiosonde=f"{radiosonde_dir}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
         time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
-        source=f"solar {_solar_source_path}/NewGuey2003_BBR.dat",  # page 119
+        source=f"solar {solar_source_path}" if solar_flag else "thermal",  # page 119
+        sur_temperature="293.15",  # page 121; set to 20 degC for now
         # sza=f"{sza_libradtran:.4f}",  # page 122
         # verbose="",  # page 123
-        wavelength="179.5 2225",  # SMART wavelength range
+        # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
+        wavelength="290 3600" if solar_flag else "4000 100000",
         zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
     )
+
     # set options for libRadtran run - radiative transfer equation solver
     rte_settings = dict(
         rte_solver="fdisort2",
