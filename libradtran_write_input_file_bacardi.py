@@ -31,7 +31,7 @@ _base_dir = get_path("base")
 _libradtran_dir = get_path("libradtran", flight)
 input_path = f"{_libradtran_dir}/wkdir/{'solar' if solar_flag else 'thermal'}"
 make_dir(input_path)  # create directory
-radiosonde_dir = f"{_base_dir}/../02_Soundings/RS_for_libradtran/"
+radiosonde_dir = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
 solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran/NewGuey2003_BBR.dat"  # set solar source file
 
 bahamas_ds = read_bahamas(flight)

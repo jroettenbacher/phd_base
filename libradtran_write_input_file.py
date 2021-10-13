@@ -28,7 +28,7 @@ time_step = pd.Timedelta(minutes=2)
 # %% set paths
 _base_dir = get_path("base")
 _libradtran_dir = get_path("libradtran", flight)
-radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran/"
+radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
 solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
 input_path = f"{_libradtran_dir}/wkdir"
 make_dir(input_path)  # create directory
