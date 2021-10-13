@@ -13,6 +13,7 @@ import pandas as pd
 from smart import get_path
 from functions_jr import make_dir
 from pysolar.solar import get_altitude
+from global_land_mask import globe
 from bahamas import read_bahamas
 from libradtran import find_closest_radiosonde_station
 
@@ -29,13 +30,19 @@ timestamp = bahamas_ds.time[0]
 while timestamp < bahamas_ds.time[-1]:
     bahamas_ds_sel = bahamas_ds.sel(time=timestamp)
     lat, lon, alt = bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values
+    is_on_land = globe.is_land(lat, lon)  # check if location is over land
     zout = alt / 1000  # page 127; aircraft altitude in km
     radiosonde_station = find_closest_radiosonde_station(lat, lon)
     # need to create a time zone aware datetime object to calculate the solar azimuth angle
     dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
-    # sun altitude measures from ground up -> 90 - sun altitude = sza
-    cos_sza = np.cos(np.deg2rad(90 - get_altitude(lat, lon, dt_timestamp)))
-    calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)  # calculate albedo after Taylor et al 1996 for sea surface
+    if is_on_land:
+        calc_albedo = 0.2  # set albedo to a fixed value (will be updated)
+    else:
+        # sun altitude measures from ground up -> 90 - sun altitude = solar zenith angle
+        cos_sza = np.cos(np.deg2rad(90 - get_altitude(lat, lon, dt_timestamp)))
+        calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)  # calculate albedo after Taylor et al 1996 for sea surface
+
+    # provide libRadtran with sza (libRadtran calculates it itself as well)
     sza_libradtran = 90 - get_altitude(lat, lon, dt_timestamp, elevation=alt)
 
     # %% internal variables
