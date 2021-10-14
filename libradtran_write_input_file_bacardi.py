@@ -24,14 +24,13 @@ log.setLevel(logging.DEBUG)
 
 # %% user input
 all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
-# all_flights = all_flights[15]  # select single flight if needed
+all_flights = all_flights[21:22]  # select single flight if needed
+time_step = pd.Timedelta(minutes=2)
+solar_flag = True  # True for solar wavelength range, False for terrestrial wavelength range
 
 # %% run for all flights
 for flight in all_flights:
-    time_step = pd.Timedelta(minutes=2)
-    solar_flag = True  # True for solar wavelength range, False for terrestrial wavelength range
-
-    # %% set paths
+    # set paths
     _base_dir = get_path("base")
     _libradtran_dir = get_path("libradtran", flight)
     input_path = f"{_libradtran_dir}/wkdir/{'solar' if solar_flag else 'thermal'}"
