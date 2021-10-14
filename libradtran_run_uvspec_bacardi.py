@@ -3,8 +3,6 @@
 author: Johannes Röttenbacher
 """
 # %% module import
-import sys
-
 import pandas as pd
 from smart import get_path
 import os
@@ -14,6 +12,7 @@ from joblib import cpu_count
 import datetime as dt
 from libradtran import get_info_from_libradtran_input
 from cirrus_hl import transfer_calibs
+from functions_jr import make_dir
 from pysolar.solar import get_azimuth
 import logging
 
@@ -22,6 +21,7 @@ log = logging.getLogger(__name__)
 try:
     log.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
+    make_dir("./logs")
     fh = logging.FileHandler(f'./logs/{dt.datetime.utcnow():%Y%m%d}_{__file__}.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
@@ -37,7 +37,6 @@ try:
 except NameError:
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
-
 # %% set options and get files
 all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
 all_flights = all_flights[17:]  # select specific flight[s] if needed
