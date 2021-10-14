@@ -3,6 +3,8 @@
 author: Johannes Röttenbacher
 """
 # %% module import
+import sys
+
 import pandas as pd
 from smart import get_path
 import os
@@ -15,9 +17,26 @@ from cirrus_hl import transfer_calibs
 from pysolar.solar import get_azimuth
 import logging
 
+# %% set up logging to console and file when calling script from console
 log = logging.getLogger(__name__)
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
+try:
+    log.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler(f'./logs/{dt.datetime.utcnow():%Y%m%d}_{__file__}.log')
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter)
+    # add the handlers to logger
+    log.addHandler(ch)
+    log.addHandler(fh)
+except NameError:
+    log.addHandler(logging.StreamHandler())
+    log.setLevel(logging.INFO)
 
 # %% set options and get files
 all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
@@ -40,7 +59,8 @@ for flight in all_flights:
 
     processes = set()
     max_processes = cpu_count() - 4
-    for infile, outfile, log_file in zip(tqdm(input_files, desc="libRadtran simulations"), output_files, error_logs):
+    tqdm_desc = f"libRadtran simulations {flight}"
+    for infile, outfile, log_file in zip(tqdm(input_files, desc=tqdm_desc), output_files, error_logs):
         with open(infile, "r") as ifile, open(outfile, "w") as ofile, open(log_file, "w") as lfile:
             processes.add(Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile))
         if len(processes) >= max_processes:
