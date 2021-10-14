@@ -175,11 +175,6 @@ Answer: The conversion of the analog signal to a digital can lead to this.
 
 ## 2. BACARDI
 
-**TODO:** 
-- [x] switch radiosonde station according to HALO position
-- [ ] set ozone concentration according to date and closest ozone sonde measurement
-- [ ] set the albedo according to the land use (Sea surface -> Taylor, land -> average land)
-
 BACARDI is a broadband radiometer mounted on the bottom and top of HALO. 
 The data is initially processed by DLR and then
 Anna Luebke used the scripts provided by André Ehrlich and written by Kevin Wolf to process the
@@ -350,12 +345,16 @@ Run on Linux.
 
 ## 5. libRadtran
 
-[libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model radiative fluxes
-spectrally resolved.
+[libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model spectral radiative 
+fluxes.
 
 ### 5.0 libRadtran simulations along flight path
 
 The following scripts use the BAHAMAS data to create libRadtran input files to simulate fluxes along the flightpath.
+The two scripts are meant to allow for flexible settings of the simulation.
+BACARDI versions of these scripts are available which replace the old IDL scripts.
+They are to be used as part of the BACARDI processing. 
+Before publishing BACARDI data, the state of the libRadtran input settings should be saved!
 
 **TODO:**
 - [ ] use specific total column ozone concentrations from OMI
@@ -364,10 +363,14 @@ The following scripts use the BAHAMAS data to create libRadtran input files to s
   * checkout the instructions for command line download [here](https://disc.gsfc.nasa.gov/data-access#windows_wget)
 - [x] change atmosphere file according to location -> uvspec does this automatically when lat, lon and time are supplied 
   - [x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
+- [x] use ocean or land albedo according to land sea mask
+- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
 - [ ] use self made surface_type_map for simulations in the Arctic
 - [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
-- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
-- [ ] use ocean or land albedo according to land sea mask
+- [x] include solar zenith angle filter
+- BACARDI
+- [ ] use surface_type_map for BACARDI simulations
+- [ ] use surface temperature according to ERA5 reanalysis for BACARDI simulations
 
 #### libradtran_write_input_file.py
 
@@ -395,22 +398,11 @@ After that the output files are merged into one data frame and information from 
 ### 5.1 BACARDI processing
 
 The following two scripts ~~are needed~~ were used in order to prepare the BACARDI processing.
+They are superseded by the new python versions of these scripts.
+* [libradtran_write_input_file_bacardi.py](#libradtran_write_input_file_bacardi.py)
+* [libradtran_run_uvspec_bacardi.py](#libradtran_run_uvspec_bacardi.py)
 
 #### 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
-
-**TODO:**
-- [ ] use specific total column ozone concentrations from OMI 
-  * can be downloaded [here](https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura)
-  * you need an Earth Data account and [add the application to your profile](https://disc.gsfc.nasa.gov/earthdata-login)
-  * checkout the instructions for command line download [here](https://disc.gsfc.nasa.gov/data-access#windows_wget)
-- [x] change atmosphere file
-  - [x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
-- [ ] use self made surface_type_map for simulations in the Arctic
-- [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
-- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
-- [ ] use ocean or land albedo according to land sea mask
-- [ ] 
-
 
 **Current settings:**
 * Albedo from Taylor et al. 1996
@@ -464,4 +456,45 @@ idl> .r 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
 idl> journal
 ```
 
+#### libradtran_write_input_file_bacardi.py
 
+This will write all input files for libRadtran simulations along the flight path.
+
+**Required User Input:**
+* flights in a list (optional, if not manually specified all flights will be processed)
+* time_step, in what interval should the simulations be done along the flight path?
+* solar_flag, write file for simulation of solar or thermal infrared fluxes?
+
+The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary. 
+The options are linked to the page in the manual where they are described in more detail.
+The input files are then saved to a working directory where `libradtran_run_uvspec_bacardi.py` will find them 
+and read them in.
+
+Run like this:
+
+```shell
+python libradtran_write_input_file_bacardi.py
+```
+
+#### libradtran_run_uvspec_bacardi.py
+
+This will run libRadtran simulations with the given input files from `libradtran_write_input_file_bacardi.py`.
+
+**Required User Input:**
+* flights in a list (optional, if not manually specified all flights will be processed)
+* solar_flag, run simulation for solar or for thermal infrared wavelengths?
+
+The script will loop through all files and start simulations for all input files it finds (in parallel for one flight).
+If the script is called via the command line it creates a `log` folder in the working directory if necessary and saves
+a log file to that folder.
+It also displays a progress bar in the terminal.
+After it is done with one flight, it will collect information from the input files and merge all output files in a 
+dataframe to which it appends the information from the input files.
+It converts everything to a netCDF file and writes it to disc with a bunch of metadata included.
+
+Run like this:
+
+```shell
+python libradtran_run_uvspec_bacardi.py
+```
