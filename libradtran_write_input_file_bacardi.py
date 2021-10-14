@@ -97,7 +97,7 @@ for flight in all_flights:
 
         # %% write input file
         with open(_input_filepath, "w") as ifile:
-            ifile.write(f"# libRadtran input file generated with libradtran__write_input_file_bacardi.py "
+            ifile.write(f"# libRadtran input file generated with libradtran_write_input_file_bacardi.py "
                         f"({datetime.datetime.utcnow():%c UTC})\n")
             for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                       ["Atmospheric", "RTE", "Post Process"]):

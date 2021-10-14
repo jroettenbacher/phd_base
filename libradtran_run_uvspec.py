@@ -19,10 +19,10 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set options and get files
-flight = "Flight_20210625a"
+flight = "Flight_20210719a"
 uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
 libradtran_base_dir = get_path("libradtran", flight)
-libradtran_dir = os.path.join(libradtran_base_dir, "wkdir")
+libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "solar")
 input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                if f.endswith(".inp")]
 input_files.sort()  # sort input files -> output files will be sorted as well
