@@ -20,12 +20,13 @@ from cirrus_hl import transfer_calibs
 
 log = logging.getLogger()
 log.addHandler(logging.StreamHandler())
-log.setLevel(logging.WARNING)
+log.setLevel(logging.DEBUG)
 
 # %% user input
 all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
 # all_flights = all_flights[15]  # select single flight if needed
 
+# %% run for all flights
 for flight in all_flights:
     time_step = pd.Timedelta(minutes=2)
     solar_flag = True  # True for solar wavelength range, False for terrestrial wavelength range
@@ -59,8 +60,10 @@ for flight in all_flights:
         # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
         sza_libradtran = 90 - get_altitude(lat, lon, dt_timestamp, elevation=alt)
         if sza_libradtran > 85:
-            log.debug(f"Solar zenith angle for {timestamp} is {sza_libradtran}! "
+            log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran:.2f}!\n"
                       f"Skipping this timestamp and moving on to the next one.")
+            # increase timestamp by time_step
+            timestamp = timestamp + time_step
             continue
 
         # %% create input file

@@ -53,8 +53,10 @@ while timestamp < bahamas_ds.time[-1]:
     # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
     sza_libradtran = 90 - get_altitude(lat, lon, dt_timestamp, elevation=alt)
     if sza_libradtran > 85:
-        log.debug(f"Solar zenith angle for {timestamp} is {sza_libradtran}!\n"
+        log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran:.2f}!\n"
                   f"Skipping this timestamp and moving on to the next one.")
+        # increase timestamp by time_step
+        timestamp = timestamp + time_step
         continue
 
     # %% internal variables
