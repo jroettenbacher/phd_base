@@ -16,46 +16,51 @@ from functions_jr import make_dir
 from pysolar.solar import get_azimuth
 import logging
 
+# %% set options
+all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
+all_flights = all_flights[17:]  # select specific flight[s] if needed
+
+uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
+solar_flag = True
+solar_str = "solar" if solar_flag else "thermal"
+
 # %% set up logging to console and file when calling script from console
 log = logging.getLogger(__name__)
 try:
     log.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
     make_dir("./logs")
-    fh = logging.FileHandler(f'./logs/{dt.datetime.utcnow():%Y%m%d}_{__file__}.log')
+    fh = logging.FileHandler(f'./logs/{dt.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{solar_str}.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
+    ch.setLevel(logging.INFO)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s : %(levelname)s - %(message)s', datefmt="%c")
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
     log.addHandler(ch)
     log.addHandler(fh)
 except NameError:
+    # __file__ is undefined if script is executed in console, set a normal logger instead
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
-# %% set options and get files
-all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
-all_flights = all_flights[17:]  # select specific flight[s] if needed
 
-uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-solar_flag = True
 log.info(f"Settings passed:\nsolar_flag: {solar_flag}\nuvspec_exe: {uvspec_exe}")
 
+# %% run for all flights
 for flight in all_flights:
     log.info(f"Working on {flight}")
+    # get files
     libradtran_base_dir = get_path("libradtran", flight)
-    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", f"{'solar' if solar_flag else 'thermal'}")
+    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", solar_str)
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
     input_files.sort()  # sort input files -> output files will be sorted as well
     output_files = [f.replace(".inp", ".out") for f in input_files]
     error_logs = [f.replace(".out", ".log") for f in output_files]
 
     # %% call uvspec for all files
-
     processes = set()
     max_processes = cpu_count() - 4
     tqdm_desc = f"libRadtran simulations {flight}"
@@ -102,7 +107,6 @@ for flight in all_flights:
         continue
 
     # %% merge output files and write a netCDF file
-
     latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
 
     # read input files and extract information from it
@@ -198,7 +202,7 @@ for flight in all_flights:
 
     encoding = dict(time=dict(units='seconds since 2021-01-01'))
 
-    ds = output.to_xarray()
+    ds = output.to_xarray()  # convert dataframe to dataset
     ds.attrs = attributes  # assign global attributes
     ds = ds.rename({"zout": "altitude"})
     # set attributes of each variable
@@ -206,7 +210,6 @@ for flight in all_flights:
     for var in ds:
         ds[var].attrs = var_attrs[var]
     # save file
-    solar_str = "solar" if solar_flag else "ter"
     nc_filepath = f"{libradtran_base_dir}/{flight}_libRadtran_clearsky_bb_simulation_{solar_str}.nc"
     ds.to_netcdf(nc_filepath, encoding=encoding)
     log.info(f"Saved {nc_filepath}")
