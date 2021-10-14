@@ -25,9 +25,10 @@ all_flights = [key for key in transfer_calibs.keys()]  # get all flights from di
 
 uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
 solar_flag = True
+log.info(f"Settings passed:\nsolar_flag: {solar_flag}\nuvspec_exe: {uvspec_exe}")
 
 for flight in all_flights:
-
+    log.info(f"Working on {flight}")
     libradtran_base_dir = get_path("libradtran", flight)
     libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", f"{'solar' if solar_flag else 'thermal'}")
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
@@ -67,11 +68,17 @@ for flight in all_flights:
                 os.wait()
                 processes.difference_update([p for p in processes if p.poll() is not None])
 
-        # wait for all simulations to finish
-        while len(processes) > 0:
-            processes.difference_update([p for p in processes if p.poll() is not None])
-        # update file_check
-        file_check = sum([os.path.getsize(file) == 0 for file in output_files])
+            # wait for all simulations to finish
+            while len(processes) > 0:
+                processes.difference_update([p for p in processes if p.poll() is not None])
+            # update file_check
+            file_check = sum([os.path.getsize(file) == 0 for file in output_files])
+            counter += 1
+            if counter > 10:
+                raise UserWarning(f"Simulation of {files_to_rerun} does not compute!\nCheck for other errors!")
+    except UserWarning as e:
+        log.info(f"{e}\nMoving to next flight")
+        continue
 
     # %% merge output files and write a netCDF file
 
