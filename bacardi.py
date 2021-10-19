@@ -19,7 +19,16 @@ import re
 # %% functions
 
 
-def read_bacardi_raw(filename: str, path: str):
+def read_bacardi_raw(filename: str, path: str) -> xr.Dataset:
+    """
+    Read raw BACARDI data as provided by DLR
+    Args:
+        filename: name of file
+        path: path to file
+
+    Returns: Dataset with BACARDI data and time as dimension
+
+    """
     filepath = os.path.join(path, filename)
     date = re.search(r"\d{8}", filename)[0]
     ds = xr.open_dataset(filepath)
