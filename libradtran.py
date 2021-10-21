@@ -74,6 +74,8 @@ def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp
     Returns: Some variables (latitude, longitude, time, header of output file, wavelength range, integrate flag)
 
     """
+    # define all possible output values as None in case the right line is not found
+    latitude, longitude, time_stamp, header, wavelengths, integrate_flag = None, None, None, None, None, None
     with open(filepath, "r") as ifile:
         lines = ifile.readlines()
 
