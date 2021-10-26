@@ -16,9 +16,10 @@ from cirrus_hl import gopro_lt, gopro_offsets
 flight = "Flight_20210730"
 correct_time = False
 start_file = 0
-file = "/mnt/c/Users/Johannes/Documents/Gopro/20211021/20211021_Gopro_0001.JPG"
+file = "/mnt/c/C:/Users/Johannes/Pictures/GoPro/20211025/20211025_Gopro_0001.JPG"
 
-path = f"{get_path('gopro')}/{flight[7:]}"
+path = f"{get_path('gopro')}/{flight[7:]}"  # path to all files
+# path = "/mnt/c/Users/Johannes/Pictures/GoPro/20211025"
 sync_to_bahamas = True if flight in gopro_offsets else False
 LT_to_UTC = gopro_lt[flight] if flight in gopro_lt else False
 files = [os.path.join(path, f) for f in os.listdir(path) if f.endswith(".JPG")][start_file:]
