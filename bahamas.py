@@ -22,7 +22,8 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # set plotting options for each flight
-plot_props = dict(Flight_20210625a=dict(figsize=(9, 9), cb_loc="left", shrink=1, l_loc=1),
+plot_props = dict(Flight_20210624a=dict(figsize=(9.5, 9), cb_loc="left", shrink=1, l_loc=1),
+                  Flight_20210625a=dict(figsize=(9.5, 9), cb_loc="left", shrink=1, l_loc=1),
                   Flight_20210626a=dict(figsize=(9.5, 8), cb_loc="bottom", shrink=0.9, l_loc=4),
                   Flight_20210628a=dict(figsize=(10, 9), cb_loc="left", shrink=1, l_loc=4),
                   Flight_20210629a=dict(figsize=(9, 8.2), cb_loc="bottom", shrink=1, l_loc=1),
@@ -61,14 +62,12 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     bahamas_dir = smart.get_path("bahamas", flight)
     outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots"
     make_dir(outpath)
-    # find bahamas file
-    file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
     # read in bahamas data
-    bahamas = read_bahamas(f"{bahamas_dir}/{file}")
+    bahamas = read_bahamas(flight)
     # select second airport for map plot according to flight
     airport = stop_over_locations[flight] if flight in stop_over_locations else None
     # select position and time data
-    lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["TIME"]
+    lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["time"]
     # calculate flight duration
     flight_duration = pd.Timedelta((times[-1] - times[0]).values).to_pytimedelta()
     # set extent of plot
@@ -118,7 +117,7 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     plt.close()
 
 
-def read_bahamas(flight: str, bahamas_path: str = None) -> xr.Dataset:
+def read_bahamas(flight: str = None, bahamas_path: str = None) -> xr.Dataset:
     """
     Reader function for netcdf BAHAMAS data. Uses flight argument to build path to BAHAMAS data unless bahamas_path is
     provided.
@@ -129,9 +128,10 @@ def read_bahamas(flight: str, bahamas_path: str = None) -> xr.Dataset:
     Returns: xr.DataSet with BAHAMAS data and time as dimension
 
     """
-    bahamas_dir = smart.get_path("bahamas", flight)
-    bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
-    bahamas_path = f"{bahamas_dir}/{bahamas_file}" if bahamas_path is None else bahamas_path
+    if flight:
+        bahamas_dir = smart.get_path("bahamas", flight)
+        bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+        bahamas_path = f"{bahamas_dir}/{bahamas_file}" if bahamas_path is None else bahamas_path
     ds = xr.open_dataset(bahamas_path)
     ds = ds.swap_dims({"tid": "TIME"})
     ds = ds.rename({"TIME": "time"})
