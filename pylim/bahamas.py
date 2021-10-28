@@ -18,8 +18,6 @@ import pandas as pd
 from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
 
 # set plotting options for each flight
 plot_props = dict(Flight_20210624a=dict(figsize=(9.5, 9), cb_loc="left", shrink=1, l_loc=1),

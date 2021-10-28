@@ -12,6 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import smart
 import cirrus_hl
+import logging
+log = logging.getLogger(__name__)
 
 
 def read_bacardi_raw(filename: str, path: str) -> xr.Dataset:

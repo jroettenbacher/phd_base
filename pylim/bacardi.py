@@ -15,6 +15,8 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import logging
+log = logging.getLogger(__name__)
 
 
 # %% functions

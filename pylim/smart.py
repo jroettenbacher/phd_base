@@ -21,8 +21,6 @@ import reader
 hv.extension('bokeh')
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.WARNING)
-log.addHandler(logging.StreamHandler())
 
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
