@@ -10,9 +10,10 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-import smart
-from cirrus_hl import stop_over_locations, coordinates
-from bahamas import plot_props, read_bahamas
+from pylim import helpers as h
+from pylim.cirrus_hl import stop_over_locations, coordinates
+from pylim.bahamas import plot_props
+import pylim.reader as reader
 from helpers import make_dir
 import cartopy.crs as ccrs
 import cartopy
@@ -27,15 +28,15 @@ log.setLevel(logging.WARNING)
 date = 20210729
 number = "a"
 flight = f"Flight_{date}{number}"
-bahamas_dir = smart.get_path("bahamas", flight)
-gopro_dir = smart.get_path("gopro")
+bahamas_dir = h.get_path("bahamas", flight)
+gopro_dir = h.get_path("gopro")
 # find bahamas file
 file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
 # select second airport for map plot according to flight
 airport = stop_over_locations[flight] if flight in stop_over_locations else None
 
 # %% read in bahamas data
-bahamas = read_bahamas(f"{bahamas_dir}/{file}")
+bahamas = reader.read_bahamas(f"{bahamas_dir}/{file}")
 # select only position data
 lon = bahamas["IRS_LON"]
 lat = bahamas["IRS_LAT"]
@@ -50,7 +51,7 @@ extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
 
 # %% select lon and lat values corresponding with the picture timestamps
 # get first and last bahamas time step
-first_ts, last_ts = pd.to_datetime(bahamas.TIME[0].values), pd.to_datetime(bahamas.TIME[-1].values)
+first_ts, last_ts = pd.to_datetime(bahamas.time[0].values), pd.to_datetime(bahamas.time[-1].values)
 # make strings with the only the time from timestamps
 first_ts, last_ts = first_ts.strftime("%H:%M:%S"), last_ts.strftime("%H:%M:%S")
 # read timestamps
@@ -61,8 +62,8 @@ ts_sel = timestamps.between_time(first_ts, last_ts)
 ts_sel.to_csv(f"{gopro_dir}/{flight}_timestamps_sel.csv", index_label="datetime")
 
 # %% select corresponding lat and lon values
-lon_sel = bahamas.IRS_LON.sel(TIME=ts_sel.index)
-lat_sel = bahamas.IRS_LAT.sel(TIME=ts_sel.index)
+lon_sel = bahamas.IRS_LON.sel(time=ts_sel.index)
+lat_sel = bahamas.IRS_LAT.sel(time=ts_sel.index)
 assert len(lon_sel) == len(lat_sel), "Lon and Lat are not of same lenght!"
 # %% plot on map
 
@@ -85,7 +86,7 @@ def plot_bahamas_map(flight: str, lon, lat, extent: list, lon1: float, lat1: flo
     Returns: Saves a png file
 
     """
-    bahamas_dir = smart.get_path("bahamas", flight)
+    bahamas_dir = h.get_path("bahamas", flight)
     outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots/time_lapse"
     make_dir(outpath)
     airport = kwargs["airport"] if "airport" in kwargs else None
