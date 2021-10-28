@@ -11,7 +11,7 @@ import logging
 import numpy as np
 import pandas as pd
 from smart import get_path
-from functions_jr import make_dir
+from helpers import make_dir
 from pysolar.solar import get_altitude
 from global_land_mask import globe
 from bahamas import read_bahamas

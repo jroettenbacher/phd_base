@@ -14,7 +14,7 @@ from libradtran import read_libradtran
 from cirrus_hl import stop_over_locations, coordinates
 import os
 import smart
-from functions_jr import make_dir, set_cb_friendly_colors, set_xticks_and_xlabels
+from helpers import make_dir, set_cb_friendly_colors, set_xticks_and_xlabels
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import patheffects

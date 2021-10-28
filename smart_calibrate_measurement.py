@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import smart
 from cirrus_hl import lookup, transfer_calibs
-from functions_jr import make_dir
+from helpers import make_dir
 import logging
 
 log = logging.getLogger(__name__)

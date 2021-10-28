@@ -13,7 +13,7 @@ import pandas as pd
 import smart
 from cirrus_hl import stop_over_locations, coordinates
 from bahamas import plot_props, read_bahamas
-from functions_jr import make_dir
+from helpers import make_dir
 import cartopy.crs as ccrs
 import cartopy
 from tqdm import tqdm

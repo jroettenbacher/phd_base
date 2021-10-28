@@ -6,7 +6,7 @@ author: Johannes Roettenbacher
 """
 import os
 import smart
-from functions_jr import make_dir
+from helpers import make_dir
 import logging
 from tqdm import tqdm
 from joblib import Parallel, delayed, cpu_count

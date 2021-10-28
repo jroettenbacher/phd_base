@@ -6,7 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import holoviews as hv
 from holoviews import opts
-
 import smart
 
 hv.extension('bokeh')

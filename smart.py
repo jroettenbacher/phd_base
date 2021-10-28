@@ -12,7 +12,7 @@ import xarray as xr
 from typing import Tuple, Union
 import numpy as np
 import toml
-import functions_jr as jr
+import helpers as jr
 import matplotlib.pyplot as plt
 import holoviews as hv
 from holoviews import opts

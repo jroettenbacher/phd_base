@@ -5,7 +5,7 @@ author: Johannes Roettenbacher
 
 # %% import modules
 import os
-from functions_jr import make_dir
+from helpers import make_dir
 import smart
 from cirrus_hl import lookup
 import pandas as pd

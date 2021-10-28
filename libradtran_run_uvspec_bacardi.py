@@ -12,7 +12,7 @@ from joblib import cpu_count
 import datetime as dt
 from libradtran import get_info_from_libradtran_input
 from cirrus_hl import transfer_calibs
-from functions_jr import make_dir
+from helpers import make_dir
 from pysolar.solar import get_azimuth
 import logging
 

@@ -9,7 +9,7 @@ import numpy as np
 import smart
 import xarray as xr
 from cirrus_hl import stop_over_locations, coordinates
-from functions_jr import make_dir
+from helpers import make_dir
 import os
 import cartopy.crs as ccrs
 import cartopy

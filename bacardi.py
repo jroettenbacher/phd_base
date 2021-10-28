@@ -9,7 +9,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
 from matplotlib.patches import Patch
-from functions_jr import set_xticks_and_xlabels
+from helpers import set_xticks_and_xlabels
 from libradtran import read_libradtran
 import pandas as pd
 import numpy as np
@@ -111,10 +111,11 @@ if __name__ == '__main__':
     ds.F_down_terrestrial.plot(x="time", label=r"$F_{\downarrow}$ BACARDI", ax=ax, c="#f89c20", ls="-")
     bbr_sim_ter.plot(y="F_up", ax=ax, label=r"$F_{\uparrow}$ libRadtran", c="#CC6677", ls="--",
                      path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
-    bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel=r"Broadband irradiance (W$\,$m$^{-2}$)", label=r"$F_{\downarrow}$ libRadtran",
+    bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel=r"Broadband irradiance (W$\,$m$^{-2}$)",
+                     label=r"$F_{\downarrow}$ libRadtran",
                      c="#f89c20", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
     ax.set_xlabel(r"Time (UTC)")
-    set_xticks_and_xlabels(ax, pd.to_timedelta((ds.time[-1]-ds.time[0]).values))
+    set_xticks_and_xlabels(ax, pd.to_timedelta((ds.time[-1] - ds.time[0]).values))
     ax.grid()
     handles, labels = ax.get_legend_handles_labels()
     legend_column_headers = ["Solar", "Terrestrial"]
@@ -129,4 +130,3 @@ if __name__ == '__main__':
     # plt.show()
     plt.savefig(f"{ql_path}/CIRRUS_HL_{flight}_bacardi_libradtran_broadband_irradiance.png", dpi=100)
     plt.close()
-

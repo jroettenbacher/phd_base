@@ -12,7 +12,7 @@ import pandas as pd
 from bahamas import read_bahamas
 from cirrus_hl import lookup, transfer_calibs
 from smart import get_path, plot_smart_data, read_smart_raw
-from functions_jr import set_cb_friendly_colors
+from helpers import set_cb_friendly_colors
 import logging
 
 log = logging.getLogger("smart")

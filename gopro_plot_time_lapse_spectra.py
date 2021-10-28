@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import smart
 from cirrus_hl import lookup
-from functions_jr import make_dir
+from helpers import make_dir
 from tqdm import tqdm
 from joblib import Parallel, delayed, cpu_count
 
@@ -68,7 +68,7 @@ def plot_timelapse_spectra(wavelengths: list, albedo: pd.DataFrame, fdw: pd.Data
         albedo: calculated albedo
         fdw: calibrated downward irradiance
         fup: calibrated upward irradiance
-        gopro_times: data frame with gopro times and picture numbers used in plot_maps.py
+        gopro_times: data frame with gopro times and picture numbers used in gopro_plot_maps.py
         idx: which timestep (index) to plot
         channel: VNIR or SWIR (only for plot title at the moment, should come from script above)
         plot_path: where to save figure

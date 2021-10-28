@@ -10,7 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 from subprocess import Popen
 import smart
-from functions_jr import make_dir
+from helpers import make_dir
 
 # %% set paths
 date = "20210729"
