@@ -6,16 +6,16 @@ import datetime
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import smart
 import xarray as xr
-from cirrus_hl import stop_over_locations, coordinates
-from helpers import make_dir
 import os
 import cartopy.crs as ccrs
 import cartopy
 import logging
 import pandas as pd
 from typing import Union, Tuple
+from pylim import smart
+from pylim.helpers import make_dir
+from pylim.cirrus_hl import stop_over_locations, coordinates
 
 log = logging.getLogger(__name__)
 

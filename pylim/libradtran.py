@@ -4,15 +4,13 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
-import matplotlib.pyplot as plt
-from smart import get_path
 import datetime
 import pandas as pd
-import numpy as np
-from cirrus_hl import coordinates, radiosonde_stations
 from geopy.distance import geodesic
 import re
 from typing import Tuple, List
+from pylim.helpers import get_path
+from pylim.cirrus_hl import coordinates, radiosonde_stations
 import logging
 
 log = logging.getLogger(__name__)

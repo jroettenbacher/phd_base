@@ -10,13 +10,12 @@ import sys
 import pandas as pd
 from typing import Tuple, Union
 import numpy as np
-import helpers as jr
 import matplotlib.pyplot as plt
 import holoviews as hv
 from holoviews import opts
-from cirrus_hl import lookup
-import helpers as h
-import reader
+from pylim.cirrus_hl import lookup
+from pylim import helpers as h
+from pylim import reader
 
 hv.extension('bokeh')
 
@@ -345,7 +344,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         time_extend = end_dt - begin_dt
         smart_sel.plot(ax=ax, legend=False, xlabel="Time (UTC)", ylabel=ylabel,
                        title=f"SMART Time Series {title} {direction} {channel}\n{wl:.3f} nm {begin_dt:%Y-%m-%d}")
-        jr.set_xticks_and_xlabels(ax, time_extend)
+        h.set_xticks_and_xlabels(ax, time_extend)
         figname = filename.replace('.dat', f'_{wl:.1f}nm.png')
     elif wavelength == "all":
         begin_dt, end_dt = smart.index[0], smart.index[-1]

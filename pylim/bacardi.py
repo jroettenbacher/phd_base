@@ -9,13 +9,13 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
 from matplotlib.patches import Patch
-from helpers import set_xticks_and_xlabels
-from libradtran import read_libradtran
 import pandas as pd
 import numpy as np
 import os
 import re
 import logging
+from pylim.reader import read_libradtran
+from pylim.helpers import set_xticks_and_xlabels
 log = logging.getLogger(__name__)
 
 
