@@ -42,7 +42,7 @@ def read_bahamas(bahamas_path: str) -> xr.Dataset:
     """
     Reader function for netcdf BAHAMAS data as provided by DLR.
     Args:
-        bahamas_path (optional): full path of netcdf file, overwrites standard path
+        bahamas_path: full path of netcdf file
 
     Returns: xr.DataSet with BAHAMAS data and time as dimension
 

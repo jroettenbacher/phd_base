@@ -8,7 +8,7 @@ import datetime
 import pandas as pd
 from geopy.distance import geodesic
 import re
-from typing import Tuple, List
+from typing import List
 from pylim.helpers import get_path
 from pylim.cirrus_hl import coordinates, radiosonde_stations
 import logging
