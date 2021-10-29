@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import datetime
+from pathlib import Path
+import logging
+log = logging.getLogger(__name__)
 
 
 def get_path(key: str, flight: str = None, instrument: str = None) -> str:
@@ -22,13 +25,16 @@ def get_path(key: str, flight: str = None, instrument: str = None) -> str:
         Returns: Path to specified data
 
     """
+    # make sure to search for the config file in the project directory
+    project_dir = Path(__file__).resolve().parent.parent
+    log.debug(f"Searching for config.toml in {project_dir}")
     wk_dir = os.getcwd()
     if wk_dir.startswith("C"):
-        config = toml.load("config.toml")["cirrus-hl"]["jr_local"]
+        config = toml.load(f"{project_dir}/config.toml")["cirrus-hl"]["jr_local"]
     elif wk_dir.startswith("/mnt"):
-        config = toml.load("config.toml")["cirrus-hl"]["jr_ubuntu"]
+        config = toml.load(f"{project_dir}/config.toml")["cirrus-hl"]["jr_ubuntu"]
     else:
-        config = toml.load("config.toml")["cirrus-hl"]["lim_server"]
+        config = toml.load(f"{project_dir}/config.toml")["cirrus-hl"]["lim_server"]
 
     flight = "" if flight is None else flight
     paths = dict()
