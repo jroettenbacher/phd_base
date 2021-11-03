@@ -6,16 +6,17 @@
 author: Johannes Röttenbacher
 """
 # %% module import
+import os
+
+import pylim.helpers as h
+from pylim import reader
+from pylim.libradtran import find_closest_radiosonde_station
 import datetime
 import logging
 import numpy as np
 import pandas as pd
-from smart import get_path
-from helpers import make_dir
 from pysolar.solar import get_altitude
 from global_land_mask import globe
-from bahamas import read_bahamas
-from libradtran import find_closest_radiosonde_station
 
 log = logging.getLogger()
 log.addHandler(logging.StreamHandler())
@@ -26,14 +27,16 @@ flight = "Flight_20210715a"
 time_step = pd.Timedelta(minutes=2)
 
 # %% set paths
-_base_dir = get_path("base")
-_libradtran_dir = get_path("libradtran", flight)
+_base_dir = h.get_path("base")
+_libradtran_dir = h.get_path("libradtran", flight)
+_bahamas_dir = h.get_path("bahamas", flight)
+_bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
 radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
 solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
 input_path = f"{_libradtran_dir}/wkdir"
-make_dir(input_path)  # create directory
+h.make_dir(input_path)  # create directory
 
-bahamas_ds = read_bahamas(flight)
+bahamas_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
 timestamp = bahamas_ds.time[0]
 while timestamp < bahamas_ds.time[-1]:
     bahamas_ds_sel = bahamas_ds.sel(time=timestamp)

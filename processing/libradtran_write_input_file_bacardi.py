@@ -6,17 +6,17 @@
 author: Johannes Röttenbacher
 """
 # %% module import
+import pylim.helpers as h
+from pylim import reader
+from pylim.cirrus_hl import transfer_calibs
+from pylim.libradtran import find_closest_radiosonde_station
+import os
 import datetime
-import logging
 import numpy as np
 import pandas as pd
-from smart import get_path
-from helpers import make_dir
 from pysolar.solar import get_altitude
 from global_land_mask import globe
-from bahamas import read_bahamas
-from libradtran import find_closest_radiosonde_station
-from cirrus_hl import transfer_calibs
+import logging
 
 log = logging.getLogger()
 log.addHandler(logging.StreamHandler())
@@ -31,14 +31,16 @@ solar_flag = True  # True for solar wavelength range, False for terrestrial wave
 # %% run for all flights
 for flight in all_flights:
     # set paths
-    _base_dir = get_path("base")
-    _libradtran_dir = get_path("libradtran", flight)
+    _base_dir = h.get_path("base")
+    _libradtran_dir = h.get_path("libradtran", flight)
+    _bahamas_dir = h.get_path("bahamas", flight)
+    _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
     input_path = f"{_libradtran_dir}/wkdir/{'solar' if solar_flag else 'thermal'}"
-    make_dir(input_path)  # create directory
+    h.make_dir(input_path)  # create directory
     radiosonde_dir = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
     solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran/NewGuey2003_BBR.dat"  # set solar source file
 
-    bahamas_ds = read_bahamas(flight)
+    bahamas_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
     timestamp = bahamas_ds.time[0]
     while timestamp < bahamas_ds.time[-1]:
         bahamas_ds_sel = bahamas_ds.sel(time=timestamp)

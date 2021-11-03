@@ -3,16 +3,15 @@
 author: Johannes Röttenbacher
 """
 # %% module import
+import pylim.helpers as h
 import pandas as pd
-from smart import get_path
+from pylim.libradtran import get_info_from_libradtran_input
+from pylim.cirrus_hl import transfer_calibs
 import os
 from subprocess import Popen
 from tqdm import tqdm
 from joblib import cpu_count
 import datetime as dt
-from libradtran import get_info_from_libradtran_input
-from cirrus_hl import transfer_calibs
-from helpers import make_dir
 from pysolar.solar import get_azimuth
 import logging
 
@@ -29,7 +28,7 @@ log = logging.getLogger(__name__)
 try:
     log.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
-    make_dir("./logs")
+    h.make_dir("./logs")
     fh = logging.FileHandler(f'./logs/{dt.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{solar_str}.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
@@ -53,7 +52,7 @@ log.info(f"Settings passed:\nsolar_flag: {solar_flag}\nuvspec_exe: {uvspec_exe}"
 for flight in all_flights:
     log.info(f"Working on {flight}")
     # get files
-    libradtran_base_dir = get_path("libradtran", flight)
+    libradtran_base_dir = h.get_path("libradtran", flight)
     libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", solar_str)
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
     input_files.sort()  # sort input files -> output files will be sorted as well

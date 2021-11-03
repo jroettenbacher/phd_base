@@ -5,8 +5,8 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
-from bacardi import read_bacardi_raw
-from smart import get_path
+from pylim.bacardi import read_bacardi_raw
+import pylim.helpers as h
 import os
 import xarray as xr
 import numpy as np
@@ -26,8 +26,8 @@ pitch_offset = 2.85
 
 # %% read BACARDI data
 flight = "Flight_20210624a"
-bacardi_path = get_path("bacardi", flight)
-libradtran_path = get_path("libradtran", flight)
+bacardi_path = h.get_path("bacardi", flight)
+libradtran_path = h.get_path("libradtran", flight)
 libradtran_file_solar = [f for f in os.listdir(libradtran_path) if "clearsky_bb_simulation_solar" in f][0]
 bacardi_ql_file = [f for f in os.listdir(bacardi_path) if "QL" in f][0]
 bacardi = read_bacardi_raw(bacardi_ql_file, bacardi_path)

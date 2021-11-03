@@ -3,14 +3,14 @@
 author: Johannes Röttenbacher
 """
 # %% module import
+import pylim.helpers as h
+from pylim.libradtran import get_info_from_libradtran_input
 import pandas as pd
-from smart import get_path
 import os
 from subprocess import Popen
 from tqdm import tqdm
 from joblib import cpu_count
 import datetime as dt
-from libradtran import get_info_from_libradtran_input
 from pysolar.solar import get_azimuth
 import logging
 
@@ -21,7 +21,7 @@ log.setLevel(logging.INFO)
 # %% set options and get files
 flight = "Flight_20210715a"
 uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-libradtran_base_dir = get_path("libradtran", flight)
+libradtran_base_dir = h.get_path("libradtran", flight)
 libradtran_dir = os.path.join(libradtran_base_dir, "wkdir")
 input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                if f.endswith(".inp")]
