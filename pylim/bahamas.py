@@ -2,6 +2,9 @@
 """Script to keep functions to work with BAHAMAS data
 author: Johannes Röttenbacher
 """
+from pylim import reader
+import pylim.helpers as h
+from pylim.cirrus_hl import stop_over_locations, coordinates
 import datetime
 import matplotlib
 import matplotlib.pyplot as plt
@@ -10,13 +13,9 @@ import xarray as xr
 import os
 import cartopy.crs as ccrs
 import cartopy
-import logging
 import pandas as pd
 from typing import Union, Tuple
-from pylim import smart
-from pylim.helpers import make_dir
-from pylim.cirrus_hl import stop_over_locations, coordinates
-
+import logging
 log = logging.getLogger(__name__)
 
 # set plotting options for each flight
@@ -57,11 +56,12 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     Returns: Saves a png file
 
     """
-    bahamas_dir = smart.get_path("bahamas", flight)
+    bahamas_dir = h.get_path("bahamas", flight)
     outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots"
-    make_dir(outpath)
+    h.make_dir(outpath)
     # read in bahamas data
-    bahamas = read_bahamas(flight)
+    bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+    bahamas = reader.read_bahamas(f"{bahamas_dir}/{bahamas_file}")
     # select second airport for map plot according to flight
     airport = stop_over_locations[flight] if flight in stop_over_locations else None
     # select position and time data
@@ -94,7 +94,7 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
         ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=10)
         ax.plot(long, lati, '.r', markersize=10)
 
-    # get the coordinates for EDMO and ad a label
+    # get the coordinates for EDMO and add a label
     x_edmo, y_edmo = coordinates["EDMO"]
     ax.plot(x_edmo, y_edmo, 'ok')
     ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=16)
@@ -115,28 +115,6 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     plt.close()
 
 
-def read_bahamas(flight: str = None, bahamas_path: str = None) -> xr.Dataset:
-    """
-    Reader function for netcdf BAHAMAS data. Uses flight argument to build path to BAHAMAS data unless bahamas_path is
-    provided.
-    Args:
-        flight: flight identifier (e.g. Flight_20210715a)
-        bahamas_path (optional): full path of netcdf file, overwrites standard path
-
-    Returns: xr.DataSet with BAHAMAS data and time as dimension
-
-    """
-    if flight:
-        bahamas_dir = smart.get_path("bahamas", flight)
-        bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
-        bahamas_path = f"{bahamas_dir}/{bahamas_file}" if bahamas_path is None else bahamas_path
-    ds = xr.open_dataset(bahamas_path)
-    ds = ds.swap_dims({"tid": "TIME"})
-    ds = ds.rename({"TIME": "time"})
-
-    return ds
-
-
 def get_position(flight: str,
                  timestamp: Union[datetime.datetime, pd.Timestamp]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Given the flight and the exact time, get HALOs position
@@ -148,14 +126,22 @@ def get_position(flight: str,
     Returns: latitude (deg), longitude (deg), altitude (m)
 
     """
-    bahamas_dir = smart.get_path("bahamas", flight)
+    bahamas_dir = h.get_path("bahamas", flight)
     bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
-    bahamas_ds = read_bahamas(f"{bahamas_dir}/{bahamas_file}")
+    bahamas_ds = reader.read_bahamas(f"{bahamas_dir}/{bahamas_file}")
     # convert given datetime to pd.Timestamp and remove any timezone information
     ts = pd.to_datetime(timestamp).tz_convert(None)
     bahamas_ds_sel = bahamas_ds.sel(TIME=ts)
 
     return bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values
+
+
+def preprocess_bahamas(ds: xr.Dataset) -> xr.Dataset:
+    """Preprocessing function for xarray.read_mfdataset()
+    """
+    ds = ds.swap_dims({"tid": "TIME"})
+    ds = ds.rename({"TIME": "time"})
+    return ds
 
 
 if __name__ == "__main__":
