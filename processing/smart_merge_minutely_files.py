@@ -8,20 +8,20 @@ This script
 author: Johannes Röttenbacher
 """
 
-from smart import get_path
+import pylim.helpers as h
 import os
 import pandas as pd
 import logging
 from tqdm import tqdm
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # combine minutely files to one file
 # User input
 flight = "Flight_20210728a"
-data_path = get_path("data", flight=flight)  # dark current corrected files
+data_path = h.get_path("data", flight=flight)  # dark current corrected files
 # calibrated_path = get_path("calibrated", flight=flight)  # dark current corrected files
 directory = data_path
 

@@ -4,23 +4,23 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
+from pylim import reader
+from pylim.cirrus_hl import lookup, transfer_calibs
+from pylim.smart import plot_smart_data
+import pylim.helpers as h
 import os
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from bahamas import read_bahamas
-from cirrus_hl import lookup, transfer_calibs
-from smart import get_path, plot_smart_data, read_smart_raw
-from helpers import set_cb_friendly_colors
 import logging
 
-log = logging.getLogger("smart")
+log = logging.getLogger("pylim")
 log.setLevel(logging.INFO)
 
 # %% set paths
-calib_path = get_path("calib")
-plot_path = f"{get_path('plot')}/quality_check_calibration"
+calib_path = h.get_path("calib")
+plot_path = f"{h.get_path('plot')}/quality_check_calibration"
 
 # %% list all files from one spectrometer
 prop = "Fup_SWIR"
@@ -124,18 +124,18 @@ for path, filenames, p_path in zip([trans_calib_path, trans_calib_path_dark],
 flight = "Flight_20210728a"
 props = ["Fdw_SWIR", "Fup_SWIR"]
 dfs, dfs_plot, files_dict = dict(), dict(), dict()
-raw_path = get_path("raw", flight)
-bahamas_path = get_path("bahamas", flight)
+raw_path = h.get_path("raw", flight)
+bahamas_path = h.get_path("bahamas", flight)
 bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
-bahamas_ds = read_bahamas(f"{bahamas_path}/{bahamas_file}")
+bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
 for prop in props:
     files_dict[prop] = [f for f in os.listdir(raw_path) if prop in f]
-    dfs[prop] = pd.concat([read_smart_raw(raw_path, file) for file in files_dict[prop]])
+    dfs[prop] = pd.concat([reader.read_smart_raw(raw_path, file) for file in files_dict[prop]])
     # select only rows where the shutter is closed and take mean over all pixels
     dfs_plot[prop] = dfs[prop][dfs[prop]["shutter"] == 0].iloc[:, 2:].mean(axis=1)
 
 # plot mean dark current over flight
-set_cb_friendly_colors()
+h.set_cb_friendly_colors()
 fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
 for prop in props:
     dfs_plot[prop].plot(ax=axs[0], ylabel="Netto Counts", label=f"{prop}")
@@ -156,18 +156,18 @@ plt.close()
 flight = "Flight_20210723a"
 props = ["Fdw_VNIR", "Fup_VNIR"]
 dfs, dfs_plot, files_dict = dict(), dict(), dict()
-raw_path = get_path("raw", flight)
-bahamas_path = get_path("bahamas", flight)
+raw_path = h.get_path("raw", flight)
+bahamas_path = h.get_path("bahamas", flight)
 bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
-bahamas_ds = read_bahamas(f"{bahamas_path}/{bahamas_file}")
+bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
 for prop in props:
     files_dict[prop] = [f for f in os.listdir(raw_path) if prop in f]
-    dfs[prop] = pd.concat([read_smart_raw(raw_path, file) for file in files_dict[prop]])
+    dfs[prop] = pd.concat([reader.read_smart_raw(raw_path, file) for file in files_dict[prop]])
     # select only columns where no signal is measured in the VNIR, drop t_int and shutter column
     dfs_plot[prop] = dfs[prop].iloc[:, 2:150].mean(axis=1)
 
 # plot mean dark current over flight VNIR
-set_cb_friendly_colors()
+h.set_cb_friendly_colors()
 fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
 for prop in props:
     dfs_plot[prop].plot(ax=axs[0], ylabel="Netto Counts", label=f"{prop}")

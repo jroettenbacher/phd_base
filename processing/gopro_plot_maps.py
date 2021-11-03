@@ -5,22 +5,21 @@ author: Johannes Röttenbacher
 """
 
 # %% import libraries
-import logging
-import os
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
 from pylim import helpers as h
 from pylim.cirrus_hl import stop_over_locations, coordinates
 from pylim.bahamas import plot_props
 import pylim.reader as reader
-from helpers import make_dir
+import os
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
 import cartopy.crs as ccrs
 import cartopy
 from tqdm import tqdm
 from joblib import Parallel, cpu_count, delayed
+import logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.WARNING)
 

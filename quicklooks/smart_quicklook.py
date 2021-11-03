@@ -4,27 +4,26 @@ author: Johannes Roettenbacher
 """
 
 # %% import modules
+from pylim.cirrus_hl import lookup
+import pylim.helpers as h
+from pylim import reader, smart
 import os
-from helpers import make_dir
-import smart
-from cirrus_hl import lookup
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 
 # %%  set paths
 flight = "Flight_20210728a"
-raw_path = smart.get_path("raw", flight)
-pixel_path = smart.get_path("pixel_wl")
-data_path = smart.get_path("data", flight)
-calibrated_path = smart.get_path("calibrated", flight)
-plot_path = smart.get_path("plot")
+raw_path = h.get_path("raw", flight)
+pixel_path = h.get_path("pixel_wl")
+data_path = h.get_path("data", flight)
+calibrated_path = h.get_path("calibrated", flight)
+plot_path = h.get_path("plot")
 ql_path = f"{plot_path}/quicklooks/{flight}"
-make_dir(ql_path)
+h.make_dir(ql_path)
 # %% read in raw files
 raw_files = os.listdir(raw_path)
 outpath = f"{ql_path}/raw"
-make_dir(outpath)
+h.make_dir(outpath)
 for file in raw_files:
     smart.plot_smart_data(file, "all", path=raw_path, plot_path=outpath, save_fig=True)
     try:
@@ -35,7 +34,7 @@ for file in raw_files:
 # %% read in dark current corrected files
 data_files = os.listdir(data_path)
 outpath = f"{ql_path}"
-make_dir(outpath)
+h.make_dir(outpath)
 for file in data_files:
     smart.plot_smart_data(flight, file, "all", path=data_path, plot_path=outpath, save_fig=True)
     try:
@@ -46,7 +45,7 @@ for file in data_files:
 # read in calibrated files
 calib_files = os.listdir(calibrated_path)
 outpath = f"{ql_path}/calibrated"
-make_dir(outpath)
+h.make_dir(outpath)
 for file in calib_files:
     # plot the time average of the flight
     smart.plot_smart_data(flight, file, "all", path=calibrated_path, plot_path=outpath, save_fig=True)
@@ -60,8 +59,8 @@ for file in calib_files:
 # %% plot Fdw with IMS and stabbi angles - read in and prepare data
 
 flight = "Flight_20210628a"
-path = smart.get_path("calibrated")
-horipath = smart.get_path("horidata")
+path = h.get_path("calibrated")
+horipath = h.get_path("horidata")
 hori_dir = os.path.join(horipath, flight)
 hori_file = [f for f in os.listdir(hori_dir) if f.endswith("dat")][0]  # select stabbi file
 # read stabbi data and make PCTIME a datetime column and set it as index
@@ -69,16 +68,16 @@ horidata = pd.read_csv(f"{hori_dir}/{hori_file}", skipinitialspace=True, sep="\t
 horidata["PCTIME"] = pd.to_datetime(horidata["DATE"] + " " + horidata["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
 horidata.set_index("PCTIME", inplace=True)
 nav_file = [f for f in os.listdir(hori_dir) if "IMS" in f][0]  # select IMS file
-nav_df = smart.read_nav_data(f"{hori_dir}/{nav_file}")
+nav_df = reader.read_nav_data(f"{hori_dir}/{nav_file}")
 nav_df = nav_df.resample("S").mean()  # resample IMS data to one second to save RAM
 inpath = f"{path}/{flight}"  # get inpath for SMART data
 file = [f for f in os.listdir(inpath) if "Fdw_VNIR" in f][0]  # select Fdw VNIR file
 # get info from filename and select pixel to wavelength file
 date_str, channel, direction = smart.get_info_from_filename(file)
-pixel_wl = smart.read_pixel_to_wavelength(smart.get_path("pixel_wl"), lookup[f"{direction}_{channel}"])
+pixel_wl = reader.read_pixel_to_wavelength(h.get_path("pixel_wl"), lookup[f"{direction}_{channel}"])
 pixel_nr, wl = smart.find_pixel(pixel_wl, 550)
 # read in SMART data and select specified wavelength
-df = smart.read_smart_cor(inpath, file).iloc[:, pixel_nr]
+df = reader.read_smart_cor(inpath, file).iloc[:, pixel_nr]
 
 # %% read in BACARDI simulated stuff
 bacardi_path = "C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/simulations/Flight_20210628a/BBR_Fdn_clear_sky_Flight_20210628a_R0_ds_high.dat"

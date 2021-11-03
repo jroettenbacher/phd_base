@@ -18,7 +18,7 @@ from pysolar.solar import get_altitude
 from global_land_mask import globe
 import logging
 
-log = logging.getLogger()
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.DEBUG)
 

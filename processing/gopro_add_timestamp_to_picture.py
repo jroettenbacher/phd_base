@@ -5,12 +5,12 @@ author: Johannes Röttenbacher
 """
 
 # %%
+import pylim.helpers as h
+from pylim.cirrus_hl import gopro_lt, gopro_offsets
 import os
 import datetime
 from tqdm import tqdm
 from subprocess import run, Popen
-from smart import get_path
-from cirrus_hl import gopro_lt, gopro_offsets
 
 # user input
 flight = "Flight_20210730"
@@ -18,7 +18,7 @@ correct_time = False
 start_file = 0
 file = "/mnt/c/C:/Users/Johannes/Pictures/GoPro/20211025/20211025_Gopro_0001.JPG"
 
-path = f"{get_path('gopro')}/{flight[7:]}"  # path to all files
+path = f"{h.get_path('gopro')}/{flight[7:]}"  # path to all files
 # path = "/mnt/c/Users/Johannes/Pictures/GoPro/20211025"
 sync_to_bahamas = True if flight in gopro_offsets else False
 LT_to_UTC = gopro_lt[flight] if flight in gopro_lt else False

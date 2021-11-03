@@ -24,7 +24,7 @@ solar_flag = True
 solar_str = "solar" if solar_flag else "thermal"
 
 # %% set up logging to console and file when calling script from console
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 try:
     log.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages

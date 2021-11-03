@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
 # %% library import
+import pylim.helpers as h
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import holoviews as hv
 from holoviews import opts
-import smart
 
 hv.extension('bokeh')
 
 # %% Working section
 flight = "Flight_20210629a"
-path = f"{smart.get_path('horidata')}/{flight}"
+path = f"{h.get_path('horidata')}/{flight}"
 
 file = [f for f in os.listdir(path) if f.endswith('dat')]
 
@@ -62,7 +62,7 @@ def read_nav_data(nav_path: str) -> pd.DataFrame:
 
 
 flight = "Flight_20210701a"  # User Input
-horipath = smart.get_path("horidata")
+horipath = h.get_path("horidata")
 nav_dir = os.path.join(horipath, flight)
 nav_file = [f for f in os.listdir(nav_dir) if "IMS" in f][0]
 nav_path = os.path.join(nav_dir, nav_file)
@@ -89,7 +89,7 @@ hv.save(layout, f"{outpath}/{flight}_NavCommand.html")
 # %% Holoviews Dashboard of Stabilization Platform data
 
 # flight = "Flight_20210628a"
-horipath = smart.get_path("horidata")
+horipath = h.get_path("horidata")
 hori_dir = os.path.join(horipath, flight)
 hori_file = [f for f in os.listdir(hori_dir) if f.endswith("dat")][0]
 horidata = pd.read_csv(f"{hori_dir}/{hori_file}", skipinitialspace=True, sep="\t")

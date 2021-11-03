@@ -3,8 +3,9 @@
 author: Johannes Röttenbacher
 """
 # TODO: make script work for first lab calib
+import pylim.helpers as h
+from pylim import reader, smart
 import os
-import smart
 import pandas as pd
 import logging
 
@@ -17,7 +18,7 @@ folder = "ASP06_Calib_Lab_20210809"
 # folder = "ASP07_Calib_Lab_20210809"
 
 # Set paths in config.toml
-calib_path = smart.get_path("calib")
+calib_path = h.get_path("calib")
 
 # merge VNIR dark measurement files before correcting the calib files
 property = ["Iup", "Fup", "Fdw"]
@@ -69,8 +70,8 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                 dark_dir = f"{calib_path}/{folder}/dark_200ms"
                 dark_file = "2021_08_09_06_57.Iup_VNIR.dat"
 
-            measurement = smart.read_smart_raw(dirpath, file)
-            dark_current = smart.read_smart_raw(dark_dir, dark_file)
+            measurement = reader.read_smart_raw(dirpath, file)
+            dark_current = reader.read_smart_raw(dark_dir, dark_file)
             dark_current = dark_current.iloc[:, 2:].mean()
             measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]  # only use data when shutter is open
             smart_cor = measurement - dark_current

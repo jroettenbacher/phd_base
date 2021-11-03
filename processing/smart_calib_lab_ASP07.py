@@ -11,9 +11,9 @@
 author: Johannes Roettenbacher
 """
 # %%
-import smart
-from smart import get_path
-from cirrus_hl import lookup
+from pylim import smart, reader
+import pylim.helpers as h
+from pylim.cirrus_hl import lookup
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,10 +21,10 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 # %% set paths
-calib_path, plot_path, panel_path = get_path("calib"), get_path("plot"), get_path("panel")
+calib_path, plot_path, panel_path = h.get_path("calib"), h.get_path("plot"), h.get_path("panel")
 
 # %% read in lamp and panel files
-lamp = smart.read_lamp_file(plot=False, save_file=False, save_fig=False)
+lamp = reader.read_lamp_file(plot=False, save_file=False, save_fig=False)
 columns = ["wavelength", "reflectance"]
 panels = dict()
 panels["VNIR"] = pd.read_csv(f"{panel_path}/panels_VIS_8_(ASP_07).dat", skiprows=15, usecols=[0, 3], names=columns,
@@ -45,7 +45,7 @@ lamp_measurement = [f for f in os.listdir(dirpath) if f.endswith(f"{channel}_cor
 ulli_measurement = [f for f in os.listdir(dirpath_ulli) if f.endswith(f"{channel}_cor.dat")]
 filename = lamp_measurement[0]
 date_str, channel, direction = smart.get_info_from_filename(filename)
-lab_calib = smart.read_smart_cor(dirpath, filename)
+lab_calib = reader.read_smart_cor(dirpath, filename)
 # set negative counts to 0
 lab_calib[lab_calib.values < 0] = 0
 
@@ -88,7 +88,7 @@ plt.close()
 
 # %% read in Ulli transfer measurement from lab
 ulli_file = ulli_measurement[0]
-ulli = smart.read_smart_cor(f"{calib_path}/{base}/{folders[1]}", ulli_file)
+ulli = reader.read_smart_cor(f"{calib_path}/{base}/{folders[1]}", ulli_file)
 ulli[ulli.values < 0] = 0  # set negative counts to 0
 panel["S_ulli"] = ulli.mean().reset_index(drop=True)  # take mean over time of calib measurement
 if normalize:

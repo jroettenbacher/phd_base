@@ -5,12 +5,13 @@ input: raw smart transfer calibration measurements
 output: dark current corrected and merged smart measurements
 author: Johannes Roettenbacher
 """
+import pylim.helpers as h
+from pylim import smart
 import os
-import smart
 import pandas as pd
 import logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
@@ -18,7 +19,7 @@ log.setLevel(logging.INFO)
 folder = "ASP06_transfer_calib_20210729"
 
 # Set paths in config.toml
-calib_path = smart.get_path("calib")
+calib_path = h.get_path("calib")
 
 # merge VNIR dark measurement files before correcting the calib files
 property = ["Iup", "Fup", "Fdw"]

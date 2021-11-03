@@ -14,7 +14,7 @@ import datetime as dt
 from pysolar.solar import get_azimuth
 import logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 

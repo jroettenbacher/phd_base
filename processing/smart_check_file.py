@@ -3,16 +3,17 @@
 author: Johannes Roettenbacher
 """
 
+import pylim.helpers as h
+from pylim import reader
 import os
-import smart
 
-flight = "flight_01"
-raw_path = smart.get_path("raw")
+flight = "Flight_20210625a"
+raw_path = h.get_path("raw", flight)
 inpath = f"{raw_path}/{flight}"
 
 for file in os.listdir(inpath):
     try:
-        df = smart.read_smart_raw(inpath, file)
+        df = reader.read_smart_raw(inpath, file)
     except:
         os.remove(f"{inpath}/{file}")
         print(f"Deleted {file}")

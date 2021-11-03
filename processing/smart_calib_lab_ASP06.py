@@ -11,18 +11,18 @@
 9. write dat file with all information
 author: Johannes Roettenbacher"""
 # %%
-import smart
-from smart import get_path
-from cirrus_hl import lookup
+import pylim.helpers as h
+from pylim import reader, smart
+from pylim.cirrus_hl import lookup
 import os
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 # %% set paths
-pixel_path, calib_path, plot_path = get_path("pixel_wl"), get_path("calib"), get_path("plot")
+pixel_path, calib_path, plot_path = h.get_path("pixel_wl"), h.get_path("calib"), h.get_path("plot")
 
 # %% read lamp file
-lamp = smart.read_lamp_file(plot=False, save_file=False, save_fig=False)
+lamp = reader.read_lamp_file(plot=False, save_file=False, save_fig=False)
 
 # %% read in ASP06 dark current corrected lamp measurement data and relate pixel to wavelength
 channel = "SWIR"  # set channel to work on (VNIR or SWIR)
@@ -37,13 +37,13 @@ lamp_measurement = [f for f in os.listdir(dirpath) if f.endswith(f"{channel}_cor
 ulli_measurement = [f for f in os.listdir(dirpath_ulli) if f.endswith(f"{channel}_cor.dat")]
 filename = lamp_measurement[0]
 date_str, channel, direction = smart.get_info_from_filename(filename)
-lab_calib = smart.read_smart_cor(dirpath, filename)
+lab_calib = reader.read_smart_cor(dirpath, filename)
 # set negative counts to 0
 lab_calib[lab_calib.values < 0] = 0
 
 # %% read in pixel to wavelength file
 spectrometer = lookup[f"{direction}_{channel}"]
-pixel_wl = smart.read_pixel_to_wavelength(pixel_path, spectrometer)
+pixel_wl = reader.read_pixel_to_wavelength(pixel_path, spectrometer)
 pixel_wl["S0"] = lab_calib.mean().reset_index(drop=True)  # take mean over time of calib measurement
 if normalize:
     pixel_wl["S0"] = pixel_wl["S0"] / t_int  # normalize counts by integration time
@@ -80,7 +80,7 @@ plt.close()
 
 # %% read in Ulli transfer measurement from lab
 ulli_file = ulli_measurement[0]
-ulli = smart.read_smart_cor(f"{calib_path}/{base}/{folders[1]}", ulli_file)
+ulli = reader.read_smart_cor(f"{calib_path}/{base}/{folders[1]}", ulli_file)
 ulli[ulli.values < 0] = 0  # set negative counts to 0
 pixel_wl["S_ulli"] = ulli.mean().reset_index(drop=True)  # take mean over time of calib measurement
 if normalize:

@@ -5,26 +5,25 @@ author: Johannes Röttenbacher
 """
 
 # %%
+import pylim.helpers as h
 import os
 import pandas as pd
 from tqdm import tqdm
 from subprocess import Popen
-import smart
-from helpers import make_dir
 
 # %% set paths
 date = "20210729"
 number = "a"
 flight = f"Flight_{date}{number}"
-gopro_dir = smart.get_path('gopro')
+gopro_dir = h.get_path('gopro')
 gopro_path = f"{gopro_dir}/{date}"
-map_path = f"{smart.get_path('bahamas', flight)}/plots/time_lapse"
+map_path = f"{h.get_path('bahamas', flight)}/plots/time_lapse"
 maps = [os.path.join(map_path, f) for f in os.listdir(map_path) if f.endswith(".png")]
 map_numbers = pd.read_csv(f"{gopro_dir}/{flight}_timestamps_sel.csv", index_col="datetime", parse_dates=True)
 f1, f2 = map_numbers.number.iloc[0], map_numbers.number.iloc[-1]
 files = [os.path.join(gopro_path, f) for f in os.listdir(gopro_path) if f.endswith(".JPG")][f1-1:f2-1]
 outpath = f"{gopro_dir}/{flight}"
-make_dir(outpath)
+h.make_dir(outpath)
 processes = set()
 max_processes = 10
 

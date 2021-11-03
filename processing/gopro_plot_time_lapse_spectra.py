@@ -4,41 +4,41 @@ author: Johannes Röttenbacher
 """
 
 # %% import modules
+import pylim.helpers as h
+from pylim import reader, smart
+from pylim.cirrus_hl import lookup
 import os
 import logging
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-import smart
-from cirrus_hl import lookup
-from helpers import make_dir
 from tqdm import tqdm
 from joblib import Parallel, delayed, cpu_count
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.WARNING)
 
 # %% select flight and set paths
 date = 20210707
 flight = f"Flight_{date}a"
-gopro_path = smart.get_path("gopro")
+gopro_path = h.get_path("gopro")
 # read the GoPro csv
 gopro_times = pd.read_csv(f"{gopro_path}/{flight}_timestamps_sel.csv", index_col="datetime", parse_dates=True)
 
 # %% read SMART data
-calib_path = smart.get_path("calibrated")
+calib_path = h.get_path("calibrated")
 smart_path = f"{calib_path}/{flight}"
 fdw_file = [f for f in os.listdir(smart_path) if "Fdw_VNIR" in f][0]
 fup_file = [f for f in os.listdir(smart_path) if "Fup_VNIR" in f][0]
-fdw = smart.read_smart_cor(smart_path, fdw_file)
-fup = smart.read_smart_cor(smart_path, fup_file)
+fdw = reader.read_smart_cor(smart_path, fdw_file)
+fup = reader.read_smart_cor(smart_path, fup_file)
 
 # %% get pixel to wavelength file for x-axis
-pixel_wl_path = smart.get_path("pixel_wl")
+pixel_wl_path = h.get_path("pixel_wl")
 channel = "VNIR"
 direction = "Fdw"
-pixel_wl = smart.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
 wavelengths = pixel_wl["wavelength"]
 
 # %% select the closest SMART timestamps to the picture time
@@ -55,8 +55,8 @@ fup_sel[fup_sel < 0] = 0
 albedo = fup_sel.divide(fdw_sel)
 
 # %% plot spectral albedo, fdw and fup
-plot_path = f"{smart.get_path('plot')}/time_lapse/{flight}"
-make_dir(plot_path)
+plot_path = f"{h.get_path('plot')}/time_lapse/{flight}"
+h.make_dir(plot_path)
 
 
 def plot_timelapse_spectra(wavelengths: list, albedo: pd.DataFrame, fdw: pd.DataFrame, fup: pd.DataFrame,
@@ -112,8 +112,8 @@ Parallel(n_jobs=cpu_count()-2)(delayed(plot_timelapse_spectra)
                                for idx in tqdm(range(len(gopro_times))))
 
 # %% plot timeseries with moving marker
-plot_path = f"{smart.get_path('plot')}/time_lapse_ts/{flight}"
-make_dir(plot_path)
+plot_path = f"{h.get_path('plot')}/time_lapse_ts/{flight}"
+h.make_dir(plot_path)
 wl = 550
 nr, wl = smart.find_pixel(pixel_wl, wl)
 number = gopro_times.number[idx]  # get image number for outfile name

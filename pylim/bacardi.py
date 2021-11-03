@@ -4,7 +4,8 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
-from smart import get_path
+import pylim.helpers as h
+from pylim import reader
 import xarray as xr
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
@@ -14,10 +15,8 @@ import numpy as np
 import os
 import re
 import logging
-from pylim.reader import read_libradtran
-from pylim.helpers import set_xticks_and_xlabels
-log = logging.getLogger(__name__)
 
+log = logging.getLogger(__name__)
 
 # %% functions
 
@@ -229,7 +228,7 @@ def decon_rt(xdatacon, xtime, xrsp_time, xfcut, xrm_length, xdt, NO_RM=False, xf
 if __name__ == '__main__':
     # %% set paths
     flight = "Flight_20210719a"
-    bacardi_path = get_path("bacardi", flight)
+    bacardi_path = h.get_path("bacardi", flight)
     ql_path = bacardi_path
 
     # %% read in bacardi data
@@ -240,8 +239,8 @@ if __name__ == '__main__':
     # %% read in libRadtran simulations
     libradtran_file = f"BBR_Fdn_clear_sky_{flight}_R0_ds_high.dat"
     libradtran_file_ter = f"BBR_Fdn_clear_sky_{flight}_R0_ds_high_ter.dat"
-    bbr_sim = read_libradtran(flight, libradtran_file)
-    bbr_sim_ter = read_libradtran(flight, libradtran_file_ter)
+    bbr_sim = reader.read_libradtran(flight, libradtran_file)
+    bbr_sim_ter = reader.read_libradtran(flight, libradtran_file_ter)
 
     # %% BACARDI and libRadtran quicklooks
     plt.rc('font', size=14)
@@ -265,7 +264,7 @@ if __name__ == '__main__':
                      label=r"$F_{\downarrow}$ libRadtran",
                      c="#f89c20", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
     ax.set_xlabel(r"Time (UTC)")
-    set_xticks_and_xlabels(ax, pd.to_timedelta((ds.time[-1] - ds.time[0]).values))
+    h.set_xticks_and_xlabels(ax, pd.to_timedelta((ds.time[-1] - ds.time[0]).values))
     ax.grid()
     handles, labels = ax.get_legend_handles_labels()
     legend_column_headers = ["Solar", "Terrestrial"]

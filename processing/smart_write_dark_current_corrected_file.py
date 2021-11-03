@@ -4,9 +4,9 @@ input: raw smart measurements
 output: dark current corrected smart measurements
 author: Johannes Roettenbacher
 """
+import pylim.helpers as h
+from pylim import cirrus_hl, smart
 import os
-import smart
-from helpers import make_dir
 import logging
 from tqdm import tqdm
 from joblib import Parallel, delayed, cpu_count
@@ -18,12 +18,12 @@ log.setLevel(logging.INFO)
 # User input
 flight = "Flight_20210728a"  # which flight do the files in raw belong to?
 # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
-transfer_cali_date = smart.transfer_calibs[flight]
+transfer_cali_date = cirrus_hl.transfer_calibs[flight]
 
 # Set paths in config.toml
-inpath = smart.get_path("raw", flight)
-outdir = smart.get_path("data", flight)
-make_dir(outdir)
+inpath = h.get_path("raw", flight)
+outdir = h.get_path("data", flight)
+h.make_dir(outdir)
 # create list of input files and add a progress bar to it
 files = tqdm([file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))])
 files_debug = [file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))]

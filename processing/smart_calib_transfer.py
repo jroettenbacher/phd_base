@@ -11,8 +11,9 @@ author: Johannes Roettenbacher
 """
 
 # %% module import and set paths
-import smart
-from cirrus_hl import lookup
+import pylim.helpers as h
+from pylim import reader, smart
+from pylim.cirrus_hl import lookup
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -20,8 +21,8 @@ import matplotlib.pyplot as plt
 # %% set variables
 field_folder = "ASP06_transfer_calib_20210729"  # transfer calib folder
 lab_cali_date = "2021_03_29"  # set lab calib to relate measurement to
-calib_path = smart.get_path("calib")
-plot_path = smart.get_path("plot")
+calib_path = h.get_path("calib")
+plot_path = h.get_path("plot")
 t_int = 300  # integration time of transfer calibration measurement
 normalize = True  # normalize counts by integration time
 norm = "_norm" if normalize else ""
@@ -36,7 +37,7 @@ lab_cali_files = [f for f in os.listdir(calib_path) if f.endswith(f"lab_calib{no
 # %% read in Ulli transfer measurement from field
 for field_file in field_cali_files:
     date_str, channel, direction = smart.get_info_from_filename(field_file)
-    ulli_field = smart.read_smart_cor(f"{calib_path}/{field_folder}/Tint_{t_int}ms", field_file)
+    ulli_field = reader.read_smart_cor(f"{calib_path}/{field_folder}/Tint_{t_int}ms", field_file)
     ulli_field[ulli_field.values < 0] = 0  # set negative counts to 0
     # read corresponding cali file
     lab_file = [f for f in lab_cali_files if f"{direction}_{channel}" in f][0]

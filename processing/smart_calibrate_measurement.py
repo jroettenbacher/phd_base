@@ -4,15 +4,15 @@ author: Johannes Roettenbacher
 """
 
 # %% import modules and set paths
+import pylim.helpers as h
+from pylim import smart, reader
+from pylim.cirrus_hl import lookup, transfer_calibs
 import os
 import numpy as np
 import pandas as pd
-import smart
-from cirrus_hl import lookup, transfer_calibs
-from helpers import make_dir
 import logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("pylim")
 log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
@@ -27,12 +27,12 @@ date = f"{transfer_date[:4]}_{transfer_date[4:6]}_{transfer_date[6:]}"  # reform
 
 # %% set paths
 norm = "_norm" if normalize else ""
-calib_path = smart.get_path("calib")
-data_path = smart.get_path("data", flight)
-calibrated_path = smart.get_path("calibrated", flight)
+calib_path = h.get_path("calib")
+data_path = h.get_path("data", flight)
+calibrated_path = h.get_path("calibrated", flight)
 inpath = data_path
 outpath = calibrated_path
-make_dir(outpath)  # create outpath if necessary
+h.make_dir(outpath)  # create outpath if necessary
 
 # %% read in dark current corrected measurement files
 files = [f for f in os.listdir(inpath)]
@@ -41,7 +41,7 @@ for file in files:
     date_str = date if len(date) > 0 else date_str  # overwrite date_str if date is given
     spectrometer = lookup[f"{direction}_{channel}"]
     t_int = t_int_asp06 if "ASP06" in spectrometer else t_int_asp07  # select relevant integration time
-    measurement = smart.read_smart_cor(data_path, file)
+    measurement = reader.read_smart_cor(data_path, file)
     # measurement[measurement.values < 0] = 0  # set negative values to 0
 
     # %% read in matching transfer calibration file from same day or from given day with matching t_int

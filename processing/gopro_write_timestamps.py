@@ -9,14 +9,14 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
+import pylim.helpers as h
 from subprocess import run
 import re
 import pandas as pd
-from smart import get_path
 
 # %% set paths
 date = 20210728
-path = f"{get_path('gopro')}/{date}"
+path = f"{h.get_path('gopro')}/{date}"
 # file = f"{path}/{date}_Gopro_0001.jpg"
 
 # write meta data info to file
