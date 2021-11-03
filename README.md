@@ -2,7 +2,12 @@
 
 *author: Johannes Röttenbacher*
 
-Here I code all the stuff I need for my PhD.
+Here I code all the stuff I need for my PhD. 
+It includes processing for measurement data gathered by the HALO aircraft.
+During the first year a new python package was created which provides useful functions used in the processing and analysis of the data.
+The package is called `pylim`.
+Further there are folders for different purposes:
+
 
 ## 1. SMART
 
@@ -39,33 +44,31 @@ There are two workflows:
 2. Measurement files
 
 Both workflows start with the correction of the dark current. 
-After the raw files are copied from ASP06/07 into `raw_only` and `raw` the minutely files are corrected for the dark
-current and saved with the new ending `*_cor.dat` in `data_cor`.
+After the raw files are copied from ASP06/07 into `raw_only` and `raw` the minutely files are corrected for the dark current and saved with the new ending `*_cor.dat` in `data_cor`.
 Then the minutely files are merged to one file per folder and channel.
 
 **Calibration files**
 
-Use `smart_process_transfer_calib.py` or `smart_process_lab_calib.py` to correct the calibration files for the 
-dark current and merge the minutely files.
-Then run `smart_calib_lab_ASP06/07.py` for the lab calibrations or `smart_calib_transfer.py` for the transfer 
-calibration.
+Use `smart_process_transfer_calib.py` or `smart_process_lab_calib.py` to correct the calibration files for the dark current and merge the minutely files.
+Then run `smart_calib_lab_ASP06/07.py` for the lab calibrations or `smart_calib_transfer.py` for the transfer calibration.
 Each script returns a file in the `calib` folder with the calibration factor.
 
 **Measurement files**
 
 Use `smart_write_dark_currented_corrected_file.py` to correct one flight for the dark current.
 Merge the resulting minutely files with `smart_merge_minutely_files.py`.
-Finally calibrate the measurement with `smart_calibrate_measurment.py`.
+Finally, calibrate the measurement with `smart_calibrate_measurment.py`.
 The resulting calibrated files are saved in the `data_calibrated` folder.
 
 
 ### 1.1 smart.py
 
 These are functions in relation with the SMART instrument.
-"_" denotes internal functions which are called inside other functions. There is also a lookup dictionary to look up
-which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part
-belongs to which channel. Another dictionary relates each measurement with the date of the transfer calibration for that
-measurement. The functions are explained in their docstring and they can be tested using the main frame.
+"_" denotes internal functions which are called inside other functions. 
+~~There is also a lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.~~
+~~Another dictionary relates each measurement with the date of the transfer calibration for that measurement.~~ 
+This has been moved to `cirrus-hl.py`.
+The functions are explained in their docstring and they can be tested using the main frame.
 You can:
 
 * read in raw and processed SMART data
@@ -389,6 +392,12 @@ Run on Linux.
 Uses ffmpeg to create a stop motion video of the GoPro pictures.
 Run on Linux.
 
+Run like this:
+
+```shell
+ffmpeg 
+```
+
 ## 5. libRadtran
 
 [libRadtran](https://doi.org/10.5194/gmd-9-1647-2016) is a radiative transfer model which can model spectral radiative 
@@ -410,10 +419,10 @@ Before publishing BACARDI data, the state of the libRadtran input settings shoul
 - [x] change atmosphere file according to location -> uvspec does this automatically when lat, lon and time are supplied 
   - [x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
 - [x] use ocean or land albedo according to land sea mask
-- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
-- [ ] use self made surface_type_map for simulations in the Arctic
-- [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
 - [x] include solar zenith angle filter
+- [ ] use altitude (ground height above sea level) from a surface map, when over land -> adjust zout definition accordingly
+- [ ] use self-made surface_type_map for simulations in the Arctic
+- [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
 - BACARDI
 - [ ] use surface_type_map for BACARDI simulations
 - [ ] use surface temperature according to ERA5 reanalysis for BACARDI simulations

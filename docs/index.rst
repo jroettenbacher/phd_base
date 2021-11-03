@@ -7,8 +7,12 @@ Welcome to Arctic Cirrus's documentation!
 =========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
+
+   Overview <readme_link>
+   setup
+   api_documentation
 
 
 

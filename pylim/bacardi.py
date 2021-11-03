@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 def read_bacardi_raw(filename: str, path: str) -> xr.Dataset:
     """
     Read raw BACARDI data as provided by DLR
+
     Args:
         filename: name of file
         path: path to file
