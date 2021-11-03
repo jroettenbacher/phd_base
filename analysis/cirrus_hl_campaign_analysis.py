@@ -4,13 +4,17 @@ author: Johannes Röttenbacher
 """
 
 # %% module import
+from pylim.cirrus_hl import coordinates
+from pylim.helpers import get_path
 import xarray as xr
-from smart import get_path
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
 import cartopy
 import cartopy.crs as ccrs
-from cirrus_hl import coordinates
+import logging
+log = logging.getLogger(__name__)
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.INFO)
 
 # %% define functions
 
@@ -18,6 +22,7 @@ from cirrus_hl import coordinates
 def preprocess_bahamas(ds: xr.Dataset) -> xr.Dataset:
     # swap dimensions
     ds = ds.swap_dims({"tid": "TIME"})
+    ds = ds.rename({"TIME": "time"})
     return ds
 
 
@@ -62,5 +67,7 @@ for station in rs_coordinates:
 ax.set_title("CIRRUS-HL - Radiosonde staions close to flight paths")
 plt.tight_layout()
 # plt.show()
-plt.savefig("CIRRUS-HL_Radiosonde_stations.png", dpi=100)
+figname = f"{plot_path}/CIRRUS-HL_Radiosonde_stations.png"
+plt.savefig(figname, dpi=100)
+log.info(f"Saved {figname}")
 plt.close()
