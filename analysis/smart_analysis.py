@@ -4,33 +4,36 @@ author: Johannes Röttenbacher
 """
 
 # %% import libraries
-import smart
-from cirrus_hl import lookup
+from pylim import reader
+from pylim import smart, helpers as h
+from pylim.cirrus_hl import lookup
 import os
-import pandas as pd
-import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
+import logging
+log = logging.getLogger("pylim")
+log.addHandler(logging.StreamHandler())
+log.setLevel(logging.INFO)
 
 # %% list files
-flight = "flight_02"
-calibrated_path = smart.get_path("calibrated")
-pixel_wl_path = smart.get_path("pixel_wl")
-plot_path = f"{smart.get_path('base')}/campaigns/CIRRUS-HL/SMART/products/{flight}"
-inpath = os.path.join(calibrated_path, flight)
-all_files = os.listdir(inpath)
+flight = "Flight_20210625a"
+calibrated_path = h.get_path("calibrated", flight)
+pixel_wl_path = h.get_path("pixel_wl")
+plot_path = f"{h.get_path('plot')}/{flight}"
+h.make_dir(plot_path)
+all_files = os.listdir(calibrated_path)
 fdw_files = [f for f in all_files if "Fdw" in f]
 fup_files = [f for f in all_files if "Fup" in f]
 
 # %% get pixel to wavelength file
 channel = "VNIR"
 direction = "Fdw"
-pixel_wl = smart.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
 # %% read in files
 fdw_file = fdw_files[0] if channel in fdw_files[0] else fdw_files[1]
 fup_file = fup_files[0] if channel in fup_files[0] else fup_files[1]
-fdw = smart.read_smart_cor(inpath, fdw_file)
-fup = smart.read_smart_cor(inpath, fup_file)
+fdw = reader.read_smart_cor(calibrated_path, fdw_file)
+fup = reader.read_smart_cor(calibrated_path, fup_file)
 
 # %% remove values < 0
 fdw_clean = fdw[fdw > 0]
@@ -99,15 +102,17 @@ ax.grid()
 plt.title(f"{channel} Spectrum and Albedo for {timestep}\nDark Current Corrected and Calibrated")
 plt.tight_layout()
 timestep_name = timestep.replace(' ', '_').replace(':', '-')
-plt.savefig(f"{plot_path}/{timestep_name}_{channel}_spectrum_albedo.png", dpi=100)
+figname = f"{plot_path}/{timestep_name}_{channel}_spectrum_albedo.png"
+plt.savefig(figname, dpi=100)
+log.info(f"Saved {figname}")
 plt.show()
 plt.close()
 
 # %% read in BAHAMAS
-inpath = f"C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/BAHAMAS/{flight}"
-file = [f for f in os.listdir(inpath) if f.endswith(".nc")]
+bahamas_dir = h.get_path("bahamas", flight)
+bahamas_file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")]
 
-bahamas = xr.open_dataset(f"{inpath}/{file}")
+bahamas = xr.open_dataset(f"{bahamas_dir}/{bahamas_file}")
 bahamas["H"].plot()
 plt.show()
 plt.close()
