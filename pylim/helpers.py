@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import datetime
 from pathlib import Path
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -18,7 +19,7 @@ def get_path(key: str, flight: str = None, instrument: str = None) -> str:
         Read paths from the toml file according to the current working directory.
 
         Args:
-            key: which path to return, see function for possible values
+            key: which path to return, see config.toml for possible values
             flight: for which flight should the path be provided (eg. Flight_20210625a)
             instrument: if key=all which instrument to generate the path to? (e.g. BAHAMAS)
 
@@ -38,9 +39,8 @@ def get_path(key: str, flight: str = None, instrument: str = None) -> str:
 
     flight = "" if flight is None else flight
     paths = dict()
-    base_dir = config["base_dir"]
+    base_dir = config.pop("base_dir")
     paths["base"] = base_dir
-    config.pop("base_dir")
     for k in config:
         paths[k] = os.path.join(base_dir, flight, config[k])
     for k in ["calib", "pixel_wl", "lamp", "panel"]:

@@ -2,20 +2,25 @@
 
 *author: Johannes Röttenbacher*
 
-Here I code all the stuff I need for my PhD. 
+Here I code all the stuff I need for my PhD on Arctic cirrus. 
 It includes processing for measurement data gathered by the HALO aircraft.
 During the first year a new python package was created which provides useful functions used in the processing and analysis of the data.
 The package is called `pylim`.
 Further there are folders for different purposes:
 
+* `analysis`: case studies or general campaign analysis to answer scientific questions
+* `processing`: scripts to generate error/bias corrected, calibrated and shareable/publishable files from raw files
+* `quicklooks`: quicklooks of measurements (raw and calibrated) and of calibrations
+
+The data is sorted by flight.
+The exact paths are defined in `config.toml` and can be adjusted according to your setup.
+More information on how to adjust this file can be found in [Setup](./docs/setup.rst).
 
 ## 1. SMART
 
-These scripts work with the SMART calibration and measurement files to generate calibrated measurement files and
-quicklooks. 
+These scripts work with the SMART calibration and measurement files to generate calibrated measurement files and quicklooks. 
 General functions are in `smart.py` and are used in other processing scripts. 
-In `config.toml` one can find
-the paths where the scripts expect to find files and where they will save the files to.
+In `config.toml` one can find the paths where the scripts expect to find files and where they will save the files to.
 
 **Folder Structure**
 
