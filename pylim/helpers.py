@@ -14,13 +14,14 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def get_path(key: str, flight: str = None, instrument: str = None) -> str:
+def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:
     """
         Read paths from the toml file according to the current working directory.
 
         Args:
             key: which path to return, see config.toml for possible values
             flight: for which flight should the path be provided (eg. Flight_20210625a)
+            campaign: campaign for which the paths should be generated
             instrument: if key=all which instrument to generate the path to? (e.g. BAHAMAS)
 
         Returns: Path to specified data
@@ -31,11 +32,11 @@ def get_path(key: str, flight: str = None, instrument: str = None) -> str:
     log.debug(f"Searching for config.toml in {project_dir}")
     wk_dir = os.getcwd()
     if wk_dir.startswith("C"):
-        config = toml.load(f"{project_dir}/config.toml")["cirrus-hl"]["jr_local"]
+        config = toml.load(f"{project_dir}/config.toml")[campaign]["jr_local"]
     elif wk_dir.startswith("/mnt"):
-        config = toml.load(f"{project_dir}/config.toml")["cirrus-hl"]["jr_ubuntu"]
+        config = toml.load(f"{project_dir}/config.toml")[campaign]["jr_ubuntu"]
     else:
-        config = toml.load(f"{project_dir}/config.toml")["cirrus-hl"]["lim_server"]
+        config = toml.load(f"{project_dir}/config.toml")[campaign]["lim_server"]
 
     flight = "" if flight is None else flight
     paths = dict()
