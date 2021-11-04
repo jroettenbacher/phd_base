@@ -3,6 +3,9 @@
 author: Johannes Röttenbacher
 """
 
+from pylim import helpers as h
+from pylim import reader
+from pylim.cirrus_hl import lookup
 import os
 import re
 import logging
@@ -13,9 +16,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import holoviews as hv
 from holoviews import opts
-from pylim.cirrus_hl import lookup
-from pylim import helpers as h
-from pylim import reader
 
 hv.extension('bokeh')
 

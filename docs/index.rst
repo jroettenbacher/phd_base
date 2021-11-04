@@ -12,6 +12,9 @@ Welcome to Arctic Cirrus's documentation!
 
    Overview <readme_link>
    setup
+   processing
+   quicklooks
+   analysis
    api_documentation
 
 
