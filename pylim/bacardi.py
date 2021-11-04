@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Script for processing and plotting BACARDI data
+"""Functions for processing and plotting BACARDI data
 author: Johannes Röttenbacher
 """
 
@@ -44,23 +44,23 @@ def read_bacardi_raw(filename: str, path: str) -> xr.Dataset:
 
 
 def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float = 0, p_off: float = 0):
-    """
-    Attitude Correction for downward irradiance
-    corrects downward irradiance for misalignment of the sensor (deviation from hoizontal alignment)
+    """Attitude Correction for downward irradiance.
+    Corrects downward irradiance for misalignment of the sensor (deviation from hoizontal alignment).
+
     - only direct fraction of irradiance can be corrected by the equation, therefore a direct fraction (fdir) has to be provided
     - please check correct definition of the attitude angle
     - for differences between the sensor attitude and the attitude given by an INS the offset angles (p_off and r_off) can be defined.
 
     Args:
         fdw: downward irradiance [W m-2] or [W m-2 nm-1]
-        roll: roll angle [deg]      		  - defined positive for left wing up
-        pitch: pitch angle [deg]	  		  - defined positive for nose down
-        yaw: yaw angle [deg]		  		  - defined clockwise with North=0°
+        roll: roll angle [deg] - defined positive for left wing up
+        pitch: pitch angle [deg] - defined positive for nose down
+        yaw: yaw angle [deg] - defined clockwise with North=0°
         sza: solar zenith angle [deg]
-        saa: solar azimuth angle [deg]	  - defined clockwise with North=0°
-        r_off: roll offset angle between INS and sensor [deg]   - defined positive for left wing up
-        p_off: pitch offset angle between INS and sensor [deg]  - defined positive for nose down
-        fdir: fraction of direct radiation [0..1]# 0=pure diffuse, 1=pure direct
+        saa: solar azimuth angle [deg] - defined clockwise with North=0°
+        r_off: roll offset angle between INS and sensor [deg] - defined positive for left wing up
+        p_off: pitch offset angle between INS and sensor [deg] - defined positive for nose down
+        fdir: fraction of direct radiation [0..1] (0=pure diffuse, 1=pure direct)
 
     Returns: corrected downward irradiance [W m-2] or [W m-2 nm-1]
 
@@ -86,36 +86,38 @@ def decon_rt(xdatacon, xtime, xrsp_time, xfcut, xrm_length, xdt, NO_RM=False, xf
 
     - Deconvolution is applied via the convolution theorem using fourier transformation
     - see Numerical Recipies 13.1
-
     - additional filters are applied to reduce the influence of sensor noise
-            - cuting off the fourier series at noise level
-          - additional running mean filter (rectangular window)
+        - cuting off the fourier series at noise level
+        - additional running mean filter (rectangular window)
 
-    INPUT:  xtime      ... has to be equidistant [s]
-            xdatacon   ... data series as measured
-            xrsp_time  ... 1/e response time of the sensor [s]
-            xfcut      ... Cut off frequenzy for noise filtering in [Hz]
-            xrm_length ... Window size of the running mean filter in [s]
-            xdt        ... Time step between two measurements [s]
+    Args:
+        xtime      ... has to be equidistant [s]
+        xdatacon   ... data series as measured
+        xrsp_time  ... 1/e response time of the sensor [s]
+        xfcut      ... Cut off frequenzy for noise filtering in [Hz]
+        xrm_length ... Window size of the running mean filter in [s]
+        xdt        ... Time step between two measurements [s]
 
-    OUTPUT: xdata      ... deconvoluted data
+    Returns: xdata      ... deconvoluted data
 
-    OPTIONAL OUTPUT: spectra_out      ...   The name of the variable to receive the fourier coefficients calculated within the routine.
-                                              The output is an array containing following parameter
-                                                  [0] ... frequency
-                                                  [1] ... fourier coeff. of original data
-                                                  [2] ... fourier coeff. of deconvolutetd data
-                                                  [3] ... fourier coeff. of deconvolutetd data + cut if freq. applied
-                                                  [4] ... fourier coeff. of deconvolutetd data + cut if freq. + running mean applied
-                                                  [5] ... fourier coeff. of convolution function
+    Optional output:
+        spectra_out ... The name of the variable to receive the fourier coefficients calculated within the routine.
+            The output is an array containing following parameter
+            [0] ... frequency
+            [1] ... fourier coeff. of original data
+            [2] ... fourier coeff. of deconvolutetd data
+            [3] ... fourier coeff. of deconvolutetd data + cut if freq. applied
+            [4] ... fourier coeff. of deconvolutetd data + cut if freq. + running mean applied
+            [5] ... fourier coeff. of convolution function
 
-    PARAMETERS:	/NO_RM			   ...  If set, the running mean filter is not applied
-                /show_spectra      ... can be specified to give a plot of the power spectra as calculated within the routine
-                                           "ENTER" hast to be pressed to continue the calculation after the plot opened.
-                SIGMA=*.**         ... choose to apply the Lanczos sigma factor reducing the Gibbs-Phenomenon
-                                    value given to SIGMA=*.**  is the max. frequency xfsigma for which Sigma-Approx. is applied
+    PARAMETERS:
+        /NO_RM ...  If set, the running mean filter is not applied
+        /show_spectra ... can be specified to give a plot of the power spectra as calculated within the routine
+            "ENTER" hast to be pressed to continue the calculation after the plot opened.
+        SIGMA=*.** ... choose to apply the Lanczos sigma factor reducing the Gibbs-Phenomenon
+            value given to SIGMA=*.**  is the max. frequency xfsigma for which Sigma-Approx. is applied
+            ==> SIGMA is somehow redundant as the running mean makes nothing else than sigma approximation...
 
-    ==> SIGMA is somehow redundant as the running mean makes nothing else than sigma approximation...
     """
 
     xdatacon = xdatacon.flatten()

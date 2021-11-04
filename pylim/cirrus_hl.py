@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Collects information about the cirrus-hl campaign
+"""General information about the CIRRUS-HL campaign
 author: Johannes Röttenbacher
 """
 

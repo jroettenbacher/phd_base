@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Script to keep functions to work with BAHAMAS data
+"""Functions to work with BAHAMAS data
 author: Johannes Röttenbacher
 """
 from pylim import reader
@@ -48,10 +48,10 @@ plot_props = dict(Flight_20210624a=dict(figsize=(9.5, 9), cb_loc="left", shrink=
 def plot_bahamas_flight_track(flight: str, **kwargs):
     """
     Plot a map of the flight track from BAHAMAS data with the location of HALO.
+
     Args:
         flight: Flight name (eg. Flight_20210707a)
-        **kwargs:
-            outpath (str): where to save plot (default: bahamas_dir/plots)
+        **kwargs: outpath (str): where to save plot (default: bahamas_dir/plots)
 
     Returns: Saves a png file
 
@@ -117,7 +117,7 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
 
 def get_position(flight: str,
                  timestamp: Union[datetime.datetime, pd.Timestamp]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Given the flight and the exact time, get HALOs position
+    """Given the flight and the exact time, get HALOs position.
 
     Args:
         flight: Which flight to read in
@@ -138,6 +138,9 @@ def get_position(flight: str,
 
 def preprocess_bahamas(ds: xr.Dataset) -> xr.Dataset:
     """Preprocessing function for xarray.read_mfdataset()
+
+    Returns: Dataset with dimension time
+
     """
     ds = ds.swap_dims({"tid": "TIME"})
     ds = ds.rename({"TIME": "time"})

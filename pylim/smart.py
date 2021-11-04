@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Script for processing and plotting of SMART data
+"""Functions for processing and plotting of SMART data
 author: Johannes Röttenbacher
 """
 
@@ -61,30 +61,29 @@ def find_pixel(df: pd.DataFrame, wavelength: float()) -> Tuple[int, float]:
     min_wl = df["wavelength"].min()
     max_wl = df["wavelength"].max()
     assert max_wl >= wavelength >= min_wl, "Given wavelength not in data frame!"
-    idx = jr.arg_nearest(df["wavelength"], wavelength)
+    idx = h.arg_nearest(df["wavelength"], wavelength)
     pixel_nr, wavelength = df["pixel"].iloc[idx], df["wavelength"].iloc[idx]
     return pixel_nr, wavelength
 
 
-def _plot_dark_current(wavelenghts: Union[pd.Series, list],
+def _plot_dark_current(wavelengths: Union[pd.Series, list],
                       dark_current: Union[pd.Series, list],
                       spectrometer: str, channel: str, **kwargs):
     """
     Plot the dark current over the wavelengths from the specified spectrometer and channel.
 
     Args:
-        wavelenghts: series or list of wavelengths corresponding with the pixel numbers from read_pixel_to_wavelength
+        wavelengths: series or list of wavelengths corresponding with the pixel numbers from read_pixel_to_wavelength
         dark_current: series or list with mean dark current for each pixel
         spectrometer: name of the spectrometer inlet
         channel: VNIR or SWIR
-        **kwargs:
-            save_fig: whether to save the figure in the current directory (True) or just show it (False, default)
+        **kwargs: save_fig: whether to save the figure in the current directory (True) or just show it (False, default)
 
     Returns:
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-    plt.plot(wavelenghts, dark_current, color='k')
+    plt.plot(wavelengths, dark_current, color='k')
     plt.axhline(dark_current.mean(), color="orange", label="Mean")
     plt.grid()
     plt.title(f"Dark Current from Spectrometer {spectrometer}, channel: {channel}")
@@ -107,8 +106,8 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
         filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat")
         option: which option to use for VNIR, 1 or 2
         kwargs:
-            path (str): path if not standard path from config.toml
-            plot (bool): show plot or not (default: True)
+            path (str): path if not standard path from config.toml,
+            plot (bool): show plot or not (default: True),
             date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
 
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
@@ -207,8 +206,7 @@ def plot_mean_corrected_measurement(flight: str, filename: str, measurement: Uni
         measurement: raw SMART measurements for each pixel averaged over time
         measurement_cor: corrected SMART measurements for each pixel averaged over time
         option: which option was used for VNIR correction
-        **kwargs:
-            save_fig (bool): save figure to current directory or just show it
+        **kwargs: save_fig (bool): save figure to current directory or just show it
 
     Returns: plot
 
@@ -249,10 +247,9 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         smart_file: filename of file to correct
         option: which option should be used to get the dark current? Only relevant for channel "VNIR".
-        kwargs:
-            path: path to file if not raw file path as given in config.toml
-            date: date from which the dark current measurement should be used for VNIR (necessary if no transfer
-                  calibration was made on a measurement day)
+        kwargs: path (str): path to file if not raw file path as given in config.toml,
+            date (str): (yyyymmdd) date from which the dark current measurement should be used for VNIR (necessary if \
+            no transfer calibration was made on a measurement day)
 
     Returns: Series with corrected smart measurement
 
@@ -283,10 +280,9 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: Standard SMART filename
         wavelength: list with either one or two wavelengths in nm or 'all'
-        **kwargs:
-            path (str): give path to filename if not default from config.toml
-            save_fig: save figure? (default: False)
-            plot_path: where to save figure (default: given in config.toml)
+        **kwargs: path (str): give path to filename if not default from config.toml,
+            save_fig (bool): save figure? (default: False),
+            plot_path (str): where to save figure (default: given in config.toml)
 
     Returns: Shows a figure or saves it to disc.
 
@@ -371,13 +367,13 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
 def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
     """
     Plot a spectra from a SMART calibrated measurement file for a given index (time step)
+
     Args:
         path: where the file can be found
         filename: name of the file (standard SMART filename convention)
         index: which row to plot
-        **kwargs:
-            save_fig: Save figure to plot path given in config.toml
-            plot_path: Where to save plot if not standard plot path
+        **kwargs: save_fig (bool): Save figure to plot path given in config.toml (default: False),
+            plot_path (str): Where to save plot if not standard plot path
 
     Returns: Shows and or saves a plot
 
@@ -419,13 +415,13 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
 def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
     """
     Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)
+
     Args:
         path: where the file can be found
         filename: name of the file (standard SMART filename convention)
         index: which row to plot
-        **kwargs:
-            save_fig: Save figure to plot path given in config.toml
-            plot_path: Where to save plot if not standard plot path
+        **kwargs: save_fig (bool): Save figure to plot path given in config.toml (default: False)
+            plot_path (str): Where to save plot if not standard plot path
 
     Returns: Shows and or saves a plot
 
@@ -619,7 +615,7 @@ def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[li
     return curve
 
 
-def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, str], flight:str) -> hv.Overlay:
+def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, str], flight: str) -> hv.Overlay:
     """
     Plot upward and downward irradiance as a time averaged series over the wavelength or as a time series for one
     wavelength.

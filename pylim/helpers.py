@@ -53,9 +53,10 @@ def get_path(key: str, flight: str = None, instrument: str = None) -> str:
 
 def make_dir(folder: str) -> None:
     """
-    creates folder if it doesn't exist already
+    Creates folder if it doesn't exist already.
+
     Args:
-        folder: folder name
+        folder: folder name or full path
 
     Returns: nothing, but creates a new folder if possible
 
@@ -69,6 +70,7 @@ def make_dir(folder: str) -> None:
 def arg_nearest(array, value):
     """
     Find the index of the nearest value in an array.
+
     Args:
         array: Input has to be convertible to an ndarray
         value: Value to search for
@@ -142,7 +144,10 @@ def set_xticks_and_xlabels(ax: plt.axis, time_extend: datetime.timedelta) -> plt
 
 
 def set_cb_friendly_colors():
-    # set new colorblind friendly color cycle
+    """Set new colorblind friendly color cycle.
+
+    Returns: Modifies the standard pyplot color cycle
+
+    """
     cb_color_cycle = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
     plt.rcParams['axes.prop_cycle'] = plt.cycler(color=cb_color_cycle)
-

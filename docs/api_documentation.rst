@@ -1,42 +1,37 @@
 API Documentation
 =================
 
-pylim main module
------------------
-.. automodule:: pylim
-   :members:
-
-pylim.bacardi
+bacardi
 --------------
 .. automodule:: pylim.bacardi
    :members:
 
-pylim.bahamas
+bahamas
 --------------
 .. automodule:: pylim.bahamas
    :members:
 
-pylim.cirrus_hl
+cirrus_hl
 ----------------
 .. automodule:: pylim.cirrus_hl
    :members:
 
-pylim.helpers
+helpers
 --------------
 .. automodule:: pylim.helpers
    :members:
 
-pylim.libradtran
+libradtran
 -----------------
 .. automodule:: pylim.libradtran
    :members:
 
-pylim.reader
+reader
 -------------
 .. automodule:: pylim.reader
    :members:
 
-pylim.smart
+smart
 -------------
 .. automodule:: pylim.smart
    :members:
