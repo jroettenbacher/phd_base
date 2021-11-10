@@ -5,6 +5,8 @@ Lamp used: FEL-1587
 The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
 Each measurement lasted about 30 seconds with 1000 ms integration time.
 Data is stored in folders which denote the angle the inlet was turned to.
+_turned: The inlet was turned 90deg around the horizontal axis to evaluate al four azimuth directions
+_diffuse: A baffle was placed before the inlet to shade it
 author: Johannes Röttenbacher
 """
 
@@ -15,6 +17,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from copy import deepcopy
+import numpy as np
 import logging
 
 log = logging.getLogger("pylim")
@@ -25,12 +28,14 @@ log.setLevel(logging.INFO)
 calib_path = h.get_path("calib")
 folder_name = "ASP06_cosine_calibration"
 plot_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction"
-lamp_path = h.get_path("lamp")
+properties = ["Fdw", "Fup"]
+channels = ["VNIR", "SWIR"]
+
 
 # %% correct measurements for dark current and merge them into one file for each channel
-# merge VNIR dark measurement files before correcting the calib files
 folder = "ASP06_cosine_calibration"
-properties = ["Fdw", "Fup"]
+
+# merge VNIR dark measurement files before correcting the calib files
 for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
     log.debug(f"Working on {dirpath}")
     if "diffuse" in dirpath:
@@ -47,71 +52,70 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                 log.debug(f"Saved {outname}")
             except ValueError:
                 pass
-log.info("Merged all VNIR files")
+
+log.info("Merged all diffuse VNIR files")
 # correct all calibration measurement files for the dark current
 # for VNIR use the diffuse measurements to the corresponding angles as dark current measurements
 # if no such measurement is available use the 95deg diffuse measurement
 for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
-    if "diffuse" not in dirpath:
-        log.debug(f"Working on {dirpath}")
-        dirname = os.path.basename(dirpath)
-        for file in files:
-            if file.endswith("SWIR.dat"):
-                log.debug(f"Working on {dirpath}/{file}")
-                smart_cor = smart.correct_smart_dark_current("", file, option=2, path=dirpath)
-                outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
-                smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
-                log.debug(f"Saved {outname}")
+    log.debug(f"Working on {dirpath}")
+    dirname = os.path.basename(dirpath)
+    for file in files:
+        if file.endswith("SWIR.dat"):
+            log.debug(f"Working on {dirpath}/{file}")
+            smart_cor = smart.correct_smart_dark_current("", file, option=2, path=dirpath)
+            outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
+            smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
+            log.debug(f"Saved {outname}")
 
-            if file.endswith("VNIR.dat"):
-                log.debug(f"Working on {dirpath}/{file}")
-                _, channel, direction = smart.get_info_from_filename(file)
-                dark_dir = dirpath.replace(dirname, f"{dirname}_diffuse")
-                if os.path.isdir(dark_dir):
-                    try:
-                        dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
-                    except IndexError:
-                        log.debug(f"No file for direction: {direction} and channel: {channel} can be found")
-                        dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
-                        dark_file = "2021_11_08_14_45.Fdw_VNIR.dat"
-
-                else:
+        if file.endswith("VNIR.dat"):
+            log.debug(f"Working on {dirpath}/{file}")
+            _, channel, direction = smart.get_info_from_filename(file)
+            dark_dir = dirpath.replace(dirname, f"{dirname}_diffuse")
+            if os.path.isdir(dark_dir):
+                try:
+                    dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
+                except IndexError:
+                    log.debug(f"No file for direction: {direction} and channel: {channel} can be found")
                     dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
                     dark_file = "2021_11_08_14_45.Fdw_VNIR.dat"
 
-                measurement = reader.read_smart_raw(dirpath, file)
-                dark_current = reader.read_smart_raw(dark_dir, dark_file)
-                dark_current = dark_current.iloc[:, 2:].mean()
-                measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]  # only use data when shutter is open
-                smart_cor = measurement - dark_current
-                outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
-                smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
-                log.debug(f"Saved {outname}")
+            else:
+                dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
+                dark_file = "2021_11_08_14_45.Fdw_VNIR.dat"
+
+            measurement = reader.read_smart_raw(dirpath, file)
+            dark_current = reader.read_smart_raw(dark_dir, dark_file)
+            dark_current = dark_current.iloc[:, 2:].mean()
+            measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]  # only use data when shutter is open
+            smart_cor = measurement - dark_current
+            outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
+            smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
+            log.debug(f"Saved {outname}")
 
 log.info("Corrected all raw files for the dark current")
 # merge minutely corrected files to one file
-channels = ["VNIR", "SWIR"]
 for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
-    if "diffuse" not in dirpath:
-        log.debug(f"Working on {dirpath}")
-        for channel in channels:
-            for prop in properties:
-                try:
-                    filename = [f for f in files if f.endswith(f"{prop}_{channel}_cor.dat")]
-                    df = pd.concat([pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in filename])
-                    # delete all minutely files
-                    for file in filename:
-                        os.remove(os.path.join(dirpath, file))
-                        log.debug(f"Deleted {dirpath}/{file}")
-                    outname = f"{dirpath}/{filename[0]}"
-                    df.to_csv(outname, sep="\t")
-                    log.debug(f"Saved {outname}")
-                except ValueError:
-                    pass
+    log.debug(f"Working on {dirpath}")
+    for channel in channels:
+        for prop in properties:
+            try:
+                filename = [f for f in files if f.endswith(f"{prop}_{channel}_cor.dat")]
+                df = pd.concat([pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in filename])
+                # delete all minutely files
+                for file in filename:
+                    os.remove(os.path.join(dirpath, file))
+                    log.debug(f"Deleted {dirpath}/{file}")
+                outname = f"{dirpath}/{filename[0]}"
+                df.to_csv(outname, sep="\t")
+                log.debug(f"Saved {outname}")
+            except ValueError:
+                pass
 
 log.info("Merged all minutely corrected files")
 
 # %% read in data into dictionary
+use_raw = False  # use raw or  dark current corrected files?
 measurements = dict(Fdw_VNIR=dict(), Fdw_SWIR=dict(), Fup_VNIR=dict(), Fup_SWIR=dict())
 no_measurements = list()
 # loop through all combinations of measurements and create a dictionary
@@ -125,23 +129,32 @@ for prop in properties:
                 measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"] = dict()
                 for mtype in ["", "_diffuse"]:
                     # generate input path from options
-                    raw_path = f"{calib_path}/{folder_name}/{angle}{position}{mtype}"
+                    inpath = f"{calib_path}/{folder_name}/{angle}{position}{mtype}"
                     # generate more descriptive dictionary key
                     mtype_key = mtype[1:] if mtype == "_diffuse" else "direct"
                     # not all possible combinations have been measured, account for that with a try/except statement
                     try:
-                        # list corresponding files
-                        raw_files = [f for f in os.listdir(raw_path) if f"{prop}_{channel}" in f and "cor" not in f]
-                        measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
-                            f"{mtype_key}"] = pd.concat([reader.read_smart_raw(raw_path, f) for f in raw_files])
-
+                        if use_raw:
+                            # list corresponding files
+                            raw_files = [f for f in os.listdir(inpath) if f"{prop}_{channel}" in f and "cor" not in f]
+                            measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
+                                f"{mtype_key}"] = pd.concat([reader.read_smart_raw(inpath, f) for f in raw_files])
+                        else:
+                            # there is only one corrected file for each prop_channel in each folder
+                            cor_file = [f for f in os.listdir(inpath) if f.endswith(f"{prop}_{channel}_cor.dat")][0]
+                            measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
+                                f"{mtype_key}"] = reader.read_smart_cor(inpath, cor_file)
                     except FileNotFoundError:
                         no_measurements.append(f"{prop}_{channel}, {angle}, {position_key}, {mtype_key}")
                     except ValueError:
                         no_measurements.append(f"{prop}_{channel}, {angle}, {position_key}, {mtype_key}")
+                    except IndexError:
+                        # no cor_file can be found for prop_channel
+                        no_measurements.append(f"{prop}_{channel}, {angle}, {position_key}, {mtype_key}")
 
 # %% calculate mean of the three 0° measurements
 mean_spectra1, mean_spectra2, mean_spectra3 = dict(), dict(), dict()
+# iloc[2:] is not needed for corrected data, leave it in for convenience
 mean_spectra1["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[
                             "2021-11-05 12:38":"2021-11-05 12:40"].mean().iloc[2:]
 mean_spectra2["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[
@@ -212,6 +225,7 @@ plt.close()
 
 # %% plot difference between 3rd and 1st measurement at 0°
 diff = mean_spectra3["Fdw_VNIR"] - mean_spectra1["Fdw_VNIR"]
+# TODO: Do for all channels and in one plot
 diff.plot()
 plt.title("Fdw VNIR 0° measurement - Difference between 3rd and 1st")
 plt.xlabel("Pixel #")
@@ -223,7 +237,6 @@ figname = f"{plot_path}/Fdw_VNIR_0deg_normal_direct_diff3-1.png"
 plt.savefig(figname)
 log.info(f"Saved {figname}")
 plt.close()
-# TODO: Do for all channels and in one plot
 
 # %% calculate the mean for every angle -> one spectra per angle
 mean_spectras = deepcopy(measurements)
@@ -232,7 +245,10 @@ for channel in mean_spectras:
         for position in mean_spectras[channel][f"{angle}"]:
             for mtype in mean_spectras[channel][f"{angle}"][position]:
                 df = mean_spectras[channel][f"{angle}"][position][mtype].copy()
-                df_mean = df.where(df["shutter"] == 1).mean().iloc[2:]
+                if use_raw:
+                    df_mean = df.where(df["shutter"] == 1).mean().iloc[2:]
+                else:
+                    df_mean = df.mean()
                 mean_spectras[channel][f"{angle}"][position][mtype] = df_mean
 
 # %% calculate difference between positive and negative angles
@@ -256,8 +272,7 @@ for channel in mean_spectras:
                     diff_angles[channel][f"{angle}"].pop(position)
 
 # %% plot differences of all angles for each channel and position (6 angles per plot)
-prop, channel, position = "Fdw", "VNIR", "normal"
-# TODO: Normalize by dark current -> use dark current corrected data
+prop, channel, position = "Fdw", "VNIR", "normal"  # for testing
 rg_start = [5, 35, 65]
 rg_end = [35, 65, 100]
 plt.rcdefaults()
@@ -286,3 +301,32 @@ for prop in properties:
                 log.info(f"Saved {figname}")
                 plt.close()
                 id1 += 1
+
+# %% plot every mean spectra
+plt.rcdefaults()
+h.set_cb_friendly_colors()
+for pair in h.nested_dict_pairs_iterator(mean_spectras):
+    prop_channel, angle, position, mtype, df = pair
+    df.plot(title=f"{prop_channel} {angle}° {position} {mtype} Mean Spectrum", ylabel="Counts", xlabel="Pixel #")
+    plt.grid()
+    # plt.show()
+    figname = f"{prop_channel}_{angle}deg_{position}_{mtype}_mean_spectrum.png"
+    plt.savefig(f"{plot_path}/mean_spectras/{figname}", dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% set values < 1 to 1 to avoid problems with the correction factor calculation
+mean_spectras_cor = deepcopy(mean_spectras)
+for pair in h.nested_dict_pairs_iterator(mean_spectras_cor):
+    prop_channel, angle, position, mtype, df = pair
+    df[df < 1] = 1
+    mean_spectras_cor[prop_channel][f"{angle}"][position][mtype] = df
+
+# %% calculate the direct cosine correction factors for each angle
+k_cos_dir = dict()
+F_0 = mean_spectras_cor["Fdw_VNIR"]["0"]["normal"]["direct"]
+for angle in range(-95, 100, 5):
+    F_angle = mean_spectras_cor["Fdw_VNIR"][f"{angle}"]["normal"]["direct"]
+    angle_rad = np.deg2rad(angle)
+    k_cos_dir[f"{angle}"] = F_0 * np.cos(angle_rad) / F_angle
+
