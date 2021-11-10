@@ -31,7 +31,6 @@ plot_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correct
 properties = ["Fdw", "Fup"]
 channels = ["VNIR", "SWIR"]
 
-
 # %% correct measurements for dark current and merge them into one file for each channel
 folder = "ASP06_cosine_calibration"
 
@@ -296,7 +295,7 @@ for prop in properties:
                 ax.legend()
                 ax.grid()
                 # plt.show()
-                figname = f"{prop}_{channel}_{position}_difference_pos_neg_angles_{rg_start[id1]}-{rg_end[id1]-5}.png"
+                figname = f"{prop}_{channel}_{position}_difference_pos_neg_angles_{rg_start[id1]}-{rg_end[id1] - 5}.png"
                 plt.savefig(f"{plot_path}/diff_neg_pos_angles/{figname}", dpi=100)
                 log.info(f"Saved {figname}")
                 plt.close()
@@ -323,10 +322,133 @@ for pair in h.nested_dict_pairs_iterator(mean_spectras_cor):
     mean_spectras_cor[prop_channel][f"{angle}"][position][mtype] = df
 
 # %% calculate the direct cosine correction factors for each angle
-k_cos_dir = dict()
-F_0 = mean_spectras_cor["Fdw_VNIR"]["0"]["normal"]["direct"]
-for angle in range(-95, 100, 5):
-    F_angle = mean_spectras_cor["Fdw_VNIR"][f"{angle}"]["normal"]["direct"]
-    angle_rad = np.deg2rad(angle)
-    k_cos_dir[f"{angle}"] = F_0 * np.cos(angle_rad) / F_angle
+k_cos_dir = dict(Fdw_VNIR=dict(), Fdw_SWIR=dict(), Fup_VNIR=dict(), Fup_SWIR=dict())
+for prop in k_cos_dir:
+    F_0 = mean_spectras_cor[prop]["0"]["normal"]["direct"]
+    for angle in range(-95, 100, 5):
+        F_angle = mean_spectras_cor[prop][f"{angle}"]["normal"]["direct"]
+        angle_rad = np.deg2rad(angle)
+        k_cos_dir[prop][f"{angle}"] = F_0 * np.cos(angle_rad) / F_angle
 
+# %% create dataframe from dictionary
+dfs = pd.DataFrame()
+for pairs in h.nested_dict_pairs_iterator(mean_spectras_cor):
+    prop_channel, angle, position, mtype, df = pairs
+    df = pd.DataFrame(df, columns=["counts"]).reset_index()  # reset index to get a column with the pixel numbers
+    df = df.rename(columns={"index": "pixel"})  # rename the index column to the pixel numbers
+    df = df.assign(prop=prop_channel, angle=angle, position=position, mtype=mtype)
+    dfs = pd.concat([dfs, df])
+
+dfs.reset_index(drop=True, inplace=True)
+# %% plot actual cosine response
+prop_channel, position, mtype = "Fdw_VNIR", "normal", "direct"
+prop_channels, positions, mtypes = dfs.prop.unique(), dfs.position.unique(), dfs.mtype.unique()
+
+for prop_channel in prop_channels:
+    for position in positions:
+        for mtype in mtypes:
+            # select the corresponding values
+            z = dfs.loc[
+                (dfs["prop"] == prop_channel) & (dfs["position"] == position) & (dfs["mtype"] == mtype),
+                ["angle", "counts", "pixel"]
+            ]
+            levels = z.angle.unique()  # extract levels from angles
+            len_levels = len(levels)
+            if len_levels < 8:
+                log.info(f"Only {len_levels} angle(s) available")
+                # only plot data for which all 39 angles have been measured
+                continue
+            # convert angles to categorical type to keep order when pivoting
+            z["angle"] = pd.Categorical(z["angle"], categories=levels, ordered=True)
+            z_new = z.pivot(index="angle", columns="pixel", values="counts")
+            # arrange an artificial grid to plot on
+            rad = np.arange(0, z_new.shape[1])  # 1024 or 256 pixels
+            a = levels.astype(float)  # -95 to 95° in 5° steps
+            log.debug(f"Using angles: {a}")
+            r, th = np.meshgrid(rad, a)
+            # plot
+            fig, ax = plt.subplots()
+            img = ax.pcolormesh(th, r, z_new, cmap='YlOrRd', shading="nearest")
+            ax.grid()
+            ax.set_title(f"{prop_channel} {position} {mtype} Cosine Response")
+            ax.set_xlabel("Angle (deg)")
+            ax.set_ylabel("Pixel #")
+            if len_levels != 39:
+                ax.set_xticks(a)
+                ax.tick_params(axis='x', labelrotation=45)
+            plt.colorbar(img, label="Counts")
+            plt.tight_layout()
+            # plt.show()
+            figname = f"{prop_channel}_{position}_{mtype}_cosine_response.png"
+            plt.savefig(f"{plot_path}/cosine_response/{figname}", dpi=100)
+            log.info(f"Saved {figname}")
+            plt.close()
+
+# %% plot theoretical cosine response
+dfs["cosine_counts"] = dfs["counts"] * np.cos(np.deg2rad(dfs["angle"].astype(float)))
+prop_channel = "Fdw_VNIR"
+for prop_channel in prop_channels:
+    F0 = dfs.loc[(dfs["prop"] == prop_channel) & (dfs["position"] == "normal") & (dfs["mtype"] == "direct"),
+             ["angle", "cosine_counts", "pixel"]]
+    levels = dfs.angle.unique()  # extract levels from angles
+    # convert angles to categorical type to keep order when pivoting
+    F0["angle"] = pd.Categorical(F0["angle"], categories=levels, ordered=True)
+    F0_pivot = F0.pivot(index="angle", columns="pixel", values="cosine_counts")
+    # arrange an artificial grid to plot on
+    rad = np.arange(0, F0_pivot.shape[1])  # 1024 or 256 pixels
+    a = levels.astype(float)  # -95 to 95° in 5° steps
+    log.debug(f"Using angles: {a}")
+    r, th = np.meshgrid(rad, a)
+    # plot
+    fig, ax = plt.subplots()
+    img = ax.pcolormesh(th, r, F0_pivot, cmap='YlOrRd', shading="nearest")
+    ax.grid()
+    ax.set_title(f"{prop_channel} normal direct Theoretical Cosine Response")
+    ax.set_xlabel("Angle (deg)")
+    ax.set_ylabel("Pixel #")
+    plt.colorbar(img, label="Counts")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{prop_channel}_normal_direct_theoretical_cosine_response.png"
+    plt.savefig(f"{plot_path}/cosine_response/{figname}", dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% create dataframe with cosine correction factors
+k_cos_dir_df = pd.DataFrame()
+for pairs in h.nested_dict_pairs_iterator(k_cos_dir):
+    prop_channel, angle, df = pairs
+    df = pd.DataFrame(df, columns=["k_cos"]).reset_index()  # reset index to get a column with the pixel numbers
+    df = df.rename(columns={"index": "pixel"})  # rename the index column to the pixel numbers
+    df = df.assign(prop=prop_channel, angle=angle)
+    k_cos_dir_df = pd.concat([k_cos_dir_df, df])
+
+k_cos_dir_df.reset_index(drop=True, inplace=True)
+
+# %% plot cosine correction factors
+for prop_channel in k_cos_dir:
+    k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
+    levels = k_cos_dir_df.angle.unique()  # extract levels from angles
+    # convert angles to categorical type to keep order when pivoting
+    k_cos["angle"] = pd.Categorical(k_cos["angle"], categories=levels, ordered=True)
+    k_cos_pivot = k_cos.pivot(index="angle", columns="pixel", values="k_cos")
+    # arrange an artificial grid to plot on
+    rad = np.arange(0, k_cos_pivot.shape[1])  # 1024 or 256 pixels
+    a = levels.astype(float)  # -95 to 95° in 5° steps
+    log.debug(f"Using angles: {a}")
+    r, th = np.meshgrid(rad, a)
+    # plot
+    fig, ax = plt.subplots()
+    img = ax.pcolormesh(th, r, k_cos_pivot, cmap='coolwarm', shading="nearest")
+    ax.grid()
+    ax.set_title(f"{prop_channel} normal direct Cosine Corretion Factor")
+    ax.set_xlabel("Angle (deg)")
+    ax.set_ylabel("Pixel #")
+    img.set_clim(0.5, 1.5)
+    plt.colorbar(img, label="Correction Factor", extend="both")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{prop_channel}_normal_direct_cosine_correction_factors.png"
+    plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
