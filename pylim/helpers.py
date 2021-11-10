@@ -152,3 +152,48 @@ def set_cb_friendly_colors():
     """
     cb_color_cycle = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
     plt.rcParams['axes.prop_cycle'] = plt.cycler(color=cb_color_cycle)
+
+
+def nested_dict_values_iterator(dict_obj: dict):
+    """ Loop over all values in a nested dictionary
+    See: https://thispointer.com/python-iterate-loop-over-all-nested-dictionary-values/
+
+    Args:
+        dict_obj: nested dictionary
+
+    Returns: Each value in a nested dictionary
+
+    """
+    # Iterate over all values of dict argument
+    for value in dict_obj.values():
+        # Check if value is of dict type
+        if isinstance(value, dict):
+            # If value is dict then iterate over all its values
+            for v in nested_dict_values_iterator(value):
+                yield v
+        else:
+            # If value is not dict type then yield the value
+            yield value
+
+
+def nested_dict_pairs_iterator(dict_obj: dict):
+    """ Loop over all values in a nested dictionary and return the key, value pair
+    See: https://thispointer.com/python-how-to-iterate-over-nested-dictionary-dict-of-dicts/
+
+    Args:
+        dict_obj: nested dictionary
+
+    Returns: Each value in a nested dictionary with its key
+
+    """
+    # Iterate over all values of dict argument
+    for key, value in dict_obj.items():
+        # Check if value is of dict type
+        if isinstance(value, dict):
+            # If value is dict then iterate over all its values
+            for pair in nested_dict_pairs_iterator(value):
+                yield key, *pair
+        else:
+            # If value is not dict type then yield the key, value pair
+            yield key, value
+
