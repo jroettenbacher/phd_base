@@ -77,7 +77,8 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
 
             else:
                 assert SWIR_option == 2, f"Wrong option {SWIR_option} provided!"
-                # use diffuse measurement to correct SWIR dark current if possible else use 0° measurement
+                # use diffuse measurement to correct SWIR dark current if possible
+                # else use closest diffuse measurement else use 0° measurement
                 log.debug(f"Working on {dirpath}/{file}")
                 _, channel, direction = smart.get_info_from_filename(file)
                 try:
@@ -87,36 +88,25 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
 
                 except (FileNotFoundError, IndexError):
                     log.debug(f"No diffuse {direction}_{channel} file found in {dark_dir}")
-                    dark_file = []  # initiate empty list
-                    count = 0
-                    while len(dark_file) == 0:
-                        # loop through diffuse folders and take the one closest to the current angle
-                        if "turned" in dirname:
-                            diffuse_folders = [d for d in os.listdir(parent) if "diffuse" in d and "turned" in d]
-                        else:
-                            diffuse_folders = [d for d in os.listdir(parent) if "diffuse" in d and "turned" not in d]
+                    # find the closest diffuse folder
+                    if "turned" in dirname:
+                        diffuse_folders = [d for d in os.listdir(parent) if "diffuse" in d and "turned" in d]
+                    else:
+                        diffuse_folders = [d for d in os.listdir(parent) if "diffuse" in d and "turned" not in d]
 
-                        available_angles = [float(re.search(r"-?\d{1,2}", d)[0]) for d in diffuse_folders]
-                        current_angle = float(re.search(r"-?\d{1,2}", dirname)[0])  # get angle from dirname
-                        closest_angle = available_angles[h.arg_nearest(available_angles, current_angle)]
-                        # not every channel can be found in every folder
-                        # -> increase/decrease closest angle by 5 in each loop (alternate between increase and decrease)
-                        if count % 2 == 0:
-                            closest_angle = closest_angle + count / 2 * 5
-                        else:
-                            closest_angle = closest_angle - np.ceil(count / 2) * 5
-                        # generate new dark directory according to closest angle
-                        new_dirname = dirname.replace(dirname, f"{dirname}_diffuse").replace(str(int(current_angle)),
-                                                                                             str(int(closest_angle)))
-                        dark_dir = os.path.join(parent, new_dirname)
-                        try:
-                            dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
-                        except (FileNotFoundError, IndexError):
-                            count += 1
-                            log.debug(f"No {direction}_{channel} file found in {dark_dir}\n count: {count}")
-                            if count > 40:
-                                sys.exit(1)
-                            continue
+                    available_angles = [float(re.search(r"-?\d{1,2}", d)[0]) for d in diffuse_folders]
+                    current_angle = float(re.search(r"-?\d{1,2}", dirname)[0])  # get angle from dirname
+                    closest_angle = available_angles[h.arg_nearest(available_angles, current_angle)]
+                    # generate new dark directory according to closest angle
+                    new_dirname = dirname.replace(dirname, f"{dirname}_diffuse").replace(str(int(current_angle)),
+                                                                                         str(int(closest_angle)))
+                    dark_dir = os.path.join(parent, new_dirname)
+                    try:
+                        dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
+                    except IndexError:
+                        log.debug(f"No {direction}_{channel} file found in {dark_dir}")
+                        dark_dir = f"{calib_path}/{folder}/0_diffuse"
+                        dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
 
                 measurement = reader.read_smart_raw(dirpath, file)
                 dark_current = reader.read_smart_raw(dark_dir, dark_file)
@@ -128,7 +118,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
         if file.endswith("VNIR.dat"):
             log.debug(f"Working on {dirpath}/{file}")
             _, channel, direction = smart.get_info_from_filename(file)
-            new_dirname = dirname.replace(dirname, f"{dirname}_diffuse")
+            new_dirname = dirname.replace(dirname, f"{dirname}_diffuse") if "diffuse" not in dirname else dirname
             dark_dir = os.path.join(parent, new_dirname)
             try:
                 dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
@@ -144,7 +134,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                     smart_cor = smart.correct_smart_dark_current("", file, option=1, path=dirpath)
                 else:
                     dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
-                    dark_file = "2021_11_08_14_45.Fdw_VNIR.dat"
+                    dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
                     measurement = reader.read_smart_raw(dirpath, file)
                     dark_current = reader.read_smart_raw(dark_dir, dark_file)
                     dark_current = dark_current.iloc[:, 2:].mean()
