@@ -103,10 +103,10 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
 
     Args:
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
-        filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat")
+        filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat") of measurement file
         option: which option to use for VNIR, 1 or 2
         kwargs:
-            path (str): path if not standard path from config.toml,
+            path (str): path to measurement file if not standard path from config.toml,
             plot (bool): show plot or not (default: True),
             date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
 
@@ -127,11 +127,14 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     # calculate dark current depending on channel:
     # SWIR: use measurements during shutter phases
     # VNIR: Option 1: use measurements below 290 nm
-    #       Option 2: use dark measurements from calibration
+    #       Option 2: use dark measurements from calibration (CIRRUS-HL)
     if channel == "VNIR":
         if option == 1:
             last_dark_pixel, _ = find_pixel(pixel_wl, 290)
             dark_pixels = np.arange(1, last_dark_pixel + 1)
+            # one could apply a column mean (axis=1) and subtract the mean dark current from every timestep but for
+            # minutely files this shouldn't be of much importance
+            # TODO: Test difference between column mean and mean over rows and columns
             dark_current = smart.loc[:, dark_pixels].mean()
             dark_wls = pixel_wl[pixel_wl["pixel"].isin(dark_pixels)]["wavelength"]
             if plot:
@@ -179,6 +182,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
 
     elif channel == "SWIR":
         # check if the shutter flag was working: If all values are 1 -> shutter flag is probably not working
+        # even if the flag is working, does not mean the shutter is working
         if np.sum(smart.shutter == 1) != smart.shutter.shape[0]:
             dark_current = smart.where(smart.shutter == 0).mean().iloc[2:]
             wls = pixel_wl["wavelength"]
@@ -263,7 +267,7 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
     dark_current = get_dark_current(flight, smart_file, option, plot=False, path=path, date=date)
 
     if channel == "VNIR" and option == 1:
-        dark_current = dark_current.mean()
+        dark_current = dark_current.mean()  # If get_dark_current returns a column mean, this can to be removed
     measurement = smart.where(smart.shutter == 1).iloc[:, 2:]  # only use data when shutter is open
     measurement_cor = measurement - dark_current
 
