@@ -13,7 +13,6 @@ author: Johannes Röttenbacher
 # %% module import
 import pylim.helpers as h
 from pylim import reader, smart
-import sys
 import os
 import re
 import pandas as pd
@@ -76,7 +75,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                 smart_cor = smart.correct_smart_dark_current("", file, option=2, path=dirpath)
 
             else:
-                assert SWIR_option == 2, f"Wrong option {SWIR_option} provided!"
+                assert SWIR_option == 2, f"Wrong option '{SWIR_option}' provided!"
                 # use diffuse measurement to correct SWIR dark current if possible
                 # else use closest diffuse measurement else use 0° measurement
                 log.debug(f"Working on {dirpath}/{file}")
@@ -115,7 +114,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                 measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
                 smart_cor = measurement - dark_current
 
-        if file.endswith("VNIR.dat"):
+        elif file.endswith("VNIR.dat"):
             log.debug(f"Working on {dirpath}/{file}")
             _, channel, direction = smart.get_info_from_filename(file)
             new_dirname = dirname.replace(dirname, f"{dirname}_diffuse") if "diffuse" not in dirname else dirname
