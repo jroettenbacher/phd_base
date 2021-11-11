@@ -55,12 +55,14 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
 
 log.info("Merged all diffuse VNIR files")
 # correct all calibration measurement files for the dark current
-# for VNIR use the diffuse measurements to the corresponding angles as dark current measurements
-# if no such measurement is available use the first 70 pixel from each measurement as dark current (option 1)
-# or the 95deg diffuse measurement (option 2). However, this has the problem that it was probably warmer during that
-# measurement than during the one which is being corrected -> higher dark current at 95deg
-# the shutters on the SWIR spectrometers did not work -> use the diffuse measurements also for the correction of the
-# SWIR measured dark current -> SWIR_option = 2
+# VNIR: use the diffuse measurements to the corresponding angles as dark current measurements
+# if no such measurement is available :
+# Option 1: use the first 19:99 pixels from each measurement to scale the 0° dark current measurement as dark current
+# Option 2: use the 95deg diffuse measurement
+# However, this has the problem that it was probably warmer during that measurement than during the one which is being
+# corrected -> higher dark current at 95deg
+# SWIR: the shutters on the SWIR spectrometers did not work properly
+# SWIR_option 2: use the diffuse measurements also for the correction of the SWIR measured dark current
 VNIR_option = 1
 SWIR_option = 2
 for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
@@ -130,9 +132,19 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
             except (FileNotFoundError, IndexError):
                 log.debug(f"No diffuse {direction}_{channel} file found in {dark_dir}")
                 if VNIR_option == 1:
-                    smart_cor = smart.correct_smart_dark_current("", file, option=1, path=dirpath)
+                    # scale 0° dark current with current dark pixel measurements
+                    dark_dir = f"{calib_path}/{folder}/0_diffuse"
+                    dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
+                    dark_current = reader.read_smart_raw(dark_dir, dark_file).iloc[:, 2:].mean()  # drop tint and shutter
+                    measurement = reader.read_smart_raw(dirpath, file)
+                    measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
+                    dark_scale = dark_current * np.mean(measurement.mean().iloc[19:99]) / np.mean(dark_current.iloc[19: 99])
+                    dark_scale = dark_scale - dark_scale.rolling(20, min_periods=1).mean()
+                    dark_scale2 = dark_current.rolling(20, min_periods=1).mean() + (
+                                np.mean(measurement.mean().iloc[19:99]) - np.mean((dark_current.iloc[19:99])))
+                    smart_cor = measurement - dark_scale2 - dark_scale
                 else:
-                    dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
+                    dark_dir = f"{calib_path}/{folder}/0_diffuse"
                     dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
                     measurement = reader.read_smart_raw(dirpath, file)
                     dark_current = reader.read_smart_raw(dark_dir, dark_file)

@@ -135,6 +135,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
             # one could apply a column mean (axis=1) and subtract the mean dark current from every timestep but for
             # minutely files this shouldn't be of much importance
             # TODO: Test difference between column mean and mean over rows and columns
+            # TODO: Scale a dark current measurement with the dark pixels from the measurement file
             dark_current = smart.loc[:, dark_pixels].mean()
             dark_wls = pixel_wl[pixel_wl["pixel"].isin(dark_pixels)]["wavelength"]
             if plot:
