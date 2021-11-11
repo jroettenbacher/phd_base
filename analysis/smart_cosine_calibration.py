@@ -55,7 +55,10 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
 log.info("Merged all diffuse VNIR files")
 # correct all calibration measurement files for the dark current
 # for VNIR use the diffuse measurements to the corresponding angles as dark current measurements
-# if no such measurement is available use the 95deg diffuse measurement
+# if no such measurement is available use the first 70 pixel from each measurement as dark current (option 1)
+# or the 95deg diffuse measurement (option 2). However, this has the problem that it was probably warmer during that
+# measurement than during the one which is being corrected -> higher dark current at 95deg
+option = 1
 for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
     log.debug(f"Working on {dirpath}")
     dirname = os.path.basename(dirpath)
@@ -71,23 +74,28 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
             log.debug(f"Working on {dirpath}/{file}")
             _, channel, direction = smart.get_info_from_filename(file)
             dark_dir = dirpath.replace(dirname, f"{dirname}_diffuse")
-            if os.path.isdir(dark_dir):
-                try:
-                    dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
-                except IndexError:
-                    log.debug(f"No file for direction: {direction} and channel: {channel} can be found")
+            try:
+                dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
+                measurement = reader.read_smart_raw(dirpath, file)
+                dark_current = reader.read_smart_raw(dark_dir, dark_file)
+                dark_current = dark_current.iloc[:, 2:].mean()
+                # only use data when shutter is open
+                measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
+                smart_cor = measurement - dark_current
+            except (FileNotFoundError, IndexError):
+                log.debug(f"No diffuse file for direction: {direction} and channel: {channel} can be found")
+                if option == 1:
+                    smart_cor = smart.correct_smart_dark_current("", file, option=1, path=dirpath)
+                else:
                     dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
                     dark_file = "2021_11_08_14_45.Fdw_VNIR.dat"
+                    measurement = reader.read_smart_raw(dirpath, file)
+                    dark_current = reader.read_smart_raw(dark_dir, dark_file)
+                    dark_current = dark_current.iloc[:, 2:].mean()
+                    # only use data when shutter is open
+                    measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
+                    smart_cor = measurement - dark_current
 
-            else:
-                dark_dir = f"{calib_path}/{folder}/95_turned_diffuse"
-                dark_file = "2021_11_08_14_45.Fdw_VNIR.dat"
-
-            measurement = reader.read_smart_raw(dirpath, file)
-            dark_current = reader.read_smart_raw(dark_dir, dark_file)
-            dark_current = dark_current.iloc[:, 2:].mean()
-            measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]  # only use data when shutter is open
-            smart_cor = measurement - dark_current
             outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
             smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
             log.debug(f"Saved {outname}")
@@ -250,6 +258,8 @@ for channel in mean_spectras:
                     df_mean = df.mean()
                 mean_spectras[channel][f"{angle}"][position][mtype] = df_mean
 
+del measurements  # delete variable from workspace to free memory
+
 # %% calculate difference between positive and negative angles
 diff_angles = deepcopy(mean_spectras)
 for channel in mean_spectras:
@@ -321,6 +331,8 @@ for pair in h.nested_dict_pairs_iterator(mean_spectras_cor):
     df[df < 1] = 1
     mean_spectras_cor[prop_channel][f"{angle}"][position][mtype] = df
 
+del mean_spectras  # delete variable from workspace to free memory
+
 # %% calculate the direct cosine correction factors for each angle
 k_cos_dir = dict(Fdw_VNIR=dict(), Fdw_SWIR=dict(), Fup_VNIR=dict(), Fup_SWIR=dict())
 for prop in k_cos_dir:
@@ -340,8 +352,9 @@ for pairs in h.nested_dict_pairs_iterator(mean_spectras_cor):
     dfs = pd.concat([dfs, df])
 
 dfs.reset_index(drop=True, inplace=True)
+
 # %% plot actual cosine response
-prop_channel, position, mtype = "Fdw_VNIR", "normal", "direct"
+prop_channel, position, mtype = "Fdw_VNIR", "normal", "direct"  # for testing
 prop_channels, positions, mtypes = dfs.prop.unique(), dfs.position.unique(), dfs.mtype.unique()
 
 for prop_channel in prop_channels:
@@ -426,6 +439,7 @@ for pairs in h.nested_dict_pairs_iterator(k_cos_dir):
 k_cos_dir_df.reset_index(drop=True, inplace=True)
 
 # %% plot cosine correction factors
+k_cos_dir_df = k_cos_dir_df[np.abs(k_cos_dir_df["angle"].astype(float)) < 95]
 for prop_channel in k_cos_dir:
     k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
     levels = k_cos_dir_df.angle.unique()  # extract levels from angles
@@ -452,3 +466,4 @@ for prop_channel in k_cos_dir:
     plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
     log.info(f"Saved {figname}")
     plt.close()
+
