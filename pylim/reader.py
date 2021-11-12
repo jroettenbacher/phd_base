@@ -146,18 +146,19 @@ def read_smart_cor(path: str, filename: str) -> pd.DataFrame:
     return df
 
 
-def read_pixel_to_wavelength(path: str, spectrometer: str) -> pd.DataFrame:
+def read_pixel_to_wavelength(path: str, channel: str) -> pd.DataFrame:
     """
-    Read file which maps each pixel to a certain wavelength for a specified spectrometer.
+    Read file which maps each pixel to a certain wavelength for a specified channel.
 
     Args:
         path: Path where to find file
-        spectrometer: Which spectrometer to read in, refer to lookup table for possible spectrometers
+        channel: For which channel the pixel to wavelength mapping should be read in, refer to lookup table for possible
+         channels (e.g. ASP06_J3)
 
     Returns: pandas DataFrame relating pixel number to wavelength
 
     """
-    filename = f"pixel_wl_{cirrus_hl.lookup[spectrometer]}.dat"
+    filename = f"pixel_wl_{cirrus_hl.lookup[channel]}.dat"
     file = os.path.join(path, filename)
     df = pd.read_csv(file, sep="\s+", skiprows=7, header=None, names=["pixel", "wavelength"])
     # sort df by the wavelength column and reset the index, necessary for the SWIR spectrometers
