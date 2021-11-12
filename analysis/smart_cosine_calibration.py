@@ -12,7 +12,7 @@ author: Johannes Röttenbacher
 
 # %% module import
 import pylim.helpers as h
-from pylim import reader, smart
+from pylim import cirrus_hl, reader, smart
 import os
 import re
 import pandas as pd
@@ -497,9 +497,9 @@ for pairs in h.nested_dict_pairs_iterator(k_cos_dir):
     k_cos_dir_df = pd.concat([k_cos_dir_df, df])
 
 k_cos_dir_df.reset_index(drop=True, inplace=True)
+k_cos_dir_df = k_cos_dir_df[np.abs(k_cos_dir_df["angle"].astype(float)) < 95]
 
 # %% plot cosine correction factors
-k_cos_dir_df = k_cos_dir_df[np.abs(k_cos_dir_df["angle"].astype(float)) < 95]
 for prop_channel in k_cos_dir:
     k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
     levels = k_cos_dir_df.angle.unique()  # extract levels from angles
@@ -526,4 +526,28 @@ for prop_channel in k_cos_dir:
     plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
     log.info(f"Saved {figname}")
     plt.close()
+
+# %% plot cosine correction factor for each pixel/wavelength
+h.set_cb_friendly_colors()
+pixel_path = h.get_path("pixel_wl")
+for prop_channel in k_cos_dir:
+    k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
+    k_cos["angle"] = k_cos["angle"].astype(float)  # convert angles to float for better plotting
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_path, cirrus_hl.lookup[prop_channel])
+    k_cos = pd.merge(k_cos, pixel_wl, on="pixel")
+    for pixel in k_cos["pixel"].unique():
+        k = k_cos.loc[(k_cos["pixel"] == pixel), :]
+        fig, ax = plt.subplots()
+        k.plot(x="angle", y="k_cos", ax=ax, label=f"{k['wavelength'].iloc[0]} nm",
+               title=f"{prop_channel} Cosine correction factor for {k['wavelength'].iloc[0]} nm",
+               ylabel="Cosine Correction Factor", xlabel="Angle (°)")
+        ax.set_xticks(np.arange(-90, 95, 15))
+        ax.set_ylim(0, 2)
+        ax.axhline(1, c="k", ls="--")
+        ax.grid()
+        # plt.show()
+        figname = f"{prop_channel}_{pixel}_cosine_correction_factor.png"
+        plt.savefig(f"{plot_path}/correction_factors_single/{figname}", dpi=100)
+        log.debug(f"Saved {figname}")
+        plt.close()
 
