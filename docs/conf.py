@@ -36,7 +36,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'nbsphinx'
 ]
 autosectionlabel_prefix_document = True
 
