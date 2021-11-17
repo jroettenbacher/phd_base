@@ -12,7 +12,7 @@ lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PG
               J3="dw", J4="dw", J5="up", J6="up",
               Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4", Fup_SWIR="ASP06_J5", Fup_VNIR="ASP06_J6",
               Iup_SWIR="ASP07_J3", Iup_VNIR="ASP07_J4",
-              Fdw="ASP_02", Fup="ASP_01")  # inlet names
+              Fdw="VN05", Fup="VN11")  # inlet names
 
 # BACARDI pitch and roll offset of upward facing sensor
 roll_offset = 0.3
