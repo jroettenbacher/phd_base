@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 """Cosine Response Calibration of irradiance inlets of SMART for CIRRUS-HL and HALO-(AC)3
 ASP06 J3, J4 (Fdw) with inlet ASP02 done on 5th November 2021 by Anna Luebke and Johannes Röttenbacher
+ASP06 J6, J6 (Fup) with inlet ASP01 done on 8th November 2021 by Anna Luebke and Johannes Röttenbacher
 Lamp used: FEL-1587
 The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
 Each measurement lasted about 30 seconds with 1000 ms integration time.
 Data is stored in folders which denote the angle the inlet was turned to.
-_turned: The inlet was turned 90deg around the horizontal axis to evaluate al four azimuth directions
-_diffuse: A baffle was placed before the inlet to shade it
+_turned: The inlet was turned 90deg around the horizontal axis to evaluate all four azimuth directions
+_diffuse: A baffle was placed before the inlet to shade it (dark measurements)
 author: Johannes Röttenbacher
+IMPORTANT: The measurements were done with the inlets switched and not all measurements were performed so it was
+decided to repeat the whole calibration -> v2. This script is kept for archiving only.
 """
 
 # %% module import
@@ -19,6 +22,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from copy import deepcopy
 import numpy as np
+from tqdm import tqdm
 import logging
 
 log = logging.getLogger("pylim")
@@ -58,10 +62,10 @@ log.info("Merged all diffuse VNIR files")
 # VNIR: use the diffuse measurements to the corresponding angles as dark current measurements
 # if no such measurement is available :
 # Option 1: use the first 19:99 pixels from each measurement to scale the 0° dark current measurement as dark current
-# Option 2: use the 95deg diffuse measurement
-# However, this has the problem that it was probably warmer during that measurement than during the one which is being
-# corrected -> higher dark current at 95deg
-# SWIR: the shutters on the SWIR spectrometers did not work properly
+# Option 2: use the 0° diffuse measurement unscaled
+# However, this has the problem that the temperature differed between the two measurements
+# SWIR: the shutters on the SWIR spectrometers did not work properly, thus option two is preferred
+# SWIR_option 1: Use the first four measurements from each file where the shutter should be closed
 # SWIR_option 2: use the diffuse measurements also for the correction of the SWIR measured dark current
 VNIR_option = 1
 SWIR_option = 2
@@ -69,6 +73,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
     log.debug(f"Working on {dirpath}")
     dirname = os.path.basename(dirpath)
     parent = os.path.dirname(dirpath)
+    turned_flag = "turned" in dirname
     for file in files:
         if file.endswith("SWIR.dat"):
             if SWIR_option == 1:
@@ -90,7 +95,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                 except (FileNotFoundError, IndexError):
                     log.debug(f"No diffuse {direction}_{channel} file found in {dark_dir}")
                     # find the closest diffuse folder
-                    if "turned" in dirname:
+                    if turned_flag:
                         diffuse_folders = [d for d in os.listdir(parent) if "diffuse" in d and "turned" in d]
                     else:
                         diffuse_folders = [d for d in os.listdir(parent) if "diffuse" in d and "turned" not in d]
@@ -106,7 +111,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
                         dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
                     except IndexError:
                         log.debug(f"No {direction}_{channel} file found in {dark_dir}")
-                        dark_dir = f"{calib_path}/{folder}/0_diffuse"
+                        dark_dir = f"{parent}/0_diffuse" if not turned_flag else f"{parent}/0_turned_diffuse"
                         dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
 
                 measurement = reader.read_smart_raw(dirpath, file)
@@ -123,34 +128,29 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
             dark_dir = os.path.join(parent, new_dirname)
             try:
                 dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
-                measurement = reader.read_smart_raw(dirpath, file)
+                measurement = reader.read_smart_raw(dirpath, file).iloc[:, 2:]
                 dark_current = reader.read_smart_raw(dark_dir, dark_file)
                 dark_current = dark_current.iloc[:, 2:].mean()
-                # only use data when shutter is open
-                measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
                 smart_cor = measurement - dark_current
             except (FileNotFoundError, IndexError):
                 log.debug(f"No diffuse {direction}_{channel} file found in {dark_dir}")
                 if VNIR_option == 1:
                     # scale 0° dark current with current dark pixel measurements
-                    dark_dir = f"{calib_path}/{folder}/0_diffuse"
+                    dark_dir = f"{parent}/0_diffuse" if not turned_flag else f"{parent}/0_turned_diffuse"
                     dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
                     dark_current = reader.read_smart_raw(dark_dir, dark_file).iloc[:, 2:].mean()  # drop tint and shutter
-                    measurement = reader.read_smart_raw(dirpath, file)
-                    measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
+                    measurement = reader.read_smart_raw(dirpath, file).iloc[:, 2:]
                     dark_scale = dark_current * np.mean(measurement.mean().iloc[19:99]) / np.mean(dark_current.iloc[19: 99])
                     dark_scale = dark_scale - dark_scale.rolling(20, min_periods=1).mean()
                     dark_scale2 = dark_current.rolling(20, min_periods=1).mean() + (
                                 np.mean(measurement.mean().iloc[19:99]) - np.mean((dark_current.iloc[19:99])))
                     smart_cor = measurement - dark_scale2 - dark_scale
                 else:
-                    dark_dir = f"{calib_path}/{folder}/0_diffuse"
+                    dark_dir = f"{parent}/0_diffuse" if not turned_flag else f"{parent}/0_turned_diffuse"
                     dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
-                    measurement = reader.read_smart_raw(dirpath, file)
+                    measurement = reader.read_smart_raw(dirpath, file).iloc[:, 2:]
                     dark_current = reader.read_smart_raw(dark_dir, dark_file)
                     dark_current = dark_current.iloc[:, 2:].mean()
-                    # only use data when shutter is open
-                    measurement = measurement.where(measurement.shutter == 1).iloc[:, 2:]
                     smart_cor = measurement - dark_current
         else:
             # skip all _cor.dat files
@@ -374,14 +374,14 @@ for prop in properties:
 # %% plot every mean spectra
 plt.rcdefaults()
 h.set_cb_friendly_colors()
-for pair in h.nested_dict_pairs_iterator(mean_spectras):
+for pair in tqdm(h.nested_dict_pairs_iterator(mean_spectras), desc="Plotting Mean Spectras"):
     prop_channel, angle, position, mtype, df = pair
     df.plot(title=f"{prop_channel} {angle}° {position} {mtype} Mean Spectrum", ylabel="Counts", xlabel="Pixel #")
     plt.grid()
     # plt.show()
     figname = f"{prop_channel}_{angle}deg_{position}_{mtype}_mean_spectrum.png"
     plt.savefig(f"{plot_path}/mean_spectras/{figname}", dpi=100)
-    log.info(f"Saved {figname}")
+    log.debug(f"Saved {figname}")
     plt.close()
 
 # %% set values < 1 to 1 to avoid problems with the correction factor calculation
@@ -535,7 +535,7 @@ for prop_channel in k_cos_dir:
     k_cos["angle"] = k_cos["angle"].astype(float)  # convert angles to float for better plotting
     pixel_wl = reader.read_pixel_to_wavelength(pixel_path, cirrus_hl.lookup[prop_channel])
     k_cos = pd.merge(k_cos, pixel_wl, on="pixel")
-    for pixel in k_cos["pixel"].unique():
+    for pixel in tqdm(k_cos["pixel"].unique(), desc=f"{prop_channel}", unit=" Pixel"):
         k = k_cos.loc[(k_cos["pixel"] == pixel), :]
         fig, ax = plt.subplots()
         k.plot(x="angle", y="k_cos", ax=ax, label=f"{k['wavelength'].iloc[0]} nm",
@@ -551,3 +551,4 @@ for prop_channel in k_cos_dir:
         log.debug(f"Saved {figname}")
         plt.close()
 
+# %% save correction factors to file, one for each spectrometer
