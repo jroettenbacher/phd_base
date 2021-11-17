@@ -61,7 +61,6 @@ log.info("Merged all diffuse VNIR files")
 # SWIR: the shutters on the SWIR spectrometers did work properly for this calib
 # SWIR_option 1: Use the closed shutter measurements from each file where the shutter should be closed
 # SWIR_option 2: use the diffuse measurements also for the correction of the SWIR measured dark current
-VNIR_option = 1
 SWIR_option = 1
 for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
     log.debug(f"Working on {dirpath}")
@@ -131,7 +130,7 @@ for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
 log.info("Merged all minutely corrected files")
 
 # %% read in data into dictionary
-use_raw = False  # use raw or  dark current corrected files?
+use_raw = False  # use raw or dark current corrected files?
 measurements = dict(Fdw_VNIR=dict(), Fdw_SWIR=dict(), Fup_VNIR=dict(), Fup_SWIR=dict())
 no_measurements = list()
 # loop through all combinations of measurements and create a dictionary
@@ -148,50 +147,37 @@ for prop in properties:
                     inpath = f"{calib_path}/{folder_name}/{angle}{position}{mtype}"
                     # generate more descriptive dictionary key
                     mtype_key = mtype[1:] if mtype == "_diffuse" else "direct"
-                    # not all possible combinations have been measured, account for that with a try/except statement
-                    try:
-                        if use_raw:
-                            # list corresponding files
-                            raw_files = [f for f in os.listdir(inpath) if f"{prop}_{channel}" in f and "cor" not in f]
-                            measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
-                                f"{mtype_key}"] = pd.concat([reader.read_smart_raw(inpath, f) for f in raw_files])
-                        else:
-                            # there is only one corrected file for each prop_channel in each folder
-                            cor_file = [f for f in os.listdir(inpath) if f.endswith(f"{prop}_{channel}_cor.dat")][0]
-                            measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
-                                f"{mtype_key}"] = reader.read_smart_cor(inpath, cor_file)
-                    except FileNotFoundError:
-                        no_measurements.append(f"{prop}_{channel}, {angle}, {position_key}, {mtype_key}")
-                    except ValueError:
-                        no_measurements.append(f"{prop}_{channel}, {angle}, {position_key}, {mtype_key}")
-                    except IndexError:
-                        # no cor_file can be found for prop_channel
-                        no_measurements.append(f"{prop}_{channel}, {angle}, {position_key}, {mtype_key}")
+                    if use_raw:
+                        # list corresponding files
+                        raw_files = [f for f in os.listdir(inpath) if f"{prop}_{channel}" in f and "cor" not in f]
+                        measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
+                            f"{mtype_key}"] = pd.concat([reader.read_smart_raw(inpath, f) for f in raw_files])
+                    else:
+                        # there is only one corrected file for each prop_channel in each folder
+                        cor_file = [f for f in os.listdir(inpath) if f.endswith(f"{prop}_{channel}_cor.dat")][0]
+                        measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
+                            f"{mtype_key}"] = reader.read_smart_cor(inpath, cor_file)
 
 # %% calculate mean of the three 0° measurements
 mean_spectra1, mean_spectra2, mean_spectra3 = dict(), dict(), dict()
 # iloc[2:] is not needed for corrected data, leave it in for convenience
-mean_spectra1["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-05 12:38":"2021-11-05 12:40"].mean().iloc[2:]
-mean_spectra2["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-05 13:10":"2021-11-05 13:13"].mean().iloc[2:]
-mean_spectra3["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-05 13:37":"2021-11-05 13:39"].mean().iloc[2:]
-mean_spectra1["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-05 12:38":"2021-11-05 12:40"].mean().iloc[2:]
-mean_spectra2["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-05 13:10":"2021-11-05 13:13"].mean().iloc[2:]
-mean_spectra3["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-05 13:37":"2021-11-05 13:39"].mean().iloc[2:]
+start1, start2, start3 = "2021-11-16 09:01", "2021-11-16 09:50", "2021-11-16 10:30"
+end1, end2, end3 = "2021-11-16 09:05", "2021-11-16 09:52", "2021-11-16 10:35"
+mean_spectra1["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
+mean_spectra2["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
+mean_spectra3["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
+mean_spectra1["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
+mean_spectra2["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
+mean_spectra3["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
 
-mean_spectra1["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-08 15:26":"2021-11-08 15:28"].mean().iloc[2:]
-mean_spectra2["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-08 16:10":"2021-11-08 16:11"].mean().iloc[2:]
-mean_spectra1["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-08 15:26":"2021-11-08 15:28"].mean().iloc[2:]
-mean_spectra2["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[
-                            "2021-11-08 16:10":"2021-11-08 16:11"].mean().iloc[2:]
+# start1, start2, start3 = "2021-11-16 09:01", "2021-11-16 09:50", "2021-11-16 10:30"
+# end1, end2, end3 = "2021-11-16 09:05", "2021-11-16 09:52", "2021-11-16 10:35"
+mean_spectra1["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
+mean_spectra2["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
+mean_spectra3["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
+mean_spectra1["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
+mean_spectra2["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
+mean_spectra3["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
 
 # %% plot the 0° measurement for all channels separately
 h.set_cb_friendly_colors()
@@ -200,8 +186,7 @@ for prop in properties:
         fig, ax = plt.subplots()
         mean_spectra1[f"{prop}_{channel}"].plot(ax=ax, label="1st Measurement")
         mean_spectra2[f"{prop}_{channel}"].plot(ax=ax, label="2nd Measurement")
-        if prop == "Fdw":
-            mean_spectra3[f"Fdw_{channel}"].plot(ax=ax, label="3rd Measurement")
+        mean_spectra3[f"{prop}_{channel}"].plot(ax=ax, label="3rd Measurement")
         ax.set_title(f"{prop} {channel} 0° Direct Measurement")
         ax.set_xlabel("Pixel #")
         ax.set_ylabel("Counts")
@@ -219,10 +204,9 @@ for id1, prop in enumerate(properties):
     for id2, channel in enumerate(channels):
         mean_spectra1[f"{prop}_{channel}"].plot(ax=axs[id1, id2], label="1st Measurement")
         mean_spectra2[f"{prop}_{channel}"].plot(ax=axs[id1, id2], label="2nd Measurement")
+        mean_spectra3[f"{prop}_{channel}"].plot(ax=axs[id1, id2], label="3nd Measurement")
         axs[id1, id2].set_title(f"{prop} {channel}")
 
-mean_spectra3[f"Fdw_VNIR"].plot(ax=axs[0, 0], label="3rd Measurement")
-mean_spectra3[f"Fdw_SWIR"].plot(ax=axs[0, 1], label="3rd Measurement")
 fig.suptitle("0° Direct Measurements")
 for ax in axs:
     for a in ax:
