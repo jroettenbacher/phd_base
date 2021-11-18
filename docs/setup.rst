@@ -11,13 +11,72 @@ A possible structure could look like this::
    │   ├── analysis
    │   ├── docs
    │   ├── processing
-   │   ├── pylim  # actual python module
+   │   ├── src
+   │   │   └──  pylim  # actual python module
    │   ├── quicklooks
    │   ├── your_folder  # source code managed by your git
    │   ├── config.toml
    │   ├── LICENSE
    │   ├── README.md
    │   ├── requirements.txt
+
+Installing pylim
+----------------
+:py:mod:`pylim` is a full module complete with a :file:`pyproject.toml` and a :file:`setup.cfg`.
+In order to be able to import it into your environment you have to either `install it from source <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-from-source>`_ or build a distribution and then install it.
+Both ways work but the first one should be easier.
+These are the ways it works for me on Windows10.
+
+Windows10 - Install from source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Open an anaconda prompt, move to your project directory (e.g. phd_base) and activate your working environment.
+
+.. code-block:: console
+
+   cd C:\Users\USERNAME\PyCharmProjects\phd_base
+   conda activate phd_base
+
+Then install pylim from source with:
+
+.. code-block:: console
+
+   python -m pip install .
+
+Windows10 - Build distribution and install from it
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Make sure you have the newest version of :py:mod:`build` installed:
+
+.. code-block:: console
+
+   conda install build
+   conda update build
+
+From your project directory (e.g. phd_base) you can then call:
+
+.. code-block:: console
+
+   python -m build
+
+You will see a lot of output and hopefully this line::
+
+   Successfully built pylim-0.1.0.tar.gz and pylim-0.1.0-py3-none-any.whl
+
+For more information see `Generating distribution archives <https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives>`_.
+
+You will now have a new ``dist`` in your project directory with the two mentioned files above.
+To install :py:mod:`pylim` from your anaconda prompt call:
+
+.. code-block:: console
+
+   python -m pip install .\dist\pylim-0.1.0-py3-none-any.whl
+
+Whatever way you chose, you should be able to import :py:mod:`pylim` now:
+
+.. code-block:: python
+
+   import pylim.helpers as h
 
 Data structure
 --------------

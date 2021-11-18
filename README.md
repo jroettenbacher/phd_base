@@ -5,7 +5,7 @@
 Here I code all the stuff I need for my PhD on Arctic cirrus. 
 It includes processing for measurement data gathered by the HALO aircraft.
 During the first year a new python package was created which provides useful functions used in the processing and analysis of the data.
-The package is called `pylim`.
+The package is called `pylim` and can be found in `src`.
 Further there are folders for different purposes:
 
 * `analysis`: case studies or general campaign analysis to answer scientific questions
