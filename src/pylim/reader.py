@@ -3,6 +3,9 @@
 author: Johannes Röttenbacher
 """
 
+from pylim import helpers as h
+from pylim import smart
+from pylim import cirrus_hl
 import os
 import xarray as xr
 import pandas as pd
@@ -10,9 +13,6 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
-from pylim import helpers as h
-from pylim import smart
-from pylim import cirrus_hl
 import logging
 log = logging.getLogger(__name__)
 

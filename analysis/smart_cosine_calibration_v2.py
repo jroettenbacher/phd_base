@@ -21,7 +21,6 @@ if __name__ == "__main__":
     import pylim.helpers as h
     from pylim import cirrus_hl, reader, smart
     import os
-    import re
     import pandas as pd
     import matplotlib.pyplot as plt
     from copy import deepcopy
