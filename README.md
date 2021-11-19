@@ -16,6 +16,8 @@ The data is sorted by flight.
 The exact paths are defined in `config.toml` and can be adjusted according to your setup.
 More information on how to adjust this file can be found in [Setup](./docs/setup.rst).
 
+Documentation can be found [here](https://jroettenbacher.github.io/phd_base/).
+
 ## 1. SMART
 
 These scripts work with the SMART calibration and measurement files to generate calibrated measurement files and quicklooks. 
