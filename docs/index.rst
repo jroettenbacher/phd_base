@@ -5,6 +5,7 @@
 
 Welcome to Arctic Cirrus's documentation!
 =========================================
+This is the documentation to my PhD work.
 
 .. toctree::
    :maxdepth: 1
