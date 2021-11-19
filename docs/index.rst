@@ -5,7 +5,7 @@
 
 Welcome to Arctic Cirrus's documentation!
 =========================================
-This is the documentation to my PhD work.
+This is the documentation to my PhD work (2021-2024).
 
 .. toctree::
    :maxdepth: 1
