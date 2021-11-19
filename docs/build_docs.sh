@@ -16,11 +16,8 @@ set -x
 # INSTALL DEPENDS #
 ###################
 
-sudo apt-get update
-sudo apt-get -y install git rsync python3-sphinx python3-sphinx-rtd-theme python3-pip
-which python
-pip3 install sphinx
-pip3 install myst_parser
+apt-get update
+apt-get -y install git rsync python3-sphinx python3-sphinx-rtd-theme python3-pip python3-myst_parser
 pip3 install -r requirements.txt
 
 #####################
@@ -38,8 +35,8 @@ export SOURCE_DATE_EPOCH
 
 # build our documentation with sphinx (see docs/conf.py)
 # * https://www.sphinx-doc.org/en/master/usage/quickstart.html#running-the-build
-sudo make -C docs clean
-sudo make -C docs html
+make -C docs clean
+make -C docs html
 
 #######################
 # Update GitHub Pages #
@@ -49,7 +46,7 @@ git config --global user.name "${GITHUB_ACTOR}"
 git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
 docroot=$(mktemp -d)
-sudo rsync -av "docs/_build/html/" "${docroot}/"
+rsync -av "docs/_build/html/" "${docroot}/"
 
 pushd "${docroot}"
 
@@ -60,10 +57,10 @@ git checkout -b gh-pages
 
 # add .nojekyll to the root so that github won't 404 on content added to dirs
 # that start with an underscore (_), such as our "_content" dir..
-sudo touch .nojekyll
+touch .nojekyll
 
 # Add README
-sudo cat > README.md <<EOF
+cat > README.md <<EOF
 # GitHub Pages Cache
 
 Nothing to see here. The contents of this branch are essentially a cache that's not intended to be viewed on github.com.
@@ -82,7 +79,7 @@ git add .
 # commit all the new files
 msg="Updating Docs for commit ${GITHUB_SHA} made on $(date -d"@${SOURCE_DATE_EPOCH}" --iso-8601=seconds) from ${GITHUB_REF} by ${GITHUB_ACTOR}"
 git commit -am "${msg}"
-,
+
 # overwrite the contents of the gh-pages branch on our github.com repo
 git push deploy gh-pages --force
 

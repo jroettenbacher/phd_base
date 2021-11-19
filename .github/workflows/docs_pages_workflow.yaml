@@ -12,6 +12,7 @@ jobs:
 
   build_docs_job:
     runs-on: ubuntu-latest
+    container: debian:bullseye
 
     steps:
 
@@ -19,9 +20,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        sudo apt-get update
-        sudo apt-get install -y git
-        sudo git clone --depth 1 "https://token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
+        apt-get update
+        apt-get install -y git
+        git clone --depth 1 "https://token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
       shell: bash
 
     - name: Execute script to build our documentation and update pages
