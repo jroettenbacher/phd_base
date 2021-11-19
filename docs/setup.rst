@@ -4,7 +4,8 @@ Setup
 Get it running locally on your machine
 --------------------------------------
 
-For now (November 2021) the easiest way to use this is to ask Johannes to become collaborator on his git project and then either work within his repository on your own branch or create a folder in the cloned repository which you can track with your own git.
+For now (November 2021) the easiest way to use this is to fork this project and install pylim in your python environment if you only want to use the functions provided in pylim.
+If you want to work with the analysis and quicklook scripts you can just work in the cloned repository and add your files as you wish.
 A possible structure could look like this::
 
    ├── phd_base  # source code managed by Johannes`s github account
