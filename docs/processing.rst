@@ -11,5 +11,7 @@ This is handled by the scripts in the folders :ref:`analysis:Analysis` and :ref:
 SMART
 ------
 
+SMART has to be calibrated in the lab and in the field so there are processing routines for both cases.
+
 smart_calib_lab_ASP06.py
 ^^^^^^^^^^^^^^^^^^^^^^^^
