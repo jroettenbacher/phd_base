@@ -91,7 +91,7 @@ if __name__ == "__main__":
         log.info(f"Working on {dirpath}")
         for channel in channels:
             try:
-                filename = [file for file in files if file.endswith(f"Fdw_{channel}_cor.dat")]
+                filename = [file for file in files if file.endswith(f"{channel}_cor.dat")]
                 df = pd.concat([pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in filename])
                 # delete all minutely files
                 for file in filename:
@@ -106,23 +106,23 @@ if __name__ == "__main__":
     # %% read in all spectra and average them to one spectra for each distance measurement
     measurements = dict()
     distances = np.arange(30, 65, 5)
-    for prop_channel in ["Fdw_VNIR", "Fdw_SWIR"]:
-        measurements[prop_channel] = dict()
+    for channel in ["VNIR", "SWIR"]:
+        measurements[channel] = dict()
         for distance in distances:
-            # start_id, end_id = (200, 900) if prop_channel == "Fdw_VNIR" else (50, 220)
+            # start_id, end_id = (200, 900) if channel == "Fdw_VNIR" else (50, 220)
             inpath = os.path.join(input_path, f"{distance}cm")
-            cor_files = [f for f in os.listdir(inpath) if prop_channel in f and f.endswith("_cor.dat")]
+            cor_files = [f for f in os.listdir(inpath) if channel in f and f.endswith("_cor.dat")]
             smart_cor = pd.concat([reader.read_smart_cor(inpath, file) for file in cor_files])
             mean_spectra = smart_cor.mean(skipna=True)
-            measurements[prop_channel][f"{distance}"] = mean_spectra
+            measurements[channel][f"{distance}"] = mean_spectra
 
     # %% convert dictionary to dataframe
     dfs = pd.DataFrame()
     for pairs in h.nested_dict_pairs_iterator(measurements):
-        prop_channel, distance, df = pairs
+        channel, distance, df = pairs
         df = pd.DataFrame(df, columns=["counts"]).reset_index()  # reset index to get a column with the pixel numbers
         df = df.rename(columns={"index": "pixel"})  # rename the index column to the pixel numbers
-        df = df.assign(prop=prop_channel, distance=int(distance))
+        df = df.assign(prop=channel, distance=int(distance))
         dfs = pd.concat([dfs, df])
 
     dfs.reset_index(drop=True, inplace=True)
@@ -132,27 +132,27 @@ if __name__ == "__main__":
 
     # %% calculate linear regression for each pixel
     lin_reg = dict()
-    for prop_channel in dfs["prop"].unique():
-        lin_reg[prop_channel] = dict()
-        df_tmp = dfs[dfs["prop"] == prop_channel]
+    for channel in dfs["prop"].unique():
+        lin_reg[channel] = dict()
+        df_tmp = dfs[dfs["prop"] == channel]
         for pixel in df_tmp["pixel"].unique():
             df_sel = df_tmp[df_tmp["pixel"] == pixel]
             slope, intercept, r_value, p_value, std_err = stats.linregress(df_sel['plot_data'], df_sel['distance'])
-            lin_reg[prop_channel][f"{pixel}"] = (slope, intercept)
+            lin_reg[channel][f"{pixel}"] = (slope, intercept)
 
     # %% convert to data frame
     lin_reg_df = pd.DataFrame()
     for pairs in h.nested_dict_pairs_iterator(lin_reg):
-        prop_channel, pixel, value = pairs
-        df = pd.DataFrame({"prop": prop_channel, "pixel": int(pixel), "slope": value[0], "intercept": value[1]}, index=[0])
+        channel, pixel, value = pairs
+        df = pd.DataFrame({"prop": channel, "pixel": int(pixel), "slope": value[0], "intercept": value[1]}, index=[0])
         lin_reg_df = pd.concat([lin_reg_df, df])
 
     lin_reg_df.reset_index(drop=True, inplace=True)
 
     # %% calculate rolling mean for each channel
     dfs = list()
-    for prop_channel in lin_reg_df["prop"].unique():
-        df_tmp = lin_reg_df.loc[lin_reg_df["prop"] == prop_channel, :]
+    for channel in lin_reg_df["prop"].unique():
+        df_tmp = lin_reg_df.loc[lin_reg_df["prop"] == channel, :]
         mean_intercept = df_tmp.loc[:, ["intercept"]].rolling(window=10, min_periods=1).mean()
         df_tmp = df_tmp.assign(mean_intercept=mean_intercept)
         dfs.append(df_tmp)
@@ -160,10 +160,10 @@ if __name__ == "__main__":
     lin_reg_df_v2 = pd.concat(dfs)
 
     # %% read in pixel to wavelength mapping to use as x axis for plots
-    pixel_wl_VNIR = reader.read_pixel_to_wavelength(pixel_wl_path, "ASP06_J4")
-    pixel_wl_SWIR = reader.read_pixel_to_wavelength(pixel_wl_path, "ASP06_J3")
-    pixel_wl_VNIR["prop"] = "Fdw_VNIR"
-    pixel_wl_SWIR["prop"] = "Fdw_SWIR"
+    pixel_wl_VNIR = reader.read_pixel_to_wavelength(pixel_wl_path, "ASP06_J6")
+    pixel_wl_SWIR = reader.read_pixel_to_wavelength(pixel_wl_path, "ASP06_J5")
+    pixel_wl_VNIR["prop"] = "VNIR"
+    pixel_wl_SWIR["prop"] = "SWIR"
     pixel_wl = pd.concat([pixel_wl_VNIR, pixel_wl_SWIR])
 
     lin_reg_df_v3 = pd.merge(lin_reg_df_v2, pixel_wl, on=["prop", "pixel"])
