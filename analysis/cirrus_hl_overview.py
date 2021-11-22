@@ -2,7 +2,7 @@
 """Prepare overview plots for each flight
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim.cirrus_hl import flight_hours

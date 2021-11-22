@@ -3,7 +3,7 @@
 * 29.06.2021: cirrus over Atlantic west and north of Iceland -> Poster HALO Status Colloquium
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
 
     # %% module import
     import pylim.helpers as h

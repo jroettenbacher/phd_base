@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """Cosine Response Calibration of irradiance inlets of SMART for CIRRUS-HL and HALO-(AC)3 2nd try
 
-* ASP06 J3, J4 (Fdw) with inlet VN05 (ASP_01) done on 16th November 2021 by Anna Luebke and Johannes Röttenbacher
-* ASP06 J6, J6 (Fup) with inlet VN11 (ASP_02) done on 22th November 2021 by Anna Luebke and Johannes Röttenbacher
+* ASP06 J3, J4 (Fdw) with inlet VN05 (ASP_01) done on 16th November 2021 by Anna Luebke and Johannes Röttenbacher and finished on 22th November by Benjamin Kirbus and Johannes
+* ASP06 J5, J6 (Fup) with inlet VN11 (ASP_02) done on 22th November 2021 by Benjamin Kirbus and Johannes Röttenbacher
 
 Lamp used: cheap 1000W lamp
 
 The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
-Each measurement lasted about 42 seconds with 700 ms integration time.
+Each measurement lasted about 42 seconds with 700 ms integration time for VN05 and about 48s with 800ms integration time
+for VN11.
 Data is stored in folders which denote the angle the inlet was turned to.
 
 * :file:`{angle}_turned`: The inlet was turned 90deg clockwise around the horizontal axis to evaluate all four azimuth directions

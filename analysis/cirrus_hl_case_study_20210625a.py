@@ -3,7 +3,7 @@
 * 25.06.2021: Radiation Square for BACARDI
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import reader

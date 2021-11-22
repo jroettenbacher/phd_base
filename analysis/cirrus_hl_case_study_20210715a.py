@@ -3,7 +3,7 @@
 * 15.07.2021 SMART fixed - contrail outbreak over Spain - Radiation Square
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import reader

@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Calculate the effective receiving area of an irradiance inlet according to the R^2 law
+
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import smart, reader
@@ -18,10 +19,11 @@ if __name__ == "__main--":
     log.setLevel(logging.INFO)
 
     # %% set paths
-    folder = "ASP06_VN11_effective_receiving_area"
+    inlet = "VN05"
+    folder = f"ASP06_{inlet}_effective_receiving_area"
     calib_path = h.get_path("calib")
     input_path = os.path.join(calib_path, folder)
-    plot_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/effective_receiving_area_VN11"
+    plot_path = f"C:/Users/Johannes/Documents/Doktor/instruments/SMART/effective_receiving_area_{inlet}"
     pixel_wl_path = h.get_path("pixel_wl")
 
     # %% correct all data for the dark current
@@ -191,7 +193,7 @@ if __name__ == "__main--":
     ax.grid()
     plt.tight_layout()
     # plt.show()
-    figname = f"VN11_effective_receiving_area_delta_r.png"
+    figname = f"{inlet}_effective_receiving_area_delta_r.png"
     plt.savefig(f"{plot_path}/{figname}", dpi=100)
     log.info(f"Saved {figname}")
     plt.close()

@@ -3,7 +3,7 @@
 
 *author*: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     from pylim.cirrus_hl import coordinates
     from pylim.helpers import get_path

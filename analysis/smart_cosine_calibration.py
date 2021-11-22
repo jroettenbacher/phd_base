@@ -21,7 +21,7 @@ Data is stored in folders which denote the angle the inlet was turned to.
 author: Johannes Röttenbacher
 
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import cirrus_hl, reader, smart

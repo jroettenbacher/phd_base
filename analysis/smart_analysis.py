@@ -2,7 +2,7 @@
 """Script to do some analysis on SMART data
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% import libraries
     from pylim import reader
     from pylim import smart, helpers as h

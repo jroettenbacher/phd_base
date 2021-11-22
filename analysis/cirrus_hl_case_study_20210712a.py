@@ -3,7 +3,7 @@
 * 12.07.2021: First day with SMART fixed
 author: Johannes Röttenbacher
 """
-if __name__ == "__main--":
+if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import reader
