@@ -55,3 +55,58 @@ pixel_wl = "/projekt_agmwend/kalibration/Spektros/pixel_wl"  # pixel to waveleng
 lamp = "/projekt_agmwend/kalibration/Lamps/FEL-1587"  # lamp specification files
 panel = "/projekt_agmwend/kalibration/Panels/34816"  # panel reflectivity files
 gopro = "/projekt_agmwend/data/Cirrus_HL/04_Gopro"  # directory of GoPro timestamps files
+
+[halo-ac3]
+
+[halo-ac3.jr_local]
+base_dir = "E:/HALO-AC3/01_Flights"
+raw = "SMART/raw"  # raw measurements as given by SMART
+data = "SMART/data_cor"  # dark current corrected data
+calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
+quicklooks = "quicklooks"  # quicklook path
+horidata = "horidata"  # INS and stabilization data
+bahamas = "BAHAMAS"  # BAHAMAS measurement files
+bacardi = "BACARDI"  # BACARDI measurement files
+libradtran = "libRadtran"  # LibRadTran simulation files
+satellite = "satellite"  # satellite images
+all = "all"  # all measurements from one instrument in on instrument folder
+plot = "C:/Users/Johannes/Documents/Doktor/campaigns/HALO-AC3/case_studies"  # standard plot path
+calib = "E:/HALO-AC3/03_Calibration"  # calibration measurements
+pixel_wl = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
+lamp = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
+gopro = "E:/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
+
+[halo-ac3.jr_ubuntu]
+base_dir = "/mnt/e/HALO-AC3/01_Flights"
+raw = "SMART/raw"  # raw measurements as given by SMART
+data = "SMART/data_cor"  # dark current corrected data
+calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
+quicklooks = "quicklooks"  # quicklook path
+horidata = "horidata"  # INS and stabilization data
+bahamas = "BAHAMAS"  # BAHAMAS measurement files
+bacardi = "BACARDI"  # BACARDI measurement files
+libradtran = "libRadtran"  # LibRadTran simulation files
+satellite = "satellite"  # satellite images
+plot = "/mnt/c/Users/Johannes/Documents/campaigns/HALO-AC3/case_studies"  # standard plot path
+calib = "/mnt/e/HALO-AC3/03_Calibration"  # calibration measurements
+pixel_wl = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pixel to wavelength mapping files
+lamp = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
+gopro = "/mnt/e/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
+
+# on LIM server
+[halo-ac3.lim_server]
+base_dir = "/projekt_agmwend/data/HALO-AC3/01_Flights"
+raw = "SMART/raw"  # raw measurements as given by SMART
+data = "SMART/data_cor"  # dark current corrected data
+calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
+quicklooks = "quicklooks"
+horidata = "horidata"  # path to INS and stabilization data
+bahamas = "BAHAMAS"  # path to BAHAMAS measurement files
+bacardi = "BACARDI"  # BACARDI measurement files
+libradtran = "libRadtran"  # LibRadtran simulation files
+satellite = "satellite"  # satellite images
+plot = "/projekt_agmwend/home_rad/jroettenbacher/case_studies"  # general folder for plots
+calib = "/projekt_agmwend/data/HALO-AC3/03_Calibration"  # calibration measurements
+pixel_wl = "/projekt_agmwend/kalibration/Spektros/pixel_wl"  # pixel to wavelength mapping files
+lamp = "/projekt_agmwend/kalibration/Lamps/FEL-1587"  # lamp specification files
+gopro = "/projekt_agmwend/data/HALO-AC3/04_Gopro"  # directory of GoPro timestamps files
