@@ -43,7 +43,11 @@ def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrume
     for k in config:
         paths[k] = os.path.join(base_dir, flight, config[k])
     for k in ["calib", "pixel_wl", "lamp", "panel"]:
-        paths[k] = config[k]
+        try:
+            paths[k] = config[k]
+        except KeyError:
+            log.debug(f"Found no path for key: {k} and campaign {campaign}")
+            pass
     if key == 'all':
         paths['all'] = os.path.join(base_dir, config[key], instrument)
 
