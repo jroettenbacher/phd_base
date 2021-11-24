@@ -13,14 +13,15 @@ if __name__ == "__main__":
     from scipy import stats
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
+    from tqdm import tqdm
     import logging
     log = logging.getLogger("pylim")
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
     # %% set paths
-    inlet = "VN05"
-    folder = f"ASP06_{inlet}_effective_receiving_area"
+    inlet = "VN11"
+    folder = f"ASP06_{inlet}_effective_receiving_area_v2"
     calib_path = h.get_path("calib")
     input_path = os.path.join(calib_path, folder)
     plot_path = f"C:/Users/Johannes/Documents/Doktor/instruments/SMART/effective_receiving_area_{inlet}"
@@ -149,6 +150,33 @@ if __name__ == "__main__":
 
     lin_reg_df.reset_index(drop=True, inplace=True)
 
+    # %% plot each linear relationship
+    h.set_cb_friendly_colors()
+    for prop in dfs["prop"].unique():
+        df_tmp = dfs[dfs["prop"] == prop]
+        lin_tmp = lin_reg_df[lin_reg_df["prop"] == prop]
+        for pixel in tqdm(df_tmp["pixel"].unique(), desc="Pixel"):
+            df_plot = df_tmp[df_tmp["pixel"] == pixel]
+            lin_plot = lin_tmp[lin_tmp["pixel"] == pixel]
+            x_values = np.linspace(0, df_plot["plot_data"].max())
+            y_values = lin_plot["slope"].values * x_values + lin_plot["intercept"].values
+            fig, ax = plt.subplots()
+            df_plot.plot.scatter(x="plot_data", y="distance", ylabel="Distance (cm)", xlabel=r"$1 / \sqrt{F}}$", ax=ax,
+                                 label="Measurements", color="#117733")
+            ax.plot(x_values, y_values,
+                    label=f"Linear Regression: {lin_plot['slope'].iat[0]:.1f} * x + {lin_plot['intercept'].iat[0]:.2f}")
+            ax.grid()
+            ax.legend()
+            ax.set_ylim(-5, 65)
+            ax.set_xlim(0, df_plot["plot_data"].max())
+            ax.set_title(f"Linear regression of pixel {pixel} from channel {prop}")
+            plt.tight_layout()
+            # plt.show()
+            figname = f"{inlet}_{prop}_{pixel}_linear_regression.png"
+            plt.savefig(f"{plot_path}/{figname}", dpi=100)
+            log.debug(f"Saved {figname}")
+            plt.close()
+
     # %% calculate rolling mean for each channel
     dfs = list()
     for channel in lin_reg_df["prop"].unique():
@@ -173,7 +201,7 @@ if __name__ == "__main__":
     # %% calculate rolling mean for merged data frame
     lin_reg_df_v3["mean_intercept_all"] = lin_reg_df_v3.loc[:, ["intercept"]].rolling(window=10, min_periods=1).mean()
 
-    # %% plot data
+    # %% plot delta r for each wavelength and the rolling mean
     h.set_cb_friendly_colors()
     df_plot = lin_reg_df_v3.loc[lin_reg_df_v3["intercept"].abs() < 5]
     groups = df_plot.groupby("prop")
@@ -193,7 +221,7 @@ if __name__ == "__main__":
     ax.grid()
     plt.tight_layout()
     # plt.show()
-    figname = f"{inlet}_effective_receiving_area_delta_r.png"
+    figname = f"{inlet}_effective_receiving_area_delta_r_v2.png"
     plt.savefig(f"{plot_path}/{figname}", dpi=100)
     log.info(f"Saved {figname}")
     plt.close()
