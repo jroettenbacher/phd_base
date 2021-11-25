@@ -4,7 +4,7 @@
 author: Johannes Röttenbacher
 """
 if __name__ == "__main__":
-    # %% module import
+# %% module import
     import pylim.helpers as h
     from pylim import smart, reader
     import os
@@ -19,16 +19,16 @@ if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
-    # %% set paths
+# %% set paths
     inlet = "VN11"
+    campaign = "halo-ac3"
     folder = f"ASP06_{inlet}_effective_receiving_area_v2"
-    calib_path = h.get_path("calib")
+    calib_path = h.get_path("calib", campaign=campaign)
     input_path = os.path.join(calib_path, folder)
     plot_path = f"C:/Users/Johannes/Documents/Doktor/instruments/SMART/effective_receiving_area_{inlet}"
     pixel_wl_path = h.get_path("pixel_wl")
 
-    # %% correct all data for the dark current
-    # merge VNIR dark measurement files before correcting the calib files
+# %% correct all data for the dark current - merge VNIR dark measurement files before correcting the calib files
     for dirpath, dirs, files in os.walk(input_path):
         log.debug(f"Working on {dirpath}")
         if "diffuse" in dirpath:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             except ValueError:
                 pass
 
-    # %% read in all spectra and average them to one spectra for each distance measurement
+# %% read in all spectra and average them to one spectra for each distance measurement
     measurements = dict()
     distances = np.arange(30, 65, 5)
     for channel in ["VNIR", "SWIR"]:
@@ -117,7 +117,7 @@ if __name__ == "__main__":
             mean_spectra = smart_cor.mean(skipna=True)
             measurements[channel][f"{distance}"] = mean_spectra
 
-    # %% convert dictionary to dataframe
+# %% convert dictionary to dataframe
     dfs = pd.DataFrame()
     for pairs in h.nested_dict_pairs_iterator(measurements):
         channel, distance, df = pairs
@@ -128,10 +128,11 @@ if __name__ == "__main__":
 
     dfs.reset_index(drop=True, inplace=True)
 
-    # %% calculate 1/sqrt(F)
+# %% set negative counts to Nan and calculate 1/sqrt(F)
+    dfs["counts"] = dfs["counts"].mask(dfs["counts"] < 0)
     dfs["plot_data"] = 1 / np.sqrt(dfs["counts"])
 
-    # %% calculate linear regression for each pixel
+# %% calculate linear regression for each pixel
     lin_reg = dict()
     for channel in dfs["prop"].unique():
         lin_reg[channel] = dict()
@@ -141,7 +142,7 @@ if __name__ == "__main__":
             slope, intercept, r_value, p_value, std_err = stats.linregress(df_sel['plot_data'], df_sel['distance'])
             lin_reg[channel][f"{pixel}"] = (slope, intercept)
 
-    # %% convert to data frame
+# %% convert to data frame
     lin_reg_df = pd.DataFrame()
     for pairs in h.nested_dict_pairs_iterator(lin_reg):
         channel, pixel, value = pairs
@@ -150,12 +151,12 @@ if __name__ == "__main__":
 
     lin_reg_df.reset_index(drop=True, inplace=True)
 
-    # %% plot each linear relationship
+# %% plot each linear relationship
     h.set_cb_friendly_colors()
     for prop in dfs["prop"].unique():
         df_tmp = dfs[dfs["prop"] == prop]
         lin_tmp = lin_reg_df[lin_reg_df["prop"] == prop]
-        for pixel in tqdm(df_tmp["pixel"].unique(), desc="Pixel"):
+        for pixel in tqdm(df_tmp["pixel"].unique(), desc=prop):
             df_plot = df_tmp[df_tmp["pixel"] == pixel]
             lin_plot = lin_tmp[lin_tmp["pixel"] == pixel]
             x_values = np.linspace(0, df_plot["plot_data"].max())
@@ -166,14 +167,14 @@ if __name__ == "__main__":
             ax.plot(x_values, y_values,
                     label=f"Linear Regression: {lin_plot['slope'].iat[0]:.1f} * x + {lin_plot['intercept'].iat[0]:.2f}")
             ax.grid()
-            ax.legend()
+            ax.legend(loc=2)
             ax.set_ylim(-5, 65)
             ax.set_xlim(0, df_plot["plot_data"].max())
             ax.set_title(f"Linear regression of pixel {pixel} from channel {prop}")
             plt.tight_layout()
             # plt.show()
-            figname = f"{inlet}_{prop}_{pixel}_linear_regression.png"
-            plt.savefig(f"{plot_path}/{figname}", dpi=100)
+            figname = f"{inlet}_{prop}_{pixel:04d}_linear_regression.png"
+            plt.savefig(f"{plot_path}/lin_rel_single/{figname}", dpi=100)
             log.debug(f"Saved {figname}")
             plt.close()
 
