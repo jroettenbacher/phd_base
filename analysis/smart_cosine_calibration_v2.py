@@ -5,6 +5,8 @@
 * ASP06 J5, J6 (Fup) with inlet VN11 (ASP_02) done on 22th November 2021 by Benjamin Kirbus and Johannes Röttenbacher
 
 Lamp used: cheap 1000W lamp
+optical fiber: 22b
+-> 21b has very little output from the SWIR fiber, thus the 22b fiber was chosen for both inlets as it is identical to 21b
 
 The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
 Each measurement lasted about 42 seconds with 700 ms integration time for VN05 and about 48s with 800ms integration time
@@ -18,7 +20,7 @@ Data is stored in folders which denote the angle the inlet was turned to.
 
 """
 if __name__ == "__main__":
-    # %% module import
+# %% module import
     import pylim.helpers as h
     from pylim import cirrus_hl, reader, smart
     import os
@@ -33,14 +35,14 @@ if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
-    # %% set paths
+# %% set paths
     calib_path = h.get_path("calib")
     folder_name = "ASP06_cosine_calibration_v2"
     plot_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction_v2"
     properties = ["Fdw", "Fup"]
     channels = ["VNIR", "SWIR"]
 
-    # %% correct measurements for dark current and merge them into one file for each channel
+# %% correct measurements for dark current and merge them into one file for each channel
     folder = folder_name
 
     # merge VNIR dark measurement files before correcting the calib files
@@ -59,6 +61,7 @@ if __name__ == "__main__":
                     df.to_csv(outname, sep="\t", index=False, header=False)
                     log.debug(f"Saved {outname}")
                 except ValueError:
+                    log.debug(f"Encountered ValueError for {dirpath} and {prop}")
                     pass
 
     log.info("Merged all diffuse VNIR files")
@@ -135,7 +138,7 @@ if __name__ == "__main__":
 
     log.info("Merged all minutely corrected files")
 
-    # %% read in data into dictionary
+# %% read in data into dictionary
     use_raw = False  # use raw or dark current corrected files?
     measurements = dict(Fdw_VNIR=dict(), Fdw_SWIR=dict(), Fup_VNIR=dict(), Fup_SWIR=dict())
     no_measurements = list()
@@ -164,28 +167,28 @@ if __name__ == "__main__":
                             measurements[f"{prop}_{channel}"][f"{angle}"][f"{position_key}"][
                                 f"{mtype_key}"] = reader.read_smart_cor(inpath, cor_file)
 
-    # %% calculate mean of the three 0° measurements
+# %% calculate mean of the three 0° measurements
     mean_spectra1, mean_spectra2, mean_spectra3 = dict(), dict(), dict()
     # iloc[2:] is not needed for corrected data, leave it in for convenience
-    start1, start2, start3 = "2021-11-16 09:01", "2021-11-16 09:50", "2021-11-16 10:30"
-    end1, end2, end3 = "2021-11-16 09:05", "2021-11-16 09:52", "2021-11-16 10:35"
-    mean_spectra1["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
-    mean_spectra2["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
-    mean_spectra3["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
-    mean_spectra1["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
-    mean_spectra2["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
-    mean_spectra3["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
+    start1, start2, start3 = "2021-11-16 09:01", "2021-11-16 09:50", "2021-11-16 10:33"
+    end1, end2, end3 = "2021-11-16 09:04", "2021-11-16 09:52", "2021-11-16 10:35"
+    mean_spectra1["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start1:end1].mean()  # .iloc[2:]
+    mean_spectra2["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start2:end2].mean()  # .iloc[2:]
+    mean_spectra3["Fdw_VNIR"] = measurements["Fdw_VNIR"]["0"]["normal"]["direct"].loc[start3:end3].mean()  # .iloc[2:]
+    mean_spectra1["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start1:end1].mean()  # .iloc[2:]
+    mean_spectra2["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start2:end2].mean()  # .iloc[2:]
+    mean_spectra3["Fdw_SWIR"] = measurements["Fdw_SWIR"]["0"]["normal"]["direct"].loc[start3:end3].mean()  # .iloc[2:]
 
-    # start1, start2, start3 = "2021-11-16 09:01", "2021-11-16 09:50", "2021-11-16 10:30"
-    # end1, end2, end3 = "2021-11-16 09:05", "2021-11-16 09:52", "2021-11-16 10:35"
-    mean_spectra1["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
-    mean_spectra2["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
-    mean_spectra3["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
-    mean_spectra1["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start1:end1].mean().iloc[2:]
-    mean_spectra2["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start2:end2].mean().iloc[2:]
-    mean_spectra3["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start3:end3].mean().iloc[2:]
+    start1, start2, start3 = "2021-11-22 11:37", "2021-11-22 12:21", "2021-11-22 13:00"
+    end1, end2, end3 = "2021-11-22 11:40", "2021-11-22 12:23", "2021-11-22 13:03"
+    mean_spectra1["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start1:end1].mean()  # .iloc[2:]
+    mean_spectra2["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start2:end2].mean()  # .iloc[2:]
+    mean_spectra3["Fup_VNIR"] = measurements["Fup_VNIR"]["0"]["normal"]["direct"].loc[start3:end3].mean()  # .iloc[2:]
+    mean_spectra1["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start1:end1].mean()  # .iloc[2:]
+    mean_spectra2["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start2:end2].mean()  # .iloc[2:]
+    mean_spectra3["Fup_SWIR"] = measurements["Fup_SWIR"]["0"]["normal"]["direct"].loc[start3:end3].mean()  # .iloc[2:]
 
-    # %% plot the 0° measurement for all channels separately
+# %% plot the 0° measurement for all channels separately
     h.set_cb_friendly_colors()
     for prop in properties:
         for channel in channels:
@@ -204,8 +207,8 @@ if __name__ == "__main__":
             log.info(f"Saved {figname}")
             plt.close()
 
-    # %% plot the three 0° measurements for all channels
-    fig, axs = plt.subplots(nrows=2, ncols=2)
+# %% plot the three 0° measurements for all channels
+    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(8, 6))
     for id1, prop in enumerate(properties):
         for id2, channel in enumerate(channels):
             mean_spectra1[f"{prop}_{channel}"].plot(ax=axs[id1, id2], label="1st Measurement")
@@ -229,9 +232,8 @@ if __name__ == "__main__":
     log.info(f"Saved {figname}")
     plt.close()
 
-    # %% plot difference between 3rd and 1st measurement at 0°
+# %% plot difference between 3rd and 1st measurement at 0°
     diff = mean_spectra3["Fdw_VNIR"] - mean_spectra1["Fdw_VNIR"]
-    # TODO: Do for all channels and in one plot
     diff.plot()
     plt.title("Fdw VNIR 0° measurement - Difference between 3rd and 1st")
     plt.xlabel("Pixel #")
@@ -244,7 +246,7 @@ if __name__ == "__main__":
     log.info(f"Saved {figname}")
     plt.close()
 
-    # %% calculate the mean for every angle -> one spectra per angle
+# %% calculate the mean for every angle -> one spectra per angle
     mean_spectras = deepcopy(measurements)
     for channel in mean_spectras:
         for angle in mean_spectras[channel]:
@@ -259,7 +261,7 @@ if __name__ == "__main__":
 
     del measurements  # delete variable from workspace to free memory
 
-    # %% calculate difference between positive and negative angles
+# %% calculate difference between positive and negative angles
     diff_angles = deepcopy(mean_spectras)
     for channel in mean_spectras:
         for angle in range(5, 100, 5):
@@ -279,7 +281,7 @@ if __name__ == "__main__":
                     if position == "turned":
                         diff_angles[channel][f"{angle}"].pop(position)
 
-    # %% plot differences of all angles for each channel and position (6 angles per plot)
+# %% plot differences of all angles for each channel and position (6 angles per plot)
     prop, channel, position = "Fdw", "VNIR", "normal"  # for testing
     rg_start = [5, 35, 65]
     rg_end = [35, 65, 100]
@@ -310,20 +312,21 @@ if __name__ == "__main__":
                     plt.close()
                     id1 += 1
 
-    # %% plot every mean spectra
+# %% plot every mean spectra
     plt.rcdefaults()
     h.set_cb_friendly_colors()
     for pair in tqdm(h.nested_dict_pairs_iterator(mean_spectras), desc="Plotting Mean Spectras"):
         prop_channel, angle, position, mtype, df = pair
         df.plot(title=f"{prop_channel} {angle}° {position} {mtype} Mean Spectrum", ylabel="Counts", xlabel="Pixel #")
         plt.grid()
+        plt.legend(loc=8)
         # plt.show()
         figname = f"{prop_channel}_{angle}deg_{position}_{mtype}_mean_spectrum.png"
         plt.savefig(f"{plot_path}/mean_spectras/{figname}", dpi=100)
         log.debug(f"Saved {figname}")
         plt.close()
 
-    # %% set values < 1 to 1 to avoid problems with the correction factor calculation
+# %% set values < 1 to 1 to avoid problems with the correction factor calculation
     mean_spectras_cor = deepcopy(mean_spectras)
     for pair in h.nested_dict_pairs_iterator(mean_spectras_cor):
         prop_channel, angle, position, mtype, df = pair
@@ -332,16 +335,7 @@ if __name__ == "__main__":
 
     del mean_spectras  # delete variable from workspace to free memory
 
-    # %% calculate the direct cosine correction factors for each angle
-    k_cos_dir = dict(Fdw_VNIR=dict(), Fdw_SWIR=dict(), Fup_VNIR=dict(), Fup_SWIR=dict())
-    for prop in k_cos_dir:
-        F_0 = mean_spectras_cor[prop]["0"]["normal"]["direct"]
-        for angle in range(-95, 100, 5):
-            F_angle = mean_spectras_cor[prop][f"{angle}"]["normal"]["direct"]
-            angle_rad = np.deg2rad(angle)
-            k_cos_dir[prop][f"{angle}"] = F_0 * np.cos(angle_rad) / F_angle
-
-    # %% create dataframe from dictionary
+# %% create dataframe from dictionary
     dfs = pd.DataFrame()
     for pairs in h.nested_dict_pairs_iterator(mean_spectras_cor):
         prop_channel, angle, position, mtype, df = pairs
@@ -352,7 +346,32 @@ if __name__ == "__main__":
 
     dfs.reset_index(drop=True, inplace=True)
 
-    # %% plot actual cosine response
+# %% calculate the direct cosine correction factors for each angle
+    k_cos_dir = deepcopy(mean_spectras_cor)
+    for pairs in h.nested_dict_pairs_iterator(mean_spectras_cor):
+        prop, angle, position, mtype, F_angle = pairs
+        if mtype == "direct":
+            # remove dictionaries for mtype since only direct measurements are of importance for the cosine correction
+            k_cos_dir[prop][angle][position].pop("direct")
+            k_cos_dir[prop][angle][position].pop("diffuse")
+            F_0 = mean_spectras_cor[prop]["0"][position][mtype]
+            angle_rad = np.deg2rad(float(angle))
+            k_cos_dir[prop][angle][position] = F_0 * np.cos(angle_rad) / F_angle
+
+# %% create dataframe with cosine correction factors
+    k_cos_dir_df = pd.DataFrame()
+    for pairs in h.nested_dict_pairs_iterator(k_cos_dir):
+        prop_channel, angle, position, df = pairs
+        df = pd.DataFrame(df, columns=["k_cos"]).reset_index()  # reset index to get a column with the pixel numbers
+        df = df.rename(columns={"index": "pixel"})  # rename the index column to the pixel numbers
+        df = df.assign(prop=prop_channel, angle=angle, position=position)
+        k_cos_dir_df = pd.concat([k_cos_dir_df, df])
+
+    k_cos_dir_df.reset_index(drop=True, inplace=True)
+    # remove angles greater 90°
+    k_cos_dir_df = k_cos_dir_df[np.abs(k_cos_dir_df["angle"].astype(float)) < 95]
+
+# %% plot actual cosine response
     prop_channel, position, mtype = "Fdw_VNIR", "normal", "direct"  # for testing
     prop_channels, positions, mtypes = dfs.prop.unique(), dfs.position.unique(), dfs.mtype.unique()
 
@@ -378,9 +397,16 @@ if __name__ == "__main__":
                 a = levels.astype(float)  # -95 to 95° in 5° steps
                 log.debug(f"Using angles: {a}")
                 r, th = np.meshgrid(rad, a)
+                # select min and max of the colorbar depending on property
+                if prop_channel == "Fdw_SWIR":
+                    vmin, vmax = 0, 24000
+                elif prop_channel == "Fup_SWIR":
+                    vmin, vmax = 0, 20000
+                else:
+                    vmin, vmax = 0, 1300
                 # plot
                 fig, ax = plt.subplots()
-                img = ax.pcolormesh(th, r, z_new, cmap='YlOrRd', shading="nearest")
+                img = ax.pcolormesh(th, r, z_new, vmin=vmin, vmax=vmax, cmap='YlOrRd', shading="nearest")
                 ax.grid()
                 ax.set_title(f"{prop_channel} {position} {mtype} Cosine Response")
                 ax.set_xlabel("Angle (deg)")
@@ -396,12 +422,12 @@ if __name__ == "__main__":
                 log.info(f"Saved {figname}")
                 plt.close()
 
-    # %% plot theoretical cosine response
+# %% plot theoretical cosine response
     dfs["cosine_counts"] = dfs["counts"] * np.cos(np.deg2rad(dfs["angle"].astype(float)))
     prop_channel = "Fdw_VNIR"
     for prop_channel in prop_channels:
         F0 = dfs.loc[(dfs["prop"] == prop_channel) & (dfs["position"] == "normal") & (dfs["mtype"] == "direct"),
-                 ["angle", "cosine_counts", "pixel"]]
+                     ["angle", "cosine_counts", "pixel"]]
         levels = dfs.angle.unique()  # extract levels from angles
         # convert angles to categorical type to keep order when pivoting
         F0["angle"] = pd.Categorical(F0["angle"], categories=levels, ordered=True)
@@ -411,9 +437,16 @@ if __name__ == "__main__":
         a = levels.astype(float)  # -95 to 95° in 5° steps
         log.debug(f"Using angles: {a}")
         r, th = np.meshgrid(rad, a)
+        # select min and max of the colorbar depending on property
+        if prop_channel == "Fdw_SWIR":
+            vmin, vmax = 0, 24000
+        elif prop_channel == "Fup_SWIR":
+            vmin, vmax = 0, 20000
+        else:
+            vmin, vmax = 0, 1300
         # plot
         fig, ax = plt.subplots()
-        img = ax.pcolormesh(th, r, F0_pivot, cmap='YlOrRd', shading="nearest")
+        img = ax.pcolormesh(th, r, F0_pivot, vmin=vmin, vmax=vmax, cmap='YlOrRd', shading="nearest")
         ax.grid()
         ax.set_title(f"{prop_channel} normal direct Theoretical Cosine Response")
         ax.set_xlabel("Angle (deg)")
@@ -426,47 +459,74 @@ if __name__ == "__main__":
         log.info(f"Saved {figname}")
         plt.close()
 
-    # %% create dataframe with cosine correction factors
-    k_cos_dir_df = pd.DataFrame()
-    for pairs in h.nested_dict_pairs_iterator(k_cos_dir):
-        prop_channel, angle, df = pairs
-        df = pd.DataFrame(df, columns=["k_cos"]).reset_index()  # reset index to get a column with the pixel numbers
-        df = df.rename(columns={"index": "pixel"})  # rename the index column to the pixel numbers
-        df = df.assign(prop=prop_channel, angle=angle)
-        k_cos_dir_df = pd.concat([k_cos_dir_df, df])
-
-    k_cos_dir_df.reset_index(drop=True, inplace=True)
-    k_cos_dir_df = k_cos_dir_df[np.abs(k_cos_dir_df["angle"].astype(float)) < 95]
-
-    # %% plot cosine correction factors
+# %% plot cosine correction factors in 2D and mean, median over pixels
     for prop_channel in k_cos_dir:
-        k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
-        levels = k_cos_dir_df.angle.unique()  # extract levels from angles
-        # convert angles to categorical type to keep order when pivoting
-        k_cos["angle"] = pd.Categorical(k_cos["angle"], categories=levels, ordered=True)
-        k_cos_pivot = k_cos.pivot(index="angle", columns="pixel", values="k_cos")
-        # arrange an artificial grid to plot on
-        rad = np.arange(0, k_cos_pivot.shape[1])  # 1024 or 256 pixels
-        a = levels.astype(float)  # -95 to 95° in 5° steps
-        log.debug(f"Using angles: {a}")
-        r, th = np.meshgrid(rad, a)
-        # plot
-        fig, ax = plt.subplots()
-        img = ax.pcolormesh(th, r, k_cos_pivot, cmap='coolwarm', shading="nearest")
-        ax.grid()
-        ax.set_title(f"{prop_channel} normal direct Cosine Corretion Factor")
-        ax.set_xlabel("Angle (deg)")
-        ax.set_ylabel("Pixel #")
-        img.set_clim(0.5, 1.5)
-        plt.colorbar(img, label="Correction Factor", extend="both")
-        plt.tight_layout()
-        # plt.show()
-        figname = f"{prop_channel}_normal_direct_cosine_correction_factors.png"
-        plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
-        log.info(f"Saved {figname}")
-        plt.close()
+        k_tmp = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), :]
+        for position in k_tmp["position"].unique():
+            k_cos = k_tmp.loc[(k_tmp["position"] == position), ["angle", "k_cos", "pixel"]]
+            levels = k_cos.angle.unique()  # extract levels from angles
+            # convert angles to categorical type to keep order when pivoting
+            k_cos["angle"] = pd.Categorical(k_cos["angle"], categories=levels, ordered=True)
+            k_cos_pivot = k_cos.pivot(index="angle", columns="pixel", values="k_cos")
+            # arrange an artificial grid to plot on
+            rad = np.arange(0, k_cos_pivot.shape[1])  # 1024 or 256 pixels
+            a = levels.astype(float)  # -90 to 90° in 5° steps
+            log.debug(f"Using angles: {a}")
+            r, th = np.meshgrid(rad, a)
 
-    # %% plot cosine correction factor for each pixel/wavelength
+            # 2D plot
+            fig, ax = plt.subplots()
+            img = ax.pcolormesh(th, r, k_cos_pivot, cmap='coolwarm', shading="nearest")
+            ax.grid()
+            ax.set_title(f"{prop_channel} {position} direct Cosine Correction Factor")
+            ax.set_xlabel("Angle (deg)")
+            ax.set_ylabel("Pixel #")
+            img.set_clim(0, 2)
+            plt.colorbar(img, label="Correction Factor", extend="both")
+            plt.tight_layout()
+            # plt.show()
+            figname = f"{prop_channel}_{position}_direct_cosine_correction_factors.png"
+            plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
+            log.info(f"Saved {figname}")
+            plt.close()
+
+            # mean over all pixels
+            fig, ax = plt.subplots()
+            if "VNIR" in prop_channel:
+                k_cos = k_cos[k_cos["pixel"] > 200]
+            k_mean = k_cos.groupby("angle").mean().drop("pixel", axis=1)
+            ax.plot(k_mean.index.astype(float), k_mean)
+            ax.axhline(1, c="k", ls="--")  # horizontal line at 1
+            ax.set_xticks(np.arange(-90, 91, 15))
+            ax.grid()
+            ax.set_title(f"{prop_channel} {position} direct Mean Cosine Correction Factor")
+            ax.set_xlabel("Angle (deg)")
+            ax.set_ylabel("Cosine Correction Factor")
+            plt.tight_layout()
+            # plt.show()
+            figname = f"{prop_channel}_{position}_direct_mean_cosine_correction_factors.png"
+            plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
+            log.info(f"Saved {figname}")
+            plt.close()
+
+            # median over all pixels
+            fig, ax = plt.subplots()
+            k_mean = k_cos.groupby("angle").median().drop("pixel", axis=1)
+            ax.plot(k_mean.index.astype(float), k_mean)
+            ax.axhline(1, c="k", ls="--")  # horizontal line at 1
+            ax.set_xticks(np.arange(-90, 91, 15))
+            ax.grid()
+            ax.set_title(f"{prop_channel} {position} direct Median Cosine Correction Factor")
+            ax.set_xlabel("Angle (deg)")
+            ax.set_ylabel("Cosine Correction Factor")
+            plt.tight_layout()
+            # plt.show()
+            figname = f"{prop_channel}_{position}_direct_median_cosine_correction_factors.png"
+            plt.savefig(f"{plot_path}/correction_factors/{figname}", dpi=100)
+            log.info(f"Saved {figname}")
+            plt.close()
+
+# %% plot cosine correction factor for each pixel/wavelength
     h.set_cb_friendly_colors()
     pixel_path = h.get_path("pixel_wl")
     for prop_channel in k_cos_dir:
@@ -484,10 +544,11 @@ if __name__ == "__main__":
             ax.set_ylim(0, 2)
             ax.axhline(1, c="k", ls="--")
             ax.grid()
+            ax.legend(loc=8)
             # plt.show()
-            figname = f"{prop_channel}_{pixel}_cosine_correction_factor.png"
+            figname = f"{prop_channel}_{pixel:04d}_cosine_correction_factor.png"
             plt.savefig(f"{plot_path}/correction_factors_single/{figname}", dpi=100)
             log.debug(f"Saved {figname}")
             plt.close()
 
-    # %% save correction factors to file, one for each spectrometer
+# %% save correction factors to file, one for each spectrometer
