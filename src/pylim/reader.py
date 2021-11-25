@@ -56,11 +56,14 @@ def read_bahamas(bahamas_path: str) -> xr.Dataset:
     return ds
 
 
-def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = True) -> pd.DataFrame:
+def read_lamp_file(campaign: str = "cirrus-hl", filename: str = None, plot: bool = True, save_fig: bool = True,
+                   save_file: bool = True) -> pd.DataFrame:
     """
     Read in the 1000W lamp specification file interpolated to 1nm steps. Converts W/cm^2 to W/m^2.
 
     Args:
+        campaign: for which campaign should the lamp file be read in?
+        filename: name of lamp file to be read in
         plot: plot lamp file?
         save_fig: save figure to standard plot path defined in config.toml?
         save_file: save lamp file to standard calib path deined in config.toml?
@@ -69,11 +72,11 @@ def read_lamp_file(plot: bool = True, save_fig: bool = True, save_file: bool = T
 
     """
     # set paths
-    calib_path = h.get_path("calib")
-    plot_path = h.get_path("plot")
-    lamp_path = h.get_path("lamp")  # get path to lamp defined in config.toml
-    # read in lamp file
-    lamp_file = "F1587i01_19.std"
+    calib_path = h.get_path("calib", campaign=campaign)
+    plot_path = h.get_path("plot", campaign=campaign)
+    lamp_path = h.get_path("lamp", campaign=campaign)  # get path to lamp defined in config.toml
+    # read in lamp file (name for cirrus-hl and halo-ac3)
+    lamp_file = "F1587i01_19.std" if filename is None else filename
     names = ["Irradiance"]  # column name
     lamp = pd.read_csv(os.path.join(lamp_path, lamp_file), skiprows=1, header=None, names=names)
     lamp["Wavelength"] = np.arange(250, 2501)

@@ -7,7 +7,8 @@ author: Johannes Röttenbacher
 smart_lookup = dict(ASP06_J5="PGS_6_(ASP_06)", ASP06_J6="VIS_7_(ASP_06)",  # spectrometers
                     J5="dw", J6="dw",  # direction of channel
                     Fdw_SWIR="ASP06_J5", Fdw_VNIR="ASP06_J6",  # direction, property of channel
-                    Fdw="VN11"  # inlet name
+                    Fdw="VN11",  # inlet name
+                    irradiance_standard="FEL-1587"  # irradiance standard used for calibration
                     )
 
 # coordinates for map plots (lon, lat)
