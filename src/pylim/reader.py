@@ -79,6 +79,8 @@ def read_lamp_file(campaign: str = "cirrus-hl", filename: str = None, plot: bool
     lamp_file = "F1587i01_19.std" if filename is None else filename
     names = ["Irradiance"]  # column name
     lamp = pd.read_csv(os.path.join(lamp_path, lamp_file), skiprows=1, header=None, names=names)
+    # TODO: make the wavelength definition more flexible,
+    #  it should adjust itself according to information given in the lamp file
     lamp["Wavelength"] = np.arange(250, 2501)
     # convert from W/cm^2 to W/m^2; cm = m * 10^-2 => cm^2 = (m * 10^-2)^2 = m^2 * 10^-4 => W*10^4/m^2
     lamp["Irradiance"] = lamp["Irradiance"] * 1e4
