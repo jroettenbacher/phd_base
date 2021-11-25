@@ -5,36 +5,37 @@
 * Variables which start with "_" are for internal use only and will not be used as a option for the input file.
 author: Johannes Röttenbacher
 """
-# %% module import
-import os
+if __name__ == "__main__":
+    # %% module import
+    import os
 
-import pylim.helpers as h
-from pylim import reader
-from pylim.libradtran import find_closest_radiosonde_station
-import datetime
-import logging
-import numpy as np
-import pandas as pd
-from pysolar.solar import get_altitude
-from global_land_mask import globe
+    import pylim.helpers as h
+    from pylim import reader
+    from pylim.libradtran import find_closest_radiosonde_station
+    import datetime
+    import logging
+    import numpy as np
+    import pandas as pd
+    from pysolar.solar import get_altitude
+    from global_land_mask import globe
 
-log = logging.getLogger("pylim")
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.WARNING)
+    log = logging.getLogger("pylim")
+    log.addHandler(logging.StreamHandler())
+    log.setLevel(logging.WARNING)
 
-# %% user input
-flight = "Flight_20210715a"
-time_step = pd.Timedelta(minutes=2)
+    # %% user input
+    flight = "Flight_20210715a"
+    time_step = pd.Timedelta(minutes=2)
 
-# %% set paths
-_base_dir = h.get_path("base")
-_libradtran_dir = h.get_path("libradtran", flight)
-_bahamas_dir = h.get_path("bahamas", flight)
-_bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
-radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
-solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
-input_path = f"{_libradtran_dir}/wkdir"
-h.make_dir(input_path)  # create directory
+    # %% set paths
+    _base_dir = h.get_path("base")
+    _libradtran_dir = h.get_path("libradtran", flight)
+    _bahamas_dir = h.get_path("bahamas", flight)
+    _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
+    radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
+    solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
+    input_path = f"{_libradtran_dir}/wkdir"
+    h.make_dir(input_path)  # create directory
 
 bahamas_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
 timestamp = bahamas_ds.time[0]

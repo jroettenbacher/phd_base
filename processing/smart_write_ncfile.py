@@ -13,8 +13,8 @@ The netCDF file could be writen as a standard output from smart_calibrate_measur
  script. Start with this script and write a function that can then be used in the calibration script.
 author: Johannes Röttenbacher
 """
+if __name__ == "__main__":
+    import pylim.helpers as h
+    from pylim import reader
 
-import pylim.helpers as h
-from pylim import reader
-
-flight = "Flight_20210624a"
+    flight = "Flight_20210624a"
