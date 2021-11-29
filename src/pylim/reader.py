@@ -177,19 +177,19 @@ def read_nav_data(nav_path: str) -> pd.DataFrame:
     Reader function for Navigation data file from the INS used by the stabilization of SMART
 
     Args:
-        nav_path: path to file including filename
+        nav_path: path to IMS file including filename
 
     Returns: pandas DataFrame with headers and a DateTimeIndex
 
     """
     # read out the start time information given in the file
-    with open(nav_path) as f:
+    with open(nav_path, encoding="cp1252") as f:
         time_info = f.readlines()[1]
     start_time = pd.to_datetime(time_info[11:31], format="%m/%d/%Y %H:%M:%S")
     # define the start date of the measurement
     start_date = pd.Timestamp(year=start_time.year, month=start_time.month, day=start_time.day)
     header = ["marker", "seconds", "roll", "pitch", "yaw", "AccS_X", "AccS_Y", "AccS_Z", "OmgS_X", "OmgS_Y", "OmgS_Z"]
-    nav = pd.read_csv(nav_path, sep="\s+", skiprows=13, header=None, names=header)
+    nav = pd.read_csv(nav_path, sep="\s+", skiprows=13, header=None, names=header, encoding="cp1252")
     nav["time"] = pd.to_datetime(nav["seconds"], origin=start_date, unit="s")
     nav = nav.set_index("time")
 

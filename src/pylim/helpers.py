@@ -12,6 +12,11 @@ import logging
 
 log = logging.getLogger(__name__)
 
+# ecRad bands in nanometers
+ecRad_bands = dict(Band1=(3077, 3846), Band2=(2500, 3077), Band3=(2150, 2500), Band4=(1942, 2150), Band5=(1626, 1941),
+                   Band6=(1299, 1626), Band7=(1243, 1298), Band8=(779, 1242), Band9=(625, 778), Band10=(442, 625),
+                   Band11=(345, 441), Band12=(264, 344), Band13=(200, 263), Band14=(3846, 12195))
+
 
 def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:
     """
