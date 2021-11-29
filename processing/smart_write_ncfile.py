@@ -34,7 +34,6 @@ if __name__ == "__main__":
     campaign = "cirrus-hl"
     flight = "Flight_20210629a"
     prop_channel = "Fdw_VNIR"
-    t_int = 300
 
     # %% get paths and read in files
     smart_dir = h.get_path("calibrated", flight=flight, campaign=campaign)
@@ -53,10 +52,7 @@ if __name__ == "__main__":
     # merge wavelength to data and set it as a multi index together with time
     cal_data_long = cal_data_long.reset_index().merge(pixel_wl, how="left", on="pixel").set_index(["time", "wavelength"])
 
-    ds = cal_data_long.to_xarray()
-
-    # %% multiply normalized irradiance with integration time
-    ds["irradiance"] = ds["irradiance"] * t_int
+    ds = cal_data_long.to_xarray()  # convert to xr.DataSet
 
     # %% create metadata for ncfile
     ds.irradiance.attrs = dict(long_name="spectral downward irradiance", units="W m-2")
