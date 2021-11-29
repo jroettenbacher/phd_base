@@ -5,7 +5,7 @@ author: Johannes Röttenbacher
 """
 if __name__ == "__main__":
 
-    # %% module import
+# %% module import
     import pylim.helpers as h
     from pylim import reader
     from pylim import smart
@@ -23,20 +23,24 @@ if __name__ == "__main__":
     import pandas as pd
     import rasterio
     from rasterio.plot import show
+    from tqdm import tqdm
     import logging
     log = logging.getLogger("pylim")
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
-    # %% 20210629
+# %% 20210629
     print(20210629)
 
-    # %% set paths
+# %% set paths and background data
     flight = "Flight_20210629a"
+    date = "20210629"
     bahamas_dir = h.get_path("bahamas", flight)
     bacardi_dir = h.get_path("bacardi", flight)
     smart_dir = h.get_path("calibrated", flight)
     sat_dir = h.get_path("satellite", flight)
+    ecrad_dir = os.path.join(h.get_path("ecrad"), date)
+    horidata_dir = h.get_path("horidata", flight)
     sat_file = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
     sat_image = os.path.join(sat_dir, sat_file)
     if os.getcwd().startswith("C:"):
@@ -50,25 +54,25 @@ if __name__ == "__main__":
     in_cloud = (pd.Timestamp(2021, 6, 29, 10, 15), pd.Timestamp(2021, 6, 29, 11, 54))
     above_cloud = (pd.Timestamp(2021, 6, 29, 11, 54), pd.Timestamp(2021, 6, 29, 12, 5))
 
-    # %% find bahamas file and read in bahamas data
+# %% find bahamas file and read in bahamas data
     file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
     bahamas = reader.read_bahamas(os.path.join(bahamas_dir, file))
 
-    # %% read in satellite picture
+# %% read in satellite picture
     sat_ds = rasterio.open(sat_image)
 
-    # %% select flight sections for plotting
+# %% select flight sections for plotting
     bahamas_belowcloud = (below_cloud[0] < bahamas.time) & (bahamas.time < below_cloud[1])
     bahamas_abovecloud = (above_cloud[0] < bahamas.time) & (bahamas.time < above_cloud[1])
     bahamas_incloud = (in_cloud[0] < bahamas.time) & (bahamas.time < in_cloud[1])
 
-    # %% select further points to plot
+# %% select further points to plot
     x_edmo, y_edmo = coordinates["EDMO"]
     airport = stop_over_locations[flight] if flight in stop_over_locations else None
     x2, y2 = coordinates[airport]
     torshavn_x, torshavn_y = coordinates["Torshavn"]
 
-    # %% select position and time data and set extent
+# %% select position and time data and set extent
     lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["time"]
     pad = 2
     llcrnlat = lat.min(skipna=True) - pad
@@ -82,7 +86,7 @@ if __name__ == "__main__":
     props = plot_props[flight]
     h.set_cb_friendly_colors()
 
-    # %% plot bahamas map with highlighted below and above cloud sections and sat image
+# %% plot bahamas map with highlighted below and above cloud sections and sat image
     fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.PlateCarree()})
     # ax.stock_img()
     show(sat_ds, ax=ax)
@@ -131,7 +135,7 @@ if __name__ == "__main__":
     log.info(f"Saved {fig_name}")
     plt.close()
 
-    # %% plot bahamas data to check for clouds
+# %% plot bahamas data to check for clouds
     plt.rcdefaults()
     ylabels = ["Static Air\nTemperature (K)", "Relative \nHumidity (%)", "Static \nPressure (hPa)"]
     fig, axs = plt.subplots(nrows=3)
@@ -169,7 +173,7 @@ if __name__ == "__main__":
     log.info(f"Saved {figname}")
     plt.close()
 
-    # %% read in libradtran and bacardi files
+# %% read in libradtran and bacardi files
     libradtran_file = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high.dat"
     libradtran_file_ter = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high_ter.dat"
     bacardi_file = "CIRRUS_HL_F05_20210629a_ADLR_BACARDI_BroadbandFluxes_R0.nc"
@@ -177,7 +181,7 @@ if __name__ == "__main__":
     bbr_sim_ter = reader.read_libradtran(flight, libradtran_file_ter)
     bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
 
-    # %% select flight sections for libRadtran simulations and BACARDI measurements
+# %% select flight sections for libRadtran simulations and BACARDI measurements
     bbr_belowcloud = ((below_cloud[0] < bbr_sim.index) & (bbr_sim.index < below_cloud[1]))
     bbr_ter_belowcloud = ((below_cloud[0] < bbr_sim_ter.index) & (bbr_sim_ter.index < below_cloud[1]))
     bacardi_belowcloud = ((below_cloud[0] < bacardi_ds.time) & (bacardi_ds.time < below_cloud[1]))
@@ -185,14 +189,14 @@ if __name__ == "__main__":
     bbr_ter_abovecloud = ((above_cloud[0] < bbr_sim_ter.index) & (bbr_sim_ter.index < above_cloud[1]))
     bacardi_abovecloud = ((above_cloud[0] < bacardi_ds.time) & (bacardi_ds.time < above_cloud[1]))
 
-    # %% get mean values for flight sections
+# %% get mean values for flight sections
     bbr_sim[bbr_belowcloud].mean()
     bbr_sim_ter[bbr_ter_belowcloud].mean()
     bacardi_ds.sel(time=bacardi_belowcloud).mean()
     bbr_sim[bbr_abovecloud].mean()
     bbr_sim_ter[bbr_ter_abovecloud].mean()
     bacardi_ds.sel(time=bacardi_abovecloud).mean()
-    # %% plot libradtran simulations together with BACARDI measurements (solar + terrestrial)
+# %% plot libradtran simulations together with BACARDI measurements (solar + terrestrial)
     plt.rcdefaults()
     h.set_cb_friendly_colors()
     plt.rc('font', size=20)
@@ -242,7 +246,7 @@ if __name__ == "__main__":
     log.info(f"Saved {figname}")
     plt.close()
 
-    # %% plot libradtran simulations together with BACARDI measurements (terrestrial)
+# %% plot libradtran simulations together with BACARDI measurements (terrestrial)
     plt.rcdefaults()
     x_sel = (pd.Timestamp(2021, 6, 29, 9), pd.Timestamp(2021, 6, 29, 13))
     fig, ax = plt.subplots()
@@ -271,7 +275,7 @@ if __name__ == "__main__":
     log.info(f"Saved {figname}")
     plt.close()
 
-    # %% read in SMART data
+# %% read in SMART data
     smart_files = [f for f in os.listdir(smart_dir)]
     smart_files.sort()
     fdw_swir = reader.read_smart_cor(smart_dir, smart_files[2])
@@ -279,7 +283,7 @@ if __name__ == "__main__":
     fup_swir = reader.read_smart_cor(smart_dir, smart_files[4])
     fup_vnir = reader.read_smart_cor(smart_dir, smart_files[5])
 
-    # %% average smart spectra over different flight sections
+# %% average smart spectra over different flight sections
     below_cloud_mean_fdw_vnir = fdw_vnir[below_cloud[0]:below_cloud[1]].mean()
     below_cloud_mean_fup_vnir = fup_vnir[below_cloud[0]:below_cloud[1]].mean()
     below_cloud_mean_fdw_swir = fdw_swir[below_cloud[0]:below_cloud[1]].mean()
@@ -290,7 +294,7 @@ if __name__ == "__main__":
     above_cloud_mean_fdw_swir = fdw_swir[above_cloud[0]:above_cloud[1]].mean()
     above_cloud_mean_fup_swir = fup_swir[above_cloud[0]:above_cloud[1]].mean()
 
-    # %% get pixel to wavelength mapping for each spectrometer
+# %% get pixel to wavelength mapping for each spectrometer
     pixel_wl_dict = dict()
     for filename in smart_files[2:]:
         date_str, channel, direction = smart.get_info_from_filename(filename)
@@ -298,7 +302,7 @@ if __name__ == "__main__":
         spectrometer = smart.lookup[name]
         pixel_wl_dict[name.casefold()] = reader.read_pixel_to_wavelength(h.get_path("pixel_wl"), spectrometer)
 
-    # %% prepare data frame for plotting VNIR
+# %% prepare data frame for plotting VNIR
     plot_fup_vnir = pixel_wl_dict["fup_vnir"]
     plot_fup_vnir["fup_below_cloud"] = below_cloud_mean_fup_vnir.reset_index(drop=True)
     plot_fup_vnir["fup_above_cloud"] = above_cloud_mean_fup_vnir.reset_index(drop=True)
@@ -311,7 +315,7 @@ if __name__ == "__main__":
     plot_fup_vnir = plot_fup_vnir[plot_fup_vnir["wavelength"].between(min_wl, max_wl)]
     plot_fdw_vnir = plot_fdw_vnir[plot_fdw_vnir["wavelength"].between(min_wl, max_wl)]
 
-    # %% prepare data frame for plotting SWIR
+# %% prepare data frame for plotting SWIR
     plot_fup_swir = pixel_wl_dict["fup_swir"]
     plot_fup_swir["fup_below_cloud"] = below_cloud_mean_fup_swir.reset_index(drop=True)
     plot_fup_swir["fup_above_cloud"] = above_cloud_mean_fup_swir.reset_index(drop=True)
@@ -319,25 +323,25 @@ if __name__ == "__main__":
     plot_fdw_swir["fdw_below_cloud"] = below_cloud_mean_fdw_swir.reset_index(drop=True)
     plot_fdw_swir["fdw_above_cloud"] = above_cloud_mean_fdw_swir.reset_index(drop=True)
 
-    # %% merge VNIR and SWIR data
+# %% merge VNIR and SWIR data
     plot_fup = pd.concat([plot_fup_vnir, plot_fup_swir], ignore_index=True)
     plot_fdw = pd.concat([plot_fdw_vnir, plot_fdw_swir], ignore_index=True)
 
-    # %% sort dataframes by wavelength
+# %% sort dataframes by wavelength
     plot_fup.sort_values(by="wavelength", inplace=True)
     plot_fdw.sort_values(by="wavelength", inplace=True)
 
-    # %% remove 800 - 950 nm from fup -> calibration problem
+# %% remove 800 - 950 nm from fup -> calibration problem
     plot_fup.iloc[:, 2:] = plot_fup.iloc[:, 2:].where(~plot_fup["wavelength"].between(850, 950), np.nan)
 
-    # %% calculate albedo below and above cloud
+# %% calculate albedo below and above cloud
     albedo = plot_fup.loc[:, ("pixel", "wavelength")].copy()
     albedo["albedo_below_cloud"] = np.abs(plot_fup["fup_below_cloud"] / plot_fdw["fdw_below_cloud"])
     albedo["albedo_above_cloud"] = np.abs(plot_fup["fup_above_cloud"] / plot_fdw["fdw_above_cloud"])
     albedo = albedo.rename(columns={"fup_below_cloud": "albedo_below_cloud", "fup_above_cloud": "albedo_above_cloud"})
     albedo = albedo[albedo["wavelength"] < 2180]
 
-    # %% plot averaged spectra F_up and F_dw
+# %% plot averaged spectra F_up and F_dw
     plt.rcParams.update({'font.size': 14})
     h.set_cb_friendly_colors()
     fig, axs = plt.subplots(figsize=(10, 8), nrows=3)
@@ -374,5 +378,92 @@ if __name__ == "__main__":
     figname = f"{outpath}/{flight}_SMART_average_spectra_albedo.png"
     plt.savefig(figname, dpi=100)
     log.info(f"Saved {figname}")
+    plt.close()
+
+# %% read in ecRad output
+    ecrad_output_file = [f for f in os.listdir(ecrad_dir) if "output" in f][0]
+    ecrad_output = xr.open_dataset(f"{ecrad_dir}/{ecrad_output_file}")
+    # assign coordinates to band_sw
+    ecrad_output = ecrad_output.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17)})
+
+# %% read in SMART horidata
+    ims_file = [f for f in os.listdir(horidata_dir) if "IMS" in f][0]
+    horidata = reader.read_nav_data(os.path.join(horidata_dir, ims_file))
+    # convert data frame to xarray for easier use later
+    horidata = horidata.to_xarray()
+
+# %% select only relevant time (bahamas time range)
+    ecrad_output = ecrad_output.where(ecrad_output.time == bahamas.time, drop=True)
+
+# %% select flight sections for ecRad
+    ecrad_belowcloud = ((below_cloud[0] < ecrad_output.time) & (ecrad_output.time < below_cloud[1]))
+    ecrad_abovecloud = ((above_cloud[0] < ecrad_output.time) & (ecrad_output.time < above_cloud[1]))
+
+# %% calculate pressure height
+    q_air = 1.292
+    g_geo = 9.81
+    pressure_hl = ecrad_output["pressure_hl"]
+    ecrad_output["press_height"] = -(pressure_hl[:, 137]) * np.log(pressure_hl[:, :] / pressure_hl[:, 137]) / (
+            q_air * g_geo)
+
+# %% select bahamas data corresponding to model time
+    bahamas_sel = bahamas.sel(time=ecrad_output.time)
+
+# %% get height level of actual flight altitude in ecRad model, this determines only the index of the level
+    ecrad_timesteps = len(ecrad_output.time)
+    aircraft_height_level = np.zeros(ecrad_timesteps)
+
+    for i in tqdm(range(ecrad_timesteps)):
+        aircraft_height_level[i] = h.arg_nearest(ecrad_output["press_height"][i, :].values, bahamas_sel.IRS_ALT[i].values)
+
+    aircraft_height_level = aircraft_height_level.astype(int)
+
+# %% prepare ecRad data for plotting
+    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"])
+    ecrad_dn_sw = ecrad_output["spectral_flux_dn_sw"].isel(half_level=height_level_da)
+    ecrad_up_sw = ecrad_output["spectral_flux_up_sw"].isel(half_level=height_level_da)
+
+# %% read in SMART nc file
+    smart_fdw = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
+    smart_fup = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fup_VNIR_2021_06_29.nc")
+
+# %% select nearest corresponding horidata to SMART measurements
+    hdata = horidata.sel(time=smart_fup.time, method="nearest")
+
+# %% sum up SMART irradiance over ecRad bands
+    nr_bands = len(h.ecRad_bands)
+    fdw_banded = np.empty((nr_bands, smart_fdw.time.shape[0]))
+    fup_banded = np.empty((nr_bands, smart_fup.time.shape[0]))
+    for i, band in enumerate(h.ecRad_bands):
+        wl1 = h.ecRad_bands[band][0]
+        wl2 = h.ecRad_bands[band][1]
+        fdw_banded[i, :] = smart_fdw.Fdw.loc[dict(wavelength=slice(wl1, wl2))].sum(dim="wavelength")
+        fup_banded[i, :] = smart_fup.Fup.loc[dict(wavelength=slice(wl1, wl2))].sum(dim="wavelength")
+
+    fdw_banded = xr.DataArray(fdw_banded, coords={"ecrad_band": range(1, 15), "time": smart_fdw.time}, name="Fdw")
+    fup_banded = xr.DataArray(fup_banded, coords={"ecrad_band": range(1, 15), "time": smart_fup.time}, name="Fup")
+
+# %% filter SMART data for high roll angles
+    condition = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
+                             coords={"time": fdw_banded.time}).expand_dims({"ecrad_band": range(1, 15)})
+    fdw_banded = fdw_banded.where(condition)
+
+# %% plot ecrad flux in comparison to banded SMART flux
+    h.set_cb_friendly_colors()
+    band = 10
+    fig, ax = plt.subplots()
+    ecrad_dn_sw.sel(band_sw=band).plot(x="time", label="ecRad simulation", ax=ax)
+    fdw_banded.sel(ecrad_band=band).plot(x="time", label="SMART measurement", ax=ax)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw.time) & (ecrad_dn_sw.time < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    ax.legend()
+    ax.set_title(f"ecRad Band {band}: {h.ecRad_bands[f'Band{band}']} nm")
+    ax.set_ylabel("Spectral Downward Irradiance $(\mathrm{W\,m}^{-2})$")
+    ax.grid()
+    plt.show()
     plt.close()
 
