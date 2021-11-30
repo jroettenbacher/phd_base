@@ -419,13 +419,18 @@ if __name__ == "__main__":
     aircraft_height_level = aircraft_height_level.astype(int)
 
 # %% prepare ecRad data for plotting
-    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"])
+    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ecrad_output.time})
     ecrad_dn_sw = ecrad_output["spectral_flux_dn_sw"].isel(half_level=height_level_da)
     ecrad_up_sw = ecrad_output["spectral_flux_up_sw"].isel(half_level=height_level_da)
 
-# %% read in SMART nc file
-    smart_fdw = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
-    smart_fup = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fup_VNIR_2021_06_29.nc")
+# %% read in SMART nc files
+    fdw_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
+    fup_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fup_VNIR_2021_06_29.nc")
+    fdw_swir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_SWIR_2021_06_29.nc")
+    fup_swir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fup_SWIR_2021_06_29.nc")
+    # merge VNIR and SWIR channel
+    smart_fdw = xr.merge([fdw_vnir.Fdw, fdw_swir.Fdw])
+    smart_fup = xr.merge([fup_vnir.Fup, fup_swir.Fup])
 
 # %% select nearest corresponding horidata to SMART measurements
     hdata = horidata.sel(time=smart_fup.time, method="nearest")
@@ -443,27 +448,70 @@ if __name__ == "__main__":
     fdw_banded = xr.DataArray(fdw_banded, coords={"ecrad_band": range(1, 15), "time": smart_fdw.time}, name="Fdw")
     fup_banded = xr.DataArray(fup_banded, coords={"ecrad_band": range(1, 15), "time": smart_fup.time}, name="Fup")
 
-# %% filter SMART data for high roll angles
+# %% filter SMART data for high motion angles and 0
     condition = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
                              coords={"time": fdw_banded.time}).expand_dims({"ecrad_band": range(1, 15)})
     fdw_banded = fdw_banded.where(condition)
+    fup_banded = fup_banded.where(condition)
+    fdw_banded = fdw_banded.where(fdw_banded > 0)
+    fup_banded = fup_banded.where(fup_banded > 0)
 
 # %% plot ecrad flux in comparison to banded SMART flux
-    h.set_cb_friendly_colors()
-    band = 10
-    fig, ax = plt.subplots()
-    ecrad_dn_sw.sel(band_sw=band).plot(x="time", label="ecRad simulation", ax=ax)
-    fdw_banded.sel(ecrad_band=band).plot(x="time", label="SMART measurement", ax=ax)
+    band = 4
+    time_extend = pd.Timedelta((fup_banded.time[-1] - fup_banded.time[0]).values)
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(10, 7))
+    fup_banded.sel(ecrad_band=band).plot(x="time", label=r"F$_\uparrow$ SMART", c="#6699CC", ls="-", ax=ax)
+    fdw_banded.sel(ecrad_band=band).plot(x="time", label=r"F$_\downarrow$ SMART", c="#117733", ls="-", ax=ax)
+    ecrad_up_sw.sel(band_sw=band).plot(x="time", label=r"F$_\uparrow$ ecRad", c="#CC6677", ls="--", ax=ax)
+    ecrad_dn_sw.sel(band_sw=band).plot(x="time", label=r"F$_\downarrow$ ecRad", c="#f89c20", ls="--", ax=ax)
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
                     transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw.time) & (ecrad_dn_sw.time < in_cloud[1])),
                     transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
                     transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
-    ax.legend()
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=4)
+
     ax.set_title(f"ecRad Band {band}: {h.ecRad_bands[f'Band{band}']} nm")
-    ax.set_ylabel("Spectral Downward Irradiance $(\mathrm{W\,m}^{-2})$")
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Spectral Downward Irradiance \n$(\mathrm{W\,m}^{-2}\mathrm{\,nm}^{-1})$")
     ax.grid()
-    plt.show()
+    h.set_xticks_and_xlabels(ax, time_extend)
+    plt.subplots_adjust(bottom=0.27)
+    # plt.show()
+    figname = f"{outpath}/cirrus-hl_smart_ecrad_band{band}_fdw_comparison_{date}.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
     plt.close()
+
+# %% plot aircraft track through model (2D variables)
+    variable = "flux_up_lw"
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(12, 7))
+    ecrad_output[variable].plot(x="time", cmap="afmhot", ax=ax)
+    height_level_da.plot(x="time", ax=ax, label="HALO altitude")
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1,
+                    where=((in_cloud[0] < ecrad_dn_sw.time) & (ecrad_dn_sw.time < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    ax.legend(loc=2)
+    ax.set_title("ecRad Output along HALO Flight Track 29. June 2021")
+    ax.set_ylabel("Model Half Level")
+    ax.set_xlabel("Time (UTC)")
+    ax.invert_yaxis()
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{outpath}/cirrus-hl_ecRad_{variable}_halo_alt_{date}.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
 
