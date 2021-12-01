@@ -48,6 +48,7 @@ if __name__ == "__main__":
 
     # wait for all simulations to finish
     while len(processes) > 0:
+        os.wait()
         # this will remove elements of the set which are also in the list
         # the list has only terminated processes in it, p.poll returns a non None value if the process is still running
         processes.difference_update([p for p in processes if p.poll() is not None])
@@ -56,8 +57,8 @@ if __name__ == "__main__":
 
     latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
 
-    # read input files and extract information from it
-    for infile in input_files:
+    log.info("Reading input files and extracting information from it...")
+    for infile in tqdm(input_files, desc="Input files"):
         lat, lon, ts, header, wavelengths, integrate_flag = get_info_from_libradtran_input(infile)
         latitudes.append(lat)
         longitudes.append(lon)
@@ -66,8 +67,9 @@ if __name__ == "__main__":
         dt_ts = ts.to_pydatetime().astimezone(dt.timezone.utc)
         saa.append(get_azimuth(lat, lon, dt_ts))  # calculate solar azimuth angle
 
-    # merge all output files and add information from input files
-    output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+") for file in output_files])
+    log.info("Merging all output files and adding information from input files...")
+    output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+")
+                        for file in tqdm(output_files, desc="Output files")])
     output = output.assign(latitude=latitudes)
     output = output.assign(longitude=longitudes)
     output = output.assign(time=time_stamps)
