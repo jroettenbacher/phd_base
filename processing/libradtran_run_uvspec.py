@@ -20,7 +20,7 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set options and get files
-    flight = "Flight_20210629aa"
+    flight = "Flight_20210629a"
     uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight)
     libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "smart")  # file where to find input files
