@@ -442,7 +442,7 @@ if __name__ == "__main__":
 # %% select nearest corresponding horidata to SMART measurements
     hdata = horidata.sel(time=smart_fup.time, method="nearest")
 
-# %% filter SMART data for high motion angles and sensible values (0, 5 Wm^-2nm^-1)
+# %% set up filter for high motion angles and filter SMART data for sensible values (0, 5 Wm^-2nm^-1)
     condition_fdw = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
                                  coords={"time": smart_fdw.time})
     condition_fup = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
@@ -450,15 +450,16 @@ if __name__ == "__main__":
     smart_fdw["Fdw"] = smart_fdw.Fdw.where((smart_fdw.Fdw > 0) & (smart_fdw.Fdw < 5))
     smart_fup["Fup"] = smart_fup.Fup.where((smart_fup.Fup > 0) & (smart_fup.Fup < 5))
 
+# %% integrate F and apply rolling mean for smoothing
+    Fup = smart_fup.Fup.sum(dim="wavelength", skipna=True).rolling(time=15, min_periods=1).mean()
+    Fdw = smart_fdw.Fdw.sum(dim="wavelength", skipna=True).rolling(time=15, min_periods=1).mean()
+
 # %% plot SMART timeseries of integrated data together with libRadtran simulation
     plt.rcdefaults()
     h.set_cb_friendly_colors()
     x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
     plt.rc('font', size=20)
     plt.rc('lines', linewidth=3)
-    # integrate F and apply rolling mean for smoothing
-    Fup = smart_fup.Fup.sum(dim="wavelength", skipna=True).rolling(time=15, min_periods=1).mean()
-    Fdw = smart_fdw.Fdw.sum(dim="wavelength", skipna=True).rolling(time=15, min_periods=1).mean()
     fig, ax = plt.subplots(figsize=(13, 9))
     # SMART measurements filtered for high motion angles
     Fup.where(condition_fup).plot(x="time", ax=ax, label=r"F$_\uparrow$ SMART")
@@ -497,17 +498,14 @@ if __name__ == "__main__":
 # %% plot SMART timeseries of each wavelength data
     plt.rcdefaults()
     h.set_cb_friendly_colors()
-    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
     plt.rc('font', size=16)
     plt.rc('lines', linewidth=3)
     for wl in tqdm(smart_fdw.wavelength, desc="Wavelength"):
         fig, ax = plt.subplots(figsize=(10, 7))
-        # smart_fup.Fup.where((smart_fup.Fup < 5) & (smart_fup.Fup > 0)).sum(dim="wavelength").plot(x="time", ax=ax, label="Upward")
-        smart_fdw.Fdw.where((smart_fdw.Fdw < 5) & (smart_fdw.Fdw > 0)).sel(wavelength=wl).plot(x="time", ax=ax, label="Downward")
+        # smart_fup.Fup.sel(wavelength=wl).where(condition_fdw).plot(x="time", ax=ax, label=r"F$_\uparrow$ SMART")
+        smart_fdw.Fdw.sel(wavelength=wl).where(condition_fdw).plot(x="time", ax=ax, label=r"F$_\downarrow$ SMART")
         ax.legend(loc=4)
-        ax.set_xlim(x_sel)
         h.set_xticks_and_xlabels(ax, x_sel[-1] - x_sel[0])
-
         ax.set_title(f"SMART measurement wavelength: {wl.values:.2f} nm")
         ax.set_xlabel("Time (UTC)")
         ax.set_ylabel(r"Spectral Irradiance (W\,m$^{-2}\,$nm$^{-1}$)")
@@ -530,25 +528,35 @@ if __name__ == "__main__":
 
     fdw_banded = xr.DataArray(fdw_banded, coords={"ecrad_band": range(1, 15), "time": smart_fdw.time}, name="Fdw")
     fup_banded = xr.DataArray(fup_banded, coords={"ecrad_band": range(1, 15), "time": smart_fup.time}, name="Fup")
+    # apply roling mean for smoothing and filter for high motion angles
+    fdw_banded = fdw_banded.rolling(time=15, min_periods=1).mean().where(condition_fdw)
+    fup_banded = fup_banded.rolling(time=15, min_periods=1).mean().where(condition_fup)
 
 # %% plot ecrad flux in comparison to banded SMART flux
-    band = 4
-    time_extend = pd.Timedelta((fup_banded.time[-1] - fup_banded.time[0]).values)
+    band = 11
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    time_extend = x_sel[-1] - x_sel[0]
     plt.rc('font', size=16)
     plt.rc('lines', linewidth=3)
     fig, ax = plt.subplots(figsize=(10, 7))
+    # banded SMART measurement
     fup_banded.sel(ecrad_band=band).plot(x="time", label=r"F$_\uparrow$ SMART", c="#6699CC", ls="-", ax=ax)
     fdw_banded.sel(ecrad_band=band).plot(x="time", label=r"F$_\downarrow$ SMART", c="#117733", ls="-", ax=ax)
-    ecrad_up_sw.sel(band_sw=band).plot(x="time", label=r"F$_\uparrow$ ecRad", c="#CC6677", ls="--", ax=ax)
-    ecrad_dn_sw.sel(band_sw=band).plot(x="time", label=r"F$_\downarrow$ ecRad", c="#f89c20", ls="--", ax=ax)
+    # ecRad band simulation
+    ecrad_up_sw.sel(band_sw=band).plot(x="time", label=r"F$_\uparrow$ ecRad", c="#6699CC", ls="--", ax=ax,
+                                       path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ecrad_dn_sw.sel(band_sw=band).plot(x="time", label=r"F$_\downarrow$ ecRad", c="#117733", ls="--", ax=ax,
+                                       path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    # cloud markups
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
                     transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw.time) & (ecrad_dn_sw.time < in_cloud[1])),
                     transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
                     transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    # aesthetics
     ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=4)
-
+    ax.set_xlim(x_sel)
     ax.set_title(f"ecRad Band {band}: {h.ecRad_bands[f'Band{band}']} nm")
     ax.set_xlabel("Time (UTC)")
     ax.set_ylabel("Spectral Downward Irradiance \n$(\mathrm{W\,m}^{-2}\mathrm{\,nm}^{-1})$")
@@ -562,7 +570,7 @@ if __name__ == "__main__":
     plt.close()
 
 # %% plot aircraft track through model (2D variables)
-    variable = "flux_up_lw"
+    variable = "flux_dn_sw"
     plt.rcdefaults()
     h.set_cb_friendly_colors()
     plt.rc('font', size=16)
@@ -617,8 +625,6 @@ if __name__ == "__main__":
     ax.set_xlim(x_sel)
     h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
     ax.grid()
-    # ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
-    #                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
     ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_belowcloud,
                     transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
     ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw_bb.time.values)
@@ -638,6 +644,46 @@ if __name__ == "__main__":
     plt.tight_layout()
     # plt.show()
     figname = f"{outpath}/{flight}_bacardi_ecRad_broadband_irradiance.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot ecRad broadband simulations together with SMART integrated measurements (solar)
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=20)
+    plt.rc('lines', linewidth=3)
+
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    fig, ax = plt.subplots(figsize=(13, 9))
+    # solar radiation
+    Fup.where(condition_fup).plot(x="time", label=r"F$_\uparrow$ SMART", ax=ax, c="#6699CC", ls="-")
+    Fdw.where(condition_fdw).plot(x="time", label=r"F$_\downarrow$ SMART", ax=ax, c="#117733", ls="-")
+    ecrad_up_sw_bb.plot(x="time", ax=ax, label=r"F$_\uparrow$ ecRad", c="#6699CC", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ecrad_dn_sw_bb.plot(x="time", ax=ax, label=r"F$_\downarrow$ ecRad", c="#117733", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Broadband irradiance (W$\,$m$^{-2}$)")
+    ax.set_xlim(x_sel)
+    h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
+    ax.grid()
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw_bb.time.values)
+                                                             & (ecrad_dn_sw_bb.time.values < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=4)
+    ax.set_title(f"Integrated SMART Measurement "
+                 f"{smart_fup.wavelength[0].values:.2f} - {smart_fup.wavelength[-1].values:.2f} nm\n"
+                 f"and ecRad Simulation")
+    plt.subplots_adjust(bottom=0.23)
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{outpath}/cirrus-hl_SMART_ecRad_solar_broadband_irradiance_{flight}.png"
     plt.savefig(figname, dpi=100)
     log.info(f"Saved {figname}")
     plt.close()
