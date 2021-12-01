@@ -20,10 +20,10 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set options and get files
-    flight = "Flight_20210715a"
-    uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
+    flight = "Flight_20210629aa"
+    uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight)
-    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir")
+    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "smart")  # file where to find input files
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                    if f.endswith(".inp")]
     input_files.sort()  # sort input files -> output files will be sorted as well
@@ -132,6 +132,6 @@ if __name__ == "__main__":
     for var in ds:
         ds[var].attrs = var_attrs[var]
     # save file
-    nc_filepath = f"/projekt_agmwend/data/Cirrus_HL/01_Flights/{flight}/libRadtran/{flight}_libRadtran_clearsky_simulation_800nm.nc"
+    nc_filepath = f"/projekt_agmwend/data/Cirrus_HL/01_Flights/{flight}/libRadtran/{flight}_libRadtran_clearsky_simulation_smart.nc"
     ds.to_netcdf(nc_filepath, encoding=encoding)
     log.info(f"Saved {nc_filepath}")
