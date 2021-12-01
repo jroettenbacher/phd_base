@@ -39,8 +39,9 @@ if __name__ == "__main__":
     bacardi_dir = h.get_path("bacardi", flight)
     smart_dir = h.get_path("calibrated", flight)
     sat_dir = h.get_path("satellite", flight)
-    ecrad_dir = os.path.join(h.get_path("ecrad"), date)
     horidata_dir = h.get_path("horidata", flight)
+    ecrad_dir = os.path.join(h.get_path("ecrad"), date)
+    libradtran_dir = h.get_path("libradtran", flight)
     sat_file = [f for f in os.listdir(sat_dir) if "MODIS" in f][0]
     sat_image = os.path.join(sat_dir, sat_file)
     if os.getcwd().startswith("C:"):
@@ -176,10 +177,12 @@ if __name__ == "__main__":
 # %% read in libradtran and bacardi files
     libradtran_file = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high.dat"
     libradtran_file_ter = "BBR_Fdn_clear_sky_Flight_20210629a_R0_ds_high_ter.dat"
+    libradtran_file_smart = f"{flight}_libRadtran_clearsky_simulation_smart.nc"
     bacardi_file = "CIRRUS_HL_F05_20210629a_ADLR_BACARDI_BroadbandFluxes_R0.nc"
     bbr_sim = reader.read_libradtran(flight, libradtran_file)
     bbr_sim_ter = reader.read_libradtran(flight, libradtran_file_ter)
     bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
+    smart_sim = xr.open_dataset(f"{libradtran_dir}/{libradtran_file_smart}")
 
 # %% select flight sections for libRadtran simulations and BACARDI measurements
     bbr_belowcloud = ((below_cloud[0] < bbr_sim.index) & (bbr_sim.index < below_cloud[1]))
@@ -205,18 +208,18 @@ if __name__ == "__main__":
     x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
     fig, ax = plt.subplots(figsize=(13, 9))
     # solar radiation
-    bacardi_ds.F_up_solar.plot(x="time", label="F_up BACARDI", ax=ax, c="#6699CC", ls="-")
-    bacardi_ds.F_down_solar.plot(x="time", label="F_down BACARDI", ax=ax, c="#117733", ls="-")
-    bbr_sim.plot(y="F_up", ax=ax, label="F_up libRadtran", c="#6699CC", ls="--",
+    bacardi_ds.F_up_solar.plot(x="time", label=r"F$_\uparrow$ BACARDI", ax=ax, c="#6699CC", ls="-")
+    bacardi_ds.F_down_solar.plot(x="time", label=r"F$_\downarrow$ BACARDI", ax=ax, c="#117733", ls="-")
+    bbr_sim.plot(y="F_up", ax=ax, label=r"F$_\uparrow$ libRadtran", c="#6699CC", ls="--",
                  path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
-    bbr_sim.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_down libRadtran",
+    bbr_sim.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label=r"F$_\downarrow$ libRadtran",
                  c="#117733", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
     # terrestrial radiation
-    bacardi_ds.F_up_terrestrial.plot(x="time", label="F_up BACARDI", ax=ax, c="#CC6677", ls="-")
-    bacardi_ds.F_down_terrestrial.plot(x="time", label="F_down BACARDI", ax=ax, c="#f89c20", ls="-")
-    bbr_sim_ter.plot(y="F_up", ax=ax, label="F_up libRadtran", c="#CC6677", ls="--",
+    bacardi_ds.F_up_terrestrial.plot(x="time", label=r"F$_\uparrow$ BACARDI", ax=ax, c="#CC6677", ls="-")
+    bacardi_ds.F_down_terrestrial.plot(x="time", label=r"F$_\downarrow$ BACARDI", ax=ax, c="#f89c20", ls="-")
+    bbr_sim_ter.plot(y="F_up", ax=ax, label=r"F$_\uparrow$ libRadtran", c="#CC6677", ls="--",
                      path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
-    bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label="F_down libRadtran",
+    bbr_sim_ter.plot(y="F_dw", ax=ax, ylabel="Broadband irradiance (W$\,$m$^{-2}$)", label=r"F$_\downarrow$ libRadtran",
                      c="#f89c20", ls="--", path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
     ax.set_xlabel("Time (UTC)")
     ax.set_xlim(x_sel)
@@ -237,8 +240,8 @@ if __name__ == "__main__":
     # add dummy legend entries to get the right amount of rows per column
     handles.append(Patch(color='none', label=""))
     handles.append(Patch(color='none', label=""))
-    ax.legend(handles=handles, bbox_to_anchor=(0.1, 0), loc="lower left", bbox_transform=fig.transFigure, ncol=3)
-    plt.subplots_adjust(bottom=0.4)
+    ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    plt.subplots_adjust(bottom=0.37)
     plt.tight_layout()
     # plt.show()
     figname = f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance.png"
@@ -418,10 +421,14 @@ if __name__ == "__main__":
 
     aircraft_height_level = aircraft_height_level.astype(int)
 
-# %% prepare ecRad data for plotting
+# %% prepare ecRad data for plotting by selecting only the HALO flightlevel
     height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ecrad_output.time})
     ecrad_dn_sw = ecrad_output["spectral_flux_dn_sw"].isel(half_level=height_level_da)
     ecrad_up_sw = ecrad_output["spectral_flux_up_sw"].isel(half_level=height_level_da)
+    ecrad_dn_sw_bb = ecrad_output["flux_dn_sw"].isel(half_level=height_level_da)
+    ecrad_up_sw_bb = ecrad_output["flux_up_sw"].isel(half_level=height_level_da)
+    ecrad_dn_lw_bb = ecrad_output["flux_dn_lw"].isel(half_level=height_level_da)
+    ecrad_up_lw_bb = ecrad_output["flux_up_lw"].isel(half_level=height_level_da)
 
 # %% read in SMART nc files
     fdw_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
@@ -435,6 +442,82 @@ if __name__ == "__main__":
 # %% select nearest corresponding horidata to SMART measurements
     hdata = horidata.sel(time=smart_fup.time, method="nearest")
 
+# %% filter SMART data for high motion angles and sensible values (0, 5 Wm^-2nm^-1)
+    condition_fdw = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
+                                 coords={"time": smart_fdw.time})
+    condition_fup = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
+                                 coords={"time": smart_fup.time})
+    smart_fdw["Fdw"] = smart_fdw.Fdw.where((smart_fdw.Fdw > 0) & (smart_fdw.Fdw < 5))
+    smart_fup["Fup"] = smart_fup.Fup.where((smart_fup.Fup > 0) & (smart_fup.Fup < 5))
+
+# %% plot SMART timeseries of integrated data together with libRadtran simulation
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    plt.rc('font', size=20)
+    plt.rc('lines', linewidth=3)
+    # integrate F and apply rolling mean for smoothing
+    Fup = smart_fup.Fup.sum(dim="wavelength", skipna=True).rolling(time=15, min_periods=1).mean()
+    Fdw = smart_fdw.Fdw.sum(dim="wavelength", skipna=True).rolling(time=15, min_periods=1).mean()
+    fig, ax = plt.subplots(figsize=(13, 9))
+    # SMART measurements filtered for high motion angles
+    Fup.where(condition_fup).plot(x="time", ax=ax, label=r"F$_\uparrow$ SMART")
+    Fdw.where(condition_fdw).plot(x="time", ax=ax, label=r"F$_\downarrow$ SMART")
+    # libRadtran simulations
+    smart_sim.eup.plot(x="time", ax=ax, label=r"F$_\uparrow$ libRadtran", c="#6699CC", ls="--",
+                       path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    smart_sim.fdw.plot(x="time", ax=ax, label=r"F$_\downarrow$ libRadtran", c="#117733", ls="--",
+                       path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    # cloud marks
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1,
+                    where=((in_cloud[0] < ecrad_dn_sw.time) & (ecrad_dn_sw.time < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    # aesthetics
+    ax.set_xlim(x_sel)
+    h.set_xticks_and_xlabels(ax, x_sel[-1] - x_sel[0])
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=4)
+    ax.set_title(f"Integrated SMART Measurement "
+                 f"{smart_fup.wavelength[0].values:.2f} - {smart_fup.wavelength[-1].values:.2f} nm\n"
+                 f"and libRadtran Clear Sky Simulation")
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel(r"Irradiance (W$\,$m$^{-2}$)")
+    ax.grid()
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.25)
+    # plt.show()
+    figname = f"{outpath}/cirrus-hl_SMART_integrated_libRadtran_timeseries_{flight}.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot SMART timeseries of each wavelength data
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    for wl in tqdm(smart_fdw.wavelength, desc="Wavelength"):
+        fig, ax = plt.subplots(figsize=(10, 7))
+        # smart_fup.Fup.where((smart_fup.Fup < 5) & (smart_fup.Fup > 0)).sum(dim="wavelength").plot(x="time", ax=ax, label="Upward")
+        smart_fdw.Fdw.where((smart_fdw.Fdw < 5) & (smart_fdw.Fdw > 0)).sel(wavelength=wl).plot(x="time", ax=ax, label="Downward")
+        ax.legend(loc=4)
+        ax.set_xlim(x_sel)
+        h.set_xticks_and_xlabels(ax, x_sel[-1] - x_sel[0])
+
+        ax.set_title(f"SMART measurement wavelength: {wl.values:.2f} nm")
+        ax.set_xlabel("Time (UTC)")
+        ax.set_ylabel(r"Spectral Irradiance (W\,m$^{-2}\,$nm$^{-1}$)")
+        ax.grid()
+        plt.tight_layout()
+        # plt.show()
+        figname = f"{outpath}/smart_wavelength/cirrus-hl_SMART_Fdw_wl{wl.values:07.2f}_{date}.png"
+        plt.savefig(figname)
+        plt.close()
+
 # %% sum up SMART irradiance over ecRad bands
     nr_bands = len(h.ecRad_bands)
     fdw_banded = np.empty((nr_bands, smart_fdw.time.shape[0]))
@@ -447,14 +530,6 @@ if __name__ == "__main__":
 
     fdw_banded = xr.DataArray(fdw_banded, coords={"ecrad_band": range(1, 15), "time": smart_fdw.time}, name="Fdw")
     fup_banded = xr.DataArray(fup_banded, coords={"ecrad_band": range(1, 15), "time": smart_fup.time}, name="Fup")
-
-# %% filter SMART data for high motion angles and 0
-    condition = xr.DataArray((np.abs(hdata["roll"]) < 4) & (np.abs(hdata["pitch"]) < 4),
-                             coords={"time": fdw_banded.time}).expand_dims({"ecrad_band": range(1, 15)})
-    fdw_banded = fdw_banded.where(condition)
-    fup_banded = fup_banded.where(condition)
-    fdw_banded = fdw_banded.where(fdw_banded > 0)
-    fup_banded = fup_banded.where(fup_banded > 0)
 
 # %% plot ecrad flux in comparison to banded SMART flux
     band = 4
@@ -515,3 +590,54 @@ if __name__ == "__main__":
     plt.close()
 
 
+# %% plot ecRad simulations together with BACARDI measurements (solar + terrestrial)
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=20)
+    plt.rc('lines', linewidth=3)
+
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    fig, ax = plt.subplots(figsize=(13, 9))
+    # solar radiation
+    bacardi_ds.F_up_solar.plot(x="time", label=r"F$_\uparrow$ BACARDI", ax=ax, c="#6699CC", ls="-")
+    bacardi_ds.F_down_solar.plot(x="time", label=r"F$_\downarrow$ BACARDI", ax=ax, c="#117733", ls="-")
+    ecrad_up_sw_bb.plot(x="time", ax=ax, label=r"F$_\uparrow$ ecRad", c="#6699CC", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ecrad_dn_sw_bb.plot(x="time", ax=ax, label=r"F$_\downarrow$ ecRad", c="#117733", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    # terrestrial radiation
+    bacardi_ds.F_up_terrestrial.plot(x="time", label=r"F$_\uparrow$ BACARDI", ax=ax, c="#CC6677", ls="-")
+    bacardi_ds.F_down_terrestrial.plot(x="time", label=r"F$_\downarrow$ BACARDI", ax=ax, c="#f89c20", ls="-")
+    ecrad_up_lw_bb.plot(x="time", ax=ax, label=r"F$_\uparrow$ ecRad", c="#CC6677", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ecrad_dn_lw_bb.plot(x="time", ax=ax, label=r"F$_\downarrow$ ecRad", c="#f89c20", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Broadband irradiance (W$\,$m$^{-2}$)")
+    ax.set_xlim(x_sel)
+    h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
+    ax.grid()
+    # ax.fill_between(bbr_sim.index, 0, 1, where=((start_dt < bbr_sim.index) & (bbr_sim.index < end_dt)),
+    #                 transform=ax.get_xaxis_transform(), label="Case Study", color="grey")
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw_bb.time.values)
+                                                             & (ecrad_dn_sw_bb.time.values < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    handles, labels = ax.get_legend_handles_labels()
+    legend_column_headers = ["Solar", "Terrestrial"]
+    handles.insert(0, Patch(color='none', label=legend_column_headers[0]))
+    handles.insert(5, Patch(color='none', label=legend_column_headers[1]))
+    # add dummy legend entries to get the right amount of rows per column
+    handles.append(Patch(color='none', label=""))
+    handles.append(Patch(color='none', label=""))
+    ax.legend(handles=handles, bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    plt.subplots_adjust(bottom=0.37)
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{outpath}/{flight}_bacardi_ecRad_broadband_irradiance.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
