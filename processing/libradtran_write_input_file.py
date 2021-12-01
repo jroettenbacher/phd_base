@@ -85,7 +85,7 @@ if __name__ == "__main__":
             # sza=f"{sza_libradtran:.4f}",  # page 122
             # verbose="",  # page 123
             # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-            wavelength="179.5, 2225",
+            wavelength="179.5 2225",
             zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
         )
 
