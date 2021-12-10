@@ -104,30 +104,36 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     Args:
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: filename (e.g. "2021_03_29_11_07.Fup_SWIR.dat") of measurement file
-        option: which option to use for VNIR, 1 or 2
-        kwargs:
+        option: which option to use for VNIR (1, 2 or 3).
+            Option 1: use measurements below 290 nm.
+            Option 2: use dark measurements from transfer calibration (CIRRUS-HL folder structure expected).
+            Option 3: use scaled dark current measurement from transfer calibration (HALO-AC3 folder structure expected).
+        **kwargs:
             path (str): path to measurement file if not standard path from config.toml,
             plot (bool): show plot or not (default: True),
             date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
+            dark_filepath (str): complete path to dark current file to use
 
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
     """
     plot = kwargs["plot"] if "plot" in kwargs else True
     date = kwargs["date"] if "date" in kwargs else None
+    dark_filepath = kwargs["dark_filepath"] if "dark_filepath" in kwargs else None
     path = h.get_path("raw", flight)
     path = kwargs["path"] if "path" in kwargs else path
     pixel_wl_path = h.get_path("pixel_wl")
     calib_path = h.get_path("calib")
-    smart = reader.read_smart_raw(path, filename)
-    t_int = int(smart["t_int"][0])  # get integration time
+    measurement = reader.read_smart_raw(path, filename)
+    t_int = int(measurement["t_int"][0])  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
     spectrometer = lookup[f"{direction}_{channel}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, spectrometer)
     # calculate dark current depending on channel:
     # SWIR: use measurements during shutter phases
     # VNIR: Option 1: use measurements below 290 nm
-    #       Option 2: use dark measurements from calibration (CIRRUS-HL)
+    #       Option 2: use dark measurements from transfer calibration (CIRRUS-HL folder structure expected)
+    #       Option 3: use scaled dark current measurement from transfer calibration (HALO-AC3 folder structure expected)
     if channel == "VNIR":
         if option == 1:
             last_dark_pixel, _ = find_pixel(pixel_wl, 290)
@@ -135,13 +141,10 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
             # one could apply a column mean (axis=1) and subtract the mean dark current from every timestep but for
             # minutely files this shouldn't be of much importance
             # TODO: Test difference between column mean and mean over rows and columns
-            # TODO: Scale a dark current measurement with the dark pixels from the measurement file
-            dark_current = smart.loc[:, dark_pixels].mean()
-            dark_wls = pixel_wl[pixel_wl["pixel"].isin(dark_pixels)]["wavelength"]
-            if plot:
-                _plot_dark_current(dark_wls, dark_current, spectrometer, channel)
-        else:
-            assert option == 2, "Option should be either 1 or 2!"
+            dark_current = measurement.loc[:, dark_pixels].mean()
+            wls = pixel_wl[pixel_wl["pixel"].isin(dark_pixels)]["wavelength"]
+        elif option == 2:
+            wls = pixel_wl["wavelength"]
             # read in cali file
             # get path depending on spectrometer and inlet
             instrument = re.search(r'ASP\d{2}', spectrometer)[0]
@@ -175,25 +178,63 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
             try:
                 dark_current = reader.read_smart_raw(dark_dir, dark_file)
                 dark_current = dark_current.iloc[:, 2:].mean()
-                wls = pixel_wl["wavelength"]
-                if plot:
-                    _plot_dark_current(wls, dark_current, spectrometer, channel)
             except UnboundLocalError as e:
                 raise RuntimeError("No dark current file found for measurement!") from e
+
+        else:
+            assert option == 3, "Option should be either 1, 2 or 3!"
+            wls = pixel_wl["wavelength"]
+            # check if an explicit dark current file is provided,
+            # if not assume that a transfer calibration is provided -> this is the campaign mode
+            if dark_filepath is None:
+                # find dark current transfer calibration
+                try:
+                    transfer_calib_dir = os.path.join(calib_path, f"{spectrometer[:-3]}_transfer_calib_{date}")
+                except NameError as e:
+                    raise NameError(f"If no 'dark_filepath' is provided 'date' for transfer calibration needs to be "
+                                    f"given!") from e
+
+                # in the transfer calib directory find the dark current measurement folder with the correct
+                # integration time
+                dark_dir = [d for d in os.listdir(transfer_calib_dir) if "dark" in d and str(t_int) in d][0]
+                dark_dir = os.path.join(transfer_calib_dir, dark_dir)
+                dark_files = [f for f in os.listdir(dark_dir) if f"{direction}_{channel}.dat" in f]
+                # the normal workflow is to merge all VNIR dark current files and delete all single files, thus only
+                # one dark current VNIR file should be left in each dark current folder
+                if len(dark_files) > 1:
+                    raise ValueError(f"Too many dark current files found for VNIR in {dark_dir}! "
+                                     f"\nMerge VNIR files first and delete single files!")
+                else:
+                    dark_file = dark_files[0]
+
+            else:
+                # get dark_dir and dark_file from given dark_filepath
+                dark_dir, dark_file = os.path.dirname(dark_filepath), os.path.basename(dark_filepath)
+
+            # read in dark current measurement, drop t_int and shutter column and take mean over time
+            dark_current = reader.read_smart_raw(dark_dir, dark_file).iloc[:, 2:].mean()
+            # scale dark current to the measured dark pixels
+            dark_scale = dark_current * np.mean(measurement.mean().iloc[19:99]) / np.mean(dark_current.iloc[19:99])
+            # get fluctuations over the rolling mean of the scaled dark current
+            dark_scale = dark_scale - dark_scale.rolling(20, min_periods=1).mean()
+            # smooth dark current and add offset found in the first dark pixels
+            dark_scale2 = dark_current.rolling(20, min_periods=1).mean() + (
+                    np.mean(measurement.mean().iloc[19:99]) - np.mean((dark_current.iloc[19:99])))
+            dark_current = dark_scale2 + dark_scale  # add both terms together
 
     elif channel == "SWIR":
         # check if the shutter flag was working: If all values are 1 -> shutter flag is probably not working
         # even if the flag is working, does not mean the shutter is working
-        if np.sum(smart.shutter == 1) != smart.shutter.shape[0]:
-            dark_current = smart.where(smart.shutter == 0).mean().iloc[2:]
+        if np.sum(measurement.shutter == 1) != measurement.shutter.shape[0]:
+            dark_current = measurement.where(measurement.shutter == 0).iloc[:, 2:].mean()
             wls = pixel_wl["wavelength"]
-            if plot:
-                _plot_dark_current(wls, dark_current, spectrometer, channel)
         else:
-            log.debug("Shutter flag is probably wrong")
+            raise ValueError(f"Shutter flag is probably wrong in {path}/{filename}!")
     else:
-        log.warning(f"channel should be either 'VNIR' or 'SWIR' but is {channel}!")
-        sys.exit(1)
+        raise ValueError(f"'channel' should be either 'VNIR' or 'SWIR' but is {channel}!")
+
+    if plot:
+        _plot_dark_current(wls, dark_current, spectrometer, channel)
 
     return dark_current
 

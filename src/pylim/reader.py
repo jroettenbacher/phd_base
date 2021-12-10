@@ -215,3 +215,32 @@ def read_libradtran(flight: str, filename: str) -> pd.DataFrame:
     bbr_sim = bbr_sim.set_index("time")  # set it as index
 
     return bbr_sim
+
+
+def read_ozone_sonde(filepath: str) -> pd.DataFrame():
+    """
+    Reader function for ames formatted ozone sonde data from http://www.ndaccdemo.org/
+
+    Args:
+        filepath: complete path to file
+
+    Returns: pandas DataFrame with ozone volume mixing ratio
+
+    """
+    header_ny = ["ElapTime", "Press", "GeopHgt", "Temp", "RH", "PO3", "DD", "FF", "GPSHgt", "Lon", "Lat", "PmpT", "Ozi",
+                 "Vpmp", "Ipmp"]
+    header_sc = ["ElapTime", "Press", "GeopHgt", "Temp", "RH", "T_styro", "PO3", "HorWindDir", "HorWindSpeed"]
+    header_ho = ["Press", "ElapTime", "GeopHgt", "Temp", "RH", "PO3", "HorWindDir", "HorWindSpeed"]
+
+    if "sc" in filepath:
+        df = pd.read_csv(filepath, skiprows=134, sep="\s+", names=header_sc, na_values=[99.99])
+        df["o3_vmr"] = df.PO3 * 1e-3 / (df.Press * 1e2)  # mPa and hPa
+    elif "ny" in filepath:
+        df = pd.read_csv(filepath, skiprows=170, sep="\s+", names=header_ny, na_values=[99.99])
+        df["o3_vmr"] = df.PO3 * 1e-3 / (df.Press * 1e2)  # mPa and hPa
+    else:
+        assert "ho" in filepath, "No header information for given file! Adjust reader function!"
+        df = pd.read_csv(filepath, skiprows=68, sep="\s+", names=header_ho, na_values=[999.9])
+
+    return df
+

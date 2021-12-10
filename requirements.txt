@@ -10,3 +10,4 @@ tqdm>=4.50.2
 joblib>=0.17.0
 rasterio>=1.2.6
 pysolar>=0.10
+geopy>=2.2.0
