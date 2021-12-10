@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """Case study for Cirrus-HL
-* 29.06.2021: cirrus over Atlantic west and north of Iceland -> Poster HALO Status Colloquium
+
+29.06.2021: cirrus over Atlantic west and north of Iceland
+-> Poster HALO Status Colloquium 2021
+-> Presentation for CIRRUS-HL workshop 2. - 3.12.2021
+
 author: Johannes Röttenbacher
 """
 if __name__ == "__main__":
@@ -387,7 +391,8 @@ if __name__ == "__main__":
     ecrad_output_file = [f for f in os.listdir(ecrad_dir) if "output" in f][0]
     ecrad_output = xr.open_dataset(f"{ecrad_dir}/{ecrad_output_file}")
     # assign coordinates to band_sw
-    ecrad_output = ecrad_output.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17)})
+    ecrad_output = ecrad_output.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17),
+                                               "half_level": range(138)})
 
 # %% read in SMART horidata
     ims_file = [f for f in os.listdir(horidata_dir) if "IMS" in f][0]
@@ -408,6 +413,8 @@ if __name__ == "__main__":
     pressure_hl = ecrad_output["pressure_hl"]
     ecrad_output["press_height"] = -(pressure_hl[:, 137]) * np.log(pressure_hl[:, :] / pressure_hl[:, 137]) / (
             q_air * g_geo)
+    # replace TOA height (calculated as infinity) with nan
+    ecrad_output["press_height"] = ecrad_output["press_height"].where(ecrad_output["press_height"] != np.inf, np.nan)
 
 # %% select bahamas data corresponding to model time
     bahamas_sel = bahamas.sel(time=ecrad_output.time)
@@ -570,13 +577,14 @@ if __name__ == "__main__":
     plt.close()
 
 # %% plot aircraft track through model (2D variables)
-    variable = "flux_dn_sw"
+    variable = "flux_up_lw"
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
     plt.rcdefaults()
     h.set_cb_friendly_colors()
     plt.rc('font', size=16)
     plt.rc('lines', linewidth=3)
-    fig, ax = plt.subplots(figsize=(12, 7))
-    ecrad_output[variable].plot(x="time", cmap="afmhot", ax=ax)
+    fig, ax = plt.subplots(figsize=(13, 7))
+    ecrad_output[variable].plot(x="time", cmap="afmhot", ax=ax, cbar_kwargs={"pad": 0.1})
     height_level_da.plot(x="time", ax=ax, label="HALO altitude")
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
                     transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
@@ -586,17 +594,28 @@ if __name__ == "__main__":
     ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
                     transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
     ax.legend(loc=2)
+    ax.yaxis.set_major_locator(plt.FixedLocator(range(0, 138, 20)))
+    ax.set_xlim(x_sel)
+    h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
     ax.set_title("ecRad Output along HALO Flight Track 29. June 2021")
     ax.set_ylabel("Model Half Level")
     ax.set_xlabel("Time (UTC)")
     ax.invert_yaxis()
+    # add axis with pressure height
+    ax2 = ax.twinx()
+    ax2.set_ylim(0, 138)
+    ax2.yaxis.set_major_locator(plt.FixedLocator(range(0, 138, 20)))
+    yticks = ax.get_yticks()
+    ylabels = np.round(ecrad_output["press_height"].isel(time=100, half_level=yticks).values / 1000, 1)
+    ax2.set_yticklabels(ylabels)
+    ax2.set_ylabel("Pressure Altitude (km)")
+    ax2.invert_yaxis()
     plt.tight_layout()
     # plt.show()
     figname = f"{outpath}/cirrus-hl_ecRad_{variable}_halo_alt_{date}.png"
     plt.savefig(figname, dpi=100)
     log.info(f"Saved {figname}")
     plt.close()
-
 
 # %% plot ecRad simulations together with BACARDI measurements (solar + terrestrial)
     plt.rcdefaults()
@@ -644,6 +663,72 @@ if __name__ == "__main__":
     plt.tight_layout()
     # plt.show()
     figname = f"{outpath}/{flight}_bacardi_ecRad_broadband_irradiance.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot ecRad simulations together with BACARDI measurements (solar)
+    plt.rcdefaults()
+    plt.rc('font', size=20)
+    plt.rc('lines', linewidth=3)
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    fig, ax = plt.subplots(figsize=(13, 9))
+    bacardi_ds.F_up_solar.plot(x="time", label=r"F$_\uparrow$ BACARDI", ax=ax, c="#6699CC", ls="-")
+    bacardi_ds.F_down_solar.plot(x="time", label=r"F$_\downarrow$ BACARDI", ax=ax, c="#117733", ls="-")
+    ecrad_up_sw_bb.plot(x="time", ax=ax, label=r"F$_\uparrow$ ecRad", c="#6699CC", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ecrad_dn_sw_bb.plot(x="time", ax=ax, label=r"F$_\downarrow$ ecRad", c="#117733", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Broadband irradiance (W$\,$m$^{-2}$)")
+    ax.set_xlim(x_sel)
+    h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
+    ax.grid()
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw_bb.time.values)
+                                                             & (ecrad_dn_sw_bb.time.values < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=4)
+    plt.subplots_adjust(bottom=0.25)
+    plt.tight_layout()
+    # plt.show()
+    figname= f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance_solar.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot ecRad simulations together with BACARDI measurements (terrestrial)
+    plt.rcdefaults()
+    plt.rc('font', size=20)
+    plt.rc('lines', linewidth=3)
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    fig, ax = plt.subplots(figsize=(13, 9))
+    bacardi_ds.F_up_terrestrial.plot(x="time", label=r"F$_\uparrow$ BACARDI", ax=ax, c="#CC6677", ls="-")
+    bacardi_ds.F_down_terrestrial.plot(x="time", label=r"F$_\downarrow$ BACARDI", ax=ax, c="#f89c20", ls="-")
+    ecrad_up_lw_bb.plot(x="time", ax=ax, label=r"F$_\uparrow$ ecRad", c="#CC6677", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ecrad_dn_lw_bb.plot(x="time", ax=ax, label=r"F$_\downarrow$ ecRad", c="#f89c20", ls="--",
+                        path_effects=[patheffects.withStroke(linewidth=6, foreground="k")])
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Broadband irradiance (W$\,$m$^{-2}$)")
+    ax.set_xlim(x_sel)
+    h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
+    ax.grid()
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_belowcloud,
+                    transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=((in_cloud[0] < ecrad_dn_sw_bb.time.values)
+                                                             & (ecrad_dn_sw_bb.time.values < in_cloud[1])),
+                    transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    ax.fill_between(ecrad_dn_sw_bb.time.values, 0, 1, where=ecrad_abovecloud,
+                    transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=4)
+    plt.subplots_adjust(bottom=0.25)
+    plt.tight_layout()
+    # plt.show()
+    figname= f"{outpath}/{flight}_bacardi_libradtran_broadband_irradiance_terrestrial.png"
     plt.savefig(figname, dpi=100)
     log.info(f"Saved {figname}")
     plt.close()
