@@ -188,11 +188,11 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
             # if not assume that a transfer calibration is provided -> this is the campaign mode
             if dark_filepath is None:
                 # find dark current transfer calibration
-                try:
-                    transfer_calib_dir = os.path.join(calib_path, f"{spectrometer[:-3]}_transfer_calib_{date}")
-                except NameError as e:
+                if date is None:
                     raise NameError(f"If no 'dark_filepath' is provided 'date' for transfer calibration needs to be "
-                                    f"given!") from e
+                                    f"given!")
+                else:
+                    transfer_calib_dir = os.path.join(calib_path, f"{spectrometer[:-3]}_transfer_calib_{date}")
 
                 # in the transfer calib directory find the dark current measurement folder with the correct
                 # integration time
