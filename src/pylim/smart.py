@@ -302,11 +302,10 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
     """
     # TODO: do not write empty rows (were shutter is closed)
     path = h.get_path("raw", flight)
-    path = kwargs["path"] if "path" in kwargs else path
-    date = kwargs["date"] if "date" in kwargs else None
+    path = kwargs.pop("path") if "path" in kwargs else path
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = reader.read_smart_raw(path, smart_file)
-    dark_current = get_dark_current(flight, smart_file, option, plot=False, path=path, date=date)
+    dark_current = get_dark_current(flight, smart_file, option, plot=False, path=path, **kwargs)
 
     if channel == "VNIR" and option == 1:
         dark_current = dark_current.mean()  # If get_dark_current returns a column mean, this can to be removed
