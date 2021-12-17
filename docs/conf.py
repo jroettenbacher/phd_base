@@ -24,8 +24,13 @@ copyright = '2021, Johannes Röttenbacher'
 author = 'Johannes Röttenbacher'
 
 # The full version, including alpha/beta/rc tags
-release = ''
+# read in setup.cfg and extract the version number
+with open("../setup.cfg", "r") as f:
+    for line in f.readlines():
+        if line.startswith("version"):
+            version = line[10:-1]
 
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -63,3 +68,8 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# variables which should be available for every rst file in the docs
+rst_epilog = f"""
+.. |version| replace:: {version}
+"""

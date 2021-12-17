@@ -29,7 +29,7 @@ Both ways work but the first one should be easier.
 These are the ways it works for me on Windows10 and Unix.
 
 Windows10/Unix - Install from source
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Open an anaconda prompt (Windows10) or your bash shell (Unix), move to your project directory (e.g. phd_base) and activate your working environment.
 
@@ -45,7 +45,7 @@ Then install pylim from source with:
    python -m pip install .
 
 Windows10/Unix - Build distribution and install from it
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure you have the newest version of :py:mod:`build` installed:
 
@@ -62,7 +62,7 @@ From your project directory (e.g. phd_base) you can then call:
 
 You will see a lot of output and hopefully this line::
 
-   Successfully built pylim-0.1.0.tar.gz and pylim-0.1.0-py3-none-any.whl
+   Successfully built pylim-|version|.tar.gz and pylim-|version|-py3-none-any.whl
 
 For more information see `Generating distribution archives <https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives>`_.
 
@@ -71,7 +71,7 @@ To install :py:mod:`pylim` from your anaconda prompt call:
 
 .. code-block:: console
 
-   python -m pip install .\dist\pylim-0.1.0.tar.gz
+   python -m pip install .\dist\pylim-|version|.tar.gz
 
 Using the ``.tar.gz`` file will delete any old installations of pylim.
 Whatever way you chose, you should be able to import :py:mod:`pylim` now:
@@ -113,7 +113,7 @@ Providing :py:func:`pylim.helpes.get_path` with the instrument key (e.g. "smart"
 :py:func:`pylim.helpes.get_path` also accepts a campaign keyword as well to switch between different campaigns.
 
 .. attention::
-   The ``config.toml`` file has to be in the current working directory of the python console. So when you run a script in a different folder (like :file:`processing`) be sure to copy your most recent ``config.toml`` to that folder as well.
+   The ``config.toml`` file has to be in the current working directory of the python console. So when you run a script in a different folder (like :file:`processing`) be sure to copy your most recent ``config.toml`` to that folder as well. Or you change into the directory with the ``config.toml`` using :py:func:`os.chdir`.
 
 
 There are two ways of setting up paths to your local data source:
