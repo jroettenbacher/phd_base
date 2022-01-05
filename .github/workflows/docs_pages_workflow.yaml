@@ -12,18 +12,21 @@ jobs:
 
   build_docs_job:
     runs-on: ubuntu-latest
-    container: debian:bullseye
 
     steps:
+    - uses: actions/checkout@v2
+    - name: setup-conda
+      uses: s-weigand/setup-conda@v1.1.0
+      with:
+        python-version: '3.8'
 
-    - name: Prereqs
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install Dependencies
       run: |
-        apt-get update
-        apt-get install -y git
-        git clone --depth 1 "https://token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
-      shell: bash
+        sudo apt-get update -y
+        sudo apt-get -y install git rsync python3-sphinx python3-sphinx-rtd-theme python3-pip python3-git proj-bin libgeos++-dev
+        python -m pip install --upgrade pip
+        conda install -y -c conda-forge cartopy
+        python -m pip install -r requirements.txt
 
     - name: Execute script to build our documentation and update pages
       env:

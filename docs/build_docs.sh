@@ -16,10 +16,9 @@ set -x
 # INSTALL DEPENDS #
 ###################
 
-apt-get update
-apt-get -y install git rsync python3-sphinx python3-sphinx-rtd-theme python3-pip
-pip3 install myst_parser
-pip3 install -r requirements.txt
+sudo apt-get -y install python3-sphinx python3-sphinx-rtd-theme python3-pip python3-git
+python3 -m pip install myst_parser
+#python3 -m pip install -r requirements.txt
 
 #####################
 # DECLARE VARIABLES #
