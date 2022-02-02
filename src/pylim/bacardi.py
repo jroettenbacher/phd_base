@@ -1,6 +1,25 @@
 #!/usr/bin/env python
-"""Functions for processing and plotting BACARDI data
-author: Johannes Röttenbacher
+"""
+==================================================
+Functions for processing and plotting BACARDI data
+==================================================
+
+--------------
+Postprocessing
+--------------
+
+Postprocessing of the BACARDI data is done by the DLR and the LIM.
+For details on the postprocessing see the IDL postprocessing script.
+Some values are filtered out during the postprocessing.
+We set an aircraft attitude limit in the processing routine, and if the attitude exceeds this threshold, then the data is filtered out.
+For example, this would be the case during sharp turns.
+The threshold also takes the attitude correction factor into account.
+For CIRRUS-HL, if this factor is below 0.25, then we filter out data where the roll or pitch exceeds 8°.
+If this factor is above 0.25, then we begin filtering at 5°.
+For EUREC4A, the limits were not as strict because the SZAs were usually higher.
+Since this is not the case for the Arctic, something stricter was needed.
+
+**author**: Johannes Röttenbacher
 """
 
 # %% module import

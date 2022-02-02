@@ -4,7 +4,7 @@ Setup
 Get it running locally on your machine
 --------------------------------------
 
-For now (November 2021) the easiest way to use this is to fork this project and install pylim in your python environment if you only want to use the functions provided in pylim.
+For now (November 2021) the easiest way to use this is to fork this project and install pylim in your python environment.
 If you want to work with the analysis and quicklook scripts you can just work in the cloned repository and add your files as you wish.
 A possible structure could look like this::
 
@@ -24,8 +24,11 @@ A possible structure could look like this::
 Installing pylim
 ----------------
 :py:mod:`pylim` is a full module complete with a :file:`pyproject.toml` and a :file:`setup.cfg`.
-In order to be able to import it into your environment you have to either `install it from source <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-from-source>`_ or build a distribution and then install it.
-Both ways work but the first one should be easier.
+If you only want to work with the functions provided by pylim and don't care for the other scripts too much, the easiest way of installing :py:mod:`pylim` is to download the :file:`.tar.gz` file from the ``dist`` folder.
+The :file:`.tar.gz` file holds the complete package and can be installed like the self build distribution (see :ref:`install-from-dist`).
+
+If you forked/copied the whole repository you can also `install it from source <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-from-source>`_ or build a distribution and then install it.
+All ways work but the first one should be the easiest.
 These are the ways it works for me on Windows10 and Unix.
 
 Windows10/Unix - Install from source
@@ -44,8 +47,14 @@ Then install pylim from source with:
 
    python -m pip install .
 
-Windows10/Unix - Build distribution and install from it
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _install-from-dist:
+
+Windows10/Unix - (Build distribution and) install from it
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you already have the :file:`tar.gz` file downloaded you do not need to build the distribution anymore.
+Just skip to the installation.
+Otherwise start here:
 
 Make sure you have the newest version of :py:mod:`build` installed:
 
@@ -66,7 +75,7 @@ You will see a lot of output and hopefully this line::
 
 For more information see `Generating distribution archives <https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives>`_.
 
-You will now have a new ``dist`` in your project directory with the two mentioned files above.
+You will now have a new ``dist`` folder in your project directory with the two mentioned files above.
 To install :py:mod:`pylim` from your anaconda prompt call:
 
 .. code-block:: console

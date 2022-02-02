@@ -75,7 +75,7 @@ These are functions in relation with the SMART instrument.
 ~~There is also a lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.~~
 ~~Another dictionary relates each measurement with the date of the transfer calibration for that measurement.~~ 
 This has been moved to `cirrus-hl.py`.
-The functions are explained in their docstring and they can be tested using the main frame.
+The functions are explained in their docstring and can be tested using the main frame.
 You can:
 
 * read in raw and processed SMART data
@@ -83,7 +83,6 @@ You can:
 * read in the lamp standard file
 * find the closest pixel and wavelength to any given wavelength for the given wavelength calibration file
 * get information (date, measured property, channel) from the filename
-* get the path to a specified key defined in `config.toml`
 * get the dark current for a specified measurement file with either option 1 or 2 and optionally plot it
 * correct the raw measurement by the dark current
 * plot the mean corrected measurement
