@@ -29,9 +29,9 @@ if __name__ == "__main__":
     columns = ["wavelength", "reflectance"]
     panels = dict()
     panels["VNIR"] = pd.read_csv(f"{panel_path}/panels_VIS_8_(ASP_07).dat", skiprows=15, usecols=[0, 3], names=columns,
-                                 header=None, sep="\s+")
+                                 header=None, sep="\s+", encoding="cp1252")
     panels["SWIR"] = pd.read_csv(f"{panel_path}/panels_PGS_4_(ASP_07).dat", skiprows=15, usecols=[0, 3], names=columns,
-                                 header=None, sep="\s+")
+                                 header=None, sep="\s+", encoding="cp1252")
     # %% read in ASP07 dark current corrected lamp measurement data and relate pixel to wavelength
     channel = "SWIR"  # set channel to work on (VNIR or SWIR)
     normalize = True  # normalize counts by integration time
