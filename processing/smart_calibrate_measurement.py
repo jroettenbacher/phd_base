@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Calibrate measurement files with the transfer calibration
-author: Johannes Roettenbacher
+
+*author*: Johannes Roettenbacher
 """
 if __name__ == "__main__":
     # %% import modules and set paths
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set user given parameters
-    flight = "Flight_20210728a"  # set flight folder
+    flight = "Flight_20210629a"  # set flight folder
     t_int_asp06 = 300  # give integration time of field measurement for ASP06
     t_int_asp07 = 300  # give integration time of field measurement for ASP07
     normalize = True  # normalize counts with integration time
@@ -58,8 +59,7 @@ if __name__ == "__main__":
         df[direction] = df["counts"] * df["c_field"]  # calculate calibrated radiance/irradiance
 
         # %% save wide format calibrated measurement
-        # remove rows where the index is nan
-        df = df[~np.isnan(df.index)]
+        df = df[~np.isnan(df.index)]  # remove rows where the index is nan
         df_out = df.pivot(columns="pixel", values=direction)  # convert to wide format (row=time, column=pixel)
         outname = "_calibrated_norm.dat" if normalize else "_calibrated.dat"
         outfile = f"{outpath}/{file.replace('.dat', outname)}"

@@ -73,7 +73,7 @@ if __name__ == "__main__":
                     dark_file = [f for f in os.listdir(dark_dir) if direction in f and channel in f][0]
                     dark_current = reader.read_smart_raw(dark_dir, dark_file).iloc[:, 2:].mean()  # drop tint and shutter
                     measurement = reader.read_smart_raw(dirpath, file).iloc[:, 2:]
-                    dark_scale = dark_current * np.mean(measurement.mean().iloc[19:99]) / np.mean(dark_current.iloc[19: 99])
+                    dark_scale = dark_current * np.mean(measurement.mean().iloc[19:99]) / np.mean(dark_current.iloc[19:99])
                     dark_scale = dark_scale - dark_scale.rolling(20, min_periods=1).mean()
                     dark_scale2 = dark_current.rolling(20, min_periods=1).mean() + (
                             np.mean(measurement.mean().iloc[19:99]) - np.mean((dark_current.iloc[19:99])))
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     for name, group in groups:
         ax.scatter(group["wavelength"], group["intercept"], label=f"{name} (Median: {group['intercept'].median():.2f})", s=12)
 
-    ax.plot("wavelength", "mean_intercept_all", data=df_plot, label="Rolling mean (window: 10)", linewidth=3, c="#CC6677", )
+    ax.plot("wavelength", "mean_intercept_all", data=df_plot, label="Rolling mean (window: 10)", linewidth=3, c="#CC6677")
     ax.set_title(fr"$\Delta r$ (intercept) for each pixel")
     ax.set_ylabel(r"$\Delta r$ (cm)")
     ax.set_xlabel("Wavelength (nm)")
