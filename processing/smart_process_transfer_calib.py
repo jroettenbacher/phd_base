@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 """Script to correct SMART transfer calibration measurement for dark current and save it to a new file and merge the
 minutely files
-input: raw smart transfer calibration measurements
-output: dark current corrected and merged smart measurements
-author: Johannes Roettenbacher
+
+*input*: raw smart transfer calibration measurements
+
+*output*: dark current corrected and merged smart measurements
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
+    # %% import modules
     import pylim.helpers as h
     from pylim import smart
     import os
@@ -16,13 +20,15 @@ if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
-    # User input
-    folder = "ASP06_transfer_calib_20210729"
+    # %% User input
+    campaign = "cirrus-hl"
+    folder = "ASP07_transfer_calib_20210630"
+    date = folder[-8:]  # extract date from transfer calib folder
 
     # Set paths in config.toml
-    calib_path = h.get_path("calib")
+    calib_path = h.get_path("calib", campaign=campaign)
 
-    # merge VNIR dark measurement files before correcting the calib files
+    # %% merge VNIR dark measurement files before correcting the calib files
     property = ["Iup", "Fup", "Fdw"]
     for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
         log.info(f"Working on {dirpath}")
@@ -41,18 +47,18 @@ if __name__ == "__main__":
                 except ValueError:
                     pass
 
-    # correct all calibration measurement files for the dark current
+    # %% correct all calibration measurement files for the dark current
     for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
         log.info(f"Working on {dirpath}")
         for file in files:
             if file.endswith("IR.dat"):
                 log.info(f"Working on {dirpath}/{file}")
-                smart_cor = smart.correct_smart_dark_current("", file, option=2, path=dirpath)
+                smart_cor = smart.correct_smart_dark_current("", file, option=3, path=dirpath, date=date)
                 outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
                 smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
                 log.info(f"Saved {outname}")
 
-    # merge minutely corrected files to one file
+    # %% merge minutely corrected files to one file
     channels = ["SWIR", "VNIR"]
     for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
         log.info(f"Working on {dirpath}")
