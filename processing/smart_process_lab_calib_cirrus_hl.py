@@ -5,7 +5,7 @@
 """
 if __name__ == "__main__":
     import pylim.helpers as h
-    from pylim import reader, smart
+    from pylim import smart
     import os
     import pandas as pd
     import logging
