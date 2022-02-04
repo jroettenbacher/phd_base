@@ -676,14 +676,13 @@ def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, 
     if type(wavelength) != list and wavelength != "all":
         wavelength = [wavelength]
     # get paths and define input path
-    calibrated_path, pixel_path = h.get_path("calibrated"), h.get_path("pixel_wl")
-    inpath = f"{calibrated_path}/{flight}"
+    calibrated_path, pixel_path = h.get_path("calibrated", flight=flight), h.get_path("pixel_wl", flight=flight)
     date_str, channel, direction = get_info_from_filename(filename)
     direction2 = "Fdw" if direction == "Fup" else "Fup"  # set opposite direction
     filename2 = filename.replace(direction, direction2)
     # read in both irradiance measurements
-    df1 = reader.read_smart_cor(inpath, filename)
-    df2 = reader.read_smart_cor(inpath, filename2)
+    df1 = reader.read_smart_cor(calibrated_path, filename)
+    df2 = reader.read_smart_cor(calibrated_path, filename2)
     # get spectrometers from lookup dictionary
     spectro1, spectro2 = lookup[f"{direction}_{channel}"], lookup[f"{direction2}_{channel}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectro1)
