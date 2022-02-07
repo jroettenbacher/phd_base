@@ -64,7 +64,12 @@ if __name__ == "__main__":
     wl_858 = vnir.iloc[:, 807:818].mean(axis=1)
     wl_1238 = swir.iloc[:, 55:61].mean(axis=1)
     wl_1638 = swir.iloc[:, 130:135].mean(axis=1)
-    cal_data = pd.concat([wl_422, wl_532, wl_648, wl_858, wl_1238, wl_1638], join='outer', axis=1)
+
+    # %% calculate broadband irradiance
+    wl_all = vnir.sum(axis=1) + swir.sum(axis=1)
+
+    # %% merge all products
+    cal_data = pd.concat([wl_422, wl_532, wl_648, wl_858, wl_1238, wl_1638, wl_all], join='outer', axis=1)
 
     # %% create metadata for ncfile
     var_attrs = dict(
@@ -91,7 +96,11 @@ if __name__ == "__main__":
         F_down_solar_wl_1638=dict(
             long_name='Spectral downward solar irradiance (1638 nm) (SMART)',
             units='W m-2 nm-1',
-            comment='Averaged for wavelength band +-5 nm')
+            comment='Averaged for wavelength band +-5 nm'),
+        F_down_solar_bb=dict(
+            long_name='Broadband downward solar irradiance (180 - 2200 nm) (SMART)',
+            units='W m-2',
+            comment='Summed over all available wavelengths')
     )
 
     global_attrs = dict(
@@ -111,7 +120,7 @@ if __name__ == "__main__":
     if campaign == "cirrus-hl":
         units = "seconds since 2021-01-01"
     elif campaign == "halo-ac3":
-        units = "seconds since 2021-01-01"
+        units = "seconds since 2022-01-01"
     else:
         raise ValueError(f"Campaign {campaign} unknown!")
 
