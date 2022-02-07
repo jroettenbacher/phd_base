@@ -20,3 +20,6 @@ coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.
 # radiosonde stations
 radiosonde_stations = ["Torshavn_06011", "Muenchen_Oberschleissheim_10868", "Meiningen_10548", "Lerwick_03005",
                        "Ittoqqortoormiit_04339", "Tasiilaq_04360"]
+
+# transfer calibrations to each flight
+transfer_calibs = dict()

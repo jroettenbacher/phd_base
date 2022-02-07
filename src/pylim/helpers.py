@@ -127,9 +127,13 @@ def set_xticks_and_xlabels(ax: plt.axis, time_extend: datetime.timedelta) -> plt
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d\n%H:%M'))
         ax.xaxis.set_major_locator(matplotlib.dates.HourLocator(byhour=range(0, 24, 12)))
         ax.xaxis.set_minor_locator(matplotlib.dates.HourLocator(byhour=range(0, 24, 3)))
-    elif datetime.timedelta(hours=25) > time_extend >= datetime.timedelta(hours=6):
+    elif datetime.timedelta(hours=25) > time_extend >= datetime.timedelta(hours=12):
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%H:%M'))
         ax.xaxis.set_major_locator(matplotlib.dates.HourLocator(byhour=range(0, 24, 3)))
+        ax.xaxis.set_minor_locator(matplotlib.dates.MinuteLocator(byminute=range(0, 60, 30)))
+    elif datetime.timedelta(hours=12) > time_extend >= datetime.timedelta(hours=6):
+        ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%H:%M'))
+        ax.xaxis.set_major_locator(matplotlib.dates.HourLocator(byhour=range(0, 12, 2)))
         ax.xaxis.set_minor_locator(matplotlib.dates.MinuteLocator(byminute=range(0, 60, 30)))
     elif datetime.timedelta(hours=6) > time_extend >= datetime.timedelta(hours=2):
         ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%H:%M'))
