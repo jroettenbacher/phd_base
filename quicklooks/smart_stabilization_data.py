@@ -15,6 +15,7 @@ hv.extension('bokeh')
 flight = "Flight_20210629a"
 path = h.get_path('horidata', flight)
 ql_path = h.get_path("quicklooks", flight)
+output_format = "html"  # png or html, html gives an interactive plot
 
 # %% working section
 # file = [f for f in os.listdir(path) if f.endswith('dat')]
@@ -61,7 +62,7 @@ layout.opts(
 )
 layout.opts(title=f"{flight} SMART NS Measurements")
 layout.cols(1)
-figname = f"{ql_path}/{flight}_NavCommand.html"
+figname = f"{ql_path}/{flight}_NavCommand.{output_format}"
 hv.save(layout, figname)
 print(f"Saved {figname}")
 
@@ -79,9 +80,9 @@ pitch_target = hv.Dimension('TARGET4', label='Target Pitch Angle', unit='deg')
 pitch = hv.Dimension('POSN4', label='Actual Pitch Angle', unit='deg')
 time = hv.Dimension('PCTIME', label='Time', unit='UTC')
 layout = hv.Curve(horidata_hv, time, roll_target, label="Roll Target").opts(color="green") \
-         * hv.Curve(horidata_hv, time, roll, label="Actual Roll").opts(color="red")\
+         * hv.Curve(horidata_hv, time, roll, label="Actual Roll").opts(color="red", ylabel="Roll Angle (deg)")\
          + hv.Curve(horidata_hv, time, pitch_target, label="Pitch Target").opts(color="green") \
-         * hv.Curve(horidata_hv, time, pitch, label="Actual Pitch").opts(color="red")
+         * hv.Curve(horidata_hv, time, pitch, label="Actual Pitch").opts(color="red", ylabel="Pitch Angele (deg)")
 layout.opts(
     opts.Curve(responsive=True, height=350, show_grid=True, tools=["hover"],
                fontsize={'title': 16, 'labels': 14, 'xticks': 12, 'yticks': 12, 'legend': 12}),
@@ -89,6 +90,6 @@ layout.opts(
 )
 layout.opts(title=f"{flight} SMART Stabilization Table Measurements")
 layout.cols(1)
-figname = f"{ql_path}/{flight}_horidata.html"
+figname = f"{ql_path}/{flight}_horidata.{output_format}"
 hv.save(layout, figname)
 print(f"Saved {figname}")
