@@ -1,0 +1,181 @@
+#!/usr/bin/env python
+"""Create a 1Hz INS file for quicklook processing directly after the flight
+
+**Input:** SMART IMS and GPS data
+
+**Output:** 1Hz INS netCDF file
+
+*author:* Johannes Röttenbacher
+"""
+
+# %% module import
+import os
+import pandas as pd
+import pylim.helpers as h
+from pylim import reader, solar_position
+from datetime import datetime
+from tqdm import tqdm
+
+# %% user input
+campaign = "eurec4a"
+flight = "Flight_20200205a"
+date = flight[7:-1]
+
+# %% set paths
+base_path = f"E:/{campaign.swapcase()}_raw_only/06_Flights/{flight}"
+outpath = f"E:/{campaign.swapcase()}/06_Flights/{flight}"
+h.make_dir(outpath)
+hori_path = f"{base_path}/horidata/NavCommand"
+hori_files = os.listdir(hori_path)
+nav_file = [f for f in hori_files if "IMS" in f][0]
+nav_filepath = f"{hori_path}/{nav_file}"
+gps_file = [f for f in hori_files if "GPSPos" in f][0]
+gps_filepath = f"{hori_path}/{gps_file}"
+
+
+def read_ins_gps_pos(filepath: str) -> pd.DataFrame:
+    """
+    Read in a GPS position file as returned by the HALO-SMART INS system.
+
+    Args:
+        filepath: complete path to Nav_GPSPosxxxx.Asc file
+
+    Returns: time series with the GPS position data
+
+    """
+    with open(filepath, encoding="cp1252") as f:
+        time_info = f.readlines()[1]
+    start_time = pd.to_datetime(time_info[11:31], format="%m/%d/%Y %H:%M:%S")
+    # define the start date of the measurement
+    start_date = pd.Timestamp(year=start_time.year, month=start_time.month, day=start_time.day)
+    header = ["marker", "seconds", "lon", "lat", "alt", "lon_std", "lat_std", "alt_std"]
+    df = pd.read_csv(filepath, sep="\s+", skiprows=10, header=None, names=header, encoding="cp1252")
+    df["time"] = pd.to_datetime(df["seconds"], origin=start_date, unit="s")
+    df = df.set_index("time")
+
+    return df
+
+
+# %% read in IMS and GPS data
+ims = reader.read_nav_data(nav_filepath)
+gps = read_ins_gps_pos(gps_filepath)
+
+# %% resample ims data to 1 Hz
+ims_1Hz = ims.resample("1s").asfreq()  # create a dataframe with a 1Hz index
+# reindex original dataframe and use the nearest values for the full seconds
+ims = ims.reindex_like(ims_1Hz, method="nearest")
+
+# %% merge dataframes
+df = ims.merge(gps, how="inner", on="time")
+
+# %% select only relevant columns
+df = df.loc[:, ["seconds_y", "roll", "pitch", "yaw", "lat", "lon", "alt"]]
+
+# %% rename columns
+df = df.rename(columns=dict(seconds_y="seconds"))
+
+# %% IMS pitch is opposite to BAHAMAS pitch, switch signs so that they follow the same convention
+df["pitch"] = -df["pitch"]
+
+# %% calculate solar zenith and azimuth angle
+dezimal_hours = df["seconds"]/60/60
+year, month, day = df.index.year.values, df.index.month.values, df.index.day.values
+sza = list()
+saa = list()
+for i in tqdm(range(len(year))):
+    sza.extend(solar_position.get_sza(dezimal_hours[i], df["lat"][i], df["lon"][i], year[i], month[i], day[i], 1013, 15).flatten())
+    saa.append(solar_position.get_saa(dezimal_hours[i], df["lat"][i], df["lon"][i], year[i], month[i], day[i]))
+
+# %% add to dataframe
+df["sza"], df["saa"] = sza, saa
+
+# %% export to netCDF
+ds = df.to_xarray()
+
+# %% create variable and global attributes
+var_attrs = dict(
+    seconds=dict(
+        long_name='Seconds since start of day',
+        units='s',
+        comment='Time as recorded by the GPS'),
+    roll=dict(
+        long_name='Roll angle',
+        units='deg',
+        comment='Roll angle: positive = left wing up'),
+    pitch=dict(
+        long_name='Pitch angle',
+        units='deg',
+        comment='Pitch angle: positive = nose up'),
+    yaw=dict(
+        long_name='Yaw angle',
+        units='deg',
+        comment='0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180'),
+    lat=dict(
+        long_name='latitude',
+        units='degrees_north',
+        comment='GPS latitude'),
+    lon=dict(
+        long_name='longitude',
+        units='degrees_east',
+        comment='GPS longitude'),
+    alt=dict(
+        long_name='altitude',
+        units='m',
+        comment='Aircraft altitude'),
+    sza=dict(
+        long_name='Solar zenith angle',
+        units='deg',
+        comment='Solar zenith angle calculated with refraction correction (pressure: 1013hPa, temperature: 15°C)'),
+    saa=dict(
+        long_name='Solar azimuth angle',
+        units='deg',
+        comment='South = 180, range: 0 to 360')
+)
+
+global_attrs = dict(
+    title="Raw attitude angles and GPS position data from the HALO-SMART IMS system",
+    campaign_id=f"{campaign.swapcase()}",
+    platform_id="HALO",
+    instrument_id="HALO-SMART",
+    version_id="quicklook",
+    description="1Hz data from the HALO-SMART IMS system prepared for quicklook creation",
+    institution="Leipzig Institute for Meteorology, Leipzig, Germany",
+    history=f"created {datetime.strftime(datetime.utcnow(), '%c UTC')}",
+    contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
+    PI="André Ehrlich, a.ehrlich@uni-leipzig.de"
+)
+
+# set units according to campaign
+if campaign == "cirrus-hl":
+    units = "seconds since 2017-01-01 00:00:00 UTC"
+elif campaign == "halo-ac3":
+    units = "seconds since 2017-01-01 00:00:00 UTC"
+elif campaign == "eurec4a":
+    units = "seconds since 2020-01-01 00:00:00 UTC"
+else:
+    raise ValueError(f"Campaign {campaign} unknown!")
+
+encoding = dict(
+    time=dict(units=units, _FillValue=None),
+    seconds=dict(_FillValue=None),
+    roll=dict(_FillValue=None),
+    pitch=dict(_FillValue=None),
+    yaw=dict(_FillValue=None),
+    lat=dict(_FillValue=None),
+    lon=dict(_FillValue=None),
+    alt=dict(_FillValue=None),
+    sza=dict(_FillValue=None),
+    saa=dict(_FillValue=None)
+)
+
+# %% assign meta data
+for var in ds:
+    ds[var].attrs = var_attrs[var]
+
+ds.attrs = global_attrs
+
+# %% create ncfile
+outfile = f"{campaign.swapcase()}_HALO_SMART_IMS_ql_{date}.nc"
+outpath = os.path.join(outpath, outfile)
+ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
+print(f"Saved {outpath}")
