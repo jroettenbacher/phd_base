@@ -118,12 +118,13 @@ if __name__ == "__main__":
 
     # set units according to campaign
     if campaign == "cirrus-hl":
-        units = "seconds since 2021-01-01"
+        units = "seconds since 2017-01-01 00:00:00 UTC"
     elif campaign == "halo-ac3":
-        units = "seconds since 2022-01-01"
+        units = "seconds since 2017-01-01 00:00:00 UTC"
     else:
         raise ValueError(f"Campaign {campaign} unknown!")
 
+# TODO: simplify setting the encoding of the FillValue -> loop -> function
     encoding = dict(
         time=dict(units=units, _FillValue=None),
         F_down_solar_wl_422=dict(_FillValue=-999.0),
