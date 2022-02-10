@@ -1,0 +1,9 @@
+[submodule "ac3airborne"]
+	path = ac3airborne
+	url = https://github.com/jroettenbacher/ac3airborne.git
+[submodule "ac3airborne-intake"]
+	path = ac3airborne-intake
+	url = https://github.com/jroettenbacher/ac3airborne-intake.git
+[submodule "how_to_ac3airborne"]
+	path = how_to_ac3airborne
+	url = https://github.com/jroettenbacher/how_to_ac3airborne.git
