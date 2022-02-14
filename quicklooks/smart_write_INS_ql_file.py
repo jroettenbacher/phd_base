@@ -5,11 +5,11 @@
 
 **Output:** 1Hz INS netCDF file
 
-*author:* Johannes Röttenbacher
+*author*: Johannes Röttenbacher
 """
 
 if __name__ == "__main__":
-    # %% module import
+# %% module import
     import os
     import pandas as pd
     import pylim.helpers as h
@@ -17,12 +17,12 @@ if __name__ == "__main__":
     from datetime import datetime
     from tqdm import tqdm
 
-    # %% user input
+# %% user input
     campaign = "eurec4a"
     flight = "Flight_20200205a"
     date = flight[7:-1]
 
-    # %% set paths
+# %% set paths
     base_path = f"E:/{campaign.swapcase()}_raw_only/06_Flights/{flight}"
     outpath = f"E:/{campaign.swapcase()}/06_Flights/{flight}"
     h.make_dir(outpath)
@@ -33,52 +33,28 @@ if __name__ == "__main__":
     gps_file = [f for f in hori_files if "GPSPos" in f][0]
     gps_filepath = f"{hori_path}/{gps_file}"
 
-
-    def read_ins_gps_pos(filepath: str) -> pd.DataFrame:
-        """
-        Read in a GPS position file as returned by the HALO-SMART INS system.
-
-        Args:
-            filepath: complete path to Nav_GPSPosxxxx.Asc file
-
-        Returns: time series with the GPS position data
-
-        """
-        with open(filepath, encoding="cp1252") as f:
-            time_info = f.readlines()[1]
-        start_time = pd.to_datetime(time_info[11:31], format="%m/%d/%Y %H:%M:%S")
-        # define the start date of the measurement
-        start_date = pd.Timestamp(year=start_time.year, month=start_time.month, day=start_time.day)
-        header = ["marker", "seconds", "lon", "lat", "alt", "lon_std", "lat_std", "alt_std"]
-        df = pd.read_csv(filepath, sep="\s+", skiprows=10, header=None, names=header, encoding="cp1252")
-        df["time"] = pd.to_datetime(df["seconds"], origin=start_date, unit="s")
-        df = df.set_index("time")
-
-        return df
-
-
-    # %% read in IMS and GPS data
+# %% read in IMS and GPS data
     ims = reader.read_nav_data(nav_filepath)
-    gps = read_ins_gps_pos(gps_filepath)
+    gps = reader.read_ins_gps_pos(gps_filepath)
 
-    # %% resample ims data to 1 Hz
+# %% resample ims data to 1 Hz
     ims_1Hz = ims.resample("1s").asfreq()  # create a dataframe with a 1Hz index
     # reindex original dataframe and use the nearest values for the full seconds
     ims = ims.reindex_like(ims_1Hz, method="nearest")
 
-    # %% merge dataframes
+# %% merge dataframes
     df = ims.merge(gps, how="inner", on="time")
 
-    # %% select only relevant columns
+# %% select only relevant columns
     df = df.loc[:, ["seconds_y", "roll", "pitch", "yaw", "lat", "lon", "alt"]]
 
-    # %% rename columns
+# %% rename columns
     df = df.rename(columns=dict(seconds_y="seconds"))
 
-    # %% IMS pitch is opposite to BAHAMAS pitch, switch signs so that they follow the same convention
+# %% IMS pitch is opposite to BAHAMAS pitch, switch signs so that they follow the same convention
     df["pitch"] = -df["pitch"]
 
-    # %% calculate solar zenith and azimuth angle
+# %% calculate solar zenith and azimuth angle
     dezimal_hours = df["seconds"] / 60 / 60
     year, month, day = df.index.year.values, df.index.month.values, df.index.day.values
     sza = list()
@@ -89,13 +65,13 @@ if __name__ == "__main__":
         # TODO: check SZA function why it returns sometimes an array sometimes a float
         saa.append(solar_position.get_saa(dezimal_hours[i], df["lat"][i], df["lon"][i], year[i], month[i], day[i]))
 
-    # %% add to dataframe
+# %% add to dataframe
     df["sza"], df["saa"] = sza, saa
 
-    # %% export to netCDF
+# %% export to netCDF
     ds = df.to_xarray()
 
-    # %% create variable and global attributes
+# %% create variable and global attributes
     var_attrs = dict(
         seconds=dict(
             long_name='Seconds since start of day',
@@ -172,13 +148,13 @@ if __name__ == "__main__":
     )
     # TODO: simplify the setting of the _FillValue encoding -> loop -> function
 
-    # %% assign meta data
+# %% assign meta data
     for var in ds:
         ds[var].attrs = var_attrs[var]
 
     ds.attrs = global_attrs
 
-    # %% create ncfile
+# %% create ncfile
     outfile = f"{campaign.swapcase()}_HALO_SMART_IMS_ql_{date}.nc"
     outpath = os.path.join(outpath, outfile)
     ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)

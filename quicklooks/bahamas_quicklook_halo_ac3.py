@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Produces the standard BAHAMAS quicklook for HALO-(AC)3
+"""Produces the standard BAHAMAS quicklook for |haloac3|
 
 Quicklooks:
 
@@ -7,7 +7,7 @@ Quicklooks:
 - Movement quicklook
 - Meteo quicklook
 
-*Input:*
+**Input**:
 
 - Path to files
 

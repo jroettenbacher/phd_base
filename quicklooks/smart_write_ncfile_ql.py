@@ -11,11 +11,11 @@ Use option 2 because only a couple of wavelengths will be used.
 
 This script can be used during campaigns to quickly generate files for quicklooks and sharing with other groups.
 
-**author**: Johannes Röttenbacher
+*author*: Johannes Röttenbacher
 """
 
 if __name__ == "__main__":
-    # %% module import
+# %% module import
     import pylim.helpers as h
     from pylim import reader
     from pylim import cirrus_hl, smart
@@ -25,17 +25,16 @@ if __name__ == "__main__":
     from datetime import datetime
     import logging
 
-    # %% set up logging
+# %% set up logging
     log = logging.getLogger("pylim")
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
-    # %% set user variables
+# %% set user variables
     campaign = "cirrus-hl"
     flight = "Flight_20210629a"
 
-
-    # %% get paths and read in files
+# %% get paths and read in files
     smart_dir = h.get_path("calibrated", flight=flight, campaign=campaign)
     pixel_wl_dir = h.get_path("pixel_wl", campaign=campaign)
     swir_file = [f for f in os.listdir(smart_dir) if "Fdw_SWIR" in f and f.endswith("norm.dat")][0]
@@ -47,17 +46,17 @@ if __name__ == "__main__":
     pixel_wl_swir = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.lookup["Fdw_SWIR"])
     pixel_wl_vnir = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.lookup["Fdw_VNIR"])
 
-    # %% set negative values to 0
+# %% set negative values to 0
     # cal_data[cal_data < 0] = 0
 
-    # %% prepare dataframe for conversion to xr.Dataset
+# %% prepare dataframe for conversion to xr.Dataset
     # swir_long = pd.melt(swir, var_name="pixel", value_name="irradiance", ignore_index=False)  # convert to long
     # vnir_long = pd.melt(vnir, var_name="pixel", value_name="irradiance", ignore_index=False)  # convert to long
     # # merge wavelength to data and set it as a multi index together with time
     # swir_long = swir_long.reset_index().merge(pixel_wl_swir, how="left", on="pixel").set_index(["time", "wavelength"])
     # vnir_long = vnir_long.reset_index().merge(pixel_wl_vnir, how="left", on="pixel").set_index(["time", "wavelength"])
 
-    # %% extract six specific wavelengths which corresponds with standard satellite wavelengths averaged over +-5nm
+# %% extract six specific wavelengths which corresponds with standard satellite wavelengths averaged over +-5nm
     wl_422 = vnir.iloc[:, 278:289].mean(axis=1)
     wl_532 = vnir.iloc[:, 410:421].mean(axis=1)
     wl_648 = vnir.iloc[:, 550:561].mean(axis=1)
@@ -65,13 +64,13 @@ if __name__ == "__main__":
     wl_1238 = swir.iloc[:, 55:61].mean(axis=1)
     wl_1638 = swir.iloc[:, 130:135].mean(axis=1)
 
-    # %% calculate broadband irradiance
+# %% calculate broadband irradiance
     wl_all = vnir.sum(axis=1) + swir.sum(axis=1)
 
-    # %% merge all products
+# %% merge all products
     cal_data = pd.concat([wl_422, wl_532, wl_648, wl_858, wl_1238, wl_1638, wl_all], join='outer', axis=1)
 
-    # %% create metadata for ncfile
+# %% create metadata for ncfile
     var_attrs = dict(
         F_down_solar_wl_422=dict(
             long_name='Spectral downward solar irradiance (422 nm) (SMART)',
@@ -143,7 +142,7 @@ if __name__ == "__main__":
 
     ds.attrs = global_attrs
 
-    # %% create ncfile
+# %% create ncfile
     date_str, prop, direction = smart.get_info_from_filename(swir_file)
     outfile = f"{campaign.swapcase()}_HALO_SMART_spectral_irradiance_{direction}_ql_{date_str.replace('_', '')}.nc"
     outpath = os.path.join(smart_dir, outfile)
