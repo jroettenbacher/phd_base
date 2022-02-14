@@ -2,7 +2,8 @@
 """Produces the standard BAHAMAS quicklook for HALO-(AC)3
 
 - map with sea ice extent and flight track
-- 2 Meteo Quicklooks
+- Movement quicklook
+- Meteo Quicklook
 
 *author:* Johannes Röttenbacher
 """
@@ -23,7 +24,7 @@ from metpy.constants import Rd, g
 
 # %% user input
 flight = "Flight_20210705b"
-savefig = False
+savefig = True
 
 # %% set paths
 data_path = "C:/Users/Johannes/Documents/Doktor/conferences_workshops/2022_02_HALO-AC3_hackathon/data/RF09_20200205"
@@ -264,20 +265,53 @@ else:
     plt.show()
 plt.close()
 
-# %%
+# %% plot bahamas movement quicklook
 plt.rcdefaults()
-fig, axs = plt.subplots(3, 1, sharex=True)
-bahamas.TAT.plot(label="Total Air Temperature", ax=axs[0])
-bahamas.THETA.plot(label="Potential Temperature", ax=axs[1])
-bahamas.RELHUM.plot(label="Relative Humidity", ax=axs[2])
+cb_colors = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
+x = bahamas.time
+timedelta = pd.to_datetime(x[-1].values) - pd.to_datetime(x[0].values)
+plt.rcParams['font.size'] = 8
+fig, axs = plt.subplots(3, 1, sharex=True, figsize=(15/2.54, 10/2.54))
+# first row
+ax = axs[0]
+ax.plot(x, bahamas.IRS_GS, color=cb_colors[0], label="Ground Speed")
+ax.set_ylim(50, 250)
+ax.set_ylabel("Speed (m$\,$s$^{-1}$)")
+ax.plot(x, bahamas.TAS, color=cb_colors[1], label="True Air Speed")
+# legend for first row
+ax.legend(ncol=2, loc=8)
+
+# second row
+ax = axs[1]
+ax.plot(x, bahamas.IRS_PHI, color=cb_colors[2], label="Roll")
+ax.plot(x, bahamas.IRS_THE, color=cb_colors[3], label="Pitch")
+ax.set_ylim(-5, 5)
+ax.set_ylabel("Attitude Angle \n(deg)")
+ax.legend(ncol=2, loc=8)
+
+# third row
+ax = axs[2]
+ax.plot(x, bahamas.IRS_HDG, color=cb_colors[4])
+ax.text(0, 90, "East", va="bottom", ha="left", fontsize=6, transform=ax.get_yaxis_transform())
+ax.text(0, 180, "South", va="bottom", ha="left", fontsize=6, transform=ax.get_yaxis_transform())
+ax.text(0, 270, "West", va="bottom", ha="left", fontsize=6, transform=ax.get_yaxis_transform())
+ax.set_ylim(0, 360)
+ax.set_yticks([0, 90, 180, 270, 360])
+ax.set_ylabel("True Heading \n(deg)")
+
+
+# common settings over all rows
 for ax in axs:
+    set_xticks_and_xlabels(ax, timedelta)
     ax.grid()
-ax.legend()
+    ax.set_xlabel("")
+
 axs[2].set_xlabel("Time (UTC)")
-plt.tight_layout()
-fig_name = f"{plot_path}/{flight}_bahamas_meteo_ql.png"
+
+plt.tight_layout(pad=0.35)
+fig_name = f"{plot_path}/{flight}_bahamas_movement_ql.png"
 if savefig:
-    plt.savefig(fig_name, dpi=100)
+    plt.savefig(fig_name, dpi=200)
     print(f"Saved {fig_name}")
 else:
     plt.show()
@@ -291,10 +325,8 @@ _pres_maj = np.concatenate([np.arange(top * 10, top, -top) for top in (10000, 10
 _pres_min = np.concatenate([np.arange(top * 10, top, -top // 10) for top in (10000, 1000, 100, 10)] + [[10]])
 
 # %% plot bahamas meteo quicklook 2
-cb_colors = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
 ylabels = ["Static Air\nTemperature (K)", "Relative \nHumidity (%)", "Static \nPressure (hPa)"]
 x = bahamas.time  # prepare x axis
-timedelta = pd.to_datetime(x[-1].values) - pd.to_datetime(x[0].values)
 plt.rcParams['font.size'] = 8
 fig, axs = plt.subplots(nrows=3, figsize=(15/2.54, 10/2.54))
 # first row
@@ -308,6 +340,10 @@ ax2 = ax.twinx()
 ax2.plot(x, bahamas.IRS_ALT / 1000, color=cb_colors[0], label="Altitude")  # add altitude in km
 ax2.set_ylabel("Altitude (km)")
 ax2.set_yticks([0, 2, 4, 6, 8, 10, 12])
+# legend for first row
+handles, labels = ax.get_legend_handles_labels()
+handles2, labels2 = ax2.get_legend_handles_labels()
+ax.legend(handles + handles2, labels + labels2, ncol=3, loc=8)
 
 # second row
 ax = axs[1]
@@ -339,7 +375,12 @@ ax6.set_ylim(flv_limits)
 ax6.set_ylabel("Flight Level (hft)")
 ax6.yaxis.set_major_locator(ticker.MaxNLocator(5, steps=[10]))
 ax6.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+# legend for third row
+handles, labels = ax.get_legend_handles_labels()
+handles2, labels2 = ax6.get_legend_handles_labels()
+ax.legend(handles + handles2, labels + labels2, ncol=2, loc=8)
 
+# common settings over all rows
 for ax, ylabel in zip(axs, ylabels):
     ax.set_ylabel(ylabel)
     ax.grid()
@@ -349,16 +390,6 @@ axs[2].set_xlabel("Time (UTC)")
 for ax in axs[0:2]:
     ax.set_xlabel("")
     ax.set_xticklabels("")
-
-# legend for first row
-handles, labels = axs[0].get_legend_handles_labels()
-handles2, labels2 = ax2.get_legend_handles_labels()
-axs[0].legend(handles + handles2, labels + labels2, ncol=3, loc=8)
-
-# legend for third row
-handles, labels = axs[2].get_legend_handles_labels()
-handles2, labels2 = ax6.get_legend_handles_labels()
-axs[2].legend(handles + handles2, labels + labels2, ncol=2, loc=8)
 
 plt.tight_layout(pad=0.3)
 fig_name = f"{plot_path}/{flight}_bahamas_meteo2_ql.png"
