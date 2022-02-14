@@ -75,4 +75,5 @@ html_static_path = ['_static']
 # variables which should be available for every rst file in the docs
 rst_epilog = f"""
 .. |version| replace:: {version}
+.. |haloac3| replace:: HALO-(AC)\\ :sup:`3`\\
 """

@@ -15,3 +15,4 @@ SMART has to be calibrated in the lab and in the field so there are processing r
 
 smart_calib_lab_ASP06.py
 ^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.smart_calib_lab_ASP06

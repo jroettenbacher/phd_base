@@ -9,7 +9,9 @@ Quicklooks:
 
 **Input**:
 
+- flight
 - Path to files
+- save figure flag
 
 *author:* Johannes Röttenbacher
 """
