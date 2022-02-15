@@ -39,6 +39,23 @@ cirrus_hl_overview.py
 .. automodule:: analysis.cirrus_hl_overview
    :members:
 
+cirrus_hl_smart_compare_lab_calibs.py
+-------------------------------------
+
+.. automodule:: analysis.cirrus_hl_smart_compare_lab_calibs
+   :members:
+
+Results
+^^^^^^^^
+.. figure:: figures/ASP06_lab_calib_comparison.png
+
+   Comparison of the two irradiance laboratory calibrations of the four spectrometers in the ASP06 unit of HALO-SMART.
+
+.. figure:: figures/ASP07_lab_calib_comparison.png
+
+   Comparison of the two radiance laboratory calibrations of the two spectrometers in the ASP07 unit of HALO-SMART.
+
+
 smart_analysis.py
 ---------------------
 
