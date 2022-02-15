@@ -12,7 +12,12 @@ SMART
 ------
 
 SMART has to be calibrated in the lab and in the field so there are processing routines for both cases.
+Some scripts are designated for campaigns as sometimes the normal processing does not cover all possible cases which occur during a campaign.
 
 smart_calib_lab_ASP06.py
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_calib_lab_ASP06
+
+smart_process_transfer_calib_cirrus_hl.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.smart_process_transfer_calib_cirrus_hl

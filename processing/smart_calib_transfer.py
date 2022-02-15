@@ -19,10 +19,10 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     # %% set variables
-    field_folder = "ASP06_transfer_calib_20210729"  # transfer calib folder
-    lab_cali_date = "2021_03_29"  # set lab calib to relate measurement to
+    field_folder = "ASP06_transfer_calib_20210629"  # transfer calib folder
+    lab_cali_date = "2021_08_09"  # set lab calib to relate measurement to
     calib_path = h.get_path("calib")
-    plot_path = h.get_path("plot")
+    plot_path = f"{h.get_path('plot')}/transfer_calibs"
     t_int = 300  # integration time of transfer calibration measurement
     normalize = True  # normalize counts by integration time
     norm = "_norm" if normalize else ""

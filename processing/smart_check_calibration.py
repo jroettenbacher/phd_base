@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-"""Go through all calibrations and check the quality of the calibration
-author: Johannes Röttenbacher
+"""Go through all transfer calibrations and check the quality of the calibration
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
-    # %% module import
+# %% module import
     from pylim import reader
     from pylim.cirrus_hl import lookup, transfer_calibs
     from pylim.smart import plot_smart_data
@@ -18,15 +19,15 @@ if __name__ == "__main__":
     log = logging.getLogger("pylim")
     log.setLevel(logging.INFO)
 
-    # %% set paths
+# %% set paths
     calib_path = h.get_path("calib")
     plot_path = f"{h.get_path('plot')}/quality_check_calibration"
 
-    # %% list all files from one spectrometer
-    prop = "Fup_SWIR"
+# %% list all files from one spectrometer
+    prop = "Fdw_SWIR"
     files = [f for f in os.listdir(calib_path) if lookup[prop] in f]
 
-    # %% select only normalized and transfer calib files
+# %% select only normalized and transfer calib files
     files = [f for f in files if "norm" in f]
     files = [f for f in files if "transfer" in f]
     files.sort()
@@ -37,10 +38,10 @@ if __name__ == "__main__":
     else:
         pass
 
-    # %% compare 300ms and 500ms normalized measurements for Fdw_SWIR
+# %% compare 300ms and 500ms normalized measurements for Fdw_SWIR
     # file_300, file_500 = files[1], files[2]  # TODO
 
-    # %% read in transfer calib file and add timestamp from filename
+# %% read in transfer calib file and add timestamp from filename
     date_strs = [f[0:10] for f in files]  # extract date strings from filenames
     df = pd.DataFrame()
     for f, date_str in zip(files, date_strs):
@@ -50,10 +51,12 @@ if __name__ == "__main__":
 
     df = df.reset_index(drop=True)
 
-    # %% plot relation between lab calib measurement and each transfer calib measurement
+# %% set plotting layout options
     colors = plt.cm.tab20.colors  # get tab20 colors
     plt.rc('axes', prop_cycle=(mpl.cycler('color', colors)))  # Set the default color cycle
     plt.rc('font', family="serif", size=14)
+
+# %% plot relation between lab calib measurement and each transfer calib measurement
     zoom = False  # zoom in on y axis
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -75,9 +78,9 @@ if __name__ == "__main__":
     plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{prop}{zoom}.png", dpi=100)
     plt.close()
 
-    # %% take the average over n pixels and prepare data frame for plotting
+# %% take the average over n pixels and prepare data frame for plotting
     if "SWIR" in prop:
-        wl1, wl2 = 1400, 1420  # set wavelengths for averaging
+        wl1, wl2 = 1200, 1250  # set wavelengths for averaging
     else:
         wl1, wl2 = 550, 570
     df_ts = df[df["wavelength"].between(wl1, wl2)]
@@ -85,11 +88,12 @@ if __name__ == "__main__":
     # df_mean["dt"] = pd.to_datetime(df_mean.index.values, format="%Y_%m_%d")
     # df_mean.set_index(df_mean["dt"], inplace=True)
 
-    # %% plot a time series of the calibration factor
+# %% plot a time series of the calibration factor
     fig, ax = plt.subplots(figsize=(10, 6))
     df_mean.plot(y="c_field", ax=ax, label="$c_{field}$")
-    df_mean.plot(y="c_lab", c="#117733", ax=ax, label="$c_{lab}$")
+    # df_mean.plot(y="c_lab", c="#117733", ax=ax, label="$c_{lab}$")
     # ax.set_ylim((1, 2.5))
+    # ax.set_yscale("log")
     ax.set_xticks(df_mean.index.values)
     ax.set_xticklabels(df_mean.date.values, fontsize=14, rotation=45, ha="right")
     # ax.tick_params(axis="x", labelsize=12)
@@ -103,7 +107,7 @@ if __name__ == "__main__":
     plt.savefig(f"{plot_path}/SMART_calib_factors_{prop}.png", dpi=100)
     plt.close()
 
-    # %% investigate the last four days in more detail because they look wrong, plot calibration files
+# %% investigate the last four days in more detail because they look wrong, plot calibration files
     mpl.rcdefaults()  # set default plotting options
     flight = "Flight_20210719a"  # "Flight_20210721a"  # "Flight_20210721b" "Flight_20210723a" "Flight_20210728a" "Flight_20210729a"
     transfer_cali_date = transfer_calibs[flight]
@@ -120,7 +124,7 @@ if __name__ == "__main__":
             log.info(f"Plotting {path}/{filename}")
             plot_smart_data(flight, filename, wavelength="all", path=path, plot_path=p_path, save_fig=True)
 
-    # %% plot mean dark current for SWIR over flight; read in all raw files
+# %% plot mean dark current for SWIR over flight; read in all raw files
     flight = "Flight_20210728a"
     props = ["Fdw_SWIR", "Fup_SWIR"]
     dfs, dfs_plot, files_dict = dict(), dict(), dict()
@@ -152,7 +156,7 @@ if __name__ == "__main__":
     plt.savefig(f"{plot_path}/{flight}_SWIR_mean_dark_current.png", dpi=100)
     plt.close()
 
-    # %% plot mean dark current for VNIR over flight; read in all raw files
+# %% plot mean dark current for VNIR over flight; read in all raw files
     flight = "Flight_20210723a"
     props = ["Fdw_VNIR", "Fup_VNIR"]
     dfs, dfs_plot, files_dict = dict(), dict(), dict()

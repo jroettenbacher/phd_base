@@ -2,9 +2,9 @@
 """Script to correct SMART transfer calibration measurement for dark current and save it to a new file and merge the
 minutely files
 
-*input*: raw smart transfer calibration measurements
+**Input**: raw smart transfer calibration measurements
 
-*output*: dark current corrected and merged smart measurements
+**Output**: dark current corrected and merged smart measurements
 
 *author*: Johannes Röttenbacher
 """
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # %% User input
     campaign = "cirrus-hl"
-    folder = "ASP07_transfer_calib_20210630"
+    folder = "ASP06_transfer_calib_20210629"
     date = folder[-8:]  # extract date from transfer calib folder
 
     # Set paths in config.toml
