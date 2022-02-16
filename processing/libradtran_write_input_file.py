@@ -10,13 +10,12 @@ author: Johannes Röttenbacher
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
-    from pylim import reader
+    from pylim import reader, solar_position
     from pylim.libradtran import find_closest_radiosonde_station
     import os
     import datetime
     import numpy as np
     import pandas as pd
-    from pysolar.solar import get_altitude
     from global_land_mask import globe
     import logging
 
@@ -42,22 +41,26 @@ if __name__ == "__main__":
     timestamp = bahamas_ds.time[0]
     while timestamp < bahamas_ds.time[-1]:
         bahamas_ds_sel = bahamas_ds.sel(time=timestamp)
-        lat, lon, alt = bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values
+        lat, lon, alt, pres, temp = bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values, bahamas_ds_sel.PS.values, bahamas_ds_sel.TS.values
         is_on_land = globe.is_land(lat, lon)  # check if location is over land
         zout = alt / 1000  # page 127; aircraft altitude in km
         radiosonde_station = find_closest_radiosonde_station(lat, lon)
         # need to create a time zone aware datetime object to calculate the solar azimuth angle
         dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
+        # get time in decimal hours
+        decimal_hour = dt_timestamp.hour + dt_timestamp.minute / 60 + dt_timestamp.second / 60 / 60
+        year, month, day = dt_timestamp.year, dt_timestamp.month, dt_timestamp.day
         if is_on_land:
             calc_albedo = 0.2  # set albedo to a fixed value (will be updated)
         else:
-            # sun altitude measures from ground up -> 90 - sun altitude = solar zenith angle
-            # TODO: replace with calculation that includes atmospheric refraction
-            cos_sza = np.cos(np.deg2rad(90 - get_altitude(lat, lon, dt_timestamp)))
-            calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)  # calculate albedo after Taylor et al 1996 for sea surface
+            # calculate cosine of solar zenith angle
+            cos_sza = np.cos(np.deg2rad(
+                solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
+            # calculate albedo after Taylor et al 1996 for sea surface
+            calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
 
         # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
-        sza_libradtran = 90 - get_altitude(lat, lon, dt_timestamp, elevation=alt)
+        sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
         if sza_libradtran > 85:
             log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran:.2f}!\n"
                       f"Skipping this timestamp and moving on to the next one.")
