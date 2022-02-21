@@ -18,24 +18,24 @@ if __name__ == "__main__":
     from tqdm import tqdm
 
 # %% user input
-    campaign = "eurec4a"
-    flight = "Flight_20200205a"
-    date = flight[7:-1]
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD_00_HALO_Flight_00_20220221"
+    date = flight[-8:]
 
 # %% set paths
-    base_path = f"E:/{campaign.swapcase()}_raw_only/06_Flights/{flight}"
-    outpath = f"E:/{campaign.swapcase()}/06_Flights/{flight}"
+    base_path = f"E:/{campaign.swapcase()}_raw_only/02_Flights/{flight}"
+    outpath = f"E:/{campaign.swapcase()}/02_Flights/{flight}/horidata"
     h.make_dir(outpath)
-    hori_path = f"{base_path}/horidata/NavCommand"
+    hori_path = f"{base_path}/horidata"
     hori_files = os.listdir(hori_path)
-    nav_file = [f for f in hori_files if "IMS" in f][0]
-    nav_filepath = f"{hori_path}/{nav_file}"
-    gps_file = [f for f in hori_files if "GPSPos" in f][0]
-    gps_filepath = f"{hori_path}/{gps_file}"
+    nav_files = [f for f in hori_files if "IMS" in f]
+    nav_filepath = [f"{hori_path}/{f}" for f in nav_files]
+    gps_files = [f for f in hori_files if "GPSPos" in f]
+    gps_filepath = [f"{hori_path}/{f}" for f in gps_files]
 
 # %% read in IMS and GPS data
-    ims = reader.read_nav_data(nav_filepath)
-    gps = reader.read_ins_gps_pos(gps_filepath)
+    ims = pd.concat([reader.read_nav_data(f) for f in nav_filepath])
+    gps = pd.concat([reader.read_ins_gps_pos(f) for f in gps_filepath])
 
 # %% resample ims data to 1 Hz
     ims_1Hz = ims.resample("1s").asfreq()  # create a dataframe with a 1Hz index
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 # %% add to dataframe
     df["sza"], df["saa"] = sza, saa
 
-# %% export to netCDF
+# %% convert to xarray
     ds = df.to_xarray()
 
 # %% create variable and global attributes
@@ -156,6 +156,6 @@ if __name__ == "__main__":
 
 # %% create ncfile
     outfile = f"{campaign.swapcase()}_HALO_SMART_IMS_ql_{date}.nc"
-    outpath = os.path.join(outpath, outfile)
-    ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
-    print(f"Saved {outpath}")
+    out = os.path.join(outpath, outfile)
+    ds.to_netcdf(out, format="NETCDF4_CLASSIC", encoding=encoding)
+    print(f"Saved {out}")
