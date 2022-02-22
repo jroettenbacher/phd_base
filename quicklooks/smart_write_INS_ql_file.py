@@ -28,14 +28,14 @@ if __name__ == "__main__":
     h.make_dir(outpath)
     hori_path = f"{base_path}/horidata"
     hori_files = os.listdir(hori_path)
-    nav_files = [f for f in hori_files if "IMS" in f]
-    nav_filepath = [f"{hori_path}/{f}" for f in nav_files]
-    gps_files = [f for f in hori_files if "GPSPos" in f]
-    gps_filepath = [f"{hori_path}/{f}" for f in gps_files]
+    nav_files = [f for f in hori_files if "Nav_IMS" in f]
+    nav_filepaths = [f"{hori_path}/{f}" for f in nav_files]
+    gps_files = [f for f in hori_files if "Nav_GPSPos" in f]
+    gps_filepaths = [f"{hori_path}/{f}" for f in gps_files]
 
 # %% read in IMS and GPS data
-    ims = pd.concat([reader.read_nav_data(f) for f in nav_filepath])
-    gps = pd.concat([reader.read_ins_gps_pos(f) for f in gps_filepath])
+    ims = pd.concat([reader.read_nav_data(f) for f in nav_filepaths])
+    gps = pd.concat([reader.read_ins_gps_pos(f) for f in gps_filepaths])
 
 # %% resample ims data to 1 Hz
     ims_1Hz = ims.resample("1s").asfreq()  # create a dataframe with a 1Hz index

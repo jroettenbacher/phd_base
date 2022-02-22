@@ -12,9 +12,10 @@ from holoviews import opts
 hv.extension('bokeh')
 
 # %% Define flight and paths
-flight = "Flight_20210629a"
-path = h.get_path('horidata', flight)
-ql_path = h.get_path("quicklooks", flight)
+flight = "HALO-AC3_FD_00_HALO_Flight_00_20220221"
+path = h.get_path('horidata', flight, campaign="halo-ac3")
+ql_path = h.get_path("quicklooks", flight, campaign="halo-ac3")
+h.make_dir(ql_path)
 output_format = "html"  # png or html, html gives an interactive plot
 
 # %% working section
@@ -41,12 +42,14 @@ output_format = "html"  # png or html, html gives an interactive plot
 
 # %% Holoviews Dashboard of NavCommand quicklook
 
-horipath = h.get_path("horidata", flight)
-nav_file = [f for f in os.listdir(horipath) if "IMS" in f][0]
-nav_path = os.path.join(horipath, nav_file)
-nav_data = reader.read_nav_data(nav_path)
+horipath = h.get_path("horidata", flight, campaign="halo-ac3")
+nav_files = [f for f in os.listdir(horipath) if "Nav_IMS" in f]
+nav_paths = [os.path.join(horipath, f) for f in nav_files]
+nav_data = pd.concat([reader.read_nav_data(f) for f in nav_paths])
 # resample file from 20Hz to 1Hz
-nav_data = nav_data.resample("S").mean()
+ims_1Hz = nav_data.resample("1s").asfreq()  # create a dataframe with a 1Hz index
+# reindex original dataframe and use the nearest values for the full seconds
+nav_data = nav_data.reindex_like(ims_1Hz, method="nearest")
 # convert to hv.Table
 nav_data = nav_data.reset_index()
 nav_table = hv.Table(nav_data)
@@ -60,7 +63,7 @@ layout.opts(
     opts.Curve(responsive=True, height=300, tools=["hover"], show_grid=True,
                fontsize={'title': 16, 'labels': 14, 'xticks': 12, 'yticks': 12, 'legend': 12})
 )
-layout.opts(title=f"{flight} SMART NS Measurements")
+layout.opts(title=f"{flight} SMART INS Measurements")
 layout.cols(1)
 figname = f"{ql_path}/{flight}_NavCommand.{output_format}"
 hv.save(layout, figname)
@@ -68,9 +71,9 @@ print(f"Saved {figname}")
 
 # %% Holoviews Dashboard of Stabilization Platform data
 
-horipath = h.get_path("horidata", flight)
-hori_file = [f for f in os.listdir(horipath) if f.endswith("dat")][0]
-horidata = pd.read_csv(f"{horipath}/{hori_file}", skipinitialspace=True, sep="\t")
+horipath = h.get_path("horidata", flight, campaign="halo-ac3")
+hori_files = [f for f in os.listdir(horipath) if f.endswith("dat")]
+horidata = pd.concat([pd.read_csv(f"{horipath}/{f}", skipinitialspace=True, sep="\t") for f in hori_files])
 horidata["PCTIME"] = pd.to_datetime(horidata["DATE"] + " " + horidata["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
 horidata_hv = hv.Table(horidata)
 # annotate data

@@ -68,7 +68,7 @@ panel = "/projekt_agmwend/kalibration/Panels/34816"  # panel reflectivity files
 [halo-ac3]
 
 [halo-ac3.jr_local]
-base_dir = "E:/HALO-AC3/01_Flights"
+base_dir = "E:/HALO-AC3/02_Flights"
 raw = "SMART/raw"  # raw measurements as given by SMART
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
@@ -86,7 +86,7 @@ lamp = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp
 gopro = "E:/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
 
 [halo-ac3.jr_ubuntu]
-base_dir = "/mnt/e/HALO-AC3/01_Flights"
+base_dir = "/mnt/e/HALO-AC3/02_Flights"
 raw = "SMART/raw"  # raw measurements as given by SMART
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
@@ -104,7 +104,7 @@ gopro = "/mnt/e/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
 
 # on LIM server
 [halo-ac3.lim_server]
-base_dir = "/projekt_agmwend/data/HALO-AC3/01_Flights"
+base_dir = "/projekt_agmwend/data/HALO-AC3/02_Flights"
 raw = "SMART/raw"  # raw measurements as given by SMART
 data = "SMART/data_cor"  # dark current corrected data
 calibrated = "SMART/data_calibrated"  # calibrated and dark current corrected data
