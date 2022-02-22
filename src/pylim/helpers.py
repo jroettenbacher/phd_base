@@ -99,7 +99,8 @@ def set_xticks_and_xlabels(ax: plt.axis, time_extend: datetime.timedelta) -> plt
         -   time_extend > 7 days:               major ticks every 2 day,  minor ticks every 12 hours
         -   7 days > time_extend > 2 days:      major ticks every day, minor ticks every  6 hours
         -   2 days > time_extend > 1 days:      major ticks every 12 hours, minor ticks every  3 hours
-        -   1 days > time_extend > 6 hours:     major ticks every 3 hours, minor ticks every  30 minutes
+        -   1 days > time_extend > 12 hours:    major ticks every 2 hours, minor ticks every  30 minutes
+        -   12hours > time_extend > 6 hours:    major ticks every 1 hours, minor ticks every  30 minutes
         -   6 hours > time_extend > 2 hour:     major ticks every hour, minor ticks every  15 minutes
         -   2 hours > time_extend > 15 min:     major ticks every 15 minutes, minor ticks every 5 minutes
         -   15 min > time_extend > 5 min:       major ticks every 15 minutes, minor ticks every 5 minutes

@@ -4,6 +4,8 @@
 author: Johannes Röttenbacher
 """
 
+from pandas import Timestamp as Ts
+
 smart_lookup = dict(ASP06_J5="PGS_6_(ASP_06)", ASP06_J6="VIS_7_(ASP_06)",  # spectrometers
                     J5="dw", J6="dw",  # direction of channel
                     Fdw_SWIR="ASP06_J5", Fdw_VNIR="ASP06_J6",  # direction, property of channel
@@ -22,4 +24,6 @@ radiosonde_stations = ["Torshavn_06011", "Muenchen_Oberschleissheim_10868", "Mei
                        "Ittoqqortoormiit_04339", "Tasiilaq_04360"]
 
 # transfer calibrations to each flight
-transfer_calibs = dict()
+transfer_calibs = dict(Flight_20220221a="")
+
+take_offs_landings = dict(Flight_20220221a=(Ts(2022, 2, 21, 10, 25), Ts(2022, 2, 21, 13, 42)))
