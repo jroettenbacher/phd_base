@@ -35,9 +35,10 @@ if __name__ == "__main__":
     # %% User Input
     prop = "SWIR"  # set property to work on (VNIR or SWIR)
     direction = "Fup"  # these are the spectrometers which will measure Fdw during HALO-AC3
-    normalize = False  # normalize counts to integration time
+    normalize = True  # normalize counts to integration time
     t_int = 300  # integration time of calibration measurement
     base = "ASP06_lab_calibration_before"
+    date_str = "2021_11_23"
 
     # %% set paths
     campaign = "halo-ac3"
@@ -205,6 +206,6 @@ if __name__ == "__main__":
     plt.close()
 
     # %% save lamp and ulli measurement from lab to file
-    csvname = f"{calib_path}/{spectrometer}_Fdw_{prop}_lab_calib{norm}.dat"
+    csvname = f"{calib_path}/{date_str}_{spectrometer}_Fdw_{prop}_lab_calib{norm}.dat"
     pixel_wl.to_csv(csvname, index=False)
     log.info(f"Saved {csvname}")

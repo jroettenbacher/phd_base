@@ -21,15 +21,15 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% User input
-    campaign = "cirrus-hl"
-    folder = "ASP06_transfer_calib_20210629"
+    campaign = "halo-ac3"
+    folder = "ASP06_transfer_calib_20220222"
     date = folder[-8:]  # extract date from transfer calib folder
 
     # Set paths in config.toml
     calib_path = h.get_path("calib", campaign=campaign)
 
     # %% merge VNIR dark measurement files before correcting the calib files
-    property = ["Iup", "Fup", "Fdw"]
+    property = ["Fdw"]
     for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
         log.info(f"Working on {dirpath}")
         if "dark" in dirpath:
@@ -53,7 +53,8 @@ if __name__ == "__main__":
         for file in files:
             if file.endswith("IR.dat"):
                 log.info(f"Working on {dirpath}/{file}")
-                smart_cor = smart.correct_smart_dark_current("", file, option=3, path=dirpath, date=date)
+                smart_cor = smart.correct_smart_dark_current("", file, option=3, path=dirpath, date=date,
+                                                             campaign=campaign)
                 outname = f"{dirpath}/{file.replace('.dat', '_cor.dat')}"
                 smart_cor.to_csv(outname, sep="\t", float_format="%.0f")
                 log.info(f"Saved {outname}")

@@ -19,12 +19,15 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     # %% set variables
-    field_folder = "ASP06_transfer_calib_20210629"  # transfer calib folder
-    lab_cali_date = "2021_08_09"  # set lab calib to relate measurement to
-    calib_path = h.get_path("calib")
-    plot_path = f"{h.get_path('plot')}/transfer_calibs"
+    campaign = "halo-ac3"
+    field_folder = "ASP06_transfer_calib_20220222"  # transfer calib folder
+    lab_cali_date = "2021_11_23"  # set lab calib to relate measurement to
+    calib_path = h.get_path("calib", campaign=campaign)
+    plot_path = f"{h.get_path('plot', campaign=campaign)}/transfer_calibs"
     t_int = 300  # integration time of transfer calibration measurement
+    t_int_str = "_300ms" if campaign == "halo-ac3" else ""
     normalize = True  # normalize counts by integration time
+    ulli_nr = "2" if campaign == "halo-ac3" else "" # which Ulli sphere to use: 2 or 3 for halo-ac3 else ""
     norm = "_norm" if normalize else ""
     # # loop through all transfer calib folders
     # field_folders = [d for d in next(os.walk(calib_path))[1] if "transfer_calib" in d]
@@ -32,7 +35,7 @@ if __name__ == "__main__":
     # list transfer calibration files
     field_cali_files = [f for f in os.listdir(f"{calib_path}/{field_folder}/Tint_{t_int}ms") if f.endswith("cor.dat")]
     # list lab calibration files for selecting the right one
-    lab_cali_files = [f for f in os.listdir(calib_path) if f.endswith(f"lab_calib{norm}.dat") and lab_cali_date in f]
+    lab_cali_files = [f for f in os.listdir(calib_path) if f.endswith(f"lab_calib{t_int_str}{norm}.dat") and lab_cali_date in f]
 
     # %% read in Ulli transfer measurement from field
     for field_file in field_cali_files:
@@ -49,16 +52,16 @@ if __name__ == "__main__":
             ylabel = "Normalized Counts"
         else:
             ylabel = "Counts"
-        lab_df["c_field"] = lab_df["F_ulli"] / lab_df["S_ulli_field"]  # calculate field calibration factor
+        lab_df["c_field"] = lab_df[f"F_ulli{ulli_nr}"] / lab_df["S_ulli_field"]  # calculate field calibration factor
         # calculate relation between S_ulli_lab and S_ulli_field
-        lab_df["rel_ulli"] = lab_df["S_ulli"] / lab_df["S_ulli_field"]
+        lab_df["rel_ulli"] = lab_df[f"S_ulli{ulli_nr}"] / lab_df["S_ulli_field"]
 
         # %% plot transfer calib measurement
         spectrometer = lookup[f'{direction}_{channel}']
         fig, ax = plt.subplots()
-        ax.plot(lab_df["wavelength"], lab_df["S_ulli"], label="Counts in lab")
+        ax.plot(lab_df["wavelength"], lab_df[f"S_ulli{ulli_nr}"], label="Counts in lab")
         ax.plot(lab_df["wavelength"], lab_df["S_ulli_field"], label="Counts in field")
-        ax.set_title(f"Ulli Transfer Sphere Lab and Transfer Calibration {date_str.replace('_', '-')} \n"
+        ax.set_title(f"Ulli{ulli_nr} Transfer Sphere Lab and Transfer Calibration {date_str.replace('_', '-')} \n"
                      f"{spectrometer} {direction} {channel}")
         ax.set_xlabel("Wavelength (nm)")
         ax.set_ylabel(ylabel)
@@ -72,7 +75,7 @@ if __name__ == "__main__":
         ax2.legend(lines + lines2, labels + labels2, loc=0)
         ax.grid()
         plt.tight_layout()
-        figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_ulli_transfer_calib{norm}.png"
+        figname = f"{plot_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_ulli{ulli_nr}_transfer_calib{norm}.png"
         plt.savefig(figname, dpi=100)
         plt.show()
         plt.close()
