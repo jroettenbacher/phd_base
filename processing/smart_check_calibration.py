@@ -20,23 +20,24 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
 # %% set paths
-    calib_path = h.get_path("calib")
-    plot_path = f"{h.get_path('plot')}/quality_check_calibration"
+    campaign = "halo-ac3"
+    calib_path = h.get_path("calib", campaign=campaign)
+    plot_path = f"{h.get_path('plot', campaign=campaign)}/quality_check_calibration"
 
 # %% list all files from one spectrometer
-    prop = "Fdw_SWIR"
+    prop = "Fdw_VNIR"
     files = [f for f in os.listdir(calib_path) if lookup[prop] in f]
 
 # %% select only normalized and transfer calib files
-    files = [f for f in files if "norm" in f]
-    files = [f for f in files if "transfer" in f]
+    files = [f for f in files if "norm" in f and "transfer" in f]
     files.sort()
-    if prop == "Fdw_SWIR" or prop == "Fdw_VNIR" or prop == "Fup_VNIR":
-        files.pop(2)  # remove 500ms file from the 16th
-    elif prop == "Fup_SWIR":
-        files.pop(1)  # remove 500ms file from the 16th
-    else:
-        pass
+    if campaign == "cirrus-hl":
+        if prop == "Fdw_SWIR" or prop == "Fdw_VNIR" or prop == "Fup_VNIR":
+            files.pop(2)  # remove 500ms file from the 16th
+        elif prop == "Fup_SWIR":
+            files.pop(1)  # remove 500ms file from the 16th
+        else:
+            pass
 
 # %% compare 300ms and 500ms normalized measurements for Fdw_SWIR
     # file_300, file_500 = files[1], files[2]  # TODO
@@ -75,7 +76,9 @@ if __name__ == "__main__":
     ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
     plt.tight_layout()
     # plt.show()
-    plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{prop}{zoom}.png", dpi=100)
+    figname = f"{plot_path}/SMART_calib_rel_lab-field_{prop}{zoom}.png"
+    plt.savefig(figname, dpi=100)
+    print(f"Saved {figname}")
     plt.close()
 
 # %% take the average over n pixels and prepare data frame for plotting
@@ -90,7 +93,7 @@ if __name__ == "__main__":
 
 # %% plot a time series of the calibration factor
     fig, ax = plt.subplots(figsize=(10, 6))
-    df_mean.plot(y="c_field", ax=ax, label="$c_{field}$")
+    df_mean.plot(y="c_field", marker="o", ax=ax, label="$c_{field}$")
     # df_mean.plot(y="c_lab", c="#117733", ax=ax, label="$c_{lab}$")
     # ax.set_ylim((1, 2.5))
     # ax.set_yscale("log")
@@ -104,86 +107,7 @@ if __name__ == "__main__":
     ax.legend()
     plt.tight_layout()
     # plt.show()
-    plt.savefig(f"{plot_path}/SMART_calib_factors_{prop}.png", dpi=100)
-    plt.close()
-
-# %% investigate the last four days in more detail because they look wrong, plot calibration files
-    mpl.rcdefaults()  # set default plotting options
-    flight = "Flight_20210719a"  # "Flight_20210721a"  # "Flight_20210721b" "Flight_20210723a" "Flight_20210728a" "Flight_20210729a"
-    transfer_cali_date = transfer_calibs[flight]
-    instrument = lookup[prop][:5]
-    calibration = f"{instrument}_transfer_calib_{transfer_cali_date}"
-    trans_calib_path = f"{calib_path}/{calibration}/Tint_300ms"
-    trans_calib_path_dark = f"{calib_path}/{calibration}/dark_300ms"
-    trans_calib_files = [f for f in os.listdir(trans_calib_path) if prop in f]
-    trans_calib_files_dark = [f for f in os.listdir(trans_calib_path_dark) if prop in f]
-    plot_paths = [plot_path, f"{plot_path}/dark"]
-    for path, filenames, p_path in zip([trans_calib_path, trans_calib_path_dark],
-                                       [trans_calib_files, trans_calib_files_dark], plot_paths):
-        for filename in filenames:
-            log.info(f"Plotting {path}/{filename}")
-            plot_smart_data(flight, filename, wavelength="all", path=path, plot_path=p_path, save_fig=True)
-
-# %% plot mean dark current for SWIR over flight; read in all raw files
-    flight = "Flight_20210728a"
-    props = ["Fdw_SWIR", "Fup_SWIR"]
-    dfs, dfs_plot, files_dict = dict(), dict(), dict()
-    raw_path = h.get_path("raw", flight)
-    bahamas_path = h.get_path("bahamas", flight)
-    bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
-    bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
-    for prop in props:
-        files_dict[prop] = [f for f in os.listdir(raw_path) if prop in f]
-        dfs[prop] = pd.concat([reader.read_smart_raw(raw_path, file) for file in files_dict[prop]])
-        # select only rows where the shutter is closed and take mean over all pixels
-        dfs_plot[prop] = dfs[prop][dfs[prop]["shutter"] == 0].iloc[:, 2:].mean(axis=1)
-
-    # plot mean dark current over flight
-    h.set_cb_friendly_colors()
-    fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
-    for prop in props:
-        dfs_plot[prop].plot(ax=axs[0], ylabel="Netto Counts", label=f"{prop}")
-    bahamas_ds["IRS_ALT_km"] = bahamas_ds["IRS_ALT"] / 1000
-    bahamas_ds["IRS_ALT_km"].plot(ax=axs[1], label="BAHAMAS Altitude", color="#DDCC77")
-    axs[0].set_ylim((1500, 4000))
-    axs[1].set_ylabel("Altitude (km)")
-    axs[1].set_xlabel("Time (UTC)")
-    for ax in axs:
-        ax.legend()
-        ax.grid()
-    fig.suptitle(f"{flight} - Mean Dark Current")
-    # plt.show()
-    plt.savefig(f"{plot_path}/{flight}_SWIR_mean_dark_current.png", dpi=100)
-    plt.close()
-
-# %% plot mean dark current for VNIR over flight; read in all raw files
-    flight = "Flight_20210723a"
-    props = ["Fdw_VNIR", "Fup_VNIR"]
-    dfs, dfs_plot, files_dict = dict(), dict(), dict()
-    raw_path = h.get_path("raw", flight)
-    bahamas_path = h.get_path("bahamas", flight)
-    bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith(".nc")][0]
-    bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
-    for prop in props:
-        files_dict[prop] = [f for f in os.listdir(raw_path) if prop in f]
-        dfs[prop] = pd.concat([reader.read_smart_raw(raw_path, file) for file in files_dict[prop]])
-        # select only columns where no signal is measured in the VNIR, drop t_int and shutter column
-        dfs_plot[prop] = dfs[prop].iloc[:, 2:150].mean(axis=1)
-
-    # plot mean dark current over flight VNIR
-    h.set_cb_friendly_colors()
-    fig, axs = plt.subplots(nrows=2, sharex="all", figsize=(10, 6))
-    for prop in props:
-        dfs_plot[prop].plot(ax=axs[0], ylabel="Netto Counts", label=f"{prop}")
-    bahamas_ds["IRS_ALT_km"] = bahamas_ds["IRS_ALT"] / 1000
-    bahamas_ds["IRS_ALT_km"].plot(ax=axs[1], label="BAHAMAS Altitude", color="#DDCC77")
-    axs[0].set_ylim((90, 230))
-    axs[1].set_ylabel("Altitude (km)")
-    axs[1].set_xlabel("Time (UTC)")
-    for ax in axs:
-        ax.legend()
-        ax.grid()
-    fig.suptitle(f"{flight} - Mean Dark Current")
-    # plt.show()
-    plt.savefig(f"{plot_path}/{flight}_VNIR_mean_dark_current.png", dpi=100)
+    figname = f"{plot_path}/SMART_calib_factors_{prop}.png"
+    plt.savefig(figname, dpi=100)
+    print(f"Saved {figname}")
     plt.close()
