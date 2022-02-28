@@ -19,8 +19,8 @@ author: Johannes Röttenbacher
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
-    from pylim import reader
-    from pylim import cirrus_hl, smart
+    from pylim import reader, smart
+    from pylim.halo_ac3 import smart_lookup
     import os
     import pandas as pd
     import logging
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # read in smart calibrated data
     cal_data = reader.read_smart_cor(smart_dir, smart_file)
     # read in pixel to wavelength mapping
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.lookup[prop_channel])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_dir, smart_lookup[prop_channel])
 
     # %% set negative values to 0
     cal_data[cal_data < 0] = 0

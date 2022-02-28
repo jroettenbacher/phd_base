@@ -7,7 +7,7 @@ if __name__ == "__main__":
     # %% import modules and set paths
     import pylim.helpers as h
     from pylim import smart, reader
-    from pylim.cirrus_hl import lookup, transfer_calibs
+    from pylim.halo_ac3 import smart_lookup, transfer_calibs
     import os
     import numpy as np
     import pandas as pd
@@ -18,19 +18,21 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set user given parameters
-    flight = "Flight_20210629a"  # set flight folder
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD_00_HALO_Flight_01_20220225"  # set flight folder
+    flight_key = flight[20:] if campaign == "halo-ac3" else flight
     t_int_asp06 = 300  # give integration time of field measurement for ASP06
     t_int_asp07 = 300  # give integration time of field measurement for ASP07
     normalize = True  # normalize counts with integration time
     # give date of transfer calib to use for calibrating measurement if not same as measurement date else set to ""
-    transfer_date = transfer_calibs[flight]
+    transfer_date = transfer_calibs[flight_key]
     date = f"{transfer_date[:4]}_{transfer_date[4:6]}_{transfer_date[6:]}"  # reformat date to match file name
 
     # %% set paths
     norm = "_norm" if normalize else ""
-    calib_path = h.get_path("calib")
-    data_path = h.get_path("data", flight)
-    calibrated_path = h.get_path("calibrated", flight)
+    calib_path = h.get_path("calib", campaign=campaign)
+    data_path = h.get_path("data", flight, campaign=campaign)
+    calibrated_path = h.get_path("calibrated", flight, campaign=campaign)
     inpath = data_path
     outpath = calibrated_path
     h.make_dir(outpath)  # create outpath if necessary
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     for file in files:
         date_str, channel, direction = smart.get_info_from_filename(file)
         date_str = date if len(date) > 0 else date_str  # overwrite date_str if date is given
-        spectrometer = lookup[f"{direction}_{channel}"]
+        spectrometer = smart_lookup[f"{direction}_{channel}"]
         t_int = t_int_asp06 if "ASP06" in spectrometer else t_int_asp07  # select relevant integration time
         measurement = reader.read_smart_cor(data_path, file)
         # measurement[measurement.values < 0] = 0  # set negative values to 0

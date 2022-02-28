@@ -20,26 +20,28 @@ if __name__ == "__main__":
 
     # combine minutely files to one file
     # User input
-    flight = "Flight_20210728a"
-    data_path = h.get_path("data", flight=flight)  # dark current corrected files
-    # calibrated_path = get_path("calibrated", flight=flight)  # dark current corrected files
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD_00_HALO_Flight_01_20220225"  # set flight folder
+    data_path = h.get_path("data", flight=flight, campaign=campaign)  # dark current corrected files
     directory = data_path
 
     channels = ["SWIR", "VNIR"]
-    property = ["Iup", "Fup", "Fdw"]
-    corrected = True  # merge corrected files
+    props = ["Fdw"]
+    corrected = True  # merge dark current corrected files
     cor = "_cor" if corrected else ""
     for dirpath, dirs, files in os.walk(directory):
-        for prop in property:
+        for prop in props:
             for channel in channels:
                 try:
                     filename = [file for file in files if file.endswith(f"{prop}_{channel}{cor}.dat")]
                     if corrected:
                         df = pd.concat(
-                            [pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in tqdm(filename)])
+                            [pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in
+                             tqdm(filename, desc=f"{prop}_{channel}")])
                     else:
                         df = pd.concat(
-                            [pd.read_csv(f"{dirpath}/{file}", sep="\t") for file in tqdm(filename)])
+                            [pd.read_csv(f"{dirpath}/{file}", sep="\t") for file in tqdm(filename,
+                                                                                         desc=f"{prop}_{channel}")])
                     # delete all minutely files
                     for file in filename:
                         os.remove(os.path.join(dirpath, file))

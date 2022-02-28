@@ -23,10 +23,12 @@ def make_dark_cur_cor_file(flight: str, file: str, inpath: str, transfer_cali_da
 
     """
     log.info(f"Working on {file}")
+    campaign = "halo-ac3" if flight.startswith("HALO-AC3") else "cirrus-hl"
     if len(transfer_cali_date) > 0:
-        smart_cor = smart.correct_smart_dark_current(flight, file, option=3, path=inpath, date=transfer_cali_date)
+        smart_cor = smart.correct_smart_dark_current(flight, file, campaign=campaign, option=3, path=inpath,
+                                                     date=transfer_cali_date)
     else:
-        smart_cor = smart.correct_smart_dark_current(flight, file, option=3, path=inpath)
+        smart_cor = smart.correct_smart_dark_current(flight, file, campaign=campaign, option=3, path=inpath)
     outfile = f"{outdir}/{file.replace('.dat', '_cor.dat')}"
     smart_cor.to_csv(outfile, sep="\t", float_format="%.0f")
     log.info(f"Saved {outfile}")
@@ -34,7 +36,8 @@ def make_dark_cur_cor_file(flight: str, file: str, inpath: str, transfer_cali_da
 
 if __name__ == "__main__":
     import pylim.helpers as h
-    from pylim import cirrus_hl, smart
+    from pylim import smart
+    from pylim.halo_ac3 import transfer_calibs, smart_lookup
     import os
     import logging
     from tqdm import tqdm
@@ -45,13 +48,15 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # User input
-    flight = "Flight_20210728a"  # which flight do the files in raw belong to?
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD_00_HALO_Flight_01_20220225"  # which flight do the files in raw belong to?
+    flight_key = flight[20:] if campaign == "halo-ac3" else flight
     # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
-    transfer_cali_date = cirrus_hl.transfer_calibs[flight]
+    transfer_cali_date = transfer_calibs[flight_key]
 
     # Set paths in config.toml
-    inpath = h.get_path("raw", flight)
-    outdir = h.get_path("data", flight)
+    inpath = h.get_path("raw", flight, campaign=campaign)
+    outdir = h.get_path("data", flight, campaign=campaign)
     h.make_dir(outdir)
     # create list of input files and add a progress bar to it
     files = tqdm([file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))])

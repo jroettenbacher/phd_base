@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # %% module import and set paths
     import pylim.helpers as h
     from pylim import reader, smart
-    from pylim.cirrus_hl import lookup
+    from pylim.halo_ac3 import smart_lookup
     import os
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         lab_df["rel_ulli"] = lab_df[f"S_ulli{ulli_nr}"] / lab_df["S_ulli_field"]
 
         # %% plot transfer calib measurement
-        spectrometer = lookup[f'{direction}_{channel}']
+        spectrometer = smart_lookup[f'{direction}_{channel}']
         fig, ax = plt.subplots()
         ax.plot(lab_df["wavelength"], lab_df[f"S_ulli{ulli_nr}"], label="Counts in lab")
         ax.plot(lab_df["wavelength"], lab_df["S_ulli_field"], label="Counts in field")
