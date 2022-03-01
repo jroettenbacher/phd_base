@@ -135,6 +135,7 @@ if __name__ == "__main__":
     for var in ds:
         ds[var].attrs = var_attrs[var]
     # save file
-    nc_filepath = f"/projekt_agmwend/data/Cirrus_HL/01_Flights/{flight}/libRadtran/{flight}_libRadtran_clearsky_simulation_smart.nc"
+    flight_str = flight[9:] if campaign == "halo-ac3" else flight
+    nc_filepath = f"{libradtran_base_dir}/libRadtran_clearsky_simulation_smart_{flight_str}.nc"
     ds.to_netcdf(nc_filepath, encoding=encoding)
     log.info(f"Saved {nc_filepath}")
