@@ -20,10 +20,11 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set options and get files
-    flight = "Flight_20210629a"
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
     uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
-    libradtran_base_dir = h.get_path("libradtran", flight)
-    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "smart")  # file where to find input files
+    libradtran_base_dir = h.get_path("libradtran", flight, campaign)
+    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "halo-smart")  # file where to find input files
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                    if f.endswith(".inp")]
     input_files.sort()  # sort input files -> output files will be sorted as well

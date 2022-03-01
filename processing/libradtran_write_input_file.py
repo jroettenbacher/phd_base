@@ -16,6 +16,7 @@ if __name__ == "__main__":
     import datetime
     import numpy as np
     import pandas as pd
+    import xarray as xr
     from global_land_mask import globe
     import logging
 
@@ -24,24 +25,35 @@ if __name__ == "__main__":
     log.setLevel(logging.WARNING)
 
     # %% user input
-    flight = "Flight_20210629a"
-    time_step = pd.Timedelta(minutes=2)
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
+    time_step = pd.Timedelta(seconds=2)
+    use_smart_ins = True  # whether to use the SMART INs system or the BAHAMAS file
 
     # %% set paths
-    _base_dir = h.get_path("base")
-    _libradtran_dir = h.get_path("libradtran", flight)
-    _bahamas_dir = h.get_path("bahamas", flight)
-    _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
+    _base_dir = h.get_path("base", flight, campaign)
+    _libradtran_dir = h.get_path("libradtran", flight, campaign)
+    input_path = f"{_libradtran_dir}/wkdir/halo-smart"  # where to save the created files
+    h.make_dir(input_path)  # create directory
+    if use_smart_ins:
+        _horidata_dir = h.get_path("horidata", flight, campaign)
+        _horidata_file = [f for f in os.listdir(_horidata_dir) if f.endswith(".nc")][0]
+        ins_ds = xr.open_dataset(f"{_horidata_dir}/{_horidata_file}")
+    else:
+        _bahamas_dir = h.get_path("bahamas", flight, campaign)
+        _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
+        ins_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
     radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
     solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
-    input_path = f"{_libradtran_dir}/wkdir/smart"  # where to save the created files
-    h.make_dir(input_path)  # create directory
 
-    bahamas_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
-    timestamp = bahamas_ds.time[0]
-    while timestamp < bahamas_ds.time[-1]:
-        bahamas_ds_sel = bahamas_ds.sel(time=timestamp)
-        lat, lon, alt, pres, temp = bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values, bahamas_ds_sel.PS.values, bahamas_ds_sel.TS.values
+    timestamp = ins_ds.time[0]
+    while timestamp < ins_ds.time[-1]:
+        ins_ds_sel = ins_ds.sel(time=timestamp)
+        if use_smart_ins:
+            # no temperature and pressure available use norm atmosphere
+            lat, lon, alt, pres, temp = ins_ds_sel.lat.values, ins_ds_sel.lon.values, ins_ds_sel.alt.values, 1013.25, 288.15
+        else:
+            lat, lon, alt, pres, temp = ins_ds_sel.IRS_LAT.values, ins_ds_sel.IRS_LON.values, ins_ds_sel.IRS_ALT.values, ins_ds_sel.PS.values, ins_ds_sel.TS.values
         is_on_land = globe.is_land(lat, lon)  # check if location is over land
         zout = alt / 1000  # page 127; aircraft altitude in km
         radiosonde_station = find_closest_radiosonde_station(lat, lon)
