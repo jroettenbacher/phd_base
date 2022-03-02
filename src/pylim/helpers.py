@@ -24,7 +24,7 @@ def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrume
 
         Args:
             key: which path to return, see config.toml for possible values
-            flight: for which flight should the path be provided (eg. Flight_20210625a)
+            flight: for which flight should the path be provided (eg. Flight_20210625a for CIRRUS-HL or HALO-AC3_FD_00_HALO_Flight_01_20220225 for HALO-AC3)
             campaign: campaign for which the paths should be generated
             instrument: if key=all which instrument to generate the path to? (e.g. BAHAMAS)
 
