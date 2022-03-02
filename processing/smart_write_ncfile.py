@@ -23,6 +23,7 @@ if __name__ == "__main__":
     from pylim.halo_ac3 import smart_lookup
     import os
     import pandas as pd
+    from datetime import datetime
     import logging
 
     # %% set up logging
@@ -31,9 +32,10 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set user variables
-    campaign = "cirrus-hl"
-    flight = "Flight_20210629a"
-    prop_channel = "Fdw_VNIR"
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
+    flight_str = flight[9:] if campaign == "halo-ac3" else flight
+    prop_channel = "Fdw_SWIR"
 
     # %% get paths and read in files
     smart_dir = h.get_path("calibrated", flight=flight, campaign=campaign)
@@ -54,17 +56,56 @@ if __name__ == "__main__":
 
     ds = cal_data_long.to_xarray()  # convert to xr.DataSet
 
+    # %% calculate broadband irradiance
+    ds[f"{prop_channel}_bb"] = ds.irradiance.sum(axis=1)
+
     # %% create metadata for ncfile
-    ds.irradiance.attrs = dict(long_name="spectral downward irradiance", units="W m-2")
-    ds = ds.rename(dict(irradiance=prop_channel[:3]))
+    var_attrs = {
+        f"{prop_channel}": dict(
+            long_name="Spectral downward irradiance (SMART)",
+            standard_name="solar_irradiance_per_unit_wavelength",
+            units="W m-2 nm-1"),
+        f"{prop_channel}_bb": dict(
+            long_name="Broadband downward irradiance (SMART)",
+            units="W m-2",
+            comment="Summed over all available wavelengths"),
+        "pixel": dict(
+            long_name="Spectrometer pixel",
+            units="1"),
+        "wavelength":dict(
+            long_name="wavelength",
+            standard_name="radiation_wavelength",
+            units="nm"),
+    }
+
+    global_attrs = dict(
+        title="Spectral downward irradiance measured by HALO-SMART",
+        campaign_id=f"{campaign.swapcase()}",
+        platform_id="HALO",
+        instrument_id="HALO-SMART",
+        version_id="0.1",
+        description="Calibrated HALO-SMART measurements corrected for dark current",
+        institution="Leipzig Institute for Meteorology, Leipzig, Germany",
+        history=f"created {datetime.strftime(datetime.utcnow(), '%c UTC')}",
+        contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
+        PI="André Ehrlich, a.ehrlich@uni-leipzig.de"
+    )
+
+    encoding = dict(time=dict(units="seconds since 2017-01-01 00:00:00 UTC", _FillValue=None))
+
+    ds = ds.rename(dict(irradiance=prop_channel))
+    # drop time dimension from pixel
     ds["pixel"] = ds.pixel.isel(time=0, drop=True)
-    # TODO: Add global attributes and standard name
-    # TODO: create attributes according to prop_channel
+
+    for var in var_attrs:
+        encoding[var] = dict(_FillValue=None)
+        ds[var].attrs = var_attrs[var]
+
+    ds.attrs = global_attrs
 
     # %% create ncfile
     date_str, prop, direction = smart.get_info_from_filename(smart_file)
-    outfile = f"{campaign}_SMART_{direction}_{prop}_{date_str}.nc"
+    outfile = f"HALO-SMART_{direction}_{prop}_{flight_str}.nc"
     outpath = os.path.join(smart_dir, outfile)
-    ds.to_netcdf(outpath, format="NETCDF4_CLASSIC",
-                 encoding={"time": {"units": "seconds since 2021-01-01"}})
+    ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
     log.info(f"Saved {outpath}")
