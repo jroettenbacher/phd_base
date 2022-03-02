@@ -17,9 +17,10 @@ if __name__ == "__main__":
     import pandas as pd
 
     # %% set paths
+    campaign = "halo-ac3"
     flight = "HALO-AC3_FD00_HALO_RF01_20220225"
     date = flight[-8:]
-    path = f"{h.get_path('gopro')}/{flight}"
+    path = f"{h.get_path('gopro', campaign=campaign)}/{flight}"
     # file = f"{path}/{date}_Gopro_0001.jpg"
 
     # write meta data info to file
