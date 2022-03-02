@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD_00_HALO_Flight_00_20220221"
+    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
     date = flight[-8:]
 
     # %% set paths
