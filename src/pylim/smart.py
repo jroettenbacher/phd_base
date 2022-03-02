@@ -113,6 +113,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
             plot (bool): show plot or not (default: True),
             date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
             dark_filepath (str): complete path to dark current file to use
+            campaign (str): campaign to which smart file belongs to
 
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
@@ -120,10 +121,11 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     plot = kwargs["plot"] if "plot" in kwargs else True
     date = kwargs["date"] if "date" in kwargs else None
     dark_filepath = kwargs["dark_filepath"] if "dark_filepath" in kwargs else None
-    path = h.get_path("raw", flight)
+    campaign = kwargs["campaign"] if "campaign" in kwargs else "halo-ac3"
+    path = h.get_path("raw", flight, campaign=campaign)
     path = kwargs["path"] if "path" in kwargs else path
     pixel_wl_path = h.get_path("pixel_wl")
-    calib_path = h.get_path("calib")
+    calib_path = h.get_path("calib", campaign=campaign)
     measurement = reader.read_smart_raw(path, filename)
     t_int = int(measurement["t_int"][0])  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
@@ -296,12 +298,13 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
         kwargs: path (str): path to file if not raw file path as given in config.toml,
             date (str): (yyyymmdd) date from which the dark current measurement should be used for VNIR (necessary if \
             no transfer calibration was made on a measurement day)
+            campaign (str): campaign to which smart file belongs to
 
     Returns: Series with corrected smart measurement
 
     """
-    # TODO: do not write empty rows (were shutter is closed)
-    path = h.get_path("raw", flight)
+    campaign = kwargs["campaign"] if "campaign" in kwargs else "halo-ac3"
+    path = h.get_path("raw", flight, campaign=campaign)
     path = kwargs.pop("path") if "path" in kwargs else path
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = reader.read_smart_raw(path, smart_file)
@@ -311,6 +314,8 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
         dark_current = dark_current.mean()  # If get_dark_current returns a column mean, this can to be removed
     measurement = smart.where(smart.shutter == 1).iloc[:, 2:]  # only use data when shutter is open
     measurement_cor = measurement - dark_current
+    # drop nan values -> dark current measurements at beginning of file
+    measurement_cor.dropna(inplace=True)
 
     return measurement_cor
 
@@ -328,6 +333,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         **kwargs: path (str): give path to filename if not default from config.toml,
             save_fig (bool): save figure? (default: False),
             plot_path (str): where to save figure (default: given in config.toml)
+            ax (plt.axis): axes to already existing matplotlib axis
 
     Returns: Shows a figure or saves it to disc.
 
@@ -340,6 +346,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
     # read in keyword arguments
     raw_path = kwargs["path"] if "path" in kwargs else raw_path
     data_path = kwargs["path"] if "path" in kwargs else data_path
+    calibrated_path = kwargs["path"] if "path" in kwargs else calibrated_path
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
     plot_path = kwargs["plot_path"] if "plot_path" in kwargs else plot_path
     ax = kwargs["ax"] if "ax" in kwargs else None
