@@ -21,7 +21,9 @@ if __name__ == "__main__":
 
     # %% set options and get files
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
+    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    date = flight[9:17]
     uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight, campaign)
     libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "halo-smart")  # file where to find input files
@@ -115,6 +117,7 @@ if __name__ == "__main__":
     )
 
     # set up global attributes
+    # CIRRUS-HL
     attributes = dict(
         comment=f'CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}',
         contact='PI: m.wendisch@uni-leipzig.de, Data: johannes.roettenbacher@uni-leipzig.de',
@@ -125,17 +128,32 @@ if __name__ == "__main__":
         source='libRadtran 2.0',
         title='Simulated clear sky downward and upward irradiance along flight track',
     )
+    # HALO-AC3
+    global_attrs = dict(
+        title="Simulated clear sky downward and upward irradiance along flight track",
+        Conventions='CF-1.9',
+        campaign_id=f"{campaign.swapcase()}",
+        platform_id="HALO",
+        instrument_id="HALO-SMART",
+        version_id="1",
+        description="Calibrated HALO-SMART measurements corrected for dark current",
+        institution="Leipzig Institute for Meteorology, Leipzig, Germany",
+        history=f"created {dt.datetime.utcnow():%c} UTC",
+        contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
+        PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
+        source='libRadtran 2.0',
+        references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
+    )
 
-    encoding = dict(time=dict(units='seconds since 2021-01-01'))
+    encoding = dict(time=dict(units='seconds since 2017-01-01'))
 
     ds = output.to_xarray()
-    ds.attrs = attributes  # assign global attributes
+    ds.attrs = global_attrs if campaign == "halo-ac3" else attributes  # assign global attributes
     ds = ds.rename({"zout": "altitude"})
     # set attributes of each variable
     for var in ds:
         ds[var].attrs = var_attrs[var]
     # save file
-    flight_str = flight[9:] if campaign == "halo-ac3" else flight
-    nc_filepath = f"{libradtran_base_dir}/libRadtran_clearsky_simulation_smart_{flight_str}.nc"
+    nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_clearsky_simulation_smart_{date}_{flight_key}.nc"
     ds.to_netcdf(nc_filepath, encoding=encoding)
     log.info(f"Saved {nc_filepath}")
