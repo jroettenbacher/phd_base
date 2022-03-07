@@ -12,17 +12,18 @@ if __name__ == "__main__":
     from subprocess import Popen
 
     # %% set paths
-    date = "20210729"
-    number = "a"
-    flight = f"Flight_{date}{number}"
-    gopro_dir = h.get_path('gopro')
-    gopro_path = f"{gopro_dir}/{date}"
-    map_path = f"{h.get_path('bahamas', flight)}/plots/time_lapse"
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_20220225_HALO_RF00"
+    date = flight[9:17]
+    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    gopro_dir = f"{h.get_path('gopro', campaign=campaign)}"
+    gopro_path = f"{gopro_dir}/{flight}"
+    map_path = f"{h.get_path('bahamas', flight, campaign)}/plots/time_lapse"
     maps = [os.path.join(map_path, f) for f in os.listdir(map_path) if f.endswith(".png")]
     map_numbers = pd.read_csv(f"{gopro_dir}/{flight}_timestamps_sel.csv", index_col="datetime", parse_dates=True)
     f1, f2 = map_numbers.number.iloc[0], map_numbers.number.iloc[-1]
     files = [os.path.join(gopro_path, f) for f in os.listdir(gopro_path) if f.endswith(".JPG")][f1-1:f2-1]
-    outpath = f"{gopro_dir}/{flight}"
+    outpath = f"{gopro_dir}/{flight}_map"
     h.make_dir(outpath)
     processes = set()
     max_processes = 10
@@ -37,6 +38,5 @@ if __name__ == "__main__":
         if len(processes) >= max_processes:
             os.wait()
             processes.difference_update([p for p in processes if p.poll() is not None])
-
 
     print(f"Done with all files for {flight}")
