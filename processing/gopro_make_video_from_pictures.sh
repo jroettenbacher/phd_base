@@ -2,7 +2,9 @@
 
 # create a stop motion video from GoPro time laps pictures
 flight="HALO-AC3_20220225_HALO_RF00"
-date="20220225"
+# extract date and flight key
+date=${flight:9:8}
+key=${flight:23:4}
 #base_dir="/mnt/d/CIRRUS-HL/Gopro"
 base_dir="/mnt/e/HALO-AC3/04_Gopro"
 #base_dir="/mnt/c/Users/Johannes/Videos"
@@ -15,7 +17,7 @@ framerate="24"
 start_number="199"
 ffmpeg -framerate ${framerate} -f image2 \
   -start_number ${start_number} \
-  -i ${inpath}/${date}_Gopro_%04d.JPG \
+  -i ${inpath}/HALO-AC3_HALO_Gopro_${date}_${key}_%04d.JPG \
   -vcodec libx264 -b:v 50000k \
   -r ${framerate} ${outpath}
 
