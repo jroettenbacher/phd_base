@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # %% user input
     campaign = "halo-ac3"
     flight = "HALO-AC3_20220225_HALO_RF00"
-    time_step = pd.Timedelta(seconds=2)
+    time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = True  # whether to use the SMART INs system or the BAHAMAS file
 
     # %% set paths
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         _bahamas_dir = h.get_path("bahamas", flight, campaign)
         _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
         ins_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
-    radiosonde_path = f"{_base_dir}/../01_Soundings/RS_for_libradtran"
+    radiosonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran"
     solar_source_path = f"{_base_dir}/../00_tools/08_libradtran"
 
     timestamp = ins_ds.time[0]
