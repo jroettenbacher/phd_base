@@ -26,7 +26,7 @@ if __name__ == "__main__":
     date = flight[9:17]
     uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight, campaign)
-    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "halo-smart")  # file where to find input files
+    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "smart")  # file where to find input files
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                    if f.endswith(".inp")]
     input_files.sort()  # sort input files -> output files will be sorted as well
@@ -136,12 +136,11 @@ if __name__ == "__main__":
         platform_id="HALO",
         instrument_id="HALO-SMART",
         version_id="1",
-        description="Calibrated HALO-SMART measurements corrected for dark current",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
         history=f"created {dt.datetime.utcnow():%c} UTC",
         contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
         PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
-        source='libRadtran 2.0',
+        source='libRadtran 2.0.3',
         references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
     )
 

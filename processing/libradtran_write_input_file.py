@@ -26,14 +26,14 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
+    flight = "HALO-AC3_20220225_HALO_RF00"
     time_step = pd.Timedelta(seconds=2)
     use_smart_ins = True  # whether to use the SMART INs system or the BAHAMAS file
 
     # %% set paths
     _base_dir = h.get_path("base", flight, campaign)
     _libradtran_dir = h.get_path("libradtran", flight, campaign)
-    input_path = f"{_libradtran_dir}/wkdir/halo-smart"  # where to save the created files
+    input_path = f"{_libradtran_dir}/wkdir/smart"  # where to save the created files
     h.make_dir(input_path)  # create directory
     if use_smart_ins:
         _horidata_dir = h.get_path("horidata", flight, campaign)
@@ -43,8 +43,8 @@ if __name__ == "__main__":
         _bahamas_dir = h.get_path("bahamas", flight, campaign)
         _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
         ins_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
-    radiosonde_path = f"{_base_dir}/../02_Soundings/RS_for_libradtran"
-    solar_source_path = f"{_base_dir}/../00_Tools/05_libradtran"
+    radiosonde_path = f"{_base_dir}/../01_Soundings/RS_for_libradtran"
+    solar_source_path = f"{_base_dir}/../00_tools/08_libradtran"
 
     timestamp = ins_ds.time[0]
     while timestamp < ins_ds.time[-1]:
@@ -57,6 +57,8 @@ if __name__ == "__main__":
         is_on_land = globe.is_land(lat, lon)  # check if location is over land
         zout = alt / 1000  # page 127; aircraft altitude in km
         radiosonde_station = find_closest_radiosonde_station(lat, lon)
+        radiosonde_station = "Norderney_10113"
+        station_nr = radiosonde_station[-5:]
         # need to create a time zone aware datetime object to calculate the solar azimuth angle
         dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
         # get time in decimal hours
@@ -89,12 +91,13 @@ if __name__ == "__main__":
             albedo=f"{calc_albedo:.4f}",
             altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
             # atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
-            data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
+            data_files_path="/opt/libradtran/2.0.3/share/libRadtran/data",  # location of internal libRadtran data
             latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
             longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
             mol_file=None,  # page 104
             mol_modify="O3 300 DU",  # page 105
-            radiosonde=f"{radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
+            # radiosonde=f"{radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
+            radiosonde=f"{radiosonde_path}/Radiosonde_data_{station_nr}_{dt_timestamp:%y%m%d}_12.txt H2O RH",  # page 114
             time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
             source=f"solar {solar_source_path}/NewGuey2003_BBR.dat",  # page 119
             # sza=f"{sza_libradtran:.4f}",  # page 122
