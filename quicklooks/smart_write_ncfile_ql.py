@@ -34,8 +34,9 @@ if __name__ == "__main__":
 
 # %% set user variables
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
-    flight_str = flight[9:] if campaign == "halo-ac3" else flight
+    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    date = flight[9:17]
 
 # %% get paths and read in files
     smart_dir = h.get_path("calibrated", flight=flight, campaign=campaign)
@@ -116,7 +117,7 @@ if __name__ == "__main__":
         title="Preliminary spectral downward irradiance measured by HALO-SMART",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
-        instrument_id="HALO-SMART",
+        instrument_id="SMART",
         version_id="quicklook",
         description="Calibrated HALO-SMART measurements corrected for dark current and resampled to 1Hz resolution combined with the SMART INS data",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
@@ -149,7 +150,7 @@ if __name__ == "__main__":
 
 # %% create ncfile
     date_str, prop, direction = smart.get_info_from_filename(swir_file)
-    outfile = f"HALO-SMART_spectral_irradiance_{direction}_ql_{flight_str}.nc"
+    outfile = f"HALO-AC3_HALO_SMART_spectral_irradiance_{direction}_ql_{date}_{flight_key}.nc"
     outpath = os.path.join(smart_dir, outfile)
     ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
     log.info(f"Saved {outpath}")

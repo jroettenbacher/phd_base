@@ -134,7 +134,7 @@ if __name__ == "__main__":
         Conventions='CF-1.9',
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
-        instrument_id="HALO-SMART",
+        instrument_id="SMART",
         version_id="1",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
         history=f"created {dt.datetime.utcnow():%c} UTC",

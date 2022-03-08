@@ -20,8 +20,9 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
-    date = flight[-8:]
+    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    date = flight[9:17]
 
     # %% set paths
     base_path = f"E:/{campaign.swapcase()}_raw_only/02_Flights/{flight}"
@@ -139,7 +140,7 @@ if __name__ == "__main__":
         title="Raw attitude angles and GPS position data from the HALO-SMART IMS system",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
-        instrument_id="HALO-SMART",
+        instrument_id="SMART",
         version_id="quicklook",
         description="1Hz data from the HALO-SMART IMS system prepared for quicklook creation",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
@@ -163,7 +164,6 @@ if __name__ == "__main__":
     )
     for var in var_attrs:
         encoding[var] = dict(_FillValue=None)
-    # TODO: simplify the setting of the _FillValue encoding -> loop -> function
 
     # %% assign meta data
     for var in ds:
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     ds.attrs = global_attrs
 
     # %% create ncfile
-    outfile = f"{campaign.swapcase()}_HALO_SMART_IMS_ql_{date}.nc"
+    outfile = f"HALO-AC3_HALO_SMART_IMS_ql_{date}_{flight_key}.nc"
     out = os.path.join(outpath, outfile)
     ds.to_netcdf(out, format="NETCDF4_CLASSIC", encoding=encoding)
     print(f"Saved {out}")
