@@ -97,7 +97,7 @@ if __name__ == "__main__":
             mol_file=None,  # page 104
             mol_modify="O3 300 DU",  # page 105
             # radiosonde=f"{radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
-            radiosonde=f"{radiosonde_path}/Radiosonde_data_{station_nr}_{dt_timestamp:%Y%m%d}_12.txt H2O RH",  # page 114
+            radiosonde=f"{radiosonde_path}/Radiosonde_data_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH",  # page 114
             time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
             source=f"solar {solar_source_path}/NewGuey2003_BBR.dat",  # page 119
             # sza=f"{sza_libradtran:.4f}",  # page 122
