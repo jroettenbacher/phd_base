@@ -4,6 +4,7 @@
 Quicklooks:
 
 - map with sea ice extent and flight track
+- TBD: map with MODIS image and flight track
 - Movement quicklook
 - Meteo quicklook
 
@@ -17,12 +18,13 @@ Quicklooks:
 """
 
 if __name__ == "__main__":
-# %% import modules and set paths
+    # %% import modules and set paths
     import os
     import xarray as xr
     import matplotlib
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
+    from matplotlib import patheffects
     import cartopy
     import cartopy.crs as ccrs
     import numpy as np
@@ -30,31 +32,47 @@ if __name__ == "__main__":
     import datetime
     from metpy.units import units
     from metpy.constants import Rd, g
+    from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
+    from pylim import reader
+    import rasterio
+    from rasterio.plot import show
 
-# %% user input
-    flight = "Flight_20210705b"
+    # %% user input
+    flight = "HALO-AC3_20220225_HALO_RF00"
+    date = flight[9:17]
+    flight_key = flight[-4:]
     savefig = True
 
-# %% set paths
-    data_path = "C:/Users/Johannes/Documents/Doktor/conferences_workshops/2022_02_HALO-AC3_hackathon/data/RF09_20200205"
-    plot_path = "C:/Users/Johannes/Documents/Doktor/conferences_workshops/2022_02_HALO-AC3_hackathon/data/RF09_20200205/Plots"
-    bahamas_path = f"{data_path}/bahamas"
-    bahamas_file = "QL-CIRRUS-HL_F09_20210705b_ADLR_BAHAMAS_v1.nc"  # os.listdir(bahamas_path)[0]
+    # %% set paths
+    data_path = f"E:/HALO-AC3/02_Flights/{flight}"
+    plot_path = f"E:/HALO-AC3/02_Flights/{flight}/quicklooks"
+    bahamas_path = f"{data_path}/BAHAMAS"
+    bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith("nc")][0]
     bahamas_filepath = os.path.join(bahamas_path, bahamas_file)
-    seaice_path = f"{data_path}/sea_ice"
-    seaice_file = os.listdir(seaice_path)[0]
-    seaice_filepath = os.path.join(seaice_path, seaice_file)
-    satellite_path = f"{data_path}/satellite"
-    sat_file = [f for f in os.listdir(satellite_path)][0]
-    sat_image = os.path.join(satellite_path, sat_file)
+    dropsonde_path = f"{data_path}/dropsondes"
+    dropsonde_files = [f"{dropsonde_path}/{f}" for f in os.listdir(dropsonde_path) if f.endswith("QC.nc")]
+    # modis_path = f"{data_path}/satellite/MODIS/"
+    # modis = reader.Modis()
+    # modis.get_data("MOD021KM.A2022056.1135.061.2022056194352.hdf", "MOD03.A2022056.1135.061.2022056164637.hdf", path=modis_path)
+    # modis.increase_brightness(4)
+    # satellite_path = f"{data_path}/satellite"
+    # sat_file = "snapshot-2022-02-25.tiff"
+    # sat_image = os.path.join(satellite_path, sat_file)
+
 
 # %% create some dictionaries
-    plot_props = dict(Flight_20210705b=dict(figsize=(4, 4), cb_loc="bottom", shrink=1, l_loc=1))
+    default_extent = [-15, 30, 68, 81]
+    default_fs = (4, 4)
+    plot_props = dict(RF00=dict(extent=[5, 15, 47, 56], figsize=(5, 5), shrink=0.94, projection=ccrs.PlateCarree()),
+                      RF01=dict(extent=[5, 15, 47, 70], figsize=default_fs, shrink=1),
+                      RF02=dict(extent=[-15, 30, 68, 85], figsize=(5, 5), shrink=0.79))
 
     coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.336, 67.821), Bergen=(5.218, 60.293),
                        Torshavn=(-6.76, 62.01), Muenchen_Oberschleissheim=(11.55, 48.25), Longyearbyen=(15.46, 78.25),
                        Meiningen=(10.38, 50.56), Lerwick=(-1.18, 60.13), Ittoqqortoormiit=(-21.95, 70.48),
                        Tasiilaq=(-37.63, 65.60))
+    x_kiruna, y_kiruna = coordinates["Kiruna"]
+    x_longyear, y_longyear = coordinates["Longyearbyen"]
 
 # %% define functions
 
@@ -202,33 +220,41 @@ if __name__ == "__main__":
         return z if is_array else z[0]
 
 
+# %% read in data
+    bahamas = read_bahamas(bahamas_filepath)
+    seaice = get_amsr2_seaice(date)
+    seaice = seaice.seaice
+    dropsondes = dict()
+    for i in range(len(dropsonde_files)):
+        dropsondes[f"{i}"] = xr.open_dataset(dropsonde_files[i])
+
+# %% create dataframe with dropsonde launch times and locations
+    launch_times = [pd.to_datetime(dropsondes[var].time[-1].values) for var in dropsondes]
+    longitudes = [dropsondes[var].lon.min(skipna=True).values for var in dropsondes]
+    latitudes = [dropsondes[var].lat.min(skipna=True).values for var in dropsondes]
+    dropsonde_df = pd.DataFrame({"launch_time": launch_times, "lon": longitudes, "lat": latitudes})
+
 # %% plot sea ice conc + flight track
     orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
     reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
-    bahamas_dir = os.path.dirname(bahamas_filepath)
-    # read in bahamas and sea ice data
-    bahamas = read_bahamas(bahamas_filepath)
-    seaice = xr.open_dataset(seaice_filepath)
-    seaice = seaice.seaice
 
     # select position and time data
     lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["time"]
     # calculate flight duration
     flight_duration = pd.Timedelta((times[-1] - times[0]).values).to_pytimedelta()
-    # set extent of plot
-    llcrnlat = 68
-    llcrnlon = -15
-    urcrnlat = 81
-    urcrnlon = 30
-    extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+    # set plot properties
+    props = plot_props[flight_key]
+    projection = props["projection"] if "projection" in props else ccrs.NorthPolarStereo()
+    extent = props["extent"]
     # set plotting options
     plt.rcdefaults()
     font = {'size': 8}
     matplotlib.rc('font', **font)
-    # get plot properties
-    props = plot_props[flight]
+
     # start plotting
-    fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": ccrs.NorthPolarStereo()})
+    fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": projection})
+
+    # add general map features
     ax.stock_img()
     ax.coastlines()
     ax.add_feature(cartopy.feature.BORDERS)
@@ -236,37 +262,42 @@ if __name__ == "__main__":
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, x_inline=False, y_inline=False)
     gl.bottom_labels = False
     gl.left_labels = False
+
     # add sea ice extent
     ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
-    # TODO: Add dropsonde locations
-    # plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
-    # for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
-    #     ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=10)
-    #     ax.plot(long, lati, '.r', markersize=10)
-
-    # get the coordinates for EDMO and add a label
-    x_edmo, y_edmo = coordinates["Kiruna"]
-    ax.plot(x_edmo, y_edmo, '.r', transform=ccrs.PlateCarree())
-    ax.text(x_edmo + 0.1, y_edmo + 0.1, "Kiruna", fontsize=10, transform=ccrs.PlateCarree())
-    # plot a second airport label
-    x2, y2 = coordinates["Longyearbyen"]
-    ax.plot(x2, y2, '.r', transform=ccrs.PlateCarree())
-    ax.text(x2 + 0.1, y2 + 0.1, "Longyearbyen", fontsize=10, transform=ccrs.PlateCarree())
 
     # plot flight track and color by relative humidity
-    points = ax.scatter(lon, lat, c=bahamas.RELHUM, cmap="YlGn", norm=plt.Normalize(70, 110), s=4, transform=ccrs.PlateCarree())
+    points = ax.scatter(lon, lat, c=bahamas.RELHUM, cmap="YlGn", norm=plt.Normalize(70, 110), s=4,
+                        transform=ccrs.PlateCarree())
     # add the corresponding colorbar and decide whether to plot it horizontally or vertically
-    plt.colorbar(points, ax=ax, pad=0, location=props["cb_loc"], label="Relative Humidity (%)", shrink=props["shrink"])
+    plt.colorbar(points, ax=ax, pad=0, location="bottom", label="Relative Humidity (%)", shrink=props["shrink"])
+
+    # plot a marker for each dropsonde together with the launch time
+    for i in range(dropsonde_df.shape[0]):
+        df = dropsonde_df.iloc[i]
+        ax.annotate(f"{df['launch_time']:%H:%M}", (df.lon, df.lat), fontsize=8)
+        ax.plot(df.lon, df.lat, "x", color="#CC6677", markersize=6, label="Dropsonde")
+
+    # plot location of Kiruna and Longyearbyen and add a label
+    ax.plot(x_kiruna, y_kiruna, '.r', transform=ccrs.PlateCarree())
+    ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "Kiruna", fontsize=10, transform=ccrs.PlateCarree())
+    ax.plot(x_longyear, y_longyear, '.r', transform=ccrs.PlateCarree())
+    ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=10, transform=ccrs.PlateCarree())
 
     # add wind barbs
-    increment = 5000
-    lat, lon, u, v = lat[0::increment], lon[0::increment], bahamas.U[::increment] * 1.94384449, bahamas.V[::increment] * 1.94384449
-    ax.barbs(lon, lat, u, v, length=6, transform=ccrs.PlateCarree())
+    # increment = 5000
+    # lat, lon, u, v = lat[0::increment], lon[0::increment], bahamas.U[::increment] * 1.94384449, bahamas.V[::increment] * 1.94384449
+    # ax.barbs(lon, lat, u, v, length=6, transform=ccrs.PlateCarree())
 
     # write the flight duration in the lower left corner of the map
-    ax.text(0, 0.01, f"Duration: {str(flight_duration)[:4]} (hr:min)", transform=ax.transAxes, fontsize=10, color="white")
+    ax.text(0, 0.01, f"Duration: {str(flight_duration)[:4]} (hr:min)", transform=ax.transAxes, fontsize=10, color="white", path_effects=[patheffects.withStroke(linewidth=1, foreground="black")])
+
+    # add legend for dropsondes
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend([handles[0]], [labels[0]], loc=1)
+
     plt.tight_layout(pad=0.1)
-    fig_name = f"{plot_path}/{flight}_bahamas_track_ql.png"
+    fig_name = f"{plot_path}/HALO-AC3_HALO_BAHAMAS_track_ql_{date}_{flight_key}.png"
     if savefig:
         plt.savefig(fig_name, dpi=100)
         print(f"Saved {fig_name}")
@@ -274,7 +305,7 @@ if __name__ == "__main__":
         plt.show()
     plt.close()
 
-# %% plot bahamas movement quicklook
+    # %% plot bahamas movement quicklook
     plt.rcdefaults()
     cb_colors = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
     x = bahamas.time
@@ -318,7 +349,7 @@ if __name__ == "__main__":
     axs[2].set_xlabel("Time (UTC)")
 
     plt.tight_layout(pad=0.35)
-    fig_name = f"{plot_path}/{flight}_bahamas_movement_ql.png"
+    fig_name = f"{plot_path}/HALO-AC3_HALO_BAHAMAS_movement_ql_{date}_{flight_key}.png"
     if savefig:
         plt.savefig(fig_name, dpi=200)
         print(f"Saved {fig_name}")
@@ -337,7 +368,8 @@ if __name__ == "__main__":
     ylabels = ["Static Air\nTemperature (K)", "Relative \nHumidity (%)", "Static \nPressure (hPa)"]
     x = bahamas.time  # prepare x axis
     plt.rcParams['font.size'] = 8
-    fig, axs = plt.subplots(nrows=3, figsize=(15/2.54, 10/2.54))
+    nrows = 2
+    fig, axs = plt.subplots(nrows=nrows, figsize=(15/2.54, 10/2.54))
     # first row
     ax = axs[0]
     ax.plot(x, bahamas.TS, color=cb_colors[2], label="Temperature")  # static temperature
@@ -361,33 +393,33 @@ if __name__ == "__main__":
     ax.set_yticks([0, 25, 50, 75, 100, 125], minor=False)
 
     # third row
-    ax = axs[2]
-    ax.plot(x, bahamas.PS, label="Pressure")
-    ax.invert_yaxis()
-    ax.set_yscale("log")
-    major_ticks = [1000, 900, 800, 700, 600, 500, 400, 300, 200]
-    minor_ticks = _pres_min[(_pres_min <= p_bot) & (_pres_min >= p_top)]
-    labels = [1000, "", "", 700, "", 500, 400, 300, 200]
+    # ax = axs[2]
+    # ax.plot(x, bahamas.PS, label="Pressure")
+    # ax.invert_yaxis()
+    # ax.set_yscale("log")
+    # major_ticks = [1000, 900, 800, 700, 600, 500, 400, 300, 200]
+    # minor_ticks = _pres_min[(_pres_min <= p_bot) & (_pres_min >= p_top)]
+    # labels = [1000, "", "", 700, "", 500, 400, 300, 200]
     # Draw ticks and tick labels.
-    ax.set_yticks(minor_ticks/100, [], minor=True)
-    ax.set_yticks(major_ticks, minor=False)
-    ax.set_yticklabels(labels, minor=False, fontsize=8)
-    ax.set_ylim(p_bot / 100, p_top / 100)  # Set axis limits7
+    # ax.set_yticks(minor_ticks/100, [], minor=True)
+    # ax.set_yticks(major_ticks, minor=False)
+    # ax.set_yticklabels(labels, minor=False, fontsize=8)
+    # ax.set_ylim(p_bot / 100, p_top / 100)  # Set axis limits7
     # secondary yaxis
-    ax6 = ax.twinx()
-    ax6.plot(x, flv, color="#D55E00", label="Flight Level")
-    ax6.axhline(300, color="k", linewidth=1)
-    ax6.text(0.01, 305, "FL 300", va="bottom", ha="left", fontsize=6, transform=ax6.get_yaxis_transform())
-    ax6.axhline(400, color="k", linewidth=1)
-    ax6.text(0.01, 405, "FL 400", va="bottom", ha="left", fontsize=6, transform=ax6.get_yaxis_transform())
-    ax6.set_ylim(flv_limits)
-    ax6.set_ylabel("Flight Level (hft)")
-    ax6.yaxis.set_major_locator(ticker.MaxNLocator(5, steps=[10]))
-    ax6.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    # ax6 = ax.twinx()
+    # ax6.plot(x, flv, color="#D55E00", label="Flight Level")
+    # ax6.axhline(300, color="k", linewidth=1)
+    # ax6.text(0.01, 305, "FL 300", va="bottom", ha="left", fontsize=6, transform=ax6.get_yaxis_transform())
+    # ax6.axhline(400, color="k", linewidth=1)
+    # ax6.text(0.01, 405, "FL 400", va="bottom", ha="left", fontsize=6, transform=ax6.get_yaxis_transform())
+    # ax6.set_ylim(flv_limits)
+    # ax6.set_ylabel("Flight Level (hft)")
+    # ax6.yaxis.set_major_locator(ticker.MaxNLocator(5, steps=[10]))
+    # ax6.yaxis.set_minor_locator(ticker.AutoMinorLocator())
     # legend for third row
-    handles, labels = ax.get_legend_handles_labels()
-    handles2, labels2 = ax6.get_legend_handles_labels()
-    ax.legend(handles + handles2, labels + labels2, ncol=2, loc=8)
+    # handles, labels = ax.get_legend_handles_labels()
+    # handles2, labels2 = ax6.get_legend_handles_labels()
+    # ax.legend(handles + handles2, labels + labels2, ncol=2, loc=8)
 
     # common settings over all rows
     for ax, ylabel in zip(axs, ylabels):
@@ -395,13 +427,13 @@ if __name__ == "__main__":
         ax.grid()
         set_xticks_and_xlabels(ax, timedelta)
 
-    axs[2].set_xlabel("Time (UTC)")
-    for ax in axs[0:2]:
+    axs[nrows-1].set_xlabel("Time (UTC)")
+    for ax in axs[0:nrows-1]:
         ax.set_xlabel("")
         ax.set_xticklabels("")
 
     plt.tight_layout(pad=0.3)
-    fig_name = f"{plot_path}/{flight}_bahamas_meteo2_ql.png"
+    fig_name = f"{plot_path}/HALO-AC3_HALO_BAHAMAS_meteo_ql_{date}_{flight_key}.png"
     if savefig:
         plt.savefig(fig_name, dpi=200)
         print(f"Saved {fig_name}")
