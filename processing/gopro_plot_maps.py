@@ -11,9 +11,11 @@ if __name__ == "__main__":
     from pylim.halo_ac3 import coordinates, take_offs_landings
     from pylim.bahamas import plot_props
     import pylim.reader as reader
+    from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
     import os
     import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib import patheffects
     from matplotlib.markers import MarkerStyle
     import pandas as pd
     import xarray as xr
@@ -30,7 +32,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight = "HALO-AC3_20220312_HALO_RF02"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     use_smart_ins = True
@@ -107,43 +109,63 @@ if __name__ == "__main__":
         outpath = kwargs["outpath"] if "outpath" in kwargs else f"{bahamas_dir}/plots/time_lapse"
         h.make_dir(outpath)
         airport = kwargs["airport"] if "airport" in kwargs else None
+        add_seaice = kwargs["add_seaice"] if "add_seaice" in kwargs else True
         font = {'weight': 'bold', 'size': 26}
         matplotlib.rc('font', **font)
 
         # get plot properties
         props = plot_props[flight_key]
-        projection = ccrs.NorthPolarStereo() if campaign == "halo-ac3" else ccrs.PlateCarree()
-        fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": ccrs.PlateCarree()})
-        ax.stock_img()
+        data_proj = ccrs.PlateCarree()
+        projection = ccrs.NorthPolarStereo() if campaign == "halo-ac3" else data_proj
+        fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": projection})
+
+        if add_seaice:
+            orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
+            reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
+            seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=1)):%Y%m%d}")
+            seaice = seaice.seaice
+            ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
+        else:
+            ax.stock_img()
+
         ax.coastlines()
         ax.add_feature(cartopy.feature.BORDERS)
-        ax.set_extent(extent)
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+        ax.set_extent(extent, crs=data_proj)
+        gl = ax.gridlines(crs=data_proj, draw_labels=True)
         gl.bottom_labels = False
         gl.left_labels = False
+
+        # plot flight track and color by flight altitude
+        points = ax.scatter(lon, lat, color="orange", s=10, transform=data_proj)
+        # add the corresponding colorbar and decide whether to plot it horizontally or vertically
+        # plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+
         # plot a way point every 30 minutes = 1800 seconds
         td = 1800  # for 1Hz data, for 10Hz data use 18000
         for long, lati, nr in zip(lon[td::td], lat[td::td], range(len(lat[td::td]))):
-            ax.annotate(nr + 1, (long, lati), fontsize=16)
-            ax.plot(long, lati, '.r', markersize=10)
+            ax.text(long, lati, nr + 1, fontsize=16, transform=data_proj,
+                    path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
+            ax.plot(long, lati, '.r', markersize=10, transform=data_proj)
+
         # plot an airplane marker for HALO
         m = MarkerStyle("$\u2708$")
         m._transform.rotate_deg(halo_pos[2])
-        ax.plot(halo_pos[0], halo_pos[1], c="k", marker=m, ls="", markersize=28, label="HALO")
-        # get the coordinates for EDMO and ad a label
-        x_edmo, y_edmo = coordinates["EDMO"]
-        ax.plot(x_edmo, y_edmo, 'ok')
-        ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=16)
+        ax.plot(halo_pos[0], halo_pos[1], c="k", marker=m, ls="", markersize=28, label="HALO", transform=data_proj)
+
+        # get the coordinates for EDMO/Kiruna and ad a label
+        x_kiruna, y_kiruna = coordinates["Kiruna"]
+        ax.plot(x_kiruna, y_kiruna, 'ok', transform=data_proj)
+        ax.text(x_kiruna - 2, y_kiruna - 0.2, "Kiruna", fontsize=16, transform=data_proj,
+                path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
         # plot a second airport label if given
         if airport is not None:
             x2, y2 = coordinates[airport]
-            ax.text(x2 + 0.1, y2 + 0.1, airport, fontsize=16)
-        # plot flight track and color by flight altitude
-        points = ax.scatter(lon, lat, color="orange", s=10)
-        # add the corresponding colorbar and decide whether to plot it horizontally or vertically
+            ax.plot(x2, y2, 'ok', airport, transform=data_proj)
+            ax.text(x2, y2, airport, fontsize=16, transform=data_proj,
+                    path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
+
         ax.legend(loc=props["l_loc"])
-        # plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
-        # plt.tight_layout(pad=0.1)
+        plt.tight_layout(pad=0.1)
         fig_name = f"{outpath}/{flight}_map_{number:04}.png"
         plt.savefig(fig_name, dpi=100)
         log.info(f"Saved {fig_name}")
@@ -152,7 +174,7 @@ if __name__ == "__main__":
 
 
     # %% loop through timesteps
-    # halo_pos1 = halo_pos[0]
-    # number = ts_sel.number.values[0]
-    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    halo_pos1 = halo_pos[0]
+    number = ts_sel.number.values[0]
+    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))

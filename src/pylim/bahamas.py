@@ -42,7 +42,10 @@ plot_props = dict(Flight_20210624a=dict(figsize=(9.5, 9), cb_loc="left", shrink=
                   Flight_20210721b=dict(figsize=(10, 5), cb_loc="bottom", shrink=1, l_loc=4),
                   Flight_20210723a=dict(figsize=(9, 8.5), cb_loc="bottom", shrink=1, l_loc=1),
                   Flight_20210728a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1),
-                  Flight_20210729a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1))
+                  Flight_20210729a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1),
+                  RF00=dict(figsize=(9, 7), cb_loc="bottom", shrink=1, l_loc=1),
+                  RF01=dict(),
+                  RF02=dict(figsize=(6.2, 9), cb_loc="bottom", shrink=1, l_loc=2))
 
 
 def plot_bahamas_flight_track(flight: str, **kwargs):
@@ -89,7 +92,7 @@ def plot_bahamas_flight_track(flight: str, **kwargs):
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
     gl.bottom_labels = False
     gl.left_labels = False
-    # plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
+    # plot a way point every 15 minutes = 9000 milliseconds with a time stamp next to it
     for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
         ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=10)
         ax.plot(long, lati, '.r', markersize=10)
