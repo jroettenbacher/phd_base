@@ -7,24 +7,33 @@
 # %% modules
 import pylim.helpers as h
 from pylim.halo_ac3 import coordinates
+from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
 import os
 import xarray as xr
 import rasterio
 from rasterio.plot import show
 import matplotlib.pyplot as plt
+from matplotlib import patheffects
 import pandas as pd
 import cartopy
 import cartopy.crs as ccrs
 
 # %% user input
 campaign = "halo-ac3"
-flight = "HALO-AC3_FD00_HALO_RF01_20220225"
-flight_key = flight[19:] if campaign == "halo-ac3" else flight
-add_satellite = True  # needs to provide a satellite image which has to be manually downloaded
+date = "20220312"
+flight = f"HALO-AC3_{date}_HALO_RF02"
+flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+add_satellite = False  # needs to provide a satellite image which has to be manually downloaded
+add_seaice = True
 savefig = True
 
-# %% set plot properties
-plot_props = dict(RF01_20220225=dict(figsize=(4, 4), cb_loc="bottom", shrink=1, l_loc=1))
+# %% set plot properties and get some information from the dicts
+default_extent = [-15, 30, 68, 81]
+default_fs = (4, 4)
+plot_props = dict(RF00=dict(figsize=(4, 4), cb_loc="bottom", shrink=1, l_loc=1),
+                  RF02=dict(figsize=(4, 4), cb_loc="bottom", shrink=1, l_loc=1, extent=[-15, 30, 68, 85]))
+x_kiruna, y_kiruna = coordinates["Kiruna"]
+x_longyear, y_longyear = coordinates["Longyearbyen"]
 
 # %% set paths and read in files
 ql_path = h.get_path("quicklooks", flight, campaign)
@@ -32,12 +41,21 @@ horipath = h.get_path("horidata", flight, campaign)
 infile = [f for f in os.listdir(horipath) if f.endswith("nc")][0]  # read in the INS quicklook file
 if add_satellite:
     sat_path = h.get_path("satellite", flight, campaign)
-    sat_file = [f for f in os.listdir(sat_path) if "MODIS" in f][0]
+    sat_file = [f for f in os.listdir(sat_path) if "MODIS_" in f][0]
     sat_ds = rasterio.open(f"{sat_path}/{sat_file}")
 
 dropsonde_path = h.get_path("dropsonde", flight, campaign)
-dropsonde_files = os.listdir(dropsonde_path)
+dropsonde_files = [os.path.join(dropsonde_path, f) for f in os.listdir(dropsonde_path)]
 ins = xr.open_dataset(f"{horipath}/{infile}")
+
+# %% create dataframe with dropsonde launch times and locations
+dropsondes = dict()
+for i in range(len(dropsonde_files)):
+    dropsondes[f"{i}"] = xr.open_dataset(dropsonde_files[i])
+launch_times = [pd.to_datetime(dropsondes[var].time[-1].values) for var in dropsondes]
+longitudes = [dropsondes[var].lon.min(skipna=True).values for var in dropsondes]
+latitudes = [dropsondes[var].lat.min(skipna=True).values for var in dropsondes]
+dropsonde_df = pd.DataFrame({"launch_time": launch_times, "lon": longitudes, "lat": latitudes})
 
 # %% plot map quicklook
 orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
@@ -47,25 +65,25 @@ reversed_map = orig_map.reversed()  # reversing the original colormap using reve
 lon, lat, altitude, times = ins["lon"], ins["lat"], ins["alt"], ins["time"]
 # calculate flight duration
 flight_duration = pd.Timedelta((times[-1] - times[0]).values).to_pytimedelta()
-# set extent of plot
-llcrnlat = 47
-llcrnlon = 5
-urcrnlat = 58
-urcrnlon = 15
-extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+
 # set plotting options
 plt.rcdefaults()
 font = {'size': 8}
 plt.rc('font', **font)
-# get plot properties
-props = plot_props[flight_key]
+props = plot_props[flight_key]  # get plot properties
+# set extent of plot
+extent = props["extent"] if "extent" in props else default_extent
+
 # start plotting
-fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": ccrs.PlateCarree()})
+fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": ccrs.NorthPolarStereo()})
 # add satellite image
 if add_satellite:
     show(sat_ds, ax=ax)
 else:
-    ax.stock_image()
+    # ax.stock_img()
+    # ax.background_img(name='natural-earth-1', resolution='large8192px')
+    pass
+
 ax.coastlines()
 ax.add_feature(cartopy.feature.BORDERS)
 ax.set_extent(extent, crs=ccrs.PlateCarree())
@@ -73,35 +91,44 @@ gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, x_inline=False, y_in
 gl.bottom_labels = False
 gl.left_labels = False
 
-# plot flight track
-points = ax.plot(lon, lat, c="orange", linewidth=2)
-
 # add sea ice extent
-# ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
+if add_seaice:
+    seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=1)):%Y%m%d}")
+    seaice = seaice.seaice
+    ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
+
+# plot flight track
+points = ax.scatter(lon, lat, s=1, c="orange", transform=ccrs.PlateCarree())
+
 # plot dropsonde launch locations
-for i, f in enumerate(dropsonde_files):
-    ds = xr.open_dataset(f"{dropsonde_path}/{f}")
-    ds_lon, ds_lat = ds.lon[-1], ds.lat[-1]
-    ax.plot(ds_lon, ds_lat, "x", color="#CC6677", markersize=6, label="Dropsonde")
-    ax.annotate(ds.time.dt.strftime("%H:%M").values[-1], (ds_lon, ds_lat), fontsize=8)
+for i in range(dropsonde_df.shape[0]):
+    df = dropsonde_df.iloc[i]
+    # ax.annotate(f"{df['launch_time']:%H:%M}", (df.lon, df.lat), fontsize=8, transform=ccrs.PlateCarree())
+    ax.text(df.lon, df.lat, f"{df['launch_time']:%H:%M}", c="white", fontsize=8, transform=ccrs.PlateCarree(),
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
+    ax.plot(df.lon, df.lat, "x", color="red", markersize=8, label="Dropsonde", transform=ccrs.PlateCarree())
 
-# plot a way point every 15 minutes = 900 seconds with a time stamp next to it
-# for long, lati, time_stamp in zip(lon[900::900], lat[900::900], times[900::900]):
-#     ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=8)
-#     ax.plot(long, lati, '.', color="#D55E00", markersize=6)
-
-# get the coordinates for EDMO and add a label
-x_edmo, y_edmo = coordinates["EDMO"]
-ax.plot(x_edmo, y_edmo, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
-ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=10, transform=ccrs.PlateCarree())
+# plot some place labels
+# x_edmo, y_edmo = coordinates["EDMO"]
+# ax.plot(x_edmo, y_edmo, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
+# ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=10, transform=ccrs.PlateCarree())
 # plot a second airport label
-x2, y2 = coordinates["Leipzig"]
-ax.plot(x2, y2, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
-ax.text(x2 + 0.1, y2 + 0.1, "Leipzig", fontsize=10, transform=ccrs.PlateCarree())
+# x2, y2 = coordinates["Leipzig"]
+# ax.plot(x2, y2, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
+# ax.text(x2 + 0.1, y2 + 0.1, "Leipzig", fontsize=10, transform=ccrs.PlateCarree())
 # plot a third location label
-x2, y2 = coordinates["Jülich"]
-ax.plot(x2, y2, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
-ax.text(x2 + 0.1, y2 + 0.1, "Jülich", fontsize=10, transform=ccrs.PlateCarree())
+# x2, y2 = coordinates["Jülich"]
+# ax.plot(x2, y2, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
+# ax.text(x2 + 0.1, y2 + 0.1, "Jülich", fontsize=10, transform=ccrs.PlateCarree())
+# Kiruna
+x_kiruna, y_kiruna = coordinates["Kiruna"]
+ax.plot(x_kiruna, y_kiruna, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
+ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "Kiruna", fontsize=10, transform=ccrs.PlateCarree())
+# Longyearbyen
+x_longyear, y_longyear = coordinates["Longyearbyen"]
+ax.plot(x_longyear, y_longyear, '.', color="#117733", markersize=8, transform=ccrs.PlateCarree())
+ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=10, transform=ccrs.PlateCarree(),
+        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # # add wind barbs
 # increment = 5000
@@ -109,11 +136,12 @@ ax.text(x2 + 0.1, y2 + 0.1, "Jülich", fontsize=10, transform=ccrs.PlateCarree()
 # ax.barbs(lon, lat, u, v, length=6, transform=ccrs.PlateCarree())
 
 # write the flight duration in the lower left corner of the map
-ax.text(0, 0.01, f"Duration: {str(flight_duration)[:4]} (hr:min)", transform=ax.transAxes, fontsize=10, color="white")
+ax.text(0, 0.01, f"Duration: {str(flight_duration)[:4]} (hr:min)", transform=ax.transAxes, fontsize=10, color="white",
+        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
 handles, labels = ax.get_legend_handles_labels()
 ax.legend([handles[0]], [labels[0]], loc=1)
 plt.tight_layout(pad=0.3)
-fig_name = f"{ql_path}/SMART_INS-track_{flight[9:]}.png"
+fig_name = f"{ql_path}/HALO_SMART_INS-track_{date}_{flight_key}.png"
 if savefig:
     plt.savefig(fig_name, dpi=100)
     print(f"Saved {fig_name}")
