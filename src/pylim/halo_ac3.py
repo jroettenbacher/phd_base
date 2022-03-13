@@ -6,8 +6,10 @@ author: Johannes Röttenbacher
 
 from pandas import Timestamp as Ts
 
-smart_lookup = dict(ASP06_J5="PGS_6_(ASP_06)", ASP06_J6="VIS_7_(ASP_06)",  # spectrometers
-                    J5="dw", J6="dw",  # direction of channel
+smart_lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
+                    ASP06_J6="VIS_7_(ASP_06)",  # spectrometers
+                    J3="dw", J4="dw",  # direction of channel
+                    # TODO: Change J5 and J6 to J3 and J4 -> look out for breaking stuff
                     Fdw_SWIR="ASP06_J5", Fdw_VNIR="ASP06_J6",  # direction, property of channel
                     Fdw="VN11",  # inlet name
                     irradiance_standard="FEL-1587"  # irradiance standard used for calibration
@@ -25,10 +27,12 @@ radiosonde_stations = ["Torshavn_06011", "Muenchen_Oberschleissheim_10868", "Mei
                        "Ittoqqortoormiit_04339", "Tasiilaq_04360", "Norderney_10113"]
 
 # transfer calibrations to each flight
-transfer_calibs = dict(EMV="20220222", RF00="20220222")
+transfer_calibs = dict(EMV="20220222", RF00="20220222", RF01="20220313", RF02="20220313")
 
 take_offs_landings = dict(EMV=(Ts(2022, 2, 21, 10, 25), Ts(2022, 2, 21, 13, 42)),
-                          RF00=(Ts(2022, 2, 25, 7, 30), Ts(2022, 2, 25, 12, 13)))
+                          RF00=(Ts(2022, 2, 25, 7, 30), Ts(2022, 2, 25, 12, 13)),
+                          RF01=(Ts(2022, 3, 11, 13, 20), Ts(2022, 3, 11, 16, 20)),
+                          RF02=(Ts(2022, 3, 12, 8, 22, 16), Ts(2022, 3, 12, 16, 44, 16)))
 
 # GoPro time offset to BAHAMAS
-gopro_offsets = dict(EMV=-2, RF00=24)
+gopro_offsets = dict(EMV=-2, RF00=24, RF01=0, RF02=123)
