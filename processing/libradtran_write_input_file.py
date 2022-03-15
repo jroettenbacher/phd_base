@@ -7,12 +7,15 @@
 
 author: Johannes Röttenbacher
 """
+import re
+
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import reader, solar_position
     from pylim.libradtran import find_closest_radiosonde_station
     import os
+    import re
     import datetime
     import numpy as np
     import pandas as pd
@@ -26,9 +29,11 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight = "HALO-AC3_20220312_HALO_RF02"
+    date = flight[9:17]
     time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
-    use_smart_ins = True  # whether to use the SMART INs system or the BAHAMAS file
+    use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
+    use_dropsonde = True
 
     # %% set paths
     _base_dir = h.get_path("base", flight, campaign)
@@ -44,6 +49,7 @@ if __name__ == "__main__":
         _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
         ins_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
     radiosonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran"
+    dropsonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
     solar_source_path = f"{_base_dir}/../00_tools/08_libradtran"
 
     timestamp = ins_ds.time[0]
@@ -56,9 +62,26 @@ if __name__ == "__main__":
             lat, lon, alt, pres, temp = ins_ds_sel.IRS_LAT.values, ins_ds_sel.IRS_LON.values, ins_ds_sel.IRS_ALT.values, ins_ds_sel.PS.values, ins_ds_sel.TS.values
         is_on_land = globe.is_land(lat, lon)  # check if location is over land
         zout = alt / 1000  # page 127; aircraft altitude in km
-        radiosonde_station = find_closest_radiosonde_station(lat, lon)
-        radiosonde_station = "Norderney_10113"
-        station_nr = radiosonde_station[-5:]
+
+        # define radiosonde station or dropsonde
+        if use_dropsonde:
+            dropsonde_files = [f for f in os.listdir(dropsonde_path)]
+            dropsonde_files.sort()  # sort dropsonde files
+            # read out timestamps from file
+            dropsonde_times = [int(f[9:14].replace(" ", "")) for f in dropsonde_files]
+            # convert to date time to match with BAHAMAS/INS timestamp
+            dropsonde_times = pd.to_datetime(dropsonde_times, unit="s", origin=pd.to_datetime(date))
+            # find index of the closest dropsonde to BAHAMAS/INS timestamp
+            time_diffs = dropsonde_times - timestamp.values
+            idx = np.asarray(np.nonzero(time_diffs == time_diffs.min()))[0][0]
+            dropsonde_file = dropsonde_files[idx]
+            radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
+        else:
+            radiosonde_station = find_closest_radiosonde_station(lat, lon)
+            radiosonde_station = "Longyearbyen_01004"
+            station_nr = radiosonde_station[-5:]
+            radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
+
         # need to create a time zone aware datetime object to calculate the solar azimuth angle
         dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
         # get time in decimal hours
@@ -75,7 +98,7 @@ if __name__ == "__main__":
 
         # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
         sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
-        if sza_libradtran > 85:
+        if sza_libradtran > 90:
             log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran:.2f}!\n"
                       f"Skipping this timestamp and moving on to the next one.")
             # increase timestamp by time_step
@@ -97,7 +120,7 @@ if __name__ == "__main__":
             mol_file=None,  # page 104
             mol_modify="O3 300 DU",  # page 105
             # radiosonde=f"{radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH",  # page 114
-            radiosonde=f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH",  # page 114
+            radiosonde=radiosonde,  # page 114
             time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
             source=f"solar {solar_source_path}/NewGuey2003_BBR.dat",  # page 119
             # sza=f"{sza_libradtran:.4f}",  # page 122

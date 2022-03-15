@@ -21,10 +21,10 @@ if __name__ == "__main__":
 
     # %% set options and get files
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight = "HALO-AC3_20220312_HALO_RF02"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17]
-    uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
+    uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight, campaign)
     libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "smart")  # file where to find input files
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
