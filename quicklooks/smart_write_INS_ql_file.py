@@ -15,17 +15,20 @@ if __name__ == "__main__":
     import numpy as np
     import pylim.helpers as h
     from pylim import reader, solar_position
+    from pylim.halo_ac3 import take_offs_landings
     from datetime import datetime
     from tqdm import tqdm
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight = "HALO-AC3_20220316_HALO_RF06"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17]
+    # get flight start and end
+    to, td = take_offs_landings[flight_key][0], take_offs_landings[flight_key][1]
 
     # %% set paths
-    base_path = f"E:/{campaign.swapcase()}_raw_only/02_Flights/{flight}"
+    base_path = f"E:/{campaign.swapcase()}/02_Flights/{flight}"
     outpath = f"E:/{campaign.swapcase()}/02_Flights/{flight}/horidata"
     h.make_dir(outpath)
     hori_path = f"{base_path}/horidata"
@@ -79,6 +82,8 @@ if __name__ == "__main__":
 
     # %% convert to xarray
     ds = df.to_xarray()
+    # select only time between TO and TD
+    ds = ds.sel(time=slice(to, td))
 
     # %% create variable and global attributes
     var_attrs = dict(
@@ -172,7 +177,7 @@ if __name__ == "__main__":
     ds.attrs = global_attrs
 
     # %% create ncfile
-    outfile = f"HALO-AC3_HALO_SMART_IMS_ql_{date}_{flight_key}.nc"
+    outfile = f"HALO-AC3_HALO_gps_ins_{date}_{flight_key}.nc"
     out = os.path.join(outpath, outfile)
     ds.to_netcdf(out, format="NETCDF4_CLASSIC", encoding=encoding)
     print(f"Saved {out}")

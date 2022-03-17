@@ -12,7 +12,9 @@ from holoviews import opts
 hv.extension('bokeh')
 
 # %% Define flight and paths
-flight = "HALO-AC3_FD_00_HALO_Flight_00_20220221"
+date = "20220314"
+flight_key = "RF04"
+flight = f"HALO-AC3_{date}_HALO_{flight_key}"
 path = h.get_path('horidata', flight, campaign="halo-ac3")
 ql_path = h.get_path("quicklooks", flight, campaign="halo-ac3")
 h.make_dir(ql_path)
@@ -50,6 +52,8 @@ nav_data = pd.concat([reader.read_nav_data(f) for f in nav_paths])
 ims_1Hz = nav_data.resample("1s").asfreq()  # create a dataframe with a 1Hz index
 # reindex original dataframe and use the nearest values for the full seconds
 nav_data = nav_data.reindex_like(ims_1Hz, method="nearest")
+# switch sign of pitch to match BAHAMAS configuration: positve = nose up
+nav_data["pitch"] = -nav_data["pitch"]
 # convert to hv.Table
 nav_data = nav_data.reset_index()
 nav_table = hv.Table(nav_data)
@@ -65,7 +69,7 @@ layout.opts(
 )
 layout.opts(title=f"{flight} SMART INS Measurements")
 layout.cols(1)
-figname = f"{ql_path}/{flight}_NavCommand.{output_format}"
+figname = f"{ql_path}/HALO-AC3_HALO_SMART_NavCommand_{date}_{flight_key}.{output_format}"
 hv.save(layout, figname)
 print(f"Saved {figname}")
 
@@ -93,6 +97,6 @@ layout.opts(
 )
 layout.opts(title=f"{flight} SMART Stabilization Table Measurements")
 layout.cols(1)
-figname = f"{ql_path}/{flight}_horidata.{output_format}"
+figname = f"{ql_path}/HALO-AC3_HALO_SMART_horidata_{date}_{flight_key}.{output_format}"
 hv.save(layout, figname)
 print(f"Saved {figname}")

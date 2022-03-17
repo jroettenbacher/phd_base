@@ -34,9 +34,9 @@ if __name__ == "__main__":
 
 # %% set user variables
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    date = "20220313"
+    flight = f"HALO-AC3_{date}_HALO_RF03"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-    date = flight[9:17]
 
 # %% get paths and read in files
     smart_dir = h.get_path("calibrated", flight=flight, campaign=campaign)

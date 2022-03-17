@@ -27,6 +27,8 @@ if __name__ == "__main__":
     from matplotlib import patheffects
     import cartopy
     import cartopy.crs as ccrs
+    from osgeo import gdal, osr
+    gdal.UseExceptions()
     import numpy as np
     import pandas as pd
     import datetime
@@ -41,7 +43,7 @@ if __name__ == "__main__":
     flight = "HALO-AC3_20220225_HALO_RF00"
     date = flight[9:17]
     flight_key = flight[-4:]
-    savefig = True
+    savefig = False
 
     # %% set paths
     data_path = f"E:/HALO-AC3/02_Flights/{flight}"
@@ -304,6 +306,71 @@ if __name__ == "__main__":
     else:
         plt.show()
     plt.close()
+
+# %% plot satellite image with track
+    #     img = rasterio.open(sat_image)
+    #     # extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+    #     fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": ccrs.NorthPolarStereo()})
+    #     show(img, ax=ax, transform=ccrs.PlateCarree())
+    #     # ax.stock_img()
+    #     # img = ax.imshow(data[:3, :, :].transpose((1, 2, 0)), origin='upper')
+    #     # ax.imshow(data[:3, :, :].transpose((1, 2, 0)))
+    #     # ax.coastlines(linewidth=3)
+    #     ax.add_feature(cartopy.feature.COASTLINE, linewidth=2)
+    #     # ax.set_extent(extent, crs=ccrs.Geodetic())
+    #     # plot flight track
+    #     # points = ax.plot(lon, lat, c="orange", linewidth=6, transform=ccrs.PlateCarree())
+    #     gl = ax.gridlines(transform=ccrs.PlateCarree(), draw_labels=True)
+    #     plt.show()
+    #     plt.close()
+
+# %% plot satellite image with track
+    #     projection = ccrs.NorthPolarStereo(central_longitude=7.981409)
+    #     # extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
+    #     extent = [modis.lon.min(), modis.lon.max(), modis.lat.min(), modis.lat.max()]
+    #     central_lon = (extent[1]+extent[0])/2
+    #     central_lat = (extent[2]+extent[3])/2
+    #     proj = ccrs.NorthPolarStereo(central_longitude=central_lon)
+    #     data_crs = ccrs.PlateCarree()
+    #     fig, ax = plt.subplots(figsize=(11, 9), subplot_kw={"projection": proj})
+    #     # ax.imshow(modis.rgb, extent=extent, origin="lower", transform=ccrs.PlateCarree())
+    #     # What you put in for the image doesn't matter because of the color mapping
+    #     rgb = 0.299 * modis.rgb[:, :, 0] + 0.587*modis.rgb[:, :, 1] + 0.114* modis.rgb[:, :, 2]
+    #     ax.pcolormesh(modis.lon, modis.lat, rgb, transform=ccrs.PlateCarree(), cmap="Blues")
+    #     # ax.stock_img()
+    #     # img = ax.imshow(data[:3, :, :].transpose((1, 2, 0)), origin='upper')
+    #     # ax.imshow(data[:3, :, :].transpose((1, 2, 0)))
+    #     # ax.coastlines(linewidth=3)
+    #     ax.add_feature(cartopy.feature.COASTLINE, linewidth=3)
+    #     # ax.set_extent(extent)
+    #     gl = ax.gridlines(transform=ccrs.PlateCarree(), draw_labels=True)
+    #     gl.bottom_labels = False
+    #     gl.left_labels = False
+    #
+    #     # plot flight track
+    #     # points = ax.plot(lon, lat, c="orange", linewidth=6, transform=ccrs.PlateCarree())
+    #
+    #     # plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
+    #     # for long, lati, time_stamp in zip(lon[9000::9000], lat[9000::9000], times[9000::9000]):
+    #     #     ax.annotate(time_stamp.dt.strftime("%H:%M").values, (long, lati), fontsize=16,
+    #     #                 path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    #     #     ax.plot(long, lati, '.k', markersize=10)
+    #
+    #     # plot points with labels and white line around text
+    #     # ax.plot(x_kiruna, y_kiruna, 'ok')
+    #     # ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "EDMO", fontsize=22,
+    #     #         path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    #     # ax.plot(x_longyear, y_longyear, 'ok')
+    #     # ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=22,
+    #     #         path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+    #
+    #     # ax.legend(loc=3, fontsize=18, markerscale=6)
+    #     # plt.tight_layout(pad=0.1)
+    #     plt.show()
+    #     # fig_name = f"{plot_path}/{flight}_bahamas_track_satellite.png"
+    #     # plt.savefig(fig_name, dpi=100)
+    #     # print(f"Saved {fig_name}")
+    #     plt.close()
 
     # %% plot bahamas movement quicklook
     plt.rcdefaults()
