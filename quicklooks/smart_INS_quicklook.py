@@ -20,8 +20,8 @@ import cartopy.crs as ccrs
 
 # %% user input
 campaign = "halo-ac3"
-date = "20220313"
-flight = f"HALO-AC3_{date}_HALO_RF03"
+date = "20220316"
+flight = f"HALO-AC3_{date}_HALO_RF06"
 flight_key = flight[-4:] if campaign == "halo-ac3" else flight
 add_satellite = False  # needs to provide a satellite image which has to be manually downloaded
 add_seaice = True
@@ -35,7 +35,9 @@ plot_props = dict(RF00=dict(figsize=(4, 4)),
                   RF01=dict(extent=[5, 25, 47, 69]),
                   RF02=dict(extent=[-15, 30, 68, 85]),
                   RF03=dict(extent=[-15, 30, 68, 90], figsize=(4.8, 5.5)),
-                  RF04=dict(extent=[-15, 30, 68, 90], figsize=(4.8, 5.5)))
+                  RF04=dict(extent=[-15, 30, 68, 90], figsize=(4.8, 5.5)),
+                  RF05=dict(figsize=(5.5, 4)),
+                  RF06=dict(extent=[-15, 30, 68, 85]))
 x_kiruna, y_kiruna = coordinates["Kiruna"]
 x_longyear, y_longyear = coordinates["Longyearbyen"]
 
@@ -102,7 +104,7 @@ else:
 ax.coastlines()
 ax.add_feature(cartopy.feature.BORDERS)
 ax.set_extent(extent, crs=data_crs)
-gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=True, y_inline=False)
+gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=False, y_inline=False)
 gl.bottom_labels = False
 gl.left_labels = False
 
@@ -159,10 +161,10 @@ ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transfo
         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot most northerly point
-n_lat, n_lon = float(ins.lat.max()), float(ins.lon[ins.lat == ins.lat.max()])
-ax.plot(n_lon, n_lat, 'X', color="#117733", markersize=8, transform=data_crs)
-ax.text(n_lon + 0.1, n_lat + 0.1, f"({n_lat:4.2f}N, {n_lon:4.2f}E)", fontsize=11,
-        transform=data_crs, path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+# n_lat, n_lon = float(ins.lat.max()), float(ins.lon[ins.lat == ins.lat.max()])
+# ax.plot(n_lon, n_lat, 'X', color="#117733", markersize=8, transform=data_crs)
+# ax.text(n_lon + 0.1, n_lat + 0.1, f"({n_lat:4.2f}N, {n_lon:4.2f}E)", fontsize=11,
+#         transform=data_crs, path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # # add wind barbs
 # increment = 5000

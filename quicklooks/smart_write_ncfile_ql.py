@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
 # %% set user variables
     campaign = "halo-ac3"
-    date = "20220313"
-    flight = f"HALO-AC3_{date}_HALO_RF03"
+    date = "20220316"
+    flight = f"HALO-AC3_{date}_HALO_RF06"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
 
 # %% get paths and read in files

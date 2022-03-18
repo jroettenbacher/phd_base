@@ -12,8 +12,8 @@ from holoviews import opts
 hv.extension('bokeh')
 
 # %% Define flight and paths
-date = "20220314"
-flight_key = "RF04"
+date = "20220316"
+flight_key = "RF06"
 flight = f"HALO-AC3_{date}_HALO_{flight_key}"
 path = h.get_path('horidata', flight, campaign="halo-ac3")
 ql_path = h.get_path("quicklooks", flight, campaign="halo-ac3")
