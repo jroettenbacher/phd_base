@@ -13,7 +13,6 @@ if __name__ == "__main__":
     import os
     import pandas as pd
     import numpy as np
-    import pylim.helpers as h
     from datetime import datetime
     import re
 
@@ -26,7 +25,10 @@ if __name__ == "__main__":
     # %% set paths
     base_path = f"E:/{campaign.swapcase()}/02_Flights/{flight}"
     outpath = f"E:/{campaign.swapcase()}/02_Flights/{flight}/horidata"
-    h.make_dir(outpath)
+    try:
+        os.makedirs(outpath)
+    except FileExistsError:
+        pass
     hori_path = f"{base_path}/horidata"
     hori_files = [f for f in os.listdir(hori_path) if f.endswith("nav")]
     date_from_file = pd.to_datetime(re.findall(r"\d{8}", hori_files[0])[0])
