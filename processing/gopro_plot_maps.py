@@ -24,11 +24,15 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from joblib import Parallel, cpu_count, delayed
     from typing import Tuple
+    from shapely.errors import ShapelyDeprecationWarning as shapely_warning
+    import warnings
     import logging
 
     log = logging.getLogger("pylim")
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.WARNING)
+
+    warnings.filterwarnings("ignore", category=shapely_warning)
 
     # %% set paths
     campaign = "halo-ac3"
@@ -45,6 +49,8 @@ if __name__ == "__main__":
         # INS data is not cut to actual flight time, do so here
         time_sel = (take_offs_landings[flight_key][0] <= time) & (time <= take_offs_landings[flight_key][1])
         time = time.where(time_sel, drop=True)
+        # add marker rotation offset
+        markeroffset = 0
 
     else:
         bahamas_dir = h.get_path("bahamas", flight, campaign)
@@ -54,6 +60,10 @@ if __name__ == "__main__":
         # subsample to 1 Hz data to reduce computation time
         bahamas = bahamas.resample(dict(time="1s")).nearest()
         lon, lat, time, heading = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas.time, bahamas["IRS_HDG"]
+        # add offset to bahamas heading to be able to use it for turning the halo marker in the plot
+        # the marker starts of with a 90-degree rotation, subtract it
+        markeroffset = 90
+        heading = -heading  # positive values turn marker to the left, negative to the right
 
     # select second airport for map
     airport = "Longyearbyen"
@@ -151,6 +161,7 @@ if __name__ == "__main__":
 
         # plot an airplane marker for HALO
         m = MarkerStyle("$\u2708$")
+        m._transform.rotate_deg(markeroffset)
         m._transform.rotate_deg(halo_pos[2])
         ax.plot(halo_pos[0], halo_pos[1], c="k", marker=m, ls="", markersize=28, label="HALO", transform=data_proj)
 
@@ -169,9 +180,9 @@ if __name__ == "__main__":
         ax.legend(loc=props["l_loc"])
         plt.tight_layout(pad=0.1)
         fig_name = f"{outpath}/{flight}_map_{number:04}.png"
-        # plt.savefig(fig_name, dpi=100)
-        # log.info(f"Saved {fig_name}")
-        plt.show()
+        plt.savefig(fig_name, dpi=100)
+        log.info(f"Saved {fig_name}")
+        # plt.show()
         plt.close()
 
 
