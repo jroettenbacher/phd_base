@@ -24,8 +24,6 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from joblib import Parallel, cpu_count, delayed
     from typing import Tuple
-    import warnings
-    warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)  # ignore ShapelyDeprecation warning
     import logging
 
     log = logging.getLogger("pylim")
@@ -178,7 +176,7 @@ if __name__ == "__main__":
 
 
     # %% loop through timesteps
-    halo_pos1 = halo_pos[0]
-    number = ts_sel.number.values[0]
-    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    # halo_pos1 = halo_pos[0]
+    # number = ts_sel.number.values[0]
+    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
