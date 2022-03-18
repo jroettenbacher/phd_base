@@ -24,6 +24,8 @@ if __name__ == "__main__":
     from tqdm import tqdm
     from joblib import Parallel, cpu_count, delayed
     from typing import Tuple
+    import warnings
+    warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)  # ignore ShapelyDeprecation warning
     import logging
 
     log = logging.getLogger("pylim")
@@ -32,10 +34,10 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220312_HALO_RF02"
+    flight = "HALO-AC3_20220313_HALO_RF03"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-    use_smart_ins = True
+    use_smart_ins = False
     gopro_dir = h.get_path("gopro", campaign=campaign)
     if use_smart_ins:
         horipath = h.get_path("horidata", flight, campaign)
@@ -51,6 +53,8 @@ if __name__ == "__main__":
         # find bahamas file
         file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
         bahamas = reader.read_bahamas(f"{bahamas_dir}/{file}")
+        # subsample to 1 Hz data to reduce computation time
+        bahamas = bahamas.resample(dict(time="1s")).nearest()
         lon, lat, time, heading = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas.time, bahamas["IRS_HDG"]
 
     # select second airport for map
@@ -122,7 +126,7 @@ if __name__ == "__main__":
         if add_seaice:
             orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
             reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
-            seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=1)):%Y%m%d}")
+            seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=0)):%Y%m%d}")
             seaice = seaice.seaice
             ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
         else:
@@ -131,7 +135,7 @@ if __name__ == "__main__":
         ax.coastlines()
         ax.add_feature(cartopy.feature.BORDERS)
         ax.set_extent(extent, crs=data_proj)
-        gl = ax.gridlines(crs=data_proj, draw_labels=True)
+        gl = ax.gridlines(crs=data_proj, draw_labels=True, x_inline=True)
         gl.bottom_labels = False
         gl.left_labels = False
 
@@ -167,14 +171,14 @@ if __name__ == "__main__":
         ax.legend(loc=props["l_loc"])
         plt.tight_layout(pad=0.1)
         fig_name = f"{outpath}/{flight}_map_{number:04}.png"
-        plt.savefig(fig_name, dpi=100)
-        log.info(f"Saved {fig_name}")
-        # plt.show()
+        # plt.savefig(fig_name, dpi=100)
+        # log.info(f"Saved {fig_name}")
+        plt.show()
         plt.close()
 
 
     # %% loop through timesteps
-    # halo_pos1 = halo_pos[0]
-    # number = ts_sel.number.values[0]
-    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    halo_pos1 = halo_pos[0]
+    number = ts_sel.number.values[0]
+    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
