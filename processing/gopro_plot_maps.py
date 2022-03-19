@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220315_HALO_RF05"
+    flight = "HALO-AC3_20220316_HALO_RF06"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     use_smart_ins = False
