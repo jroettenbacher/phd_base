@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220314_HALO_RF04"
+    flight = "HALO-AC3_20220315_HALO_RF05"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     use_smart_ins = False
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     llcrnlon = lon.min(skipna=True) - pad
     urcrnlat = lat.max(skipna=True) + pad
     urcrnlon = lon.max(skipna=True) + pad
-    extent = [-15, urcrnlon, llcrnlat, urcrnlat]
+    extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
 
     # %% select lon and lat values corresponding with the picture timestamps
     # get first and last bahamas time step
