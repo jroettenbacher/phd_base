@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220312_HALO_RF02"
+    flight = "HALO-AC3_20220316_HALO_RF06"
     date = flight[9:17]
     time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
@@ -63,6 +63,8 @@ if __name__ == "__main__":
         is_on_land = globe.is_land(lat, lon)  # check if location is over land
         zout = alt / 1000  # page 127; aircraft altitude in km
 
+        # need to create a time zone aware datetime object to calculate the solar azimuth angle
+        dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
         # define radiosonde station or dropsonde
         if use_dropsonde:
             dropsonde_files = [f for f in os.listdir(dropsonde_path)]
@@ -82,28 +84,25 @@ if __name__ == "__main__":
             station_nr = radiosonde_station[-5:]
             radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
 
-        # need to create a time zone aware datetime object to calculate the solar azimuth angle
-        dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
         # get time in decimal hours
         decimal_hour = dt_timestamp.hour + dt_timestamp.minute / 60 + dt_timestamp.second / 60 / 60
         year, month, day = dt_timestamp.year, dt_timestamp.month, dt_timestamp.day
-        if is_on_land:
-            calc_albedo = 0.2  # set albedo to a fixed value (will be updated)
-        else:
-            # calculate cosine of solar zenith angle
-            cos_sza = np.cos(np.deg2rad(
-                solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
-            # calculate albedo after Taylor et al 1996 for sea surface
-            calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
 
         # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
         sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
         if sza_libradtran > 90:
-            log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran:.2f}!\n"
-                      f"Skipping this timestamp and moving on to the next one.")
-            # increase timestamp by time_step
-            timestamp = timestamp + time_step
-            continue
+            log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran}!\n"
+                      f"Setting Albedo to 0.")
+            calc_albedo = 0.0
+        else:
+            if is_on_land:
+                calc_albedo = 0.2  # set albedo to a fixed value (will be updated)
+            else:
+                # calculate cosine of solar zenith angle
+                cos_sza = np.cos(np.deg2rad(
+                    solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
+                # calculate albedo after Taylor et al 1996 for sea surface
+                calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
 
         # %% internal variables
         _input_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
