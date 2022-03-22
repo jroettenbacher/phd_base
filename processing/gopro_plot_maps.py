@@ -32,8 +32,6 @@ if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.WARNING)
 
-    warnings.simplefilter("ignore", category=shapely_warning)
-
     # %% set paths
     campaign = "halo-ac3"
     flight = "HALO-AC3_20220321_HALO_RF08"
@@ -179,15 +177,17 @@ if __name__ == "__main__":
 
         ax.legend(loc=props["l_loc"])
         plt.tight_layout(pad=0.1)
-        fig_name = f"{outpath}/{flight}_map_{number:04}.png"
-        plt.savefig(fig_name, dpi=100)
-        log.info(f"Saved {fig_name}")
-        # plt.show()
-        plt.close()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fig_name = f"{outpath}/{flight}_map_{number:04}.png"
+            plt.savefig(fig_name, dpi=100)
+            log.info(f"Saved {fig_name}")
+            # plt.show()
+            plt.close()
 
 
     # %% loop through timesteps
-    halo_pos1 = halo_pos[0]
-    number = ts_sel.number.values[0]
-    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    # halo_pos1 = halo_pos[0]
+    # number = ts_sel.number.values[0]
+    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
