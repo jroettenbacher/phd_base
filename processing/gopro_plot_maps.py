@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220321_HALO_RF08"
+    flight = "HALO-AC3_20220320_HALO_RF07"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     use_smart_ins = True
@@ -127,58 +127,58 @@ if __name__ == "__main__":
         props = plot_props[flight_key]
         data_proj = ccrs.PlateCarree()
         projection = ccrs.NorthPolarStereo() if campaign == "halo-ac3" else data_proj
-        fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": projection})
-
-        if add_seaice:
-            orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
-            reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
-            seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=0)):%Y%m%d}")
-            seaice = seaice.seaice
-            ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
-        else:
-            ax.stock_img()
-
-        ax.coastlines()
-        ax.add_feature(cartopy.feature.BORDERS)
-        ax.set_extent(extent, crs=data_proj)
-        gl = ax.gridlines(crs=data_proj, draw_labels=True, x_inline=True, y_inline=True)
-        gl.bottom_labels = False
-        gl.left_labels = False
-
-        # plot flight track and color by flight altitude
-        points = ax.scatter(lon, lat, color="orange", s=10, transform=data_proj)
-        # add the corresponding colorbar and decide whether to plot it horizontally or vertically
-        # plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
-
-        # plot a way point every 30 minutes = 1800 seconds
-        td = 1800  # for 1Hz data, for 10Hz data use 18000
-        for long, lati, nr in zip(lon[td::td], lat[td::td], range(len(lat[td::td]))):
-            ax.text(long, lati, nr + 1, fontsize=16, transform=data_proj,
-                    path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
-            ax.plot(long, lati, '.r', markersize=10, transform=data_proj)
-
-        # plot an airplane marker for HALO
-        m = MarkerStyle("$\u2708$")
-        m._transform.rotate_deg(markeroffset)
-        m._transform.rotate_deg(halo_pos[2])
-        ax.plot(halo_pos[0], halo_pos[1], c="k", marker=m, ls="", markersize=28, label="HALO", transform=data_proj)
-
-        # get the coordinates for EDMO/Kiruna and ad a label
-        x_kiruna, y_kiruna = coordinates["Kiruna"]
-        ax.plot(x_kiruna, y_kiruna, 'ok', transform=data_proj)
-        ax.text(x_kiruna - 2, y_kiruna - 0.2, "Kiruna", fontsize=16, transform=data_proj,
-                path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
-        # plot a second airport label if given
-        if airport is not None:
-            x2, y2 = coordinates[airport]
-            ax.plot(x2, y2, 'ok', airport, transform=data_proj)
-            ax.text(x2, y2, airport, fontsize=16, transform=data_proj,
-                    path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
-
-        ax.legend(loc=props["l_loc"])
-        plt.tight_layout(pad=0.1)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": projection})
+
+            if add_seaice:
+                orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
+                reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
+                seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=0)):%Y%m%d}")
+                seaice = seaice.seaice
+                ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=ccrs.PlateCarree(), cmap=reversed_map)
+            else:
+                ax.stock_img()
+
+            ax.coastlines()
+            ax.add_feature(cartopy.feature.BORDERS)
+            ax.set_extent(extent, crs=data_proj)
+            gl = ax.gridlines(crs=data_proj, draw_labels=True, x_inline=False, y_inline=False)
+            gl.bottom_labels = False
+            gl.left_labels = False
+
+            # plot flight track and color by flight altitude
+            points = ax.scatter(lon, lat, color="orange", s=10, transform=data_proj)
+            # add the corresponding colorbar and decide whether to plot it horizontally or vertically
+            # plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
+
+            # plot a way point every 30 minutes = 1800 seconds
+            td = 1800  # for 1Hz data, for 10Hz data use 18000
+            for long, lati, nr in zip(lon[td::td], lat[td::td], range(len(lat[td::td]))):
+                ax.text(long, lati, nr + 1, fontsize=16, transform=data_proj,
+                        path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
+                ax.plot(long, lati, '.r', markersize=10, transform=data_proj)
+
+            # plot an airplane marker for HALO
+            m = MarkerStyle("$\u2708$")
+            m._transform.rotate_deg(markeroffset)
+            m._transform.rotate_deg(halo_pos[2])
+            ax.plot(halo_pos[0], halo_pos[1], c="k", marker=m, ls="", markersize=28, label="HALO", transform=data_proj)
+
+            # get the coordinates for EDMO/Kiruna and ad a label
+            x_kiruna, y_kiruna = coordinates["Kiruna"]
+            ax.plot(x_kiruna, y_kiruna, 'ok', transform=data_proj)
+            ax.text(x_kiruna - 2, y_kiruna - 0.2, "Kiruna", fontsize=16, transform=data_proj,
+                    path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
+            # plot a second airport label if given
+            if airport is not None:
+                x2, y2 = coordinates[airport]
+                ax.plot(x2, y2, 'ok', airport, transform=data_proj)
+                ax.text(x2, y2, airport, fontsize=16, transform=data_proj,
+                        path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
+
+            ax.legend(loc=props["l_loc"])
+            plt.tight_layout(pad=0.1)
             fig_name = f"{outpath}/{flight}_map_{number:04}.png"
             plt.savefig(fig_name, dpi=100)
             log.info(f"Saved {fig_name}")
