@@ -32,14 +32,14 @@ if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.WARNING)
 
-    warnings.filterwarnings("ignore", category=shapely_warning)
+    warnings.simplefilter("ignore", category=shapely_warning)
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220315_HALO_RF05"
+    flight = "HALO-AC3_20220321_HALO_RF08"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-    use_smart_ins = False
+    use_smart_ins = True
     gopro_dir = h.get_path("gopro", campaign=campaign)
     if use_smart_ins:
         horipath = h.get_path("horidata", flight, campaign)
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         ax.coastlines()
         ax.add_feature(cartopy.feature.BORDERS)
         ax.set_extent(extent, crs=data_proj)
-        gl = ax.gridlines(crs=data_proj, draw_labels=True, x_inline=True)
+        gl = ax.gridlines(crs=data_proj, draw_labels=True, x_inline=True, y_inline=True)
         gl.bottom_labels = False
         gl.left_labels = False
 
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
 
     # %% loop through timesteps
-    # halo_pos1 = halo_pos[0]
-    # number = ts_sel.number.values[0]
-    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    halo_pos1 = halo_pos[0]
+    number = ts_sel.number.values[0]
+    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
