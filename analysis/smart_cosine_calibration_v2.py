@@ -39,6 +39,7 @@ if __name__ == "__main__":
     calib_path = h.get_path("calib")
     folder_name = "ASP06_cosine_calibration_v2"
     plot_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction_v2"
+    outfile_path = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction_factors"
     properties = ["Fdw", "Fup"]
     channels = ["VNIR", "SWIR"]
 
@@ -551,4 +552,18 @@ if __name__ == "__main__":
             log.debug(f"Saved {figname}")
             plt.close()
 
-# %% save correction factors to file, one for each spectrometer
+# %% save correction factors to file, one for each inlet
+    out_df = k_cos_dir_df.reset_index(drop=True)
+    # separate inlets
+    VN05_channels, VN11_channels = ["Fdw_VNIR", "Fdw_SWIR"], ["Fup_VNIR", "Fup_SWIR"]
+    VN05 = out_df.loc[out_df["prop"].isin(VN05_channels)]
+    VN11 = out_df.loc[out_df["prop"].isin(VN11_channels)]
+    # split up information in the prop column
+    VN05[["direction", "property"]] = VN05["prop"].str.split("_", expand=True)
+    VN11[["direction", "property"]] = VN11["prop"].str.split("_", expand=True)
+    VN05["channel"] = [cirrus_hl.lookup[prop] for prop in VN05["prop"]]
+    VN11["channel"] = [cirrus_hl.lookup[prop] for prop in VN11["prop"]]
+    # save file like this for further use
+    VN11.to_csv(f"{outfile_path}/HALO_SMART_VN11_cosine_correction_factors.csv", index=False)
+    VN05.to_csv(f"{outfile_path}/HALO_SMART_VN05_cosine_correction_factors.csv", index=False)
+
