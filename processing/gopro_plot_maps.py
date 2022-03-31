@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220320_HALO_RF07"
+    flight = "HALO-AC3_20220329_HALO_RF10"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     use_smart_ins = True
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
 
     # %% loop through timesteps
-    # halo_pos1 = halo_pos[0]
-    # number = ts_sel.number.values[0]
-    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    halo_pos1 = halo_pos[0]
+    number = ts_sel.number.values[0]
+    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
