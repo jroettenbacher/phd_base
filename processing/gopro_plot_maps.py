@@ -44,9 +44,6 @@ if __name__ == "__main__":
         file = [f for f in os.listdir(horipath) if f.endswith(".nc")][0]
         ins = xr.open_dataset(f"{horipath}/{file}")
         lat, lon, time, heading = ins.lat, ins.lon, ins.time, ins.yaw
-        # INS data is not cut to actual flight time, do so here
-        time_sel = (take_offs_landings[flight_key][0] <= time) & (time <= take_offs_landings[flight_key][1])
-        time = time.where(time_sel, drop=True)
         # add marker rotation offset
         markeroffset = 0
 
@@ -120,6 +117,7 @@ if __name__ == "__main__":
         h.make_dir(outpath)
         airport = kwargs["airport"] if "airport" in kwargs else None
         add_seaice = kwargs["add_seaice"] if "add_seaice" in kwargs else True
+        use_smart_ins = kwargs["use_smart_ins"] if "use_smart_ins" in kwargs else True
         font = {'weight': 'bold', 'size': 26}
         matplotlib.rc('font', **font)
 
@@ -153,7 +151,7 @@ if __name__ == "__main__":
             # plt.colorbar(points, ax=ax, pad=0.01, location=props["cb_loc"], label="Height (km)", shrink=props["shrink"])
 
             # plot a way point every 30 minutes = 1800 seconds
-            td = 1800  # for 1Hz data, for 10Hz data use 18000
+            td = 1800 if use_smart_ins else 18000 # for 1Hz data, for 10Hz data use 18000
             for long, lati, nr in zip(lon[td::td], lat[td::td], range(len(lat[td::td]))):
                 ax.text(long, lati, nr + 1, fontsize=16, transform=data_proj,
                         path_effects=[patheffects.withStroke(linewidth=1, foreground="white")])
@@ -187,7 +185,7 @@ if __name__ == "__main__":
 
 
     # %% loop through timesteps
-    halo_pos1 = halo_pos[0]
-    number = ts_sel.number.values[0]
-    plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
-    # Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
+    # halo_pos1 = halo_pos[0]
+    # number = ts_sel.number.values[0]
+    # plot_flight_track(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport)
+    Parallel(n_jobs=cpu_count()-4)(delayed(plot_flight_track)(flight, campaign, lon, lat, extent, halo_pos1, number, airport=airport, use_smart_ins=use_smart_ins) for halo_pos1, number in zip(tqdm(halo_pos), ts_sel.number.values))
