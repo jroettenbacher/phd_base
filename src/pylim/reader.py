@@ -171,6 +171,22 @@ def read_pixel_to_wavelength(path: str, channel: str) -> pd.DataFrame:
 
     return df
 
+def read_stabbi_data(stabbi_path: str) -> pd.DataFrame:
+    """
+    Read in stabilization platform data from SMART.
+
+    Args:
+        stabbi_path: full path to dat file
+
+    Returns: pandas DataFrame with headers and a DateTimeIndex
+
+    """
+    df = pd.read_csv(stabbi_path, skipinitialspace=True, sep="\t")
+    df["PCTIME"] = pd.to_datetime(df["DATE"] + " " + df["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
+    df.set_index("PCTIME", inplace=True)
+
+    return df
+
 
 def read_nav_data(nav_path: str) -> pd.DataFrame:
     """
