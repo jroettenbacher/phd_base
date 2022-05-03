@@ -22,6 +22,7 @@ if __name__ == "__main__":
     import os
     import xarray as xr
     import matplotlib
+    matplotlib.use("TkAgg")
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
     from matplotlib import patheffects
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     from rasterio.plot import show
 
     # %% user input
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight = "HALO-AC3_20220328_HALO_RF09"
     date = flight[9:17]
     flight_key = flight[-4:]
     savefig = False
@@ -64,10 +65,11 @@ if __name__ == "__main__":
 
 # %% create some dictionaries
     default_extent = [-15, 30, 68, 81]
-    default_fs = (4, 4)
+    default_fs = (5, 5)
     plot_props = dict(RF00=dict(extent=[5, 15, 47, 56], figsize=(5, 5), shrink=0.94, projection=ccrs.PlateCarree()),
                       RF01=dict(extent=[5, 15, 47, 70], figsize=default_fs, shrink=1),
-                      RF02=dict(extent=[-15, 30, 68, 85], figsize=(5, 5), shrink=0.79))
+                      RF02=dict(extent=[-15, 30, 68, 85], figsize=(5, 5), shrink=0.79),
+                      RF09=dict())
 
     coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.336, 67.821), Bergen=(5.218, 60.293),
                        Torshavn=(-6.76, 62.01), Muenchen_Oberschleissheim=(11.55, 48.25), Longyearbyen=(15.46, 78.25),
@@ -247,14 +249,15 @@ if __name__ == "__main__":
     # set plot properties
     props = plot_props[flight_key]
     projection = props["projection"] if "projection" in props else ccrs.NorthPolarStereo()
-    extent = props["extent"]
+    extent = props["extent"] if "extent" in props else default_extent
+    figsize = props["figsize"] if "figsize" in props else default_fs
     # set plotting options
     plt.rcdefaults()
     font = {'size': 8}
     matplotlib.rc('font', **font)
 
     # start plotting
-    fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": projection})
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": projection})
 
     # add general map features
     ax.stock_img()
@@ -372,7 +375,7 @@ if __name__ == "__main__":
     #     # print(f"Saved {fig_name}")
     #     plt.close()
 
-    # %% plot bahamas movement quicklook
+# %% plot bahamas movement quicklook
     plt.rcdefaults()
     cb_colors = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
     x = bahamas.time
@@ -422,7 +425,7 @@ if __name__ == "__main__":
         print(f"Saved {fig_name}")
     else:
         plt.show()
-    plt.close()
+    # plt.close()
 
 # %% calculate flight level
     flv = pressure2flightlevel(bahamas.PS.values * units.hPa)

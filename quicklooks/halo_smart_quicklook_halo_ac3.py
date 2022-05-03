@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 campaign = "halo-ac3"
-flight = "HALO-AC3_FD00_HALO_RF01_20220225"
+flight = "HALO-AC3_20220411"
 flight_key = flight[19:] if campaign == "halo-ac3" else flight
 halo_smart_path = h.get_path("calibrated", flight, campaign)
 halo_smart_file = [f for f in os.listdir(halo_smart_path) if f.endswith(".nc")][0]

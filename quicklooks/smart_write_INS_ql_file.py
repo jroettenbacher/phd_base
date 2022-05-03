@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220316_HALO_RF06"
+    flight = "HALO-AC3_20220412_HALO_RF18"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17]
     # get flight start and end
@@ -39,6 +39,10 @@ if __name__ == "__main__":
     gps_filepaths = [f"{hori_path}/{f}" for f in gps_files]
     vel_files = [f for f in hori_files if "Nav_GPSVel" in f]
     vel_filepaths = [f"{hori_path}/{f}" for f in vel_files]
+    # bahamas path for RF18
+    # bahamas_path = h.get_path("bahamas", flight, campaign)
+    # bahamas_file = os.path.join(bahamas_path, [f for f in os.listdir(bahamas_path) if "nc" in f][0])
+    # bahamas = reader.read_bahamas(bahamas_file)
 
     # %% read in IMS and GPS data
     ims = pd.concat([reader.read_nav_data(f) for f in nav_filepaths])
@@ -49,6 +53,7 @@ if __name__ == "__main__":
     ims_1Hz = ims.resample("1s").asfreq()  # create a dataframe with a 1Hz index
     # reindex original dataframe and use the nearest values for the full seconds
     ims = ims.reindex_like(ims_1Hz, method="nearest")
+    # bahamas = bahamas.reindex_like(ims_1Hz.to_xarray(), method="nearest")
 
     # %% merge dataframes
     df = ims.merge(gps, how="inner", on="time")
@@ -56,9 +61,12 @@ if __name__ == "__main__":
 
     # %% select only relevant columns
     df = df.loc[:, ["seconds_y", "roll", "pitch", "yaw", "lat", "lon", "alt", "v_east", "v_north", "v_up"]]
+    # bahamas = bahamas[["IRS_PHI", "IRS_THE", "IRS_HDG", "IRS_LAT", "IRS_LON", "H", "IRS_EWV", "IRS_NSV", "IRS_VV", "IRS_GS"]]
 
     # %% rename columns
     df = df.rename(columns=dict(seconds_y="seconds"))
+    # bahamas = bahamas.rename(dict(IRS_PHI="roll", IRS_THE="pitch", IRS_HDG="yaw", IRS_LAT="lat", IRS_LON="lon",
+    #                               H="alt", IRS_EWV="v_east", IRS_NSV="v_north", IRS_VV="v_up", IRS_GS="vel"))
 
     # %% IMS pitch is opposite to BAHAMAS pitch, switch signs so that they follow the same convention
     df["pitch"] = -df["pitch"]
@@ -67,8 +75,11 @@ if __name__ == "__main__":
     df["vel"] = np.sqrt(df["v_east"]**2 + df["v_north"]**2)
 
     # %% calculate solar zenith and azimuth angle
+    # df = bahamas
+    # dezimal_hours = (df.time.dt.hour + df.time.dt.minute / 60 + df.time.dt.second / 60 / 60).values
     dezimal_hours = df["seconds"] / 60 / 60
     year, month, day = df.index.year.values, df.index.month.values, df.index.day.values
+    # year, month, day = df.time.dt.year.values, df.time.dt.month.values, df.time.dt.day.values  # bahamas
     sza = list()
     saa = list()
     for i in tqdm(range(len(year))):
@@ -142,13 +153,16 @@ if __name__ == "__main__":
     )
 
     global_attrs = dict(
-        title="Raw attitude angles and GPS position data from the HALO-SMART IMS system",
+        # title="Raw attitude angles and GPS position data from the HALO-SMART IMS system",
+        title="BAHAMAS Quicklook data resampled to 1Hz",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
-        instrument_id="SMART",
+        instrument_id="BAHAMAS",
         version_id="quicklook",
-        description="1Hz data from the HALO-SMART IMS system prepared for quicklook creation",
+        description="1Hz data from the BAHAMAS system prepared for quicklook creation",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
+        institute="Flight Facility DLR Oberpfaffenhofen",
+        contact_DLR="A. Giez, M. Zoeger, Ch. Mallaun, V. Nenakhov; email: andreas.giez@dlr.de",
         history=f"created {datetime.strftime(datetime.utcnow(), '%c UTC')}",
         contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
         PI="André Ehrlich, a.ehrlich@uni-leipzig.de"

@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
 # %% set user variables
     campaign = "halo-ac3"
-    date = "20220316"
-    flight = f"HALO-AC3_{date}_HALO_RF06"
+    date = "20220412"
+    flight = f"HALO-AC3_{date}_HALO_RF18"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
 
 # %% get paths and read in files
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     )
 
     global_attrs = dict(
-        title="Preliminary spectral downward irradiance measured by HALO-SMART",
+        title="Preliminary spectral downward irradiance measured by SMART",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
         instrument_id="SMART",

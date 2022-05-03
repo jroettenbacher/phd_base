@@ -20,8 +20,8 @@ import cartopy.crs as ccrs
 
 # %% user input
 campaign = "halo-ac3"
-date = "20220316"
-flight = f"HALO-AC3_{date}_HALO_RF06"
+date = "20220412"
+flight = f"HALO-AC3_{date}_HALO_RF18"
 flight_key = flight[-4:] if campaign == "halo-ac3" else flight
 add_satellite = False  # needs to provide a satellite image which has to be manually downloaded
 add_seaice = True
@@ -37,7 +37,20 @@ plot_props = dict(RF00=dict(figsize=(4, 4)),
                   RF03=dict(extent=[-15, 30, 68, 90], figsize=(4.8, 5.5)),
                   RF04=dict(extent=[-15, 30, 68, 90], figsize=(4.8, 5.5)),
                   RF05=dict(figsize=(5.5, 4)),
-                  RF06=dict(extent=[-15, 30, 68, 85]))
+                  RF06=dict(extent=[-15, 30, 68, 85]),
+                  RF07=dict(extent=[-15, 30, 68, 82], figsize=(5.5, 4.8)),
+                  RF08=dict(figsize=(5.5, 4.6)),
+                  RF09=dict(figsize=(5.5, 4.5)),
+                  RF10=dict(figsize=(5.2, 5.5), extent=[-15, 30, 68, 86]),
+                  RF11=dict(figsize=(5.5, 4.5)),
+                  RF12=dict(figsize=(5.5, 4.5)),
+                  RF13=dict(figsize=(4.9, 5.5), extent=[-15, 30, 68, 87.5]),
+                  RF14=dict(figsize=(4.7, 5.5), extent=[-15, 30, 68, 88]),
+                  RF15=dict(figsize=(5.5, 4.5)),
+                  RF16=dict(figsize=(5.5, 4.5)),
+                  RF17=dict(figsize=(4.7, 5.5), extent=[-15, 30, 68, 90]),
+                  RF18=dict(figsize=(4.5, 5.5), extent=[-15, 30, 68, 90]))
+
 x_kiruna, y_kiruna = coordinates["Kiruna"]
 x_longyear, y_longyear = coordinates["Longyearbyen"]
 
@@ -59,13 +72,14 @@ if add_dropsondes:
     for i in range(len(dropsonde_files)):
         dropsondes[f"{i}"] = xr.open_dataset(dropsonde_files[i])
     launch_times = [pd.to_datetime(dropsondes[var].time[-1].values) for var in dropsondes]
-    longitudes = [dropsondes[var].lon.min(skipna=True).values for var in dropsondes]
-    latitudes = [dropsondes[var].lat.min(skipna=True).values for var in dropsondes]
+    longitudes = [dropsondes[var].lon[-5:].mean(skipna=True).values for var in dropsondes]
+    latitudes = [dropsondes[var].lat[-5:].mean(skipna=True).values for var in dropsondes]
     dropsonde_df = pd.DataFrame({"launch_time": launch_times, "lon": longitudes, "lat": latitudes})
 
-    # quickgrid dropsonde file
-    gridded_dropsondes = [f for f in os.listdir(f"{dropsonde_path}/..") if f.endswith("nc")][0]
-    dropsondes_ds = xr.open_dataset(f"{dropsonde_path}/../{gridded_dropsondes}")
+    if use_gridded_dropsondes:
+        # quickgrid dropsonde file
+        gridded_dropsondes = [f for f in os.listdir(f"{dropsonde_path}/..") if f.endswith("nc")][0]
+        dropsondes_ds = xr.open_dataset(f"{dropsonde_path}/../{gridded_dropsondes}")
 
 ins = xr.open_dataset(f"{horipath}/{infile}")
 
@@ -122,17 +136,20 @@ if add_dropsondes:
     if not use_gridded_dropsondes:
         for i in range(dropsonde_df.shape[0]):
             df = dropsonde_df.iloc[i]
-            ax.annotate(f"{df['launch_time']:%H:%M}", (df.lon, df.lat), fontsize=8, transform=data_crs)
             ax.text(df.lon, df.lat, f"{df['launch_time']:%H:%M}", c="white", fontsize=10, transform=data_crs,
                     path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
+            # ax.text(df.lon, df.lat, f"{i+1:02d}", c="white", fontsize=8, transform=data_crs,
+            #         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])  # RF09, RF11, RF12, RF14
             ax.plot(df.lon, df.lat, "x", color="red", markersize=8, label="Dropsonde", transform=data_crs)
     else:
         for i in range(dropsondes_ds.lon.shape[0]):
             launch_time = pd.to_datetime(dropsondes_ds.launch_time[i].values)
             x, y = dropsondes_ds.lon[i].mean().values, dropsondes_ds.lat[i].mean().values
             ax.plot(x, y, "x", color="red", markersize=8, label="Dropsonde", transform=data_crs)
-            ax.text(x, y, f"{launch_time:%H:%M}", c="white", fontsize=10, transform=data_crs,
-                    path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
+            ax.text(x, y, f"{i+1:02d}", c="white", fontsize=8, transform=data_crs,
+                    path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])  # RF09, RF11, RF12, RF14, RF18
+            # ax.text(x, y, f"{launch_time:%H:%M}", c="white", fontsize=10, transform=data_crs,
+            #         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend([handles[0]], [labels[0]], loc=l_loc)
@@ -174,11 +191,12 @@ ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transfo
 # write the flight duration in the lower left corner of the map
 ax.text(0, 0.01, f"Duration: {str(flight_duration)[:4]} (hr:min)", transform=ax.transAxes, fontsize=11, color="white",
         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
-plt.tight_layout(pad=0.3)
+plt.tight_layout(pad=0.1)
 fig_name = f"{ql_path}/HALO-AC3_HALO_SMART_INS-track_{date}_{flight_key}.png"
 if savefig:
-    plt.savefig(fig_name, dpi=100)
+    plt.savefig(fig_name, dpi=300)
     print(f"Saved {fig_name}")
 else:
+    # pass
     plt.show()
-plt.close()
+# plt.close()

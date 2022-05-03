@@ -12,11 +12,15 @@ from holoviews import opts
 hv.extension('bokeh')
 
 # %% Define flight and paths
-date = "20220316"
-flight_key = "RF06"
-flight = f"HALO-AC3_{date}_HALO_{flight_key}"
-path = h.get_path('horidata', flight, campaign="halo-ac3")
-ql_path = h.get_path("quicklooks", flight, campaign="halo-ac3")
+campaign = "cirrus-hl"
+date = "20210625a"
+flight_key = "RF18"
+if campaign == "halo-ac3":
+    flight = f"HALO-AC3_{date}_HALO_{flight_key}"
+else:
+    flight = f"Flight_{date}"  # Cirrus-HL
+path = h.get_path('horidata', flight, campaign)
+ql_path = h.get_path("quicklooks", flight, campaign)
 h.make_dir(ql_path)
 output_format = "html"  # png or html, html gives an interactive plot
 
@@ -44,7 +48,7 @@ output_format = "html"  # png or html, html gives an interactive plot
 
 # %% Holoviews Dashboard of NavCommand quicklook
 
-horipath = h.get_path("horidata", flight, campaign="halo-ac3")
+horipath = h.get_path("horidata", flight, campaign)
 nav_files = [f for f in os.listdir(horipath) if "Nav_IMS" in f]
 nav_paths = [os.path.join(horipath, f) for f in nav_files]
 nav_data = pd.concat([reader.read_nav_data(f) for f in nav_paths])
@@ -75,7 +79,7 @@ print(f"Saved {figname}")
 
 # %% Holoviews Dashboard of Stabilization Platform data
 
-horipath = h.get_path("horidata", flight, campaign="halo-ac3")
+horipath = h.get_path("horidata", flight, campaign)
 hori_files = [f for f in os.listdir(horipath) if f.endswith("dat")]
 horidata = pd.concat([pd.read_csv(f"{horipath}/{f}", skipinitialspace=True, sep="\t") for f in hori_files])
 horidata["PCTIME"] = pd.to_datetime(horidata["DATE"] + " " + horidata["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
