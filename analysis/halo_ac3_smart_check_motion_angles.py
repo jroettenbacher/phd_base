@@ -18,13 +18,16 @@ hv.extension('bokeh')
 
 # %% set paths
 campaign = "halo-ac3"
-flight = "HALO-AC3_20220225_HALO_RF00"
+date = "20220316"
+flight_key = "RF06"
+flight = f"HALO-AC3_{date}_HALO_{flight_key}"
 output_format = "html"  # png or html, html gives an interactive plot
 plot_path = f"{h.get_path('plot', flight, campaign)}/{flight}"
+h.make_dir(plot_path)
 horipath = h.get_path("horidata", flight, campaign)
-horifile = [f for f in os.listdir(horipath) if "IMS0000" in f][0]
+horifile = [f for f in os.listdir(horipath) if "IMS00" in f][0]
 bahamas_path = h.get_path("bahamas", flight, campaign)
-bahamas_file = [f for f in os.listdir(bahamas_path) if f.endswith("nc") and "QL" in f][0]
+bahamas_file = f"QL_HALO-AC3_HALO_BAHAMAS_{date}_{flight_key}_v1.nc"
 
 # %% read in files
 ims = reader.read_nav_data(f"{horipath}/{horifile}")
@@ -66,7 +69,7 @@ roll_dim = hv.Dimension("roll", label="Roll Difference", unit="deg")
 pitch_dim = hv.Dimension("pitch", label="Pitch Difference", unit="deg")
 
 # %% create layout
-ts = pd.Timestamp(2022, 2, 25, 8)  # timestamp for text location
+ts = bahamas_df.time[100]  # timestamp for text location
 layout = hv.Curve(nav_data, time, roll, label="IMU") * hv.Curve(bahamas_df, time, phi, label="BAHAMAS") + \
          hv.Curve(roll_diff, time, roll_dim, label="IMU - BAHAMAS") * hv.Text(ts, 0.7, roll_stats) +\
          hv.Curve(nav_data, time, pitch, label="IMU") * hv.Curve(bahamas_df, time, the, label="BAHAMAS") +\

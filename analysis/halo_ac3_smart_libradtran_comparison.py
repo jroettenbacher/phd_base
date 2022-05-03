@@ -30,7 +30,7 @@ h.make_dir(plot_path)
 # get files
 swir_file = [f for f in os.listdir(smart_path) if "SWIR" in f and f.endswith("nc")][0]
 vnir_file = [f for f in os.listdir(smart_path) if "VNIR" in f and f.endswith("nc")][0]
-libradtran_file = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_{date}_{flight_key}.nc"
+libradtran_file = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_wl500-600_{date}_{flight_key}.nc"
 horifile = [f for f in os.listdir(horipath) if f.endswith("nc")][0]
 stabbi_file = [f for f in os.listdir(horipath) if f.endswith("dat")][0]
 
@@ -83,7 +83,7 @@ for ax in axs:
 
 plt.tight_layout()
 # plt.show()
-figname = f"{plot_path}/HALO-AC3_HALO_SMART_integrated_libRadtran_timeseries_{date}_{flight_key}.png"
+figname = f"{plot_path}/HALO-AC3_HALO_SMART_wl500-600_libRadtran_timeseries_{date}_{flight_key}.png"
 plt.savefig(figname, dpi=100)
 log.info(f"Saved {figname}")
 plt.close()
