@@ -59,9 +59,12 @@ The first row of the file (2021_07_11_14_19.Fup_SWIR.dat) is deleted as its time
 Looking at the plot after that first correction was made still shows some weird behaviour.
 At first the counts decrease during the dark current measurement, then they jump up to a plateau where they increase slightly for a few measurements and then jump down again and slowly decrease until stable conditions are reached roughly at the minute mark (14:20 UTC).
 Some wavelengths even decrease back to the level of the dark current measurement, hinting at the possibility that the shutter was not working perfectly.
+
 Looking at the corresponding dark current measurement file shows, that the dark current dropped significantly after the first couple of measurements.
-Thus, to correct the transfer calibration measurement of Fup SWIR only the dark current measurements **before** that drop at 14:21:03.78 UTC are used to calculate the mean dark current and then correct the measurement by that.
-The corresponding rows are deleted in the dark current measurement file.
+Thus, to correct the transfer calibration measurement of Fup SWIR only the dark current measurements **before** the drop in counts at 14:21:03.78 UTC are used to calculate the mean dark current and then correct the calibration measurement by that.
+The corresponding rows are deleted in the dark current measurement file (everything before 14:21:03.78).
+
+After the dark current correction the rows exhibiting the described weird behaviour are then deleted (everything before before 14:19:50.6).
 
 *author*: Johannes Röttenbacher
 """
@@ -148,11 +151,21 @@ if __name__ == "__main__":
                     except ValueError:
                         pass
 
-# %% cut out the gradual increase in counts in
+# %% cut out the gradual increase in counts in the dark current corrected file from 29. June 202
     folder = "ASP06_transfer_calib_20210629/Tint_300ms"
     file = "2021_06_29_04_36.Fup_SWIR_cor.dat"
     df = reader.read_smart_cor(f"{calib_path}/{folder}", file)
     cut_time = pd.to_datetime("2021-06-29T04:36:18.54")
+    df = df[df.index >= cut_time]
+    # save the modified data frame
+    df.to_csv(f"{calib_path}/{folder}/{file}", sep="\t")
+    log.info(f"Saved {calib_path}/{folder}/{file}")
+
+# %% cut out the weird behaviour in the dark current corrected file from 11. July 2021
+    folder = "ASP06_transfer_calib_20210711/Tint_300ms"
+    file = "2021_07_11_14_19.Fup_SWIR_cor.dat"
+    df = reader.read_smart_cor(f"{calib_path}/{folder}", file)
+    cut_time = pd.to_datetime("2021-07-11T14:19:50.6")
     df = df[df.index >= cut_time]
     # save the modified data frame
     df.to_csv(f"{calib_path}/{folder}/{file}", sep="\t")

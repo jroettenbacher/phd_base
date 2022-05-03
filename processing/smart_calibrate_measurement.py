@@ -19,8 +19,8 @@ if __name__ == "__main__":
 
     # %% set user given parameters
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD_00_HALO_Flight_01_20220225"  # set flight folder
-    flight_key = flight[20:] if campaign == "halo-ac3" else flight
+    flight = "HALO-AC3_20220412_HALO_RF18"  # set flight folder
+    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     t_int_asp06 = 300  # give integration time of field measurement for ASP06
     t_int_asp07 = 300  # give integration time of field measurement for ASP07
     normalize = True  # normalize counts with integration time

@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # %% set variables
     campaign = "halo-ac3"
-    field_folder = "ASP06_transfer_calib_20220222"  # transfer calib folder
+    field_folder = "ASP06_transfer_calib_20220411"  # transfer calib folder
     lab_cali_date = "2021_11_23"  # set lab calib to relate measurement to
     calib_path = h.get_path("calib", campaign=campaign)
     plot_path = f"{h.get_path('plot', campaign=campaign)}/transfer_calibs"

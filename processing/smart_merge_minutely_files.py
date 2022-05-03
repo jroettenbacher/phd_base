@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # combine minutely files to one file
     # User input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD_00_HALO_Flight_01_20220225"  # set flight folder
+    flight = "HALO-AC3_20220412_HALO_RF18"  # set flight folder
     data_path = h.get_path("data", flight=flight, campaign=campaign)  # dark current corrected files
     directory = data_path
 

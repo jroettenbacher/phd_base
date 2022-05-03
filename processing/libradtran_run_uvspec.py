@@ -140,7 +140,7 @@ if __name__ == "__main__":
         history=f"created {dt.datetime.utcnow():%c} UTC",
         contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
         PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
-        source='libRadtran 2.0.3',
+        source='libRadtran 2.0.4',
         references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
     )
 

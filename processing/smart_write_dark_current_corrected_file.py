@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
     # User input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD_00_HALO_Flight_01_20220225"  # which flight do the files in raw belong to?
-    flight_key = flight[20:] if campaign == "halo-ac3" else flight
+    flight = "HALO-AC3_20220412_HALO_RF18"  # which flight do the files in raw belong to?
+    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
     transfer_cali_date = transfer_calibs[flight_key]
 

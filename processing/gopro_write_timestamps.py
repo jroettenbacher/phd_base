@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220225_HALO_RF00"
+    flight = "HALO-AC3_20220412_HALO_RF18"
     date = flight[9:17]
     path = f"{h.get_path('gopro', campaign=campaign)}/{flight}"
     # file = f"{path}/{date}_Gopro_0001.jpg"
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     with open(f"{path}/../{flight}_timestamps.txt", "r") as ts:
         for line in ts.readlines():
             if line.startswith("="):
-                pic_num.append(re.findall(r"2022\d{4}_Gopro_(?P<number>\d{4}).JPG", line)[0])
+                pic_num.append(re.findall(r".*_Gopro_.*(?P<number>\d{4}).JPG", line)[0])
             elif line.startswith("Date"):
                 timestamps.append(re.findall(r"2022:\d{2}:\d{2} \d{2}:\d{2}:\d{2}", line)[0])
             else:

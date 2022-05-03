@@ -9,9 +9,9 @@ import os
 import shutil
 from tqdm import tqdm
 
-date = "20220312"
-src = "F:/DCIM"
-dst_dir = f"E:/HALO-AC3_raw_only/04_GoPro/{date}"
+date = "20220412"
+src = "D:/DCIM"
+dst_dir = f"F:/HALO-AC3_raw_only/04_GoPro/{date}"
 h.make_dir(dst_dir)
 for src_dir, names, files in os.walk(src):
     for file in tqdm(files, desc=src_dir):

@@ -10,8 +10,7 @@ Option 2 might result in a huge file but would be easier to distribute.
 With option 1 one could still merge all single files quite easily with xarray.
 Go with option 1 for now.
 
-The netCDF file could be writen as a standard output from smart_calibrate_measurement.py or as a separate step in this
- script. Start with this script and write a function that can then be used in the calibration script.
+The netCDF file could be writen as a standard output from smart_calibrate_measurement.py or as a separate step in this script. Start with this script and write a function that can then be used in the calibration script.
 
 author: Johannes Röttenbacher
 """
@@ -20,7 +19,7 @@ if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     from pylim import reader, smart
-    from pylim.halo_ac3 import smart_lookup
+    from pylim.halo_ac3 import smart_lookup, take_offs_landings
     import os
     import pandas as pd
     from datetime import datetime
@@ -33,9 +32,12 @@ if __name__ == "__main__":
 
     # %% set user variables
     campaign = "halo-ac3"
-    flight = "HALO-AC3_FD00_HALO_RF01_20220225"
-    flight_str = flight[9:] if campaign == "halo-ac3" else flight
-    prop_channel = "Fdw_SWIR"
+    date = "20220412"
+    flight_key = "RF18"
+    flight = f"HALO-AC3_{date}_HALO_{flight_key}"
+    prop_channel = "Fdw_VNIR"
+    # prop_channel = "Fdw_SWIR"
+    to, td = take_offs_landings[flight_key]
 
     # %% get paths and read in files
     smart_dir = h.get_path("calibrated", flight=flight, campaign=campaign)
@@ -79,12 +81,12 @@ if __name__ == "__main__":
     }
 
     global_attrs = dict(
-        title="Spectral downward irradiance measured by HALO-SMART",
+        title="Spectral downward irradiance measured by SMART",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
-        instrument_id="HALO-SMART",
+        instrument_id="SMART",
         version_id="0.1",
-        description="Calibrated HALO-SMART measurements corrected for dark current",
+        description="Calibrated SMART measurements corrected for dark current",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
         history=f"created {datetime.strftime(datetime.utcnow(), '%c UTC')}",
         contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
@@ -102,10 +104,12 @@ if __name__ == "__main__":
         ds[var].attrs = var_attrs[var]
 
     ds.attrs = global_attrs
+    # cut data to flight times
+    ds = ds.sel(time=slice(to, td))
 
     # %% create ncfile
     date_str, prop, direction = smart.get_info_from_filename(smart_file)
-    outfile = f"HALO-SMART_{direction}_{prop}_{flight_str}.nc"
+    outfile = f"HALO-AC3_HALO_SMART_{direction}_{prop}_{date}_{flight_key}.nc"
     outpath = os.path.join(smart_dir, outfile)
     ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
     log.info(f"Saved {outpath}")

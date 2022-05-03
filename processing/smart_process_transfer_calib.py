@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # %% User input
     campaign = "halo-ac3"
-    folder = "ASP06_transfer_calib_20220222"
+    folder = "ASP06_transfer_calib_20220411"
     date = folder[-8:]  # extract date from transfer calib folder
 
     # Set paths in config.toml

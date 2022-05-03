@@ -6,7 +6,7 @@
 if __name__ == "__main__":
 # %% module import
     from pylim import reader
-    from pylim.cirrus_hl import lookup, transfer_calibs
+    from pylim.halo_ac3 import smart_lookup, transfer_calibs
     from pylim.smart import plot_smart_data
     import pylim.helpers as h
     import os
@@ -23,9 +23,11 @@ if __name__ == "__main__":
     campaign = "halo-ac3"
     calib_path = h.get_path("calib", campaign=campaign)
     plot_path = f"{h.get_path('plot', campaign=campaign)}/quality_check_calibration"
+    if campaign == "halo-ac3":
+        lookup = smart_lookup
 
 # %% list all files from one spectrometer
-    prop = "Fdw_VNIR"
+    prop = "Fdw_SWIR"
     files = [f for f in os.listdir(calib_path) if lookup[prop] in f]
 
 # %% select only normalized and transfer calib files
