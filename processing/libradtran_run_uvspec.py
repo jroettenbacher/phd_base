@@ -24,9 +24,10 @@ if __name__ == "__main__":
     flight = "HALO-AC3_20220312_HALO_RF02"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17]
+    wavelength = "smart"  # will be used as directory name and in outfile name (e.g. smart, bacardi, 500-600nm, ...)
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight, campaign)
-    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "smart")  # file where to find input files
+    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", wavelength)  # file where to find input files
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
                    if f.endswith(".inp")]
     input_files.sort()  # sort input files -> output files will be sorted as well
@@ -153,6 +154,6 @@ if __name__ == "__main__":
     for var in ds:
         ds[var].attrs = var_attrs[var]
     # save file
-    nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_clearsky_simulation_smart_{date}_{flight_key}.nc"
+    nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_clearsky_simulation_{wavelength}_{date}_{flight_key}.nc"
     ds.to_netcdf(nc_filepath, encoding=encoding)
     log.info(f"Saved {nc_filepath}")
