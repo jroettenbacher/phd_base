@@ -44,7 +44,7 @@ plot_props = dict(Flight_20210624a=dict(figsize=(9.5, 9), cb_loc="left", shrink=
                   Flight_20210728a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1),
                   Flight_20210729a=dict(figsize=(9, 9), cb_loc="bottom", shrink=1, l_loc=1),
                   RF00=dict(figsize=(9, 7), cb_loc="bottom", shrink=1, l_loc=1),
-                  RF01=dict(),
+                  RF01=dict(figsize=(6.2, 9), cb_loc="bottom", shrink=1, l_loc=2),
                   RF02=dict(figsize=(6.2, 9), cb_loc="bottom", shrink=1, l_loc=2),
                   RF03=dict(figsize=(6.2, 9), cb_loc="bottom", shrink=1, l_loc=3),
                   RF04=dict(figsize=(6.2, 7.9), cb_loc="bottom", shrink=1, l_loc=3),

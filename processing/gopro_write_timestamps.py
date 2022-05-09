@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220412_HALO_RF18"
+    flight = "HALO-AC3_20220311_HALO_RF01"
     date = flight[9:17]
     path = f"{h.get_path('gopro', campaign=campaign)}/{flight}"
     # file = f"{path}/{date}_Gopro_0001.jpg"

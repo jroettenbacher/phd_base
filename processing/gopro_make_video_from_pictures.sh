@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # create a stop motion video from GoPro time laps pictures
-flight="HALO-AC3_20220407_HALO_RF14"
+flight="HALO-AC3_20220311_HALO_RF01"
 # extract date and flight key
 date=${flight:9:8}
 key=${flight:23:6}
@@ -15,7 +15,7 @@ outfile="HALO-AC3_HALO_Gopro_video_fast_${date}_${key}.mp4"  # change name accor
 outpath="${base_dir}/${outfile}"
 #outpath="${inpath}/../${outfile}"
 framerate="24"
-start_number="312"
+start_number="398"
 ffmpeg -framerate ${framerate} -f image2 \
   -start_number ${start_number} \
   -i ${inpath}/HALO-AC3_HALO_Gopro_${date}_${key}_%04d.JPG \

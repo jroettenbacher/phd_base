@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220410_HALO_RF16"
+    flight = "HALO-AC3_20220412_HALO_RF18"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     gopro_dir = f"{h.get_path('gopro', campaign=campaign)}"
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     logo = "/mnt/c/Users/Johannes/Pictures/logos/AC3-Logo-komplett_small.png"
     map_numbers = pd.read_csv(f"{gopro_dir}/{flight}_timestamps_sel.csv", index_col="datetime", parse_dates=True)
     f1, f2 = map_numbers.number.iloc[0], map_numbers.number.iloc[-1]
-    files = [os.path.join(gopro_path, f) for f in os.listdir(gopro_path) if f.endswith(".JPG")][515:f2-1]
+    files = [os.path.join(gopro_path, f) for f in os.listdir(gopro_path) if f.endswith(".JPG")][f1:f2-1]
     outpath = f"{gopro_dir}/{flight}_map"
     h.make_dir(outpath)
     processes = set()
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     for picture, map in zip(tqdm(files, desc="Add Map"), maps):
         outfile = picture.replace(gopro_path, outpath)
         processes.add(Popen(['convert', picture,
-                             map, '-geometry', '+3100+0',
+                             map, '-geometry', '+3300+0',
                              '-composite', outfile]))
         if len(processes) >= max_processes:
             os.wait()

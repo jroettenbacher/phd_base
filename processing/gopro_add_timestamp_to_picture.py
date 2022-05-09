@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # user input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220411_HALO_RF17"
+    flight = "HALO-AC3_20220311_HALO_RF01"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17]
     correct_time = True

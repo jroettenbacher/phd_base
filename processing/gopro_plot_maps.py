@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220410_HALO_RF16"
+    flight = "HALO-AC3_20220311_HALO_RF01"
     date = flight[9:17]
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     use_smart_ins = False
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         heading = -heading  # positive values turn marker to the left, negative to the right
 
     # select second airport for map
-    airport = "Longyearbyen"
+    airport = "EDMO"
 
     # %% find map extend
     pad = 1
@@ -125,6 +125,7 @@ if __name__ == "__main__":
         props = plot_props[flight_key]
         data_proj = ccrs.PlateCarree()
         projection = ccrs.NorthPolarStereo() if campaign == "halo-ac3" else data_proj
+        projection = data_proj
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             fig, ax = plt.subplots(figsize=props["figsize"], subplot_kw={"projection": projection})
