@@ -42,10 +42,20 @@ end_dt = pd.Timestamp(2021, 6, 29, 12, 10)
 # %% read in data
 fdw_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
 fdw_swir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_SWIR_2021_06_29.nc")
+fup_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fup_VNIR_2021_06_29.nc")
+fup_swir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fup_SWIR_2021_06_29.nc")
 # filter VNIR data
 fdw_vnir = fdw_vnir.sel(wavelength=slice(420, 950))
+fup_vnir = fup_vnir.sel(wavelength=slice(420, 950))
+wavelengths_to_drop = fup_vnir.wavelength[fup_vnir.wavelength > 850]
+# filter swir data
+# fup_swir = fup_swir.sel(wavelength=slice(950, 2200))
 # merge VNIR and SWIR channel
 smart_fdw = xr.merge([fdw_vnir.Fdw, fdw_swir.Fdw])
+smart_fup = xr.merge([fup_vnir.Fup, fup_swir.Fup])
+mask = smart_fup.wavelength.isin(wavelengths_to_drop)
+smart_fup = smart_fup.where(~mask, np.nan)
+# smart_fup = xr.combine_by_coords([fup_vnir.Fup, fup_swir.Fup])
 
 bahamas = reader.read_bahamas(f"{bahamas_dir}/CIRRUSHL_F05_20210629a_ADLR_BAHAMAS_v1.nc")
 
@@ -53,6 +63,7 @@ sat_ds = rasterio.open(sat_image)
 
 # %% select only relevant times
 smart_fdw = smart_fdw.sel(time=slice(start_dt, end_dt))
+smart_fup = smart_fup.sel(time=slice(start_dt, end_dt))
 bahamas_sel = bahamas.sel(time=slice(start_dt, end_dt))
 
 # %% define staircase sections according to flight levels
@@ -105,9 +116,10 @@ ax.legend()
 plt.savefig(f"{plot_path}/{campaign.swapcase()}_BAHAMAS_altitude_staircase_{flight}.png", dpi=300)
 plt.close()
 
-# altitude.sel(time=start_dts).values - altitude.sel(time=end_dts).values  # differences between start and end of section
+# %% check altitude differences between start and end of sections
+altitude.sel(time=start_dts).values - altitude.sel(time=end_dts).values  # differences between start and end of section
 
-# %% select SMART data according to altitude and take averages over height
+# %% select SMART Fdw data according to altitude and take averages over height
 sections = dict()
 for i, (st, et) in enumerate(zip(start_dts, end_dts)):
     sections[f"mean_spectra_{i}"] = smart_fdw.sel(time=slice(st, et)).mean(dim="time")
@@ -116,7 +128,8 @@ h.set_cb_friendly_colors()
 labels = ["Section 1 (FL260, 8.3$\,$km)", "Section 2 (FL280, 8.7$\,$km)", "Section 3 (FL300, 9.3$\,$km)",
           "Section 4 (FL320, 10$\,$km)", "Section 5 (FL340, 10.6$\,$km)", "Section 6 (FL360, 11.2$\,$km)",
           "Section 7 (FL390, 12.2$\,$km)"]
-fig, ax = plt.subplots()
+cm = 1 / 2.54
+fig, ax = plt.subplots(figsize=(15*cm, 8*cm))
 for section, label in zip(sections, labels):
     fdw = sections[section].Fdw
     fdw.plot(ax=ax, label=label)
@@ -129,14 +142,45 @@ ax.set_ylim(0, 1.35)
 ax.set_xlabel("Wavelength (nm)")
 ax.set_ylabel("Downward Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
 ax.grid()
+plt.tight_layout()
 # plt.show()
-plt.savefig(f"{plot_path}/{campaign.swapcase()}_SMART_staircase_spectra_{flight}.png", dpi=300)
+plt.savefig(f"{plot_path}/{campaign.swapcase()}_SMART_Fdw_staircase_spectra_{flight}.png", dpi=300)
+plt.close()
+
+# %% select SMART Fup data according to altitude and take averages over height
+sections = dict()
+for i, (st, et) in enumerate(zip(start_dts, end_dts)):
+    sections[f"mean_spectra_{i}"] = smart_fup.sel(time=slice(st, et)).mean(dim="time")
+
+h.set_cb_friendly_colors()
+labels = ["Section 1 (FL260, 8.3$\,$km)", "Section 2 (FL280, 8.7$\,$km)", "Section 3 (FL300, 9.3$\,$km)",
+          "Section 4 (FL320, 10$\,$km)", "Section 5 (FL340, 10.6$\,$km)", "Section 6 (FL360, 11.2$\,$km)",
+          "Section 7 (FL390, 12.2$\,$km)"]
+fig, ax = plt.subplots(figsize=(15*cm, 8*cm))
+for section, label in zip(sections, labels):
+    fup = sections[section].Fup
+    fup.plot(ax=ax, label=label)
+    # for x_, y_, label in zip(fdw.wavelength.values, fdw.values, range(len(fdw))):
+    #     if label > 700 and label < 790:
+    #         plt.annotate(label, (x_, y_))
+
+ax.legend()
+ax.set_ylim(0, 1.35)
+ax.set_xlabel("Wavelength (nm)")
+ax.set_ylabel("Upward Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
+ax.grid()
+plt.tight_layout()
+# plt.show()
+plt.savefig(f"{plot_path}/{campaign.swapcase()}_SMART_Fup_staircase_spectra_{flight}.png", dpi=300)
 plt.close()
 
 # %%
-fdw_vnir.Fdw.mean(dim="time").plot()
-plt.show()
-plt.close()
+for i in range(fup_swir.dims["time"]):
+    date_str = pd.to_datetime(str(fup_swir.time[i].values))
+    date_str = date_str.strftime('%Y%m%d_%H%M%S')
+    fup_swir.Fup.isel(time=i).plot()
+    plt.savefig(f"{plot_path}/spectra/SMART_Fup_{date_str}UTC.png")
+    plt.close()
 
 # %% set plotting options for map plot
 lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["time"]
