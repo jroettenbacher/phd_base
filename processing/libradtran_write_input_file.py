@@ -87,7 +87,10 @@ if __name__ == "__main__":
             radiosonde_station = find_closest_radiosonde_station(lat, lon)
             # radiosonde_station = "Longyearbyen_01004" # standard for HALO-(AC)3
             station_nr = radiosonde_station[-5:]
-            radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
+            if campaign == "halo-ac3":
+                radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
+            else:
+                radiosonde = f"{radiosonde_path}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH"
 
         # get time in decimal hours
         decimal_hour = dt_timestamp.hour + dt_timestamp.minute / 60 + dt_timestamp.second / 60 / 60
