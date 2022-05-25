@@ -162,7 +162,8 @@ def set_cb_friendly_colors():
     Returns: Modifies the standard pyplot color cycle
 
     """
-    cb_color_cycle = ["#6699CC", "#117733", "#CC6677", "#DDCC77", "#D55E00", "#332288"]
+    cb_color_cycle = ["#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255",
+                      "#661100", "#6699CC", "#888888"]
     plt.rcParams['axes.prop_cycle'] = plt.cycler(color=cb_color_cycle)
 
 
@@ -209,3 +210,39 @@ def nested_dict_pairs_iterator(dict_obj: dict):
             # If value is not dict type then yield the key, value pair
             yield key, value
 
+
+def setup_logging(dir: str, custom_string: str = None):
+    """
+    Setup up logging to file if script is called from console. If it is executed inside a console setup logging only
+    to console.
+
+    Args:
+        dir: Directory where to save logging file. Gets created if it doesn't exist yet.
+        custom_string: Custom String to append to logging file name. Logging file always starts with date and the name
+                       of the script being called.
+
+    Returns: Logger
+    """
+    log = logging.getLogger("pylim")
+    try:
+        log.setLevel(logging.DEBUG)
+        # create file handler which logs even debug messages
+        make_dir(dir)
+        fh = logging.FileHandler(f'{dir}/{datetime.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{custom_string}.log')
+        fh.setLevel(logging.DEBUG)
+        # create console handler with a higher log level
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(asctime)s : %(levelname)s - %(message)s', datefmt="%c")
+        ch.setFormatter(formatter)
+        fh.setFormatter(formatter)
+        # add the handlers to logger
+        log.addHandler(ch)
+        log.addHandler(fh)
+    except NameError:
+        # __file__ is undefined if script is executed in console, set a normal logger instead
+        log.addHandler(logging.StreamHandler())
+        log.setLevel(logging.INFO)
+
+    return log
