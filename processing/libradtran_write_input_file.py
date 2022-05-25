@@ -21,7 +21,6 @@ if __name__ == "__main__":
     import pandas as pd
     import xarray as xr
     from global_land_mask import globe
-    import logging
 
     # %% user input
     campaign = "cirrus-hl"
@@ -31,28 +30,14 @@ if __name__ == "__main__":
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     use_dropsonde = False
 
-# %% set up logging to console and file when calling script from console
-    log = logging.getLogger("pylim")
+# %% setup logging
     try:
-        log.setLevel(logging.DEBUG)
-        # create file handler which logs even debug messages
-        h.make_dir("./logs")
-        fh = logging.FileHandler(f'./logs/{datetime.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{flight}.log')
-        fh.setLevel(logging.DEBUG)
-        # create console handler with a higher log level
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter('%(asctime)s : %(levelname)s - %(message)s', datefmt="%c")
-        ch.setFormatter(formatter)
-        fh.setFormatter(formatter)
-        # add the handlers to logger
-        log.addHandler(ch)
-        log.addHandler(fh)
+        file = __file__
     except NameError:
-        # __file__ is undefined if script is executed in console, set a normal logger instead
-        log.addHandler(logging.StreamHandler())
-        log.setLevel(logging.INFO)
+        file = None
+    log = h.setup_logging("./logs", file, flight)
+    log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}"
+             f"\nScript started: {datetime.datetime.utcnow():%c UTC}")
 
     # %% set paths
     _base_dir = h.get_path("base", flight, campaign)
@@ -67,7 +52,8 @@ if __name__ == "__main__":
         _bahamas_dir = h.get_path("bahamas", flight, campaign)
         _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
         ins_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
-    radiosonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran"
+    radiosonde_path = f"{_base_dir}/../0{1 if campaign == 'halo-ac3' else 2}_soundings/RS_for_libradtran"
+    # only needed for HALO-AC3
     dropsonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
     solar_source_path = f"{_base_dir}/../00_tools/0{5 if campaign == 'cirrus-hl' else 8}_libradtran"
 
