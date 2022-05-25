@@ -211,24 +211,26 @@ def nested_dict_pairs_iterator(dict_obj: dict):
             yield key, value
 
 
-def setup_logging(dir: str, custom_string: str = None):
+def setup_logging(dir: str, file: str = None, custom_string: str = None):
     """
     Setup up logging to file if script is called from console. If it is executed inside a console setup logging only
     to console.
 
     Args:
         dir: Directory where to save logging file. Gets created if it doesn't exist yet.
+        file: Name of the file which called the function. Should be given via the __file__ attribute.
         custom_string: Custom String to append to logging file name. Logging file always starts with date and the name
                        of the script being called.
 
     Returns: Logger
     """
     log = logging.getLogger("pylim")
-    try:
+    if file is not None:
+        file = os.path.basename(file)
         log.setLevel(logging.DEBUG)
         # create file handler which logs even debug messages
         make_dir(dir)
-        fh = logging.FileHandler(f'{dir}/{datetime.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{custom_string}.log')
+        fh = logging.FileHandler(f'{dir}/{datetime.datetime.utcnow():%Y%m%d}_{file[:-3]}_{custom_string}.log')
         fh.setLevel(logging.DEBUG)
         # create console handler with a higher log level
         ch = logging.StreamHandler()
@@ -240,9 +242,10 @@ def setup_logging(dir: str, custom_string: str = None):
         # add the handlers to logger
         log.addHandler(ch)
         log.addHandler(fh)
-    except NameError:
+    else:
         # __file__ is undefined if script is executed in console, set a normal logger instead
         log.addHandler(logging.StreamHandler())
         log.setLevel(logging.INFO)
 
     return log
+
