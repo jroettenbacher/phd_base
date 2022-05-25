@@ -3,7 +3,7 @@
 author: Johannes Röttenbacher
 """
 if __name__ == "__main__":
-    # %% module import
+# %% module import
     import pylim.helpers as h
     from pylim.libradtran import get_info_from_libradtran_input
     import pandas as pd
@@ -13,19 +13,14 @@ if __name__ == "__main__":
     from joblib import cpu_count
     import datetime as dt
     from pysolar.solar import get_azimuth
-    import logging
 
-    log = logging.getLogger("pylim")
-    log.addHandler(logging.StreamHandler())
-    log.setLevel(logging.INFO)
-
-    # %% set options and get files
-    campaign = "halo-ac3"
-    flight = "HALO-AC3_20220312_HALO_RF02"
+# %% set options and get files
+    campaign = "cirrus-hl"
+    flight = "Flight_20210629a"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-    date = flight[9:17]
-    wavelength = "smart"  # will be used as directory name and in outfile name (e.g. smart, bacardi, 500-600nm, ...)
-    uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
+    date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
+    wavelength = "smart_spectral"  # will be used as directory name and in outfile name (e.g. smart, bacardi, 500-600nm, ...)
+    uvspec_exe = "/opt/libradtran/2.0.3/bin/uvspec"
     libradtran_base_dir = h.get_path("libradtran", flight, campaign)
     libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", wavelength)  # file where to find input files
     input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir)
@@ -34,12 +29,16 @@ if __name__ == "__main__":
     output_files = [f.replace(".inp", ".out") for f in input_files]
     error_logs = [f.replace(".out", ".log") for f in output_files]
 
+# %% setup logging
+    log = h.setup_logging("./logs", flight_key)
+    log.INFO(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {wavelength}\n"
+             f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
     # %% call uvspec for one file
     # index = 0
     # with open(input_files[index], "r") as ifile, open(output_files[index], "w") as ofile, open(error_logs[index], "w") as lfile:
     #     Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile)
 
-    # %% call uvspec for all files
+# %% call uvspec for all files
 
     processes = set()
     max_processes = cpu_count() - 4
