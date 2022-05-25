@@ -23,10 +23,6 @@ if __name__ == "__main__":
     from global_land_mask import globe
     import logging
 
-    log = logging.getLogger("pylim")
-    log.addHandler(logging.StreamHandler())
-    log.setLevel(logging.WARNING)
-
     # %% user input
     campaign = "cirrus-hl"
     flight = "Flight_20210629a"
@@ -35,10 +31,33 @@ if __name__ == "__main__":
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     use_dropsonde = False
 
+# %% set up logging to console and file when calling script from console
+    log = logging.getLogger("pylim")
+    try:
+        log.setLevel(logging.DEBUG)
+        # create file handler which logs even debug messages
+        h.make_dir("./logs")
+        fh = logging.FileHandler(f'./logs/{datetime.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{flight}.log')
+        fh.setLevel(logging.DEBUG)
+        # create console handler with a higher log level
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(asctime)s : %(levelname)s - %(message)s', datefmt="%c")
+        ch.setFormatter(formatter)
+        fh.setFormatter(formatter)
+        # add the handlers to logger
+        log.addHandler(ch)
+        log.addHandler(fh)
+    except NameError:
+        # __file__ is undefined if script is executed in console, set a normal logger instead
+        log.addHandler(logging.StreamHandler())
+        log.setLevel(logging.INFO)
+
     # %% set paths
     _base_dir = h.get_path("base", flight, campaign)
     _libradtran_dir = h.get_path("libradtran", flight, campaign)
-    input_path = f"{_libradtran_dir}/wkdir/smart"  # where to save the created files
+    input_path = f"{_libradtran_dir}/wkdir/smart_spectral"  # where to save the created files
     h.make_dir(input_path)  # create directory
     if use_smart_ins:
         _horidata_dir = h.get_path("horidata", flight, campaign)
