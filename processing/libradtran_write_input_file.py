@@ -29,6 +29,7 @@ if __name__ == "__main__":
     time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     use_dropsonde = False
+    integrate = False
 
 # %% setup logging
     try:
@@ -143,11 +144,15 @@ if __name__ == "__main__":
         )
 
         # set options for libRadtran run - post-processing
-        postprocess_settings = dict(
-            output_user="sza albedo zout edir edn eup",  # page 109
-            # output_process="integrate",  # page 108
-        )
-
+        if integrate:
+            postprocess_settings = dict(
+                output_user="sza albedo zout edir edn eup",  # page 109
+                output_process="integrate",  # page 108
+            )
+        else:
+            postprocess_settings = dict(
+                output_user="wavelength sza albedo zout edir edn eup",  # page 109
+            )
         # %% write input file
         with open(_input_filepath, "w") as ifile:
             ifile.write(f"# libRadtran input file generated with libradtran_write_input_file.py "
