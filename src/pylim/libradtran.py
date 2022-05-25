@@ -108,5 +108,8 @@ def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp
 
         if line.startswith("output_process"):
             integrate_flag = True if line[15:].strip() == "integrate" else False
+        # there is no output process in a spectral run thus integrate_flag is never updated
+        if integrate_flag is None:
+            integrate_flag = False
 
     return latitude, longitude, time_stamp, header, wavelengths, integrate_flag

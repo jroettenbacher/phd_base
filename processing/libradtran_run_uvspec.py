@@ -6,7 +6,9 @@ if __name__ == "__main__":
 # %% module import
     import pylim.helpers as h
     from pylim.libradtran import get_info_from_libradtran_input
+    import numpy as np
     import pandas as pd
+    import xarray as xr
     import os
     from subprocess import Popen
     from tqdm import tqdm
@@ -60,12 +62,12 @@ if __name__ == "__main__":
         # the list has only terminated processes in it, p.poll returns a non None value if the process is still running
         processes.difference_update([p for p in processes if p.poll() is not None])
 
-    # %% merge output files and write a netCDF file
+# %% merge output files and write a netCDF file
 
     latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
 
     log.info("Reading input files and extracting information from it...")
-    for infile in tqdm(input_files, desc="Input files"):
+    for infile in tqdm(input_files[:20], desc="Input files"):
         lat, lon, ts, header, wavelengths, integrate_flag = get_info_from_libradtran_input(infile)
         latitudes.append(lat)
         longitudes.append(lon)
@@ -76,12 +78,18 @@ if __name__ == "__main__":
 
     log.info("Merging all output files and adding information from input files...")
     output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+")
-                        for file in tqdm(output_files, desc="Output files")])
-    output = output.assign(latitude=latitudes)
-    output = output.assign(longitude=longitudes)
+                        for file in tqdm(output_files[:20], desc="Output files")])
+    if "wavelength" in header:
+        # here a spectral simulation has been performed resulting in more than one line per file
+        nr_wavelenghts = len(output.wavelength.unique())  # retrieve the number of wavelengths which were simulated
+        time_stamps = np.repeat(time_stamps, nr_wavelenghts)
+        # retrieve wavelength independent variables from files
+        # since the data frames are all concatenated with their original index we can use only the rows with index 0
+        zout = output.loc[0, "zout"] * 1000  # convert output altitude to meters
+        sza = output.loc[0, "sza"]
+
     output = output.assign(time=time_stamps)
-    output = output.assign(saa=saa)
-    output = output.set_index(["time"])
+    output = output.set_index(["time"]) if integrate_flag else output.set_index(["time", "wavelength"])
     # calculate direct fraction
     output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
     # convert mW/m2 to W/m2 (see page 43 of manual)
@@ -151,6 +159,14 @@ if __name__ == "__main__":
     encoding = dict(time=dict(units='seconds since 2017-01-01'))
 
     ds = output.to_xarray()
+    # overwrite zout and sza in the spectral case
+    ds = ds.assign(zout=xr.DataArray(zout, coords={"time": ds.time})) if not integrate_flag else ds
+    ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
+    # add the time dependent variables from the input files
+    ds = ds.assign(saa=xr.DataArray(saa, coords={"time": ds.time}))
+    ds = ds.assign(latitude=xr.DataArray(latitudes, coords={"time": ds.time}))
+    ds = ds.assign(longitude=xr.DataArray(longitudes, coords={"time": ds.time}))
+
     ds.attrs = global_attrs if campaign == "halo-ac3" else attributes  # assign global attributes
     ds = ds.rename({"zout": "altitude"})
     # set attributes of each variable
