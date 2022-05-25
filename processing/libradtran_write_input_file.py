@@ -28,12 +28,12 @@ if __name__ == "__main__":
     log.setLevel(logging.WARNING)
 
     # %% user input
-    campaign = "halo-ac3"
-    flight = "HALO-AC3_20220316_HALO_RF06"
-    date = flight[9:17]
+    campaign = "cirrus-hl"
+    flight = "Flight_20210629a"
+    date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
-    use_dropsonde = True
+    use_dropsonde = False
 
     # %% set paths
     _base_dir = h.get_path("base", flight, campaign)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         ins_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
     radiosonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran"
     dropsonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
-    solar_source_path = f"{_base_dir}/../00_tools/08_libradtran"
+    solar_source_path = f"{_base_dir}/../00_tools/0{5 if campaign == 'cirrus-hl' else 8}_libradtran"
 
     timestamp = ins_ds.time[0]
     while timestamp < ins_ds.time[-1]:
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
         else:
             radiosonde_station = find_closest_radiosonde_station(lat, lon)
-            radiosonde_station = "Longyearbyen_01004"
+            # radiosonde_station = "Longyearbyen_01004" # standard for HALO-(AC)3
             station_nr = radiosonde_station[-5:]
             radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         # set options for libRadtran run - post-processing
         postprocess_settings = dict(
             output_user="sza albedo zout edir edn eup",  # page 109
-            output_process="integrate",  # page 108
+            # output_process="integrate",  # page 108
         )
 
         # %% write input file
