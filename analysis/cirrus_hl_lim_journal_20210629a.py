@@ -38,6 +38,7 @@ sat_image = os.path.join(sat_dir, sat_file)
 plot_path = f"{h.get_path('plot')}/{flight}"
 start_dt = pd.Timestamp(2021, 6, 29, 9, 42)
 end_dt = pd.Timestamp(2021, 6, 29, 12, 10)
+cm = 1 / 2.54
 
 # %% read in data
 fdw_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
@@ -125,10 +126,10 @@ for i, (st, et) in enumerate(zip(start_dts, end_dts)):
     sections[f"mean_spectra_{i}"] = smart_fdw.sel(time=slice(st, et)).mean(dim="time")
 
 h.set_cb_friendly_colors()
+plt.rc("font", family="serif")
 labels = ["Section 1 (FL260, 8.3$\,$km)", "Section 2 (FL280, 8.7$\,$km)", "Section 3 (FL300, 9.3$\,$km)",
           "Section 4 (FL320, 10$\,$km)", "Section 5 (FL340, 10.6$\,$km)", "Section 6 (FL360, 11.2$\,$km)",
           "Section 7 (FL390, 12.2$\,$km)"]
-cm = 1 / 2.54
 fig, ax = plt.subplots(figsize=(15*cm, 8*cm))
 for section, label in zip(sections, labels):
     fdw = sections[section].Fdw
@@ -153,6 +154,7 @@ for i, (st, et) in enumerate(zip(start_dts, end_dts)):
     sections[f"mean_spectra_{i}"] = smart_fup.sel(time=slice(st, et)).mean(dim="time")
 
 h.set_cb_friendly_colors()
+plt.rc("font", family="serif")
 labels = ["Section 1 (FL260, 8.3$\,$km)", "Section 2 (FL280, 8.7$\,$km)", "Section 3 (FL300, 9.3$\,$km)",
           "Section 4 (FL320, 10$\,$km)", "Section 5 (FL340, 10.6$\,$km)", "Section 6 (FL360, 11.2$\,$km)",
           "Section 7 (FL390, 12.2$\,$km)"]
@@ -164,7 +166,7 @@ for section, label in zip(sections, labels):
     #     if label > 700 and label < 790:
     #         plt.annotate(label, (x_, y_))
 
-ax.legend()
+# ax.legend()
 ax.set_ylim(0, 1.35)
 ax.set_xlabel("Wavelength (nm)")
 ax.set_ylabel("Upward Irradiance (W$\\,$m$^{-2}\\,$nm$^{-1}$)")
@@ -174,13 +176,13 @@ plt.tight_layout()
 plt.savefig(f"{plot_path}/{campaign.swapcase()}_SMART_Fup_staircase_spectra_{flight}.png", dpi=300)
 plt.close()
 
-# %%
-for i in range(fup_swir.dims["time"]):
-    date_str = pd.to_datetime(str(fup_swir.time[i].values))
-    date_str = date_str.strftime('%Y%m%d_%H%M%S')
-    fup_swir.Fup.isel(time=i).plot()
-    plt.savefig(f"{plot_path}/spectra/SMART_Fup_{date_str}UTC.png")
-    plt.close()
+# %% plot every single spectra
+# for i in range(fup_swir.dims["time"]):
+#     date_str = pd.to_datetime(str(fup_swir.time[i].values))
+#     date_str = date_str.strftime('%Y%m%d_%H%M%S')
+#     fup_swir.Fup.isel(time=i).plot()
+#     plt.savefig(f"{plot_path}/spectra/SMART_Fup_{date_str}UTC.png")
+#     plt.close()
 
 # %% set plotting options for map plot
 lon, lat, altitude, times = bahamas["IRS_LON"], bahamas["IRS_LAT"], bahamas["IRS_ALT"], bahamas["time"]
@@ -245,4 +247,36 @@ fig_name = f"{plot_path}/{campaign.swapcase()}_BAHAMAS_staircase_track_{flight}.
 # plt.show()
 plt.savefig(fig_name, dpi=300)
 log.info(f"Saved {fig_name}")
+plt.close()
+# %% plot all flight tracks with the natural earth as background
+bahamas_all_dir = h.get_path("all", campaign=campaign, instrument="bahamas")
+bahamas_all_files = [f"{bahamas_all_dir}/{file}" for file in os.listdir(bahamas_all_dir)]
+extent = [-35, 30, 35, 80]
+edmo = coordinates["EDMO"]
+plt.rc("font", family="serif")
+
+fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.PlateCarree()))
+ax.coastlines(linewidth=1)
+ax.add_feature(cartopy.feature.BORDERS, linewidth=1)
+ax.set_extent(extent)
+ax.background_img(name='BM', resolution='high')
+gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+gl.bottom_labels = False
+gl.left_labels = False
+
+# plot flight tracks
+cmap = plt.get_cmap("hsv")
+for i in range(len(bahamas_all_files)):
+    bahamas_tmp = reader.read_bahamas(bahamas_all_files[i])
+    lon, lat = bahamas_tmp.IRS_LON, bahamas_tmp.IRS_LAT
+    ax.plot(lon, lat, color=cmap(i/len(bahamas_all_files)), linewidth=2)
+
+# Add Oberpfaffenhofen
+ax.plot(edmo[0], edmo[1], 'or')
+ax.text(edmo[0] + 0.1, edmo[1] + 0.1, "EDMO", fontsize=10,
+        path_effects=[patheffects.withStroke(linewidth=1, foreground="w")])
+
+plt.tight_layout()
+# plt.show()
+plt.savefig(f"{plot_path}/CIRRUS-HL_BAHAMAS_all_tracks.png", dpi=300)
 plt.close()
