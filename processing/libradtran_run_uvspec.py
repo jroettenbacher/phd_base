@@ -67,7 +67,7 @@ if __name__ == "__main__":
     latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
 
     log.info("Reading input files and extracting information from it...")
-    for infile in tqdm(input_files[:20], desc="Input files"):
+    for infile in tqdm(input_files, desc="Input files"):
         lat, lon, ts, header, wavelengths, integrate_flag = get_info_from_libradtran_input(infile)
         latitudes.append(lat)
         longitudes.append(lon)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     log.info("Merging all output files and adding information from input files...")
     output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+")
-                        for file in tqdm(output_files[:20], desc="Output files")])
+                        for file in tqdm(output_files, desc="Output files")])
     if "wavelength" in header:
         # here a spectral simulation has been performed resulting in more than one line per file
         nr_wavelenghts = len(output.wavelength.unique())  # retrieve the number of wavelengths which were simulated
