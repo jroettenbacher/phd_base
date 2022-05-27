@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     processes = set()
     max_processes = cpu_count() - 4
-    for infile, outfile, log_file in zip(tqdm(input_files, desc="libRadtran simulations"), output_files, error_logs):
+    for infile, outfile, log_file in zip(tqdm(input_files[134:330], desc="libRadtran simulations"), output_files[134:330], error_logs[134:330]):
         with open(infile, "r") as ifile, open(outfile, "w") as ofile, open(log_file, "w") as lfile:
             processes.add(Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile))
         if len(processes) >= max_processes:

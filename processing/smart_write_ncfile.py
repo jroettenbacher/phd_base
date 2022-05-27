@@ -20,6 +20,7 @@ if __name__ == "__main__":
     import pylim.helpers as h
     from pylim import reader, smart
     from pylim.halo_ac3 import smart_lookup, take_offs_landings
+    from pylim.cirrus_hl import lookup as smart_lookup, take_offs_landings as take_offs_landings
     import os
     import pandas as pd
     from datetime import datetime
@@ -31,10 +32,10 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set user variables
-    campaign = "halo-ac3"
-    date = "20220412"
-    flight_key = "RF18"
-    flight = f"HALO-AC3_{date}_HALO_{flight_key}"
+    campaign = "cirrus-hl"
+    date = "20210629"
+    flight_key = "Flight_20210629a"
+    flight = f"HALO-AC3_{date}_HALO_{flight_key}" if campaign == "halo-ac3" else flight_key
     prop_channel = "Fdw_VNIR"
     # prop_channel = "Fdw_SWIR"
     to, td = take_offs_landings[flight_key]
@@ -109,7 +110,7 @@ if __name__ == "__main__":
 
     # %% create ncfile
     date_str, prop, direction = smart.get_info_from_filename(smart_file)
-    outfile = f"HALO-AC3_HALO_SMART_{direction}_{prop}_{date}_{flight_key}.nc"
+    outfile = f"{campaign.swapcase()}_HALO_SMART_{direction}_{prop}_{date}_{flight_key}.nc"
     outpath = os.path.join(smart_dir, outfile)
     ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
     log.info(f"Saved {outpath}")
