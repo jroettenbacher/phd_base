@@ -20,7 +20,7 @@ if __name__ == "__main__":
     import pylim.helpers as h
     from pylim import reader, smart
     from pylim.halo_ac3 import smart_lookup, take_offs_landings
-    from pylim.cirrus_hl import lookup as smart_lookup, take_offs_landings as take_offs_landings
+    from pylim.cirrus_hl import smart_lookup as smart_lookup, take_offs_landings as take_offs_landings
     import os
     import pandas as pd
     from datetime import datetime
@@ -38,6 +38,8 @@ if __name__ == "__main__":
     flight = f"HALO-AC3_{date}_HALO_{flight_key}" if campaign == "halo-ac3" else flight_key
     prop_channel = "Fdw_VNIR"
     # prop_channel = "Fdw_SWIR"
+    # prop_channel = "Fup_VNIR"
+    # prop_channel = "Fup_SWIR"
     to, td = take_offs_landings[flight_key]
 
     # %% get paths and read in files
@@ -91,7 +93,8 @@ if __name__ == "__main__":
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
         history=f"created {datetime.strftime(datetime.utcnow(), '%c UTC')}",
         contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
-        PI="André Ehrlich, a.ehrlich@uni-leipzig.de"
+        PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
+        Conventions="CF-1.8"
     )
 
     encoding = dict(time=dict(units="seconds since 2017-01-01 00:00:00 UTC", _FillValue=None))
