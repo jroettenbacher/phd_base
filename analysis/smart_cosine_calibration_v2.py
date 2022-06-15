@@ -28,6 +28,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from copy import deepcopy
     import numpy as np
+    import scipy.integrate as integrate
+    import scipy.interpolate as interpolate
     from tqdm import tqdm
     import logging
 
@@ -372,6 +374,61 @@ if __name__ == "__main__":
     # remove angles greater 90°
     k_cos_dir_df = k_cos_dir_df[np.abs(k_cos_dir_df["angle"].astype(float)) < 95]
 
+# %% calculate the diffuse cosine correction factors
+    k_list, p_list, prop_list = list(), list(), list()  # define output lists
+    props = np.unique(k_cos_dir_df.loc[:, "prop"])  # get all possible properties to loop over
+    for prop in props:
+        prop_df = k_cos_dir_df[k_cos_dir_df["prop"] == prop]  # select one property
+        pixels = np.unique(prop_df.loc[:, "pixel"])  # get all possible pixels to loop over
+        for pixel in pixels:
+            pixel_df = prop_df[prop_df["pixel"] == pixel]  # select one pixel
+            tmp_normal = pixel_df[pixel_df["position"] == "normal"]  # get normal measurements
+            tmp_turned = pixel_df[pixel_df["position"] == "turned"]  # get turned measurements
+            # select only normal measurements and drop unnecessary columns
+            pixel_df = tmp_normal.drop(["pixel", "position", "prop"], axis=1)
+            # replace normal positioned cosine correction factor with the mean of normal and turned
+            pixel_df.loc[:, "k_cos"] = np.mean([tmp_normal["k_cos"].values, tmp_turned["k_cos"].values], axis=0)
+            # convert angle to float and make them absolute to average over positive and negative directions
+            pixel_df.loc[:, "angle"] = np.abs(pixel_df.loc[:, "angle"].astype(float))
+            # average over both directions
+            pixel_df = pixel_df.groupby("angle").mean().reset_index()
+
+
+            def k_cos_dif(theta, df):
+                """
+                Function for diffuse cosine correction factor
+                Args:
+                    theta: angle of incoming radiation (rad)
+                    df: DataFrame with angle and corresponding cosine correction factor
+
+                Returns: Diffuse cosine correction factor
+
+                """
+                k_cos = interpolate.interp1d(df["angle"], df["k_cos"])  # create interpolation function
+                return k_cos(np.rad2deg(theta)) * np.cos(theta) * np.sin(theta)
+
+
+            # integrate over 0-90 deg
+            k_cos_diff = 2 * integrate.quad(k_cos_dif, 0, np.pi/2, args=pixel_df, limit=200)[0]
+            # append output to lists
+            k_list.append(k_cos_diff)
+            p_list.append(pixel)
+            prop_list.append(prop)
+
+    df_diff = pd.DataFrame({"k_cos_diff": k_list, "pixel": p_list, "prop": prop_list})  # create dataframe
+    # split dataframe by inlet
+    VN05_channels, VN11_channels = ["Fdw_VNIR", "Fdw_SWIR"], ["Fup_VNIR", "Fup_SWIR"]
+    VN05 = df_diff.loc[df_diff["prop"].isin(VN05_channels)]
+    VN11 = df_diff.loc[df_diff["prop"].isin(VN11_channels)]
+    # split up information in the prop column
+    VN05[["direction", "property"]] = VN05["prop"].str.split("_", expand=True)
+    VN11[["direction", "property"]] = VN11["prop"].str.split("_", expand=True)
+    VN05["channel"] = [cirrus_hl.smart_lookup[prop] for prop in VN05["prop"]]
+    VN11["channel"] = [cirrus_hl.smart_lookup[prop] for prop in VN11["prop"]]
+    # save to csv
+    VN05.to_csv(f"{outfile_path}/HALO_SMART_VN05_diffuse_cosine_correction_factors.csv", index=False)
+    VN11.to_csv(f"{outfile_path}/HALO_SMART_VN11_diffuse_cosine_correction_factors.csv", index=False)
+
 # %% plot actual cosine response
     prop_channel, position, mtype = "Fdw_VNIR", "normal", "direct"  # for testing
     prop_channels, positions, mtypes = dfs.prop.unique(), dfs.position.unique(), dfs.mtype.unique()
@@ -533,7 +590,7 @@ if __name__ == "__main__":
     for prop_channel in k_cos_dir:
         k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
         k_cos["angle"] = k_cos["angle"].astype(float)  # convert angles to float for better plotting
-        pixel_wl = reader.read_pixel_to_wavelength(pixel_path, cirrus_hl.lookup[prop_channel])
+        pixel_wl = reader.read_pixel_to_wavelength(pixel_path, cirrus_hl.smart_lookup[prop_channel])
         k_cos = pd.merge(k_cos, pixel_wl, on="pixel")
         for pixel in tqdm(k_cos["pixel"].unique(), desc=f"{prop_channel}", unit=" Pixel"):
             k = k_cos.loc[(k_cos["pixel"] == pixel), :]
@@ -561,8 +618,8 @@ if __name__ == "__main__":
     # split up information in the prop column
     VN05[["direction", "property"]] = VN05["prop"].str.split("_", expand=True)
     VN11[["direction", "property"]] = VN11["prop"].str.split("_", expand=True)
-    VN05["channel"] = [cirrus_hl.lookup[prop] for prop in VN05["prop"]]
-    VN11["channel"] = [cirrus_hl.lookup[prop] for prop in VN11["prop"]]
+    VN05["channel"] = [cirrus_hl.smart_lookup[prop] for prop in VN05["prop"]]
+    VN11["channel"] = [cirrus_hl.smart_lookup[prop] for prop in VN11["prop"]]
     # save file like this for further use
     VN11.to_csv(f"{outfile_path}/HALO_SMART_VN11_cosine_correction_factors.csv", index=False)
     VN05.to_csv(f"{outfile_path}/HALO_SMART_VN05_cosine_correction_factors.csv", index=False)
