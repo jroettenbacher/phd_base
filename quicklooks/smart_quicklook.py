@@ -4,7 +4,7 @@ author: Johannes Roettenbacher
 """
 
 # %% import modules
-from pylim.cirrus_hl import lookup
+from pylim.cirrus_hl import smart_lookup
 import pylim.helpers as h
 from pylim import reader, smart
 import os
@@ -94,7 +94,7 @@ inpath = f"{path}/{flight}"  # get inpath for SMART data
 file = [f for f in os.listdir(inpath) if "Fdw_VNIR" in f][0]  # select Fdw VNIR file
 # get info from filename and select pixel to wavelength file
 date_str, channel, direction = smart.get_info_from_filename(file)
-pixel_wl = reader.read_pixel_to_wavelength(h.get_path("pixel_wl"), lookup[f"{direction}_{channel}"])
+pixel_wl = reader.read_pixel_to_wavelength(h.get_path("pixel_wl"), smart_lookup[f"{direction}_{channel}"])
 pixel_nr, wl = smart.find_pixel(pixel_wl, 550)
 # read in SMART data and select specified wavelength
 df = reader.read_smart_cor(inpath, file).iloc[:, pixel_nr]

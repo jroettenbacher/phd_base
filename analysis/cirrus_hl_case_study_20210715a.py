@@ -9,7 +9,7 @@ if __name__ == "__main__":
     from pylim import reader
     from pylim import smart
     from pylim.bacardi import fdw_attitude_correction
-    from pylim.cirrus_hl import coordinates, lookup
+    from pylim.cirrus_hl import coordinates, smart_lookup
     from pylim.bahamas import plot_props
     import numpy as np
     import os
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     smart_fdw_rs = smart_fdw.loc[slice(rs_start, rs_end)]
 
     # %% select one wavelength with low diffuse part for correction
-    pixel_wl = smart.read_pixel_to_wavelength(pixel_wl_dir, lookup["Fdw_VNIR"])
+    pixel_wl = smart.read_pixel_to_wavelength(pixel_wl_dir, smart_lookup["Fdw_VNIR"])
     pixel, wl = smart.find_pixel(pixel_wl, 800)
     smart_800 = smart_fdw_vnir.iloc[:, pixel]
     smart_800_rs = smart_800.loc[slice(rs_start, rs_end)]

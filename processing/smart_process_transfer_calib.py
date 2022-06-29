@@ -21,8 +21,8 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% User input
-    campaign = "halo-ac3"
-    folder = "ASP06_transfer_calib_20220411"
+    campaign = "cirrus-hl"
+    folder = "ASP06_transfer_calib_20210630"
     date = folder[-8:]  # extract date from transfer calib folder
 
     # Set paths in config.toml

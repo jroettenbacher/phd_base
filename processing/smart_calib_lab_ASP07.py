@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # %%
     from pylim import smart, reader
     import pylim.helpers as h
-    from pylim.cirrus_hl import lookup
+    from pylim.cirrus_hl import smart_lookup
     import os
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     lab_calib[lab_calib.values < 0] = 0
 
     # %% add counts, lamp radiance and lamp radiance multiplied with panel reflectance to data frame
-    spectrometer = lookup[f"{direction}_{channel}"]
+    spectrometer = smart_lookup[f"{direction}_{channel}"]
     panel["S0"] = lab_calib.mean().reset_index(drop=True)  # take mean over time of calib measurement
     if normalize:
         panel["S0"] = panel["S0"] / t_int  # normalize counts by integration time

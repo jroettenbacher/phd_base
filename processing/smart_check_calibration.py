@@ -27,8 +27,8 @@ if __name__ == "__main__":
         lookup = smart_lookup
 
 # %% list all files from one spectrometer
-    prop = "Fdw_SWIR"
-    files = [f for f in os.listdir(calib_path) if lookup[prop] in f]
+    prop = "Fdw_VNIR"
+    files = [f for f in os.listdir(calib_path) if smart_lookup[prop] in f]
 
 # %% select only normalized and transfer calib files
     files = [f for f in files if "norm" in f and "transfer" in f]
@@ -60,14 +60,14 @@ if __name__ == "__main__":
     plt.rc('font', family="serif", size=14)
 
 # %% plot relation between lab calib measurement and each transfer calib measurement
-    zoom = False  # zoom in on y axis
+    zoom = True  # zoom in on y axis
 
     fig, ax = plt.subplots(figsize=(10, 6))
     for date_str in date_strs:
         df[df["date"] == date_str].sort_values(["wavelength"]).plot(x="wavelength", y="rel_ulli", label=date_str, ax=ax)
 
     if zoom:
-        ax.set_ylim((0, 10))
+        ax.set_ylim((0, 2))
         zoom = "_zoom"
     else:
         zoom = ""

@@ -158,11 +158,13 @@ if add_dropsondes:
 # plot some place labels
 # x_edmo, y_edmo = coordinates["EDMO"]
 # ax.plot(x_edmo, y_edmo, '.', color="#117733", markersize=8, transform=data_crs)
-# ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=10, transform=data_crs)
+# ax.text(x_edmo + 0.1, y_edmo + 0.1, "EDMO", fontsize=10, transform=data_crs, color="white",
+#         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
 # plot a second airport label
 # x2, y2 = coordinates["Leipzig"]
 # ax.plot(x2, y2, '.', color="#117733", markersize=8, transform=data_crs)
-# ax.text(x2 + 0.1, y2 + 0.1, "Leipzig", fontsize=10, transform=data_crs)
+# ax.text(x2 + 0.1, y2 + 0.1, "Leipzig", fontsize=10, transform=data_crs, color="white",
+#         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
 # plot a third location label
 # x2, y2 = coordinates["Jülich"]
 # ax.plot(x2, y2, '.', color="#117733", markersize=8, transform=data_crs)

@@ -37,7 +37,7 @@ def make_dark_cur_cor_file(flight: str, file: str, inpath: str, transfer_cali_da
 if __name__ == "__main__":
     import pylim.helpers as h
     from pylim import smart
-    from pylim.halo_ac3 import transfer_calibs, smart_lookup
+    from pylim.cirrus_hl import transfer_calibs, smart_lookup
     import os
     import logging
     from tqdm import tqdm
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # User input
-    campaign = "halo-ac3"
-    flight = "HALO-AC3_20220412_HALO_RF18"  # which flight do the files in raw belong to?
+    campaign = "cirrus-hl"
+    flight = "Flight_20210629a"  # which flight do the files in raw belong to?
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
     transfer_cali_date = transfer_calibs[flight_key]

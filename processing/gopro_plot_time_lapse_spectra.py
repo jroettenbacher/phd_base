@@ -6,7 +6,7 @@ if __name__ == "__main__":
     # %% import modules
     import pylim.helpers as h
     from pylim import reader, smart
-    from pylim.cirrus_hl import lookup
+    from pylim.cirrus_hl import smart_lookup
     import os
     import logging
     import matplotlib
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     pixel_wl_path = h.get_path("pixel_wl")
     channel = "VNIR"
     direction = "Fdw"
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, smart_lookup[f"{direction}_{channel}"])
     wavelengths = pixel_wl["wavelength"]
 
     # %% select the closest SMART timestamps to the picture time

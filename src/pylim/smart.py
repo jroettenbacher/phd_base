@@ -5,7 +5,7 @@ author: Johannes Röttenbacher
 
 from pylim import helpers as h
 from pylim import reader
-from pylim.cirrus_hl import lookup
+from pylim.cirrus_hl import smart_lookup
 import os
 import re
 import logging
@@ -150,7 +150,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     measurement = reader.read_smart_raw(path, filename)
     t_int = int(measurement["t_int"][0])  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
-    spectrometer = lookup[f"{direction}_{channel}"]
+    spectrometer = smart_lookup[f"{direction}_{channel}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, spectrometer)
     # calculate dark current depending on channel:
     # SWIR: use measurements during shutter phases
@@ -284,7 +284,7 @@ def plot_mean_corrected_measurement(flight: str, filename: str, measurement: Uni
     pixel_path = h.get_path("pixel_wl")
     date_str, channel, direction = get_info_from_filename(filename)
     path = h.get_path("raw", flight)
-    spectrometer = lookup[f"{direction}_{channel}"]
+    spectrometer = smart_lookup[f"{direction}_{channel}"]
     dark_current = get_dark_current(path, filename, option, plot=False)
     wavelength = reader.read_pixel_to_wavelength(pixel_path, spectrometer)["wavelength"]
 
@@ -388,7 +388,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         smart = smart.iloc[:, 2:]  # remove columns t_int and shutter
         title = "Raw"
         ylabel = "Netto Counts"
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, smart_lookup[f"{direction}_{channel}"])
     if len(wavelength) == 2:
         pixel_nr = []
         wl_str = ""
@@ -456,7 +456,7 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
     pixel_path = h.get_path("pixel_wl")
     df = reader.read_smart_cor(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
-    spectrometer = lookup[f"{direction}_{channel}"]
+    spectrometer = smart_lookup[f"{direction}_{channel}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_path, spectrometer)
     max_id = len(df) - 1
     try:
@@ -511,8 +511,8 @@ def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) 
 
     filename2 = filename.replace(channel, channel2)
     df2 = reader.read_smart_cor(path, filename2)
-    spectrometer1 = lookup[f"{direction}_{channel}"]
-    spectrometer2 = lookup[f"{direction}_{channel2}"]
+    spectrometer1 = smart_lookup[f"{direction}_{channel}"]
+    spectrometer2 = smart_lookup[f"{direction}_{channel2}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectrometer1)
     pixel_wl2 = reader.read_pixel_to_wavelength(pixel_path, spectrometer2)
     # merge pixel dfs and sort by wavelength
@@ -576,8 +576,8 @@ def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int
 
     filename2 = filename.replace(channel, channel2)
     df2 = reader.read_smart_cor(path, filename2)
-    spectrometer1 = lookup[f"{direction}_{channel}"]
-    spectrometer2 = lookup[f"{direction}_{channel2}"]
+    spectrometer1 = smart_lookup[f"{direction}_{channel}"]
+    spectrometer2 = smart_lookup[f"{direction}_{channel2}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectrometer1)
     pixel_wl2 = reader.read_pixel_to_wavelength(pixel_path, spectrometer2)
     # merge pixel dfs and sort by wavelength
@@ -644,7 +644,7 @@ def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[li
         df = df.iloc[:, 2:]  # remove columns t_int and shutter
         title = "Raw"
         ylabel = "Netto Counts"
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, smart_lookup[f"{direction}_{channel}"])
     if len(wavelength) == 2:
         pixel_nr = []
         for wl in wavelength:
@@ -711,8 +711,8 @@ def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, 
     # read in both irradiance measurements
     df1 = reader.read_smart_cor(calibrated_path, filename)
     df2 = reader.read_smart_cor(calibrated_path, filename2)
-    # get spectrometers from lookup dictionary
-    spectro1, spectro2 = lookup[f"{direction}_{channel}"], lookup[f"{direction2}_{channel}"]
+    # get spectrometers from smart_lookup dictionary
+    spectro1, spectro2 = smart_lookup[f"{direction}_{channel}"], smart_lookup[f"{direction2}_{channel}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectro1)
     pixel_wl2 = reader.read_pixel_to_wavelength(pixel_path, spectro2)
     title = "Corrected for Dark Current and Calibrated"

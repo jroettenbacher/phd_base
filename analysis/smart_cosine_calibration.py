@@ -542,7 +542,7 @@ if __name__ == "__main__":
     for prop_channel in k_cos_dir:
         k_cos = k_cos_dir_df.loc[(k_cos_dir_df["prop"] == prop_channel), ["angle", "k_cos", "pixel"]]
         k_cos["angle"] = k_cos["angle"].astype(float)  # convert angles to float for better plotting
-        pixel_wl = reader.read_pixel_to_wavelength(pixel_path, cirrus_hl.lookup[prop_channel])
+        pixel_wl = reader.read_pixel_to_wavelength(pixel_path, cirrus_hl.smart_lookup[prop_channel])
         k_cos = pd.merge(k_cos, pixel_wl, on="pixel")
         for pixel in tqdm(k_cos["pixel"].unique(), desc=f"{prop_channel}", unit=" Pixel"):
             k = k_cos.loc[(k_cos["pixel"] == pixel), :]

@@ -13,21 +13,21 @@ if __name__ == "__main__":
     # %% module import and set paths
     import pylim.helpers as h
     from pylim import reader, smart
-    from pylim.halo_ac3 import smart_lookup
+    from pylim.cirrus_hl import smart_lookup
     import os
     import pandas as pd
     import matplotlib.pyplot as plt
 
     # %% set variables
-    campaign = "halo-ac3"
-    field_folder = "ASP06_transfer_calib_20220411"  # transfer calib folder
-    lab_cali_date = "2021_11_23"  # set lab calib to relate measurement to
+    campaign = "cirrus-hl"
+    field_folder = "ASP06_transfer_calib_20210630"  # transfer calib folder
+    lab_cali_date = "2021_08_09"  # set lab calib to relate measurement to
     calib_path = h.get_path("calib", campaign=campaign)
     plot_path = f"{h.get_path('plot', campaign=campaign)}/transfer_calibs"
     t_int = 300  # integration time of transfer calibration measurement
     t_int_str = "_300ms" if campaign == "halo-ac3" else ""
     normalize = True  # normalize counts by integration time
-    ulli_nr = "2" if campaign == "halo-ac3" else "" # which Ulli sphere to use: 2 or 3 for halo-ac3 else ""
+    ulli_nr = "2" if campaign == "halo-ac3" else ""  # which Ulli sphere to use: 2 or 3 for halo-ac3 else ""
     norm = "_norm" if normalize else ""
     # # loop through all transfer calib folders
     # field_folders = [d for d in next(os.walk(calib_path))[1] if "transfer_calib" in d]

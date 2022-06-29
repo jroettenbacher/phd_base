@@ -6,7 +6,7 @@ if __name__ == "__main__":
     # %% import libraries
     from pylim import reader
     from pylim import smart, helpers as h
-    from pylim.cirrus_hl import lookup
+    from pylim.cirrus_hl import smart_lookup
     import os
     import xarray as xr
     import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # %% get pixel to wavelength file
     channel = "VNIR"
     direction = "Fdw"
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, lookup[f"{direction}_{channel}"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, smart_lookup[f"{direction}_{channel}"])
     # %% read in files
     fdw_file = fdw_files[0] if channel in fdw_files[0] else fdw_files[1]
     fup_file = fup_files[0] if channel in fup_files[0] else fup_files[1]

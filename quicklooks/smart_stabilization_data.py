@@ -13,8 +13,8 @@ hv.extension('bokeh')
 
 # %% Define flight and paths
 campaign = "cirrus-hl"
-date = "20210625a"
-flight_key = "RF18"
+date = "20210719b"
+flight_key = "RF19"
 if campaign == "halo-ac3":
     flight = f"HALO-AC3_{date}_HALO_{flight_key}"
 else:
@@ -73,7 +73,7 @@ layout.opts(
 )
 layout.opts(title=f"{flight} SMART INS Measurements")
 layout.cols(1)
-figname = f"{ql_path}/HALO-AC3_HALO_SMART_NavCommand_{date}_{flight_key}.{output_format}"
+figname = f"{ql_path}/{campaign.swapcase()}_HALO_SMART_NavCommand_{date}_{flight_key}.{output_format}"
 hv.save(layout, figname)
 print(f"Saved {figname}")
 
@@ -83,17 +83,20 @@ horipath = h.get_path("horidata", flight, campaign)
 hori_files = [f for f in os.listdir(horipath) if f.endswith("dat")]
 horidata = pd.concat([pd.read_csv(f"{horipath}/{f}", skipinitialspace=True, sep="\t") for f in hori_files])
 horidata["PCTIME"] = pd.to_datetime(horidata["DATE"] + " " + horidata["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
+horidata["roll_diff"] = horidata["TARGET3"] - horidata["POSN3"]
 horidata_hv = hv.Table(horidata)
 # annotate data
 roll_target = hv.Dimension('TARGET3', label='Target Roll Angle', unit='deg')
 roll = hv.Dimension('POSN3', label='Actual Roll Angle', unit='deg')
+roll_diff = hv.Dimension('roll_diff', label='Difference between Target and Actual Roll Angle', unit='deg')
 pitch_target = hv.Dimension('TARGET4', label='Target Pitch Angle', unit='deg')
 pitch = hv.Dimension('POSN4', label='Actual Pitch Angle', unit='deg')
 time = hv.Dimension('PCTIME', label='Time', unit='UTC')
-layout = hv.Curve(horidata_hv, time, roll_target, label="Roll Target").opts(color="green") \
-         * hv.Curve(horidata_hv, time, roll, label="Actual Roll").opts(color="red", ylabel="Roll Angle (deg)")\
-         + hv.Curve(horidata_hv, time, pitch_target, label="Pitch Target").opts(color="green") \
-         * hv.Curve(horidata_hv, time, pitch, label="Actual Pitch").opts(color="red", ylabel="Pitch Angele (deg)")
+layout = hv.Curve(horidata_hv, time, roll_target, label="Roll Target").opts(color="#88CCEE") \
+         * hv.Curve(horidata_hv, time, roll, label="Actual Roll").opts(color="#CC6677", ylabel="Roll Angle (deg)")\
+         + hv.Curve(horidata_hv, time, pitch_target, label="Pitch Target").opts(color="#88CCEE") \
+         * hv.Curve(horidata_hv, time, pitch, label="Actual Pitch").opts(color="#CC6677", ylabel="Pitch Angle (deg)") \
+         + hv.Curve(horidata_hv, time, roll_diff, label="Roll Difference").opts(color="#DDCC77", ylabel="Target - Actual Roll Angle (deg)")
 layout.opts(
     opts.Curve(responsive=True, height=350, show_grid=True, tools=["hover"],
                fontsize={'title': 16, 'labels': 14, 'xticks': 12, 'yticks': 12, 'legend': 12}),
@@ -101,6 +104,6 @@ layout.opts(
 )
 layout.opts(title=f"{flight} SMART Stabilization Table Measurements")
 layout.cols(1)
-figname = f"{ql_path}/HALO-AC3_HALO_SMART_horidata_{date}_{flight_key}.{output_format}"
+figname = f"{ql_path}/{campaign.swapcase()}_HALO_SMART_horidata_{date}_{flight_key}.{output_format}"
 hv.save(layout, figname)
 print(f"Saved {figname}")

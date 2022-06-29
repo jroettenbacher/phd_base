@@ -49,8 +49,8 @@ if __name__ == "__main__":
     swir = reader.read_smart_cor(smart_dir, swir_file)
     vnir = reader.read_smart_cor(smart_dir, vnir_file)
     # read in pixel to wavelength mapping
-    pixel_wl_swir = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.lookup["Fdw_SWIR"])
-    pixel_wl_vnir = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.lookup["Fdw_VNIR"])
+    pixel_wl_swir = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.smart_lookup["Fdw_SWIR"])
+    pixel_wl_vnir = reader.read_pixel_to_wavelength(pixel_wl_dir, cirrus_hl.smart_lookup["Fdw_VNIR"])
     # read in INS ql file
     ins = xr.open_dataset(f"{horipath}/{ins_file}")
 

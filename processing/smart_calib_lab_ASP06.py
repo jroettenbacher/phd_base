@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # %%
     import pylim.helpers as h
     from pylim import reader, smart
-    from pylim.cirrus_hl import lookup
+    from pylim.cirrus_hl import smart_lookup
     import os
     import matplotlib.pyplot as plt
     from scipy.interpolate import interp1d
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     lab_calib[lab_calib.values < 0] = 0
 
     # %% read in pixel to wavelength file
-    spectrometer = lookup[f"{direction}_{channel}"]
+    spectrometer = smart_lookup[f"{direction}_{channel}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_path, spectrometer)
     pixel_wl["S0"] = lab_calib.mean().reset_index(drop=True)  # take mean over time of calib measurement
     if normalize:

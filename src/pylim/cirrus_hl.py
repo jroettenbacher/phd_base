@@ -2,20 +2,22 @@
 """General information about the CIRRUS-HL campaign
 author: Johannes Röttenbacher
 """
-
+import numpy as np
+import pandas as pd
 from pandas import Timestamp as Ts
 from pandas import Timedelta as Td
 
 # inlet to spectrometer mapping and inlet to direction mapping and measurement to spectrometer mapping
-lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
-              ASP06_J6="VIS_7_(ASP_06)", ASP07_J3="PGS_4_(ASP_07)", ASP07_J4="VIS_8_(ASP_07)",
-              J3="dw", J4="dw", J5="up", J6="up",
-              Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4", Fup_SWIR="ASP06_J5", Fup_VNIR="ASP06_J6",
-              Iup_SWIR="ASP07_J3", Iup_VNIR="ASP07_J4",
-              Fdw="VN05", Fup="VN11",  # inlet names
-              irradiance_standard="FEL-1587"  # irradiance standard used for calibration
-              )
+smart_lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
+                    ASP06_J6="VIS_7_(ASP_06)", ASP07_J3="PGS_4_(ASP_07)", ASP07_J4="VIS_8_(ASP_07)",
+                    J3="dw", J4="dw", J5="up", J6="up",
+                    Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4", Fup_SWIR="ASP06_J5", Fup_VNIR="ASP06_J6",
+                    Iup_SWIR="ASP07_J3", Iup_VNIR="ASP07_J4",
+                    Fdw="VN05", Fup="VN11",  # inlet names
+                    irradiance_standard="FEL-1587"  # irradiance standard used for calibration
+                    )
 
+flight_numbers = dict(Flight_20210629a="F05")
 # BACARDI pitch and roll offset of upward facing sensor
 roll_offset = 0.3
 pitch_offset = 2.55
@@ -66,7 +68,16 @@ flight_sections = dict(
     Flight_20210629a=dict(
         above=[(Ts(2021, 6, 29, 11, 54), Ts(2021, 6, 29, 12, 5)), (Ts(2021, 6, 19, 12, 36), Ts(2021, 6, 29, 14, 20))],
         below=[(Ts(2021, 6, 29, 10, 10), Ts(2021, 6, 29, 10, 14))],
-        inside=[(Ts(2021, 6, 29, 10, 15), Ts(2021, 6, 29, 11, 54)), (Ts(2021, 6, 29, 12, 8), Ts(2021, 6, 29, 12, 25))]),
+        inside=[(Ts(2021, 6, 29, 10, 15), Ts(2021, 6, 29, 11, 54)), (Ts(2021, 6, 29, 12, 8), Ts(2021, 6, 29, 12, 25))],
+        staircase=dict(
+            start_dts=pd.to_datetime(np.array(['2021-06-29T09:43:41.700000000', '2021-06-29T10:10:52.000000000',
+                                               '2021-06-29T10:25:24.100000000', '2021-06-29T10:47:18.400000000',
+                                               '2021-06-29T11:08:56.200000000', '2021-06-29T11:32:42.300000000',
+                                               '2021-06-29T11:56:42.700000000'])),
+            end_dts=pd.to_datetime(np.array(['2021-06-29T10:09:42.700000000', '2021-06-29T10:23:56.800000000',
+                                             '2021-06-29T10:45:49.400000000', '2021-06-29T11:07:27.200000000',
+                                             '2021-06-29T11:31:14.100000000', '2021-06-29T11:54:31.600000000',
+                                             '2021-06-29T12:05:04.700000000'])))),
     Flight_20210719a=dict(
         above=[(Ts(2021, 7, 19, 10, 20), Ts(2021, 7, 19, 11, 42))],
         below=[(Ts(2021, 7, 19, 8, 25), Ts(2021, 7, 19, 8, 33)), (Ts(2021, 7, 19, 8, 43), Ts(2021, 7, 19, 8, 48))],
