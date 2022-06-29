@@ -6,6 +6,7 @@ Cirrus over Atlantic west and north of Iceland
 -> Poster HALO Status Colloquium 2021
 -> Presentation for CIRRUS-HL workshop 2. - 3.12.2021
 -> 1. PhD Talk
+-> Presentation for CIRRUS-HL workshop 30. - 31.05.2022
 
 **author**: Johannes Röttenbacher
 """
@@ -62,8 +63,8 @@ if __name__ == "__main__":
     in_cloud = (pd.Timestamp(2021, 6, 29, 10, 15), pd.Timestamp(2021, 6, 29, 11, 54))
     above_cloud = (pd.Timestamp(2021, 6, 29, 11, 54), pd.Timestamp(2021, 6, 29, 12, 5))
 
-# %% find bahamas file and read in bahamas data
-    file = [f for f in os.listdir(bahamas_dir) if f.endswith(".nc")][0]
+# %% read in bahamas data
+    file = "CIRRUSHL_F05_20210629a_ADLR_BAHAMAS_v1.nc"
     bahamas = reader.read_bahamas(os.path.join(bahamas_dir, file))
 
 # %% read in satellite picture
@@ -517,7 +518,7 @@ if __name__ == "__main__":
     plt.close()
 
 # %% read in ecRad output
-    ecrad_output_file = [f for f in os.listdir(ecrad_dir) if f"output_{date}" in f][0]
+    ecrad_output_file = "ecrad_merged_output_20210629_inp.nc"
     ecrad_output = xr.open_dataset(f"{ecrad_dir}/{ecrad_output_file}")
     # assign coordinates to band_sw
     ecrad_output = ecrad_output.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17),
@@ -525,12 +526,6 @@ if __name__ == "__main__":
     # select only the center column for the analysis
     if ecrad_output.dims["column"] > 1:
         ecrad_output = ecrad_output.isel(column=ecrad_output.dims["column"]//2)
-
-# %% read in SMART horidata
-    ims_file = [f for f in os.listdir(horidata_dir) if "IMS" in f][0]
-    horidata = reader.read_nav_data(os.path.join(horidata_dir, ims_file))
-    # convert data frame to xarray for easier use later
-    horidata = horidata.to_xarray()
 
 # %% select only relevant time (bahamas time range)
     time_sel = (ecrad_output.time > bahamas.time[0]) & (ecrad_output.time < bahamas.time[-1])
@@ -560,15 +555,23 @@ if __name__ == "__main__":
         aircraft_height_level[i] = h.arg_nearest(ecrad_output["press_height"][i, :].values, bahamas_sel.IRS_ALT[i].values)
 
     aircraft_height_level = aircraft_height_level.astype(int)
+    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ecrad_output.time})
+    aircraft_height = [ecrad_output["press_height"].isel(half_level=i, time=100).values for i in aircraft_height_level]
+    aircraft_height_da = xr.DataArray(aircraft_height, dims=["time"], coords={"time": ecrad_output.time})
 
 # %% prepare ecRad data for plotting by selecting only the HALO flightlevel
-    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ecrad_output.time})
     ecrad_dn_sw = ecrad_output["spectral_flux_dn_sw"].isel(half_level=height_level_da)
     ecrad_up_sw = ecrad_output["spectral_flux_up_sw"].isel(half_level=height_level_da)
     ecrad_dn_sw_bb = ecrad_output["flux_dn_sw"].isel(half_level=height_level_da)
     ecrad_up_sw_bb = ecrad_output["flux_up_sw"].isel(half_level=height_level_da)
     ecrad_dn_lw_bb = ecrad_output["flux_dn_lw"].isel(half_level=height_level_da)
     ecrad_up_lw_bb = ecrad_output["flux_up_lw"].isel(half_level=height_level_da)
+
+# %% read in SMART horidata
+    ims_file = [f for f in os.listdir(horidata_dir) if "IMS" in f][0]
+    horidata = reader.read_nav_data(os.path.join(horidata_dir, ims_file))
+    # convert data frame to xarray for easier use later
+    horidata = horidata.to_xarray()
 
 # %% read in SMART nc files
     fdw_vnir = xr.open_dataset(f"{smart_dir}/cirrus-hl_SMART_Fdw_VNIR_2021_06_29.nc")
@@ -746,9 +749,9 @@ if __name__ == "__main__":
     ax2.invert_yaxis()
     plt.tight_layout()
     plt.show()
-    # figname = f"{outpath}/cirrus-hl_ecRad_{variable}_halo_alt_{date}.png"
-    # plt.savefig(figname, dpi=100)
-    # log.info(f"Saved {figname}")
+    figname = f"{outpath}/cirrus-hl_ecRad_{variable}_halo_alt_{date}.png"
+    plt.savefig(figname, dpi=100)
+    log.info(f"Saved {figname}")
     plt.close()
 
 # %% plot ecRad simulations together with BACARDI measurements (solar + terrestrial)
@@ -1051,4 +1054,269 @@ if __name__ == "__main__":
     figname = f"{outpath}/cirrus-hl_ifs_{variable}_along_track_{date}.png"
     plt.savefig(figname, dpi=100)
     log.info(f"Saved {figname}")
+    plt.close()
+
+# %% Presentation for CIRRUS-HL workshop 30. - 31.05.2022
+########################################################################################################################
+# %% read in staircase sections
+    start_dts = xr.open_dataset(f"{outpath}/start_dts.nc")["start"]
+    end_dts = xr.open_dataset(f"{outpath}/end_dts.nc")["end"]
+
+# %% read in ecRad input
+    ecrad_input_file = "ecrad_merged_input_20210629_inp.nc"
+    ecrad_input = xr.open_dataset(f"{ecrad_dir}/{ecrad_input_file}")
+    # select only the center column for the analysis
+    if ecrad_input.dims["column"] > 1:
+        ecrad_input = ecrad_input.isel(column=ecrad_input.dims["column"] // 2)
+
+# %% read in ecRad output
+    ecrad_output_file = "ecrad_merged_output_20210629_inp.nc"
+    ecrad_output = xr.open_dataset(f"{ecrad_dir}/{ecrad_output_file}")
+    # assign coordinates to band_sw
+    ecrad_output = ecrad_output.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17),
+                                               "half_level": range(138)})
+    # select only the center column for the analysis
+    if ecrad_output.dims["column"] > 1:
+        ecrad_output = ecrad_output.isel(column=ecrad_output.dims["column"]//2)
+
+# %% calculate pressure height
+    q_air = 1.292
+    g_geo = 9.81
+    pressure_hl = ecrad_input["pressure_hl"]
+    ecrad_input["press_height"] = -(pressure_hl[:, 137]) * np.log(pressure_hl[:, :] / pressure_hl[:, 137]) / (
+            q_air * g_geo)
+    # replace TOA height (calculated as infinity) with nan
+    ecrad_input["press_height"] = ecrad_input["press_height"].where(ecrad_input["press_height"] != np.inf, np.nan)
+    ecrad_output["press_height"] = ecrad_input["press_height"]
+
+# %% select only relevant time (bahamas time range)
+    time_sel = (ecrad_input.time > bahamas.time[0]) & (ecrad_input.time < bahamas.time[-1])
+    ecrad_input = ecrad_input.sel(time=time_sel.values)
+    time_sel = (ecrad_output.time > bahamas.time[0]) & (ecrad_output.time < bahamas.time[-1])
+    ecrad_output = ecrad_output.sel(time=time_sel.values)
+
+# %% get height level of actual flight altitude in ecRad model, this determines only the index of the level
+    bahamas_sel = bahamas.sel(time=ecrad_input.time)
+    ecrad_timesteps = len(ecrad_input.time)
+    aircraft_height_level = np.zeros(ecrad_timesteps)
+
+    for i in tqdm(range(ecrad_timesteps)):
+        aircraft_height_level[i] = h.arg_nearest(ecrad_input["press_height"][i, :].values, bahamas_sel.IRS_ALT[i].values)
+
+    aircraft_height_level = aircraft_height_level.astype(int)
+    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ecrad_input.time})
+    aircraft_height = [ecrad_input["press_height"].isel(half_level=i, time=100).values for i in aircraft_height_level]
+    aircraft_height_da = xr.DataArray(aircraft_height, dims=["time"], coords={"time": ecrad_input.time})
+
+# %% read in SMART data
+    fdw_vnir = xr.open_dataset(f"{smart_dir}/CIRRUS-HL_HALO_SMART_Fdw_VNIR_20210629_Flight_20210629a.nc")
+    fup_vnir = xr.open_dataset(f"{smart_dir}/CIRRUS-HL_HALO_SMART_Fup_VNIR_20210629_Flight_20210629a.nc")
+    fdw_swir = xr.open_dataset(f"{smart_dir}/CIRRUS-HL_HALO_SMART_Fdw_SWIR_20210629_Flight_20210629a.nc")
+    fup_swir = xr.open_dataset(f"{smart_dir}/CIRRUS-HL_HALO_SMART_Fup_SWIR_20210629_Flight_20210629a.nc")
+    # filter VNIR data
+    fdw_vnir = fdw_vnir.sel(wavelength=slice(420, 950))
+    fup_vnir = fup_vnir.sel(wavelength=slice(420, 950))
+    wavelengths_to_drop = fup_vnir.wavelength[fup_vnir.wavelength > 850]
+    # filter swir data
+    # fup_swir = fup_swir.sel(wavelength=slice(950, 2200))
+
+    # merge VNIR and SWIR channel
+    smart_fdw = smart.merge_vnir_swir_nc(fdw_vnir, fdw_swir)
+    vnir = fup_vnir.rename(dict(Fup_VNIR="Fup"))
+    swir = fup_swir.rename(dict(Fup_SWIR="Fup"))
+    # merge datasets
+    all = xr.merge([swir, vnir])
+    all["Fup_bb"] = all["Fup_VNIR_bb"] + all["Fup_SWIR_bb"]
+    smart_fup = all
+    # filter some wavelengths in the overlap region of the spectrometers
+    mask = smart_fup.wavelength.isin(wavelengths_to_drop)
+    smart_fup = smart_fup.where(~mask, np.nan)
+    # resample to minutely data
+    smart_fdw = smart_fdw.resample(time="1T").mean()
+    smart_fup = smart_fup.resample(time="1T").mean()
+    smart_fup = smart_fup.reindex_like(smart_fdw, method="nearest")
+
+# %% read in libRadtran spectral data
+    lib_spec = xr.open_dataset(f"{libradtran_dir}/CIRRUS-HL_HALO_libRadtran_clearsky_simulation_smart_spectral_20210629_Flight_20210629a.nc")
+    lib_spec = lib_spec.resample(time="1T").asfreq()  # resample to full minute values, changes only the timestamps
+    # select wavelengths and timesptes closest to smart wavelengths
+    lib_spec = lib_spec.reindex_like(smart_fdw, method="nearest")
+
+# %% SMART and ecRad calculate reflectivity and transmissivity
+    smart_reflectivity = smart_fup.Fup / smart_fdw.Fdw
+    smart_transmissivity = smart_fdw.Fdw / lib_spec.fdw
+    ecrad_reflectivity = ecrad_output.spectral_flux_up_sw / ecrad_output.spectral_flux_dn_sw
+    ecrad_transmissivity = ecrad_output.spectral_flux_dn_sw / ecrad_output.spectral_flux_dn_sw_clear
+
+# %% plot aircraft track through ecrad input
+    from matplotlib import colors
+    variable = "re_liquid"
+    units = dict(clwc="g/kg", ciwc="g/kg", q_ice="g/kg", cswc="g/kg", crwc="g/kg", t="K", re_ice="m x $10^{-6}$",
+                 re_liquid="m x $10^{-6}$")
+    scale_factor = dict(clwc=1000, ciwc=1000, q_ice=1000, cswc=1000, crwc=1000, t=1, re_ice=1e6, re_liquid=1e6)
+    colorbarlabel = dict(clwc="Cloud Liquid Water Content", ciwc="Cloud Ice Water Content", q_ice="Ice and Snow Content",
+                         cswc="Cloud Snow Water Content", crwc="Cloud Rain Water Content", t="Temperature",
+                         re_ice="Effective Ice Particle Radius", re_liquid="Effective Droplet Radius")
+    cmap = dict(t="bwr")
+    cmap = cmap[variable] if variable in cmap else "YlGnBu"
+    x_sel = (pd.Timestamp(2021, 6, 29, 10), pd.Timestamp(2021, 6, 29, 12, 15))
+    ecrad_plot = ecrad_input[variable] * scale_factor[variable]
+    ecrad_plot = ecrad_plot.assign_coords(level=ecrad_input["press_height"].isel(time=100, drop=True)[1:].values/1000)
+    ecrad_plot = ecrad_plot.rename(level="height")
+    aircraft_height_plot = aircraft_height_da / 1000
+    norm = colors.TwoSlopeNorm(vmin=193, vcenter=273, vmax=293)
+
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(13, 7))
+    ecrad_plot.plot(x="time", y="height", cmap=cmap, ax=ax, cbar_kwargs={"pad": 0.01, "label": f"{colorbarlabel[variable]} ({units[variable]})"})
+    aircraft_height_plot.plot(x="time", color="k", ax=ax, label="HALO altitude")
+    # ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_belowcloud,
+    #                 transform=ax.get_xaxis_transform(), label="below cloud", color="green", alpha=0.5)
+    # ax.fill_between(ecrad_dn_sw.time.values, 0, 1,
+    #                 where=((in_cloud[0] < ecrad_dn_sw.time) & (ecrad_dn_sw.time < in_cloud[1])),
+    #                 transform=ax.get_xaxis_transform(), label="inside cloud", color="grey", alpha=0.5)
+    # ax.fill_between(ecrad_dn_sw.time.values, 0, 1, where=ecrad_abovecloud,
+    #                 transform=ax.get_xaxis_transform(), label="above cloud", color="red", alpha=0.5)
+    ax.legend(loc=2)
+    # ax.yaxis.set_major_locator(plt.FixedLocator(range(0, 138, 10)))
+    ax.set_xlim(x_sel)
+    ax.set_ylim(0, 12)
+    h.set_xticks_and_xlabels(ax, x_sel[1] - x_sel[0])
+    ax.grid()
+    ax.set_title("IFS Output along HALO Flight Track 29. June 2021")
+    ax.set_ylabel("Pressure Height (km)")
+    ax.set_xlabel("Time (UTC)")
+    # ax.invert_yaxis()
+    # add axis with pressure height
+    # ax2 = ax.twinx()
+    # ax2.set_ylim(61, 138)
+    # ax2.yaxis.set_major_locator(plt.FixedLocator(range(0, 138, 10)))
+    # yticks = ax.get_yticks()
+    # ylabels = np.round(ecrad_input["press_height"].isel(time=100, half_level=yticks).values / 1000, 1)
+    # ax2.set_yticklabels(ylabels)
+    # ax2.set_ylabel("Pressure Altitude (km)")
+    # ax2.invert_yaxis()
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{outpath}/CIRRUS-HL_IFS_{variable}_HALO_alt_{date}.png"
+    plt.savefig(figname, dpi=300)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% calculate mean values for staircase sections
+    smart_sections, libradtran_sections, ecrad_sections, section_level = dict(), dict(), dict(), dict()
+    for i, (st, et) in enumerate(zip(start_dts, end_dts)):
+        smart_sections[f"mean_reflectivity_{i}"] = smart_reflectivity.sel(time=slice(st, et)).mean(dim="time")
+        smart_sections[f"mean_transmissivity_{i}"] = smart_transmissivity.sel(time=slice(st, et)).mean(dim="time")
+        smart_sections[f"mean_fdw_{i}"] = smart_fdw.Fdw.sel(time=slice(st, et)).mean(dim="time")
+        libradtran_sections[f"mean_spectra_{i}"] = lib_spec.fdw.sel(time=slice(st, et)).mean(dim="time")
+        ecrad_sections[f"mean_reflectivity_{i}"] = ecrad_reflectivity.sel(time=slice(st, et)).mean(dim="time")
+        section_level[f"section_{i}"] = height_level_da.sel(time=slice(st, et)).median(dim="time")
+
+    labels = ["Section 1 (FL260, 8.3$\,$km)", "Section 2 (FL280, 8.7$\,$km)", "Section 3 (FL300, 9.3$\,$km)",
+              "Section 4 (FL320, 10$\,$km)", "Section 5 (FL340, 10.6$\,$km)", "Section 6 (FL360, 11.2$\,$km)",
+              "Section 7 (FL390, 12.2$\,$km)"]
+
+# %% plot spectral reflectivity (SMART)
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(13, 7))
+    for i in range(len(labels)):
+        smart_sections[f"mean_reflectivity_{i}"].plot(ax=ax, label=labels[i])
+
+    ax.set_xlim(400, 2100)
+    ax.set_ylim(0, 1)
+    ax.grid()
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    ax.set_title("Mean Spectral Reflectivity for each Staircase Section 29. June 2021")
+    ax.set_ylabel("Reflectivity")
+    ax.set_xlabel("Wavelength (nm)")
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.3)
+    # plt.show()
+    figname = f"{outpath}/CIRRUS-HL_SMART_staircase_spectral-reflectivity_{date}.png"
+    plt.savefig(figname, dpi=300)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot spectral reflectivity (ecRad)
+    xticklabels = [f"{band}" for band in h.ecRad_bands.values()]
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(14, 10))
+    for i in range(len(labels)):
+        level = section_level[f"section_{i}"]
+        ecrad_sections[f"mean_reflectivity_{i}"].sel(half_level=level).plot(ax=ax, label=labels[i])
+
+    # ax.set_xlim(400, 2100)
+    ax.set_ylim(0, 1)
+    ax.grid()
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    ax.set_title("Mean Spectral Reflectivity for each Staircase Section 29. June 2021")
+    ax.set_ylabel("Reflectivity")
+    ax.set_xlabel("ecRad Band (nm)")
+    ax.set_xticks(range(1, 15))
+    ax.set_xticklabels(xticklabels, rotation=45)
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.3)
+    # plt.show()
+    figname = f"{outpath}/CIRRUS-HL_ecRad_staircase_spectral-reflectivity_{date}.png"
+    plt.savefig(figname, dpi=300)
+    log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot spectral transmissivity (SMART)
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(13, 7))
+    for i in range(len(labels)):
+        smart_sections[f"mean_transmissivity_{i}"].plot(ax=ax, label=labels[i])
+
+    ax.set_xlim(400, 2100)
+    # ax.set_ylim(0, 1)
+    ax.grid()
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    ax.set_title("Mean Spectral Transmissivity for each Staircase Section 29. June 2021")
+    ax.set_ylabel("Transmissivity")
+    ax.set_xlabel("Wavelength (nm)")
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.3)
+    plt.show()
+    # figname = f"{outpath}/CIRRUS-HL_SMART_staircase_spectral-transmissivity_{date}.png"
+    # plt.savefig(figname, dpi=300)
+    # log.info(f"Saved {figname}")
+    plt.close()
+
+# %% plot libradtran simulation
+    plt.rcdefaults()
+    h.set_cb_friendly_colors()
+    plt.rc('font', size=16)
+    plt.rc('lines', linewidth=3)
+    fig, ax = plt.subplots(figsize=(13, 7))
+    for i in range(len(labels)):
+        libradtran_sections[f"mean_spectra_{i}"].plot(ax=ax, label=labels[i])
+        smart_sections[f"mean_fdw_{i}"].plot(ax=ax, label="SMART")
+
+    # ax.set_xlim(400, 2100)
+    # ax.set_ylim(0, 1)
+    ax.grid()
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    ax.set_title("Mean Clear Sky Spectra for each Staircase Section 29. June 2021")
+    ax.set_ylabel("Downward Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)")
+    ax.set_xlabel("Wavelength (nm)")
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.3)
+    plt.show()
+    # figname = f"{outpath}/CIRRUS-HL_SMART_staircase_spectral-reflectivity_{date}.png"
+    # plt.savefig(figname, dpi=300)
+    # log.info(f"Saved {figname}")
     plt.close()
