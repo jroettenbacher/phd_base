@@ -36,12 +36,12 @@ if __name__ == "__main__":
     asp06_props = ["Fdw_SWIR", "Fdw_VNIR", "Fup_SWIR", "Fup_VNIR"]
     asp07_props = ["Iup_SWIR", "Iup_VNIR"]
     for prop in asp06_props:
-        asp06_first[prop] = pd.read_csv(f"{calib_path}/{first_date_asp06}_{ch.lookup[prop]}_{prop}_lab_calib.dat")
-        asp06_second[prop] = pd.read_csv(f"{calib_path}/{second_date_asp0607}_{ch.lookup[prop]}_{prop}_lab_calib.dat")
+        asp06_first[prop] = pd.read_csv(f"{calib_path}/{first_date_asp06}_{ch.smart_lookup[prop]}_{prop}_lab_calib.dat")
+        asp06_second[prop] = pd.read_csv(f"{calib_path}/{second_date_asp0607}_{ch.smart_lookup[prop]}_{prop}_lab_calib.dat")
 
     for prop in asp07_props:
-        asp07_first[prop] = pd.read_csv(f"{calib_path}/{first_date_asp07}_{ch.lookup[prop]}_{prop}_lab_calib.dat")
-        asp07_second[prop] = pd.read_csv(f"{calib_path}/{second_date_asp0607}_{ch.lookup[prop]}_{prop}_lab_calib.dat")
+        asp07_first[prop] = pd.read_csv(f"{calib_path}/{first_date_asp07}_{ch.smart_lookup[prop]}_{prop}_lab_calib.dat")
+        asp07_second[prop] = pd.read_csv(f"{calib_path}/{second_date_asp0607}_{ch.smart_lookup[prop]}_{prop}_lab_calib.dat")
 
 # %% plot calibration factors for ASP06
     h.set_cb_friendly_colors()
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     ax.plot(asp06_second["Fdw_SWIR"].wavelength, asp06_second["Fdw_SWIR"].c_lab, label=second_date_asp0607)
     ax.set_yscale("log")
     ax.set_ylabel("Calibration Factor")
-    ax.set_title(f"Fdw SWIR ({ch.lookup['Fdw_SWIR']})")
+    ax.set_title(f"Fdw SWIR ({ch.smart_lookup['Fdw_SWIR']})")
     ax.legend()
     ax.grid()
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     ax.set_yscale("log")
     ax.set_xlabel("Wavelength (nm)")
     ax.set_ylabel("Calibration Factor")
-    ax.set_title(f"Fup SWIR ({ch.lookup['Fup_SWIR']})")
+    ax.set_title(f"Fup SWIR ({ch.smart_lookup['Fup_SWIR']})")
     ax.legend()
     ax.grid()
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     ax.plot(asp06_second["Fdw_VNIR"].wavelength, asp06_second["Fdw_VNIR"].c_lab, label=second_date_asp0607)
     ax.set_yscale("log")
     ax.set_ylabel("Calibration Factor")
-    ax.set_title(f"Fdw VNIR ({ch.lookup['Fdw_VNIR']})")
+    ax.set_title(f"Fdw VNIR ({ch.smart_lookup['Fdw_VNIR']})")
     ax.legend()
     ax.grid()
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     ax.set_yscale("log")
     ax.set_xlabel("Wavelength (nm)")
     ax.set_ylabel("Calibration Factor")
-    ax.set_title(f"Fup VNIR ({ch.lookup['Fup_VNIR']})")
+    ax.set_title(f"Fup VNIR ({ch.smart_lookup['Fup_VNIR']})")
     ax.legend()
     ax.grid()
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     ax.set_yscale("log")
     ax.set_xlabel("Wavelength (nm)")
     ax.set_ylabel("Calibration Factor")
-    ax.set_title(f"Iup SWIR ({ch.lookup['Iup_SWIR']})")
+    ax.set_title(f"Iup SWIR ({ch.smart_lookup['Iup_SWIR']})")
     ax.legend()
     ax.grid()
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     ax.set_yscale("log")
     ax.set_xlabel("Wavelength (nm)")
     ax.set_ylabel("Calibration Factor")
-    ax.set_title(f"Iup VNIR ({ch.lookup['Iup_VNIR']})")
+    ax.set_title(f"Iup VNIR ({ch.smart_lookup['Iup_VNIR']})")
     ax.legend()
     ax.grid()
 
