@@ -46,8 +46,8 @@ Usually a jump in the counts should be happening, here only a steady increase in
 
 Using this information the part where the counts gradually increase is cut out from the dark current corrected file before the field calibration factor is calculated with :py:mod:`processing.smart_calib_transfer.py` .
 However, this also does not seem to yield a reasonable field calibration factor from that transfer calibration.
-Further work is needed.
-Maybe the mean field calibration factor will be used for this day.
+The most reasonable explanation seems to be that the SWIR spectrometer was unstable during the calibration.
+In that case it is best to discard this transfer calibration and use another one for the 29. June 2021.
 
 **Transfer Calib Fup SWIR 11. July**
 
@@ -65,6 +65,16 @@ Thus, to correct the transfer calibration measurement of Fup SWIR only the dark 
 The corresponding rows are deleted in the dark current measurement file (everything before 14:21:03.78).
 
 After the dark current correction the rows exhibiting the described weird behaviour are then deleted (everything before before 14:19:50.6).
+
+**Transfer Calib Fup SWIR 16. July**
+
+.. figure:: figures/SMART_calib_factors_Fup_SWIR_new2.png
+
+    Evolution of the field calibration factor for ASP06 Fup SWIR channel after the corrections.
+
+After correcting the 11. July the 16. July also shows up as a rather high calibration factor.
+Looking into the dark current corrected data reveals that the first pixels show only negative values, hinting at a bad dark current measurement at the beginning of the file.
+Thus, this calibration is also discarded.
 
 *author*: Johannes Röttenbacher
 """

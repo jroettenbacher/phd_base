@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """Correct the lab calibration files for the dark current and merge the minutely files
 
+For the calibration after the campaign the bug in the LabView software was not fixed yet (see :py:mod:`processing.smart_process_transfer_calib_cirrus_hl.py`).
+Thus, the first SWIR measurement file for each calibration is deleted. This avoids the problem of a faulty dark current
+measurement at the beginning of the SWIR file.
+
 **author**: Johannes Röttenbacher
 """
 if __name__ == "__main__":
@@ -15,8 +19,8 @@ if __name__ == "__main__":
     log.setLevel(logging.DEBUG)
 
     # User input
-    folder = "ASP06_Calib_Lab_20210329"
-    # folder = "ASP07_Calib_Lab_20210809"
+    # folder = "ASP06_Calib_Lab_20210329"
+    folder = "ASP06_Calib_Lab_20210809"
     date = folder[-8:]  # extract date from folder name
     if date == "20210809":
         dark_file_J34 = "2021_08_09_10_51.Fdw_VNIR.dat"
