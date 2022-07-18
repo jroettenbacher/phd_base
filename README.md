@@ -34,7 +34,7 @@ Each flight folder has one `SMART` folder with the following subfolders:
 * `raw`: raw measurement files
 
 In the calibration folder each calibration is saved in its own folder.
-Each calibration is used to generate one calibration file, which is corrected for dark current.
+Each calibration is used to generate one calibration file, which is corrected for dark current and saved in the top level calibration folder.
 
 A few more folders needed are:
 
@@ -66,7 +66,7 @@ Use `smart_write_dark_currented_corrected_file.py` to correct one flight for the
 Merge the resulting minutely files with `smart_merge_minutely_files.py`.
 Finally, calibrate the measurement with `smart_calibrate_measurment.py`.
 The resulting calibrated files are saved in the `data_calibrated` folder.
-
+As a final step the calibrated files can then be converted to netCDF with `smart_write_ncfile.py`.
 
 ### 1.1 smart.py
 
@@ -78,9 +78,10 @@ This has been moved to `cirrus-hl.py`.
 The functions are explained in their docstring and can be tested using the main frame.
 You can:
 
-* read in raw and processed SMART data
-* read in the pixel to wavelength calibration file for the given spectrometer
-* read in the lamp standard file
+~~* read in raw and processed SMART data~~
+~~* read in the pixel to wavelength calibration file for the given spectrometer~~
+~~* read in the lamp standard file~~
+The reader functions were moved to `pylim.reader`.
 * find the closest pixel and wavelength to any given wavelength for the given wavelength calibration file
 * get information (date, measured property, channel) from the filename
 * get the dark current for a specified measurement file with either option 1 or 2 and optionally plot it
