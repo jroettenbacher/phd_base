@@ -151,25 +151,26 @@ def read_smart_cor(path: str, filename: str) -> pd.DataFrame:
     return df
 
 
-def read_pixel_to_wavelength(path: str, channel: str) -> pd.DataFrame:
+def read_pixel_to_wavelength(path: str, spectrometer: str) -> pd.DataFrame:
     """
-    Read file which maps each pixel to a certain wavelength for a specified channel.
+    Read file which maps each pixel to a certain wavelength for a specified spectrometer.
 
     Args:
         path: Path where to find file
-        channel: For which channel the pixel to wavelength mapping should be read in, refer to lookup table for possible
-         channels (e.g. ASP06_J3)
+        spectrometer: For which spectrometer the pixel to wavelength mapping should be read in, refer to lookup table for possible
+         spectrometers (e.g. ASP06_J3)
 
     Returns: pandas DataFrame relating pixel number to wavelength
 
     """
-    filename = f"pixel_wl_{cirrus_hl.lookup[channel]}.dat"
+    filename = f"pixel_wl_{cirrus_hl.smart_lookup[spectrometer]}.dat"
     file = os.path.join(path, filename)
     df = pd.read_csv(file, sep="\s+", skiprows=7, header=None, names=["pixel", "wavelength"])
     # sort df by the wavelength column and reset the index, necessary for the SWIR spectrometers
     # df = df.sort_values(by="wavelength").reset_index(drop=True)
 
     return df
+
 
 def read_stabbi_data(stabbi_path: str) -> pd.DataFrame:
     """
@@ -305,4 +306,29 @@ def read_ozone_sonde(filepath: str) -> pd.DataFrame():
         df = pd.read_csv(filepath, skiprows=68, sep="\s+", names=header_ho, na_values=[999.9])
 
     return df
+
+
+def read_ecrad_output(filepath: str) -> xr.Dataset:
+    """
+    Read in and preprocess a merged ecRad output file from :py:module:ecrad_processing.py
+    - Assign coordinates to dimensions
+    - Calculate pressure height in m
+    Args:
+        filepath: Full path to file
+
+    Returns: xarray DataSet with added coordinates to all dimensions of the file
+
+    """
+    ds = xr.open_dataset(filepath)
+    # assign coordinates to band_sw, band_lw and half_level
+    ds = ds.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17), "half_level": range(138)})
+    # calculate pressure height
+    q_air = 1.292  # dry air density at 0°C in kg/m3
+    g_geo = 9.81  # earth acceleration in m/s^2
+    pressure_hl = ds["pressure_hl"]
+    ds["press_height"] = -(pressure_hl[:, :, 137]) * np.log(pressure_hl[:, :, :] / pressure_hl[:, :, 137]) / (q_air * g_geo)
+    # replace TOA height (calculated as infinity) with nan
+    ds["press_height"] = ds["press_height"].where(ds["press_height"] != np.inf, np.nan)
+
+    return ds
 
