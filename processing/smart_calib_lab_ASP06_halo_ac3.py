@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Script to read in calibration files and calculate calibration factors for lab calibration of ASP06
 
-1. set property to work with (SWIR, VNIR), direction = Fup (uses setup names from CIRRUS-HL)
+1. set property to work with (SWIR, VNIR), direction = Fdw (uses setup names from CIRRUS-HL)
 2. read in 1000W lamp file
 3. read in calibration lamp measurements
 4. read in dark current measurements
@@ -14,13 +14,15 @@
 The smart lookup from CIRRUS-HL is used because the filenames were not changed before the calibration.
 See :ref:`analysis:smart_process_lab_calib_halo_ac3.py` for details.
 
+Due to changes of the setup the lookup from CIRRUS-HL is identical with the lookup from HALO-AC3.
+
 author: Johannes Roettenbacher
 """
 if __name__ == "__main__":
     # %%
     import pylim.helpers as h
     from pylim import reader, smart
-    from pylim.cirrus_hl import lookup
+    from pylim.cirrus_hl import smart_lookup
     import os
     import matplotlib.pyplot as plt
     from scipy.interpolate import interp1d
@@ -34,11 +36,10 @@ if __name__ == "__main__":
 
     # %% User Input
     prop = "SWIR"  # set property to work on (VNIR or SWIR)
-    direction = "Fup"  # these are the spectrometers which will measure Fdw during HALO-AC3
-    normalize = True  # normalize counts to integration time
+    direction = "Fdw"  # these are the spectrometers which measured Fdw during HALO-AC3
+    normalize = False  # normalize counts to integration time
     t_int = 300  # integration time of calibration measurement
-    base = "ASP06_lab_calibration_before"
-    date_str = "2021_11_23"
+    base = "ASP06_lab_calibration_after"
 
     # %% set paths
     campaign = "halo-ac3"
@@ -95,7 +96,7 @@ if __name__ == "__main__":
 
 
     # %% read in pixel to wavelength file
-    spectrometer = lookup[f"{direction}_{prop}"]
+    spectrometer = smart_lookup[f"{direction}_{prop}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_path, spectrometer)
     pixel_wl["S0"] = lab_calib.mean().reset_index(drop=True)  # take mean over time of calib measurement
     pixel_wl["S0_dark"] = lab_calib_dark.mean().reset_index(drop=True)
@@ -142,7 +143,7 @@ if __name__ == "__main__":
                  f"{date_str.replace('_', '-')} {spectrometer} Fdw {prop} {t_int}ms integration time")
     ax.set_xlabel("Wavelength (nm)")
     ax.set_ylabel("Calibration Factor")
-    ax.set_ylim(0, 7) if normalize else ""
+    ax.set_ylim(0, 0.2) if normalize else ""
     ax.grid()
     figname = f"{plot_path}/{spectrometer}_Fdw_{prop}_lab_calib_factor{norm}.png"
     plt.savefig(figname, dpi=100)
