@@ -991,16 +991,16 @@ for i, (st, et) in enumerate(zip(starts, ends)):
 
 h.set_cb_friendly_colors()
 plt.rc("font", family="serif")
-fig, ax = plt.subplots(figsize=(32 * cm, 20 * cm))
+fig, ax = plt.subplots(figsize=(40 * cm, 10 * cm))
 # Fdw
 sections[f"mean_spectra_0"].plot(ax=ax, linewidth=4, label="Above Cirrus", color="#44AA99")
 sections[f"mean_spectra_1"].plot(ax=ax, linewidth=4, label="Below Cirrus")
 
 # aesthetics
 ax.legend(fontsize=20)
-ax.set_title(f"Mean Spectral Downward Irradiance - SMART Measurement", size=26)
+# ax.set_title(f"11. April 2022 Mean Spectral Downward Irradiance - SMART Measurement", size=26)
 ax.set_xlabel("Wavelength (nm)", size=22)
-ax.set_ylabel("Spectral Irradiance $(\mathrm{W\,m}^{-2}\mathrm{\,nm}^{-1})$", size=22)
+ax.set_ylabel("Spectral Irradiance \n$(\mathrm{W\,m}^{-2}\mathrm{\,nm}^{-1})$", size=22)
 ax.tick_params(axis="x", labelsize=20)
 ax.tick_params(axis="y", labelsize=20)
 ax.grid()
