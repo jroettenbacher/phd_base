@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 """Go through all transfer calibrations of CIRRUS-HL and check the quality of the calibration
 
+Part1: Check transfer calibs over the course of the campaign
+Part2: Compare transfer calibs calculated with different lab calibrations
+
+Results:
+    - 20210629 Fup_SWIR -> Big increase in counts during calibration -> unstable spectrometer? Discard and use a different calibration.
+
 *author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
 # %% module import
     from pylim import reader
-    from pylim.cirrus_hl import lookup, transfer_calibs
+    from pylim.cirrus_hl import smart_lookup, transfer_calibs
     from pylim.smart import plot_smart_data
     import pylim.helpers as h
     import os
@@ -20,23 +26,18 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
 # %% set paths
-    calib_path = h.get_path("calib")
+    lab_calib = "after"
+    calib_path = f"{h.get_path('calib')}/transfer_calibs_{lab_calib}_campaign"
     plot_path = f"{h.get_path('plot')}/quality_check_calibration"
 
 # %% list all files from one spectrometer
     prop = "Fup_SWIR"
-    files = [f for f in os.listdir(calib_path) if lookup[prop] in f]
+    files = [f for f in os.listdir(calib_path) if smart_lookup[prop] in f]
 
-# %% select only normalized and transfer calib files
-    files = [f for f in files if "norm" in f]
+# %% select only normalized, 300ms transfer calib files
+    files = [f for f in files if "norm" in f and "300ms" in f]
     files = [f for f in files if "transfer" in f]
     files.sort()
-    if prop == "Fdw_SWIR" or prop == "Fdw_VNIR" or prop == "Fup_VNIR":
-        files.pop(2)  # remove 500ms file from the 16th
-    elif prop == "Fup_SWIR":
-        files.pop(1)  # remove 500ms file from the 16th
-    else:
-        pass
 
 # %% compare 300ms and 500ms normalized measurements for Fdw_SWIR
     # file_300, file_500 = files[1], files[2]  # TODO
@@ -57,25 +58,25 @@ if __name__ == "__main__":
     plt.rc('font', family="serif", size=14)
 
 # %% plot relation between lab calib measurement and each transfer calib measurement
-    zoom = False  # zoom in on y axis
+    zoom = True  # zoom in on y axis
 
     fig, ax = plt.subplots(figsize=(10, 6))
     for date_str in date_strs:
         df[df["date"] == date_str].sort_values(["wavelength"]).plot(x="wavelength", y="rel_ulli", label=date_str, ax=ax)
 
     if zoom:
-        ax.set_ylim((0, 10))
+        ax.set_ylim((0, 3))
         zoom = "_zoom"
     else:
         zoom = ""
     ax.set_ylabel("$S_{ulli, lab} / S_{ulli, field}$")
     ax.set_xlabel("Wavenlength (nm)")
-    ax.set_title(f"Relation between Lab Calib measurement \nand Transfer Calib measurement - {prop}")
+    ax.set_title(f"Relation between Lab Calib measurement {lab_calib} \nand Transfer Calib measurement - {prop}")
     ax.grid()
     ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
     plt.tight_layout()
     # plt.show()
-    plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{prop}{zoom}.png", dpi=100)
+    plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{lab_calib}_{prop}{zoom}.png", dpi=100)
     plt.close()
 
 # %% take the average over n pixels and prepare data frame for plotting
@@ -103,15 +104,15 @@ if __name__ == "__main__":
     ax.grid()
     ax.legend()
     plt.tight_layout()
-    # plt.show()
-    plt.savefig(f"{plot_path}/SMART_calib_factors_{prop}.png", dpi=100)
+    plt.show()
+    # plt.savefig(f"{plot_path}/SMART_calib_factors_{lab_calib}_{prop}.png", dpi=100)
     plt.close()
 
-# %% investigate the last four days in more detail because they look wrong, plot calibration files
+# %% investigate the last four days in more detail because they look wrong, plot calibration files (Lab View bug!)
     mpl.rcdefaults()  # set default plotting options
     flight = "Flight_20210719a"  # "Flight_20210721a"  # "Flight_20210721b" "Flight_20210723a" "Flight_20210728a" "Flight_20210729a"
     transfer_cali_date = transfer_calibs[flight]
-    instrument = lookup[prop][:5]
+    instrument = smart_lookup[prop][:5]
     calibration = f"{instrument}_transfer_calib_{transfer_cali_date}"
     trans_calib_path = f"{calib_path}/{calibration}/Tint_300ms"
     trans_calib_path_dark = f"{calib_path}/{calibration}/dark_300ms"
@@ -152,8 +153,8 @@ if __name__ == "__main__":
         ax.legend()
         ax.grid()
     fig.suptitle(f"{flight} - Mean Dark Current")
-    # plt.show()
-    plt.savefig(f"{plot_path}/{flight}_SWIR_mean_dark_current.png", dpi=100)
+    plt.show()
+    # plt.savefig(f"{plot_path}/{flight}_SWIR_mean_dark_current.png", dpi=100)
     plt.close()
 
 # %% plot mean dark current for VNIR over flight; read in all raw files
@@ -184,6 +185,74 @@ if __name__ == "__main__":
         ax.legend()
         ax.grid()
     fig.suptitle(f"{flight} - Mean Dark Current")
+    plt.show()
+    # plt.savefig(f"{plot_path}/{flight}_VNIR_mean_dark_current.png", dpi=100)
+    plt.close()
+
+# %% read in lab calibration factor from before and after campaign lab calib
+    inlet = smart_lookup[f"{prop}"]
+    date_before = "2021_03_29" if "ASP06" in inlet else "2021_03_18"
+    date_after = "2021_08_09"
+    # read in data
+    lab_calib_before = pd.read_csv(f"{calib_path}/../{date_before}_{inlet}_{prop}_lab_calib_norm.dat")
+    lab_calib_after = pd.read_csv(f"{calib_path}/../{date_after}_{inlet}_{prop}_lab_calib_norm.dat")
+
+# %% plot lab calibration from before and after campaign
+    h.set_cb_friendly_colors()
+    # plot variables
+    variables = dict(c_lab=dict(title="Laboratory Calibration Factor", ylabel="Laboratory calibration factor",
+                                ylim=(0, 0.1), yscale="log"),
+                     S0=dict(title="Lamp measurement", ylabel="Dark current corrected counts"),
+                     S_ulli=dict(title="Ulli sphere measurement", ylabel="Normalized dark current corrected counts"),
+                     F_ulli=dict(title="Irradiance measured from Ulli sphere",
+                                 ylabel="Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)"))
+    var = "F_ulli"
+    meta = variables[var]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot("wavelength", var, data=lab_calib_before, label="Before Campaign")
+    ax.plot("wavelength", var, data=lab_calib_after, label="After Campaign")
+    ax.grid()
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel(meta["ylabel"])
+    ax.set_title(f"{meta['title']} - {prop}" if "title" in meta else f"{prop}")
+    ax.set_yscale(meta["yscale"]) if "yscale" in meta else None
+    ax.set_ylim(meta["ylim"]) if "ylim" in meta else None
+    ax.legend()
+    plt.tight_layout()
     # plt.show()
-    plt.savefig(f"{plot_path}/{flight}_VNIR_mean_dark_current.png", dpi=100)
+    figname = f"{plot_path}/SMART_lab_calib_comparison_{var}_{prop}.png"
+    plt.savefig(figname, dpi=300)
+    plt.close()
+
+# %% plot relation between before and after
+    lab_calib_relation = lab_calib_before / lab_calib_after
+    lab_calib_relation["wavelength"] = lab_calib_before["wavelength"]
+    var = "F_ulli"
+    meta = variables[var]
+    fig, ax = plt.subplots()
+    ax.plot("wavelength", var, data=lab_calib_relation, label="Relation between before and after")
+    ax.grid()
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel(meta["ylabel"])
+    ax.set_title(meta["title"] if "title" in meta else "")
+    # ax.set_ylim(meta["ylim"]) if "ylim" in meta else None
+    ax.legend()
+    plt.show()
+    plt.close()
+
+# %% plot all field calibration factors
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for date_str in date_strs:
+        df[df["date"] == date_str].sort_values(["wavelength"]).plot(x="wavelength", y="c_field", label=date_str, ax=ax)
+    ax.set_xlim(890, 2200)
+    ax.set_yscale("log")
+    ax.set_ylim(0, 0.5)
+    ax.set_ylabel("Field calibration factor")
+    ax.set_xlabel("Wavenlength (nm)")
+    ax.set_title(f"Field calibration factor - {prop}")
+    ax.grid()
+    ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
+    plt.tight_layout()
+    plt.savefig(f"{plot_path}/SMART_calib_c_field_{prop}_{lab_calib}.png", dpi=300)
+    # plt.show()
     plt.close()
