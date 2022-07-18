@@ -2,15 +2,16 @@
 """Correct the lab calibration files for the dark current and merge the minutely files
 
 The calibration was still done with the naming convention of CIRRUS-HL.
-There are two calibrations available both use the VN11 inlet (ASP02), because it has a nicer cosine response, and the optical fiber 22b.
+There are two calibrations available both use the VN11 inlet (ASP02), ~~because it has a nicer cosine response~~, and the optical fiber 22b.
 **Attention:** There was a mixup between VN11 and VN05. Actually VN05 has a nicer cosine response and thus VN05 is used for HALO-AC3. However, the calibration was done with VN11 and should be repeated after the campaign with VN05.
 One calibration was done with VN11 attached to J3 and J4 on ASP06 and the other with VN11 attached to J5 and J6.
-For HALO-AC3 J5 and J6 will be the channels used.
-Thus, only the Fup measurements are of interest.
-The Fdw measurements are kept for completeness.
-Just be aware of the fact, that the file naming convention is changed for HALO-AC3.
-J5 and J6 will then be called Fdw_SWIR and Fdw_VNIR.
-So although they are called Fup the calibration measurements are actually for Fdw.
+For HALO-AC3 J3 and J4 were the channels used, because it was written like this in the Einbauanweisung.
+Thus, only the Fdw measurements are of interest.
+The Fup measurements are kept for completeness.
+~~Just be aware of the fact, that the file naming convention is changed for HALO-AC3.~~
+~~J5 and J6 will then be called Fdw_SWIR and Fdw_VNIR.~~
+~~So although they are called Fup the calibration measurements are actually for Fdw.~~
+
 
 author: Johannes Röttenbacher
 """
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     calib_path = h.get_path("calib", campaign=campaign)
 
     # %% merge VNIR dark measurement files before correcting the calib files
-    property = ["Fup"]
+    property = ["Fdw"]
     for dirpath, dirs, files in os.walk(os.path.join(calib_path, folder)):
         log.info(f"Working on {dirpath}")
         if "dark" in dirpath:
