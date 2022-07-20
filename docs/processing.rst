@@ -46,17 +46,17 @@ Then the minutely files are merged to one file per folder and channel.
 
 **Calibration files**
 
-Use `smart_process_transfer_calib.py` or `smart_process_lab_calib.py` to correct the calibration files for the dark current and merge the minutely files.
-Then run `smart_calib_lab_ASP06/07.py` for the lab calibrations or `smart_calib_transfer.py` for the transfer calibration.
+Use :py:mod:`smart_process_transfer_calib.py` or :py:mod:`smart_process_lab_calib.py` to correct the calibration files for the dark current and merge the minutely files.
+Then run :py:mod:`smart_calib_lab_ASP06/07.py` for the lab calibrations or :py:mod:`smart_calib_transfer.py` for the transfer calibration.
 Each script returns a file in the `calib` folder with the calibration factors.
 
 **Measurement files**
 
-Use `smart_write_dark_currented_corrected_file.py` to correct one flight for the dark current.
-Merge the resulting minutely files with `smart_merge_minutely_files.py`.
-Finally, calibrate the measurement with `smart_calibrate_measurment.py`.
+Use :py:mod:`smart_write_dark_currented_corrected_file.py` to correct one flight for the dark current.
+Merge the resulting minutely files with :py:mod:`smart_merge_minutely_files.py`.
+Finally, calibrate the measurement with :py:mod:`smart_calibrate_measurment.py`.
 The resulting calibrated files are saved in the `data_calibrated` folder.
-As a final step the calibrated files can then be converted to netCDF with `smart_write_ncfile.py`.
+As a final step the calibrated files can then be converted to netCDF with :py:mod:`smart_write_ncfile.py`.
 
 smart_calib_lab_ASP06.py
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,7 +65,3 @@ smart_calib_lab_ASP06.py
 smart_process_transfer_calib_cirrus_hl.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_process_transfer_calib_cirrus_hl
-
-CIRRUS-HL laboratory calibration comparison
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.cirrus_hl_smart_compare_lab_calibs
