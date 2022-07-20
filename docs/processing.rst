@@ -65,3 +65,7 @@ smart_calib_lab_ASP06.py
 smart_process_transfer_calib_cirrus_hl.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_process_transfer_calib_cirrus_hl
+
+CIRRUS-HL laboratory calibration comparison
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.cirrus_hl_smart_compare_lab_calibs

@@ -11,6 +11,45 @@ Each lab calibration is processed with `smart_process_lab_calib.py` to correct t
 After that the calibration factors are calculated with :py:mod:`analysis.smart_calib_lab_ASP06.py` for ASP06 and :py:mod:`analysis.smart_calib_lab_ASP07.py` for ASP07.
 
 - compare calibration factors
+- compare Ulli measurements
+
+Results
+^^^^^^^^
+
+.. figure:: figures/ASP06_lab_calib_comparison.png
+
+    Comparison of the lab calibration factors before and after CIRRUS-HL for the four channels on ASP06.
+
+Comparing the calibration factors of ASP06 between the before and after calibration shows that the after calibration (red) has a higher magnitude.
+This is due to fewer counts being measured during the after calibration.
+A possible cause of this is that the cable used in the after calibration was longer and also showed signs of damage leading to a loss of photons on the way from the inlet to the spectrometer.
+To account for that a higher calibration factor is needed to calculate the given irradiance which did not change between the calibrations.
+The same result can be observed for the calibrations for ASP07.
+
+.. figure:: figures/ASP07_lab_calib_comparison.png
+
+    Comparison of the lab calibration factors before and after CIRRUS-HL for the two channels on ASP07.
+
+**Ulli measurements**
+
+Taking a look at ASP06's measurements of the Ulbricht sphere (Ulli) shows the same difference in magnitude between the calibrations when comparing the dark current corrected counts.
+
+.. figure:: figures/ASP06_lab_calib_comparison_s-ulli.png
+
+    Dark current corrected count measurements of the Ulli transfer sphere from ASP06.
+
+It can clearly be seen that during the after calibration less photons reached the spectrometers.
+However, this should still result in the same irradiance as long as the Ulli sphere is run with the same power source and the same settings.
+Just like the output of the 1000W calibration lamp should not change between the calibration, so should the output of the Ulli sphere not change.
+Nonetheless, when looking at the calculated irradiance using the corresponding laboratory calibration factors clear differences can be observed for the downward measurement.
+
+.. figure:: figures/ASP06_lab_calib_comparison_f-ulli.png
+
+    Calculated irradiance of the Ulli transfer sphere from ASP06.
+
+Plotting the actual difference between the two shows a more detailed picture.
+
+.. figure:: figures/ASP06_lab_calib_comparison_f-ulli-diff.png
 
 *author*: Johannes Röttenbacher
 """
@@ -127,6 +166,142 @@ if __name__ == "__main__":
     plt.tight_layout()
     # plt.show()
     figname = f"{plot_path}/ASP07_lab_calib_comparison.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
+    plt.close()
+
+# %% plot Ulli counts for ASP06
+    h.set_cb_friendly_colors()
+    plt.rcParams['font.size'] = 8
+    fig, axs = plt.subplots(2, 2, figsize=(18 * cm, 11 * cm), sharex='col')
+    # first row, first column: Fdw SWIR
+    ax = axs[0, 0]
+    ax.plot(asp06_first["Fdw_SWIR"].wavelength, asp06_first["Fdw_SWIR"].S_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fdw_SWIR"].wavelength, asp06_second["Fdw_SWIR"].S_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_title(f"Fdw SWIR ({ch.smart_lookup['Fdw_SWIR']})")
+
+    # second row, first column: Fup SWIR
+    ax = axs[1, 0]
+    ax.plot(asp06_first["Fup_SWIR"].wavelength, asp06_first["Fup_SWIR"].S_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fup_SWIR"].wavelength, asp06_second["Fup_SWIR"].S_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_title(f"Fup SWIR ({ch.smart_lookup['Fup_SWIR']})")
+
+    # first row, second column: Fdw_VNIR
+    ax = axs[0, 1]
+    ax.plot(asp06_first["Fdw_VNIR"].wavelength, asp06_first["Fdw_VNIR"].S_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fdw_VNIR"].wavelength, asp06_second["Fdw_VNIR"].S_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_title(f"Fdw VNIR ({ch.smart_lookup['Fdw_VNIR']})")
+
+    # second row, second column: Fup VNIR
+    ax = axs[1, 1]
+    ax.plot(asp06_first["Fup_VNIR"].wavelength, asp06_first["Fup_VNIR"].S_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fup_VNIR"].wavelength, asp06_second["Fup_VNIR"].S_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_title(f"Fup VNIR ({ch.smart_lookup['Fup_VNIR']})")
+
+    for ax in axs:
+        for a in ax:
+            a.set_ylabel("Counts")
+            a.legend()
+            a.grid()
+
+    fig.suptitle("CIRRUS-HL Laboratory Calibrations ASP06 - Ulli counts")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{plot_path}/ASP06_lab_calib_comparison_s-ulli.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
+    plt.close()
+
+# %% plot Ulli irradiance measurements for ASP06
+    h.set_cb_friendly_colors()
+    plt.rcParams['font.size'] = 8
+    fig, axs = plt.subplots(2, 2, figsize=(18 * cm, 11 * cm), sharex='col')
+    # first row, first column: Fdw SWIR
+    ax = axs[0, 0]
+    ax.plot(asp06_first["Fdw_SWIR"].wavelength, asp06_first["Fdw_SWIR"].F_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fdw_SWIR"].wavelength, asp06_second["Fdw_SWIR"].F_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_title(f"Fdw SWIR ({ch.smart_lookup['Fdw_SWIR']})")
+
+    # second row, first column: Fup SWIR
+    ax = axs[1, 0]
+    ax.plot(asp06_first["Fup_SWIR"].wavelength, asp06_first["Fup_SWIR"].F_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fup_SWIR"].wavelength, asp06_second["Fup_SWIR"].F_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_title(f"Fup SWIR ({ch.smart_lookup['Fup_SWIR']})")
+
+    # first row, second column: Fdw_VNIR
+    ax = axs[0, 1]
+    ax.plot(asp06_first["Fdw_VNIR"].wavelength, asp06_first["Fdw_VNIR"].F_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fdw_VNIR"].wavelength, asp06_second["Fdw_VNIR"].F_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_title(f"Fdw VNIR ({ch.smart_lookup['Fdw_VNIR']})")
+
+    # second row, second column: Fup VNIR
+    ax = axs[1, 1]
+    ax.plot(asp06_first["Fup_VNIR"].wavelength, asp06_first["Fup_VNIR"].F_ulli, label=first_date_asp06)
+    ax.plot(asp06_second["Fup_VNIR"].wavelength, asp06_second["Fup_VNIR"].F_ulli, label=second_date_asp0607)
+    # ax.set_yscale("log")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_title(f"Fup VNIR ({ch.smart_lookup['Fup_VNIR']})")
+
+    for ax in axs:
+        for a in ax:
+            a.set_ylabel("Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)")
+            a.legend()
+            a.grid()
+
+    fig.suptitle("CIRRUS-HL Laboratory Calibrations ASP06 - Ulli Irradiance")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{plot_path}/ASP06_lab_calib_comparison_f-ulli.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
+    plt.close()
+
+# %% plot difference between Ulli irradiance for ASP06
+    h.set_cb_friendly_colors()
+    plt.rcParams['font.size'] = 8
+    fig, axs = plt.subplots(2, 2, figsize=(18 * cm, 11 * cm), sharex='col')
+    # first row, first column: Fdw SWIR
+    ax = axs[0, 0]
+    ax.plot(asp06_first["Fdw_SWIR"].wavelength, asp06_first["Fdw_SWIR"].F_ulli - asp06_second["Fdw_SWIR"].F_ulli)
+    ax.set_title(f"Fdw SWIR ({ch.smart_lookup['Fdw_SWIR']})")
+
+    # second row, first column: Fup SWIR
+    ax = axs[1, 0]
+    ax.plot(asp06_first["Fup_SWIR"].wavelength, asp06_first["Fup_SWIR"].F_ulli - asp06_second["Fup_SWIR"].F_ulli)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_title(f"Fup SWIR ({ch.smart_lookup['Fup_SWIR']})")
+
+    # first row, second column: Fdw_VNIR
+    ax = axs[0, 1]
+    ax.plot(asp06_first["Fdw_VNIR"].wavelength, asp06_first["Fdw_VNIR"].F_ulli - asp06_second["Fdw_VNIR"].F_ulli)
+    ax.set_title(f"Fdw VNIR ({ch.smart_lookup['Fdw_VNIR']})")
+
+    # second row, second column: Fup VNIR
+    ax = axs[1, 1]
+    ax.plot(asp06_first["Fup_VNIR"].wavelength, asp06_first["Fup_VNIR"].F_ulli - asp06_second["Fup_VNIR"].F_ulli)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_title(f"Fup VNIR ({ch.smart_lookup['Fup_VNIR']})")
+
+    for ax in axs:
+        for a in ax:
+            a.axhline(y=0, c="k")
+            a.set_ylabel("Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)")
+            a.grid()
+
+    fig.suptitle("CIRRUS-HL Laboratory Calibrations ASP06 - Difference in Ulli irradiance (before-after)")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{plot_path}/ASP06_lab_calib_comparison_f-ulli-diff.png"
     plt.savefig(figname, dpi=200)
     print(f"Saved {figname}")
     plt.close()
