@@ -38,18 +38,32 @@ Taking a look at ASP06's measurements of the Ulbricht sphere (Ulli) shows the sa
 
     Dark current corrected count measurements of the Ulli transfer sphere from ASP06.
 
+.. figure:: figures/ASP07_lab_calib_comparison_s-ulli.png
+
+    Dark current corrected count measurements of the Ulli transfer sphere from ASP07.
+
 It can clearly be seen that during the after calibration less photons reached the spectrometers.
 However, this should still result in the same irradiance as long as the Ulli sphere is run with the same power source and the same settings.
 Just like the output of the 1000W calibration lamp should not change between the calibration, so should the output of the Ulli sphere not change.
-Nonetheless, when looking at the calculated irradiance using the corresponding laboratory calibration factors clear differences can be observed for the downward measurement.
+Nonetheless, when looking at the calculated irradiance using the corresponding laboratory calibration factors clear differences can be observed for the downward measurements.
 
 .. figure:: figures/ASP06_lab_calib_comparison_f-ulli.png
 
     Calculated irradiance of the Ulli transfer sphere from ASP06.
 
+.. figure:: figures/ASP07_lab_calib_comparison_I-ulli.png
+
+    Calculated radiance of the Ulli transfer sphere from ASP07.
+
 Plotting the actual difference between the two shows a more detailed picture.
 
 .. figure:: figures/ASP06_lab_calib_comparison_f-ulli-diff.png
+
+    Difference between measured irradiances from Ulli sphere (before - after).
+
+.. figure:: figures/ASP07_lab_calib_comparison_I-ulli-diff.png
+
+    Difference between measured radiances from Ulli sphere (before - after).
 
 *author*: Johannes Röttenbacher
 """
@@ -302,6 +316,99 @@ if __name__ == "__main__":
     plt.tight_layout()
     # plt.show()
     figname = f"{plot_path}/ASP06_lab_calib_comparison_f-ulli-diff.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
+    plt.close()
+# %% plot Ulli counts for ASP07
+    h.set_cb_friendly_colors()
+    plt.rcParams['font.size'] = 8
+    fig, axs = plt.subplots(2, 1, figsize=(18 * cm, 11 * cm))
+    # first row: Iup SWIR
+    ax = axs[0]
+    ax.plot(asp07_first["Iup_SWIR"].wavelength, asp07_first["Iup_SWIR"].S_ulli, label=first_date_asp07)
+    ax.plot(asp07_second["Iup_SWIR"].wavelength, asp07_second["Iup_SWIR"].S_ulli, label=second_date_asp0607)
+    ax.set_yscale("log")
+    ax.set_ylabel("Counts")
+    ax.set_title(f"Iup SWIR ({ch.smart_lookup['Iup_SWIR']})")
+    ax.legend()
+    ax.grid()
+
+    # second row: Iup_VNIR
+    ax = axs[1]
+    ax.plot(asp07_first["Iup_VNIR"].wavelength, asp07_first["Iup_VNIR"].S_ulli, label=first_date_asp07)
+    ax.plot(asp07_second["Iup_VNIR"].wavelength, asp07_second["Iup_VNIR"].S_ulli, label=second_date_asp0607)
+    ax.set_yscale("log")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Counts")
+    ax.set_title(f"Iup VNIR ({ch.smart_lookup['Iup_VNIR']})")
+    ax.legend()
+    ax.grid()
+
+    fig.suptitle("CIRRUS-HL Laboratory Calibrations ASP07 - Ulli Counts")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{plot_path}/ASP07_lab_calib_comparison_s-ulli.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
+    plt.close()
+
+# %% plot Ulli irradiance for ASP07
+    h.set_cb_friendly_colors()
+    plt.rcParams['font.size'] = 8
+    fig, axs = plt.subplots(2, 1, figsize=(18 * cm, 11 * cm))
+    # first row: Iup SWIR
+    ax = axs[0]
+    ax.plot(asp07_first["Iup_SWIR"].wavelength, asp07_first["Iup_SWIR"].F_ulli, label=first_date_asp07)
+    ax.plot(asp07_second["Iup_SWIR"].wavelength, asp07_second["Iup_SWIR"].F_ulli, label=second_date_asp0607)
+    ax.set_yscale("log")
+    ax.set_ylabel("Radiance (W$\,$sr$^{-1}\,$m$^{-2}\,$nm$^{-1}$)")
+    ax.set_title(f"Iup SWIR ({ch.smart_lookup['Iup_SWIR']})")
+    ax.legend()
+    ax.grid()
+
+    # second row: Iup_VNIR
+    ax = axs[1]
+    ax.plot(asp07_first["Iup_VNIR"].wavelength, asp07_first["Iup_VNIR"].F_ulli, label=first_date_asp07)
+    ax.plot(asp07_second["Iup_VNIR"].wavelength, asp07_second["Iup_VNIR"].F_ulli, label=second_date_asp0607)
+    ax.set_yscale("log")
+    ax.set_ylim(10**-3, 5)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Radiance (W$\,$sr$^{-1}\,$m$^{-2}\,$nm$^{-1}$)")
+    ax.set_title(f"Iup VNIR ({ch.smart_lookup['Iup_VNIR']})")
+    ax.legend()
+    ax.grid()
+
+    fig.suptitle("CIRRUS-HL Laboratory Calibrations ASP07 - Ulli Radiance")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{plot_path}/ASP07_lab_calib_comparison_I-ulli.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
+    plt.close()
+
+# %% plot difference between Ulli irradiance for ASP07
+    h.set_cb_friendly_colors()
+    plt.rcParams['font.size'] = 8
+    fig, axs = plt.subplots(2, 1, figsize=(18 * cm, 11 * cm))
+    # first row: Iup SWIR
+    ax = axs[0]
+    ax.plot(asp07_first["Iup_SWIR"].wavelength, asp07_first["Iup_SWIR"].F_ulli - asp07_second["Iup_SWIR"].F_ulli)
+    ax.set_ylabel("Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)")
+    ax.set_title(f"Iup SWIR ({ch.smart_lookup['Iup_SWIR']})")
+    ax.grid()
+
+    # second row: Iup_VNIR
+    ax = axs[1]
+    ax.plot(asp07_first["Iup_VNIR"].wavelength, asp07_first["Iup_VNIR"].F_ulli - asp07_second["Iup_VNIR"].F_ulli)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Radiance (W$\,$sr$^{-1}\,$m$^{-2}\,$nm$^{-1}$)")
+    ax.set_title(f"Iup VNIR ({ch.smart_lookup['Iup_VNIR']})")
+    ax.grid()
+
+    fig.suptitle("CIRRUS-HL Laboratory Calibrations ASP07 - Difference in Ulli Radiance (before-after)")
+    plt.tight_layout()
+    # plt.show()
+    figname = f"{plot_path}/ASP07_lab_calib_comparison_I-ulli-diff.png"
     plt.savefig(figname, dpi=200)
     print(f"Saved {figname}")
     plt.close()
