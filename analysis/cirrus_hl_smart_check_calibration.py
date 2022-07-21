@@ -4,8 +4,11 @@
 Part1: Check transfer calibs over the course of the campaign
 Part2: Compare transfer calibs calculated with different lab calibrations
 
-Results:
-    - 20210629 Fup_SWIR -> Big increase in counts during calibration -> unstable spectrometer? Discard and use a different calibration.
+Results - Part 1
+^^^^^^^^^^^^^^^^^
+
+- 20210629 Fup_SWIR/Fdw_SWIR -> Big increase in counts during calibration -> unstable spectrometer? Discard and use a different calibration.
+- 20210711
 
 *author*: Johannes Röttenbacher
 """
@@ -26,12 +29,12 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
 # %% set paths
-    lab_calib = "after"
+    lab_calib = "before"
     calib_path = f"{h.get_path('calib')}/transfer_calibs_{lab_calib}_campaign"
     plot_path = f"{h.get_path('plot')}/quality_check_calibration"
 
 # %% list all files from one spectrometer
-    prop = "Fup_SWIR"
+    prop = "Fdw_SWIR"
     files = [f for f in os.listdir(calib_path) if smart_lookup[prop] in f]
 
 # %% select only normalized, 300ms transfer calib files
@@ -59,13 +62,14 @@ if __name__ == "__main__":
 
 # %% plot relation between lab calib measurement and each transfer calib measurement
     zoom = True  # zoom in on y axis
+    ylims = dict(Fdw_SWIR=(0, 20), Fup_SWIR=(0, 20))
 
     fig, ax = plt.subplots(figsize=(10, 6))
     for date_str in date_strs:
         df[df["date"] == date_str].sort_values(["wavelength"]).plot(x="wavelength", y="rel_ulli", label=date_str, ax=ax)
 
     if zoom:
-        ax.set_ylim((0, 3))
+        ax.set_ylim(ylims[prop])
         zoom = "_zoom"
     else:
         zoom = ""
@@ -76,12 +80,14 @@ if __name__ == "__main__":
     ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
     plt.tight_layout()
     # plt.show()
-    plt.savefig(f"{plot_path}/SMART_calib_rel_lab-field_{lab_calib}_{prop}{zoom}.png", dpi=100)
+    figname = f"{plot_path}/SMART_calib_rel_lab-field_{lab_calib}_{prop}{zoom}.png"
+    plt.savefig(figname, dpi=100)
+    print(f"Saved {figname}")
     plt.close()
 
 # %% take the average over n pixels and prepare data frame for plotting
     if "SWIR" in prop:
-        wl1, wl2 = 1200, 1250  # set wavelengths for averaging
+        wl1, wl2 = 1400, 1450  # set wavelengths for averaging
     else:
         wl1, wl2 = 550, 570
     df_ts = df[df["wavelength"].between(wl1, wl2)]
@@ -94,7 +100,7 @@ if __name__ == "__main__":
     df_mean.plot(y="c_field", ax=ax, label="$c_{field}$")
     # df_mean.plot(y="c_lab", c="#117733", ax=ax, label="$c_{lab}$")
     # ax.set_ylim((1, 2.5))
-    # ax.set_yscale("log")
+    ax.set_yscale("log")
     ax.set_xticks(df_mean.index.values)
     ax.set_xticklabels(df_mean.date.values, fontsize=14, rotation=45, ha="right")
     # ax.tick_params(axis="x", labelsize=12)
@@ -104,8 +110,10 @@ if __name__ == "__main__":
     ax.grid()
     ax.legend()
     plt.tight_layout()
-    plt.show()
-    # plt.savefig(f"{plot_path}/SMART_calib_factors_{lab_calib}_{prop}.png", dpi=100)
+    # plt.show()
+    figname = f"{plot_path}/SMART_calib_factors_{lab_calib}_{prop}.png"
+    plt.savefig(figname, dpi=100)
+    print(f"Saved {figname}")
     plt.close()
 
 # %% investigate the last four days in more detail because they look wrong, plot calibration files (Lab View bug!)
@@ -189,7 +197,7 @@ if __name__ == "__main__":
     # plt.savefig(f"{plot_path}/{flight}_VNIR_mean_dark_current.png", dpi=100)
     plt.close()
 
-# %% read in lab calibration factor from before and after campaign lab calib
+# %% PART 2: read in lab calibration factor from before and after campaign lab calib
     inlet = smart_lookup[f"{prop}"]
     date_before = "2021_03_29" if "ASP06" in inlet else "2021_03_18"
     date_after = "2021_08_09"
@@ -222,6 +230,7 @@ if __name__ == "__main__":
     # plt.show()
     figname = f"{plot_path}/SMART_lab_calib_comparison_{var}_{prop}.png"
     plt.savefig(figname, dpi=300)
+    print(f"Saved {figname}")
     plt.close()
 
 # %% plot relation between before and after

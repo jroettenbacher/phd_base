@@ -47,7 +47,7 @@ Usually a jump in the counts should be happening, here only a steady increase in
 Using this information the part where the counts gradually increase is cut out from the dark current corrected file before the field calibration factor is calculated with :py:mod:`processing.smart_calib_transfer.py` .
 However, this also does not seem to yield a reasonable field calibration factor from that transfer calibration.
 The most reasonable explanation seems to be that the SWIR spectrometer was unstable during the calibration.
-In that case it is best to discard this transfer calibration and use another one for the 29. June 2021.
+**In that case it is best to discard this transfer calibration and use another one for the 29. June 2021.**
 
 **Transfer Calib Fup SWIR 11. July**
 
@@ -74,7 +74,9 @@ After the dark current correction the rows exhibiting the described weird behavi
 
 After correcting the 11. July the 16. July also shows up as a rather high calibration factor.
 Looking into the dark current corrected data reveals that the first pixels show only negative values, hinting at a bad dark current measurement at the beginning of the file.
-Thus, this calibration is also discarded.
+**Thus, the transfer calibration from the 16. July is also discarded.**
+
+The finally used transfer calibrations can be found in the :code:`transfer_calibs` dictionary in `cirrus_hl.py <https://github.com/jroettenbacher/phd_base/blob/0604f52c525b8db555486e8328e4fa6595d02485/src/pylim/cirrus_hl.py#L26>`_ .
 
 *author*: Johannes Röttenbacher
 """
