@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhD Base Project &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Setup" href="setup.html" />
+    <link rel="prev" title="Welcome to Arctic Cirrus’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#smart">1. SMART</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#smart-py">1.1 smart.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-process-lab-calib-py">1.2 smart_process_lab_calib.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-process-transfer-calib-py">1.3 smart_process_transfer_calib.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-write-dark-current-corrected-file-py">1.4 smart_write_dark_current_corrected_file.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-merge-minutely-files-py">1.5 smart_merge_minutely_files.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-calib-lab-asp06-py">1.6 smart_calib_lab_ASP06.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-calib-lab-asp07-py">1.7 smart_calib_lab_ASP07.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-calib-transfer-py">1.8 smart_calib_transfer.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-calibrate-measurment-py">1.9 smart_calibrate_measurment.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#faq">FAQ</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bacardi">2. BACARDI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#radiosonde-data">2.1 Radiosonde data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#prepare-radiosonde-jr-pro">00_prepare_radiosonde_jr.pro</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#libradtran-simulation">2.2 libRadtran simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bacardi-processing">2.3 BACARDI processing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#solar-downward">Solar downward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#solar-upward">Solar upward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#terrestrial-downward">terrestrial downward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#terretrial-upward">terretrial upward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#process-bacardi-v20210928-pro">00_process_bacardi_V20210928.pro</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bahamas">3. BAHAMAS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gopro-time-lapse-quicklooks">4. GoPro Time Lapse quicklooks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#add-timestamp-to-picture-py">4.1 add_timestamp_to_picture.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#write-gopro-timestamps-py">4.2 write_gopro_timestamps.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-maps-py">4.3 plot_maps.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-map-to-picture-py">4.4 add_map_to_picture.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-video-from-pictures-sh">4.5 make_video_from_pictures.sh</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#libradtran">5. libRadtran</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#libradtran-simulations-along-flight-path">5.0 libRadtran simulations along flight path</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#libradtran-write-input-file-py">libradtran_write_input_file.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#libradtran-run-uvspec-py">libradtran_run_uvspec.py</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">5.1 BACARDI processing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dirdiff-bbr-cirrus-hl-server-jr-pro">01_dirdiff_BBR_Cirrus_HL_Server_jr.pro</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dirdiff-bbr-cirrus-hl-server-ter-pro">03_dirdiff_BBR_Cirrus_HL_Server_ter.pro</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#libradtran-write-input-file-bacardi-py">libradtran_write_input_file_bacardi.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#libradtran-run-uvspec-bacardi-py">libradtran_run_uvspec_bacardi.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PhD Base Project</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/readme_link.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="phd-base-project">
+<h1>PhD Base Project<a class="headerlink" href="#phd-base-project" title="Permalink to this heading"></a></h1>
+<p><em>author: Johannes Röttenbacher</em></p>
+<p>Here I code all the stuff I need for my PhD on Arctic cirrus.
+It includes processing for measurement data gathered by the HALO aircraft.
+During the first year a new python package was created which provides useful functions used in the processing and analysis of the data.
+The package is called <code class="docutils literal notranslate"><span class="pre">pylim</span></code> and can be found in <code class="docutils literal notranslate"><span class="pre">src</span></code>.
+Further there are folders for different purposes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">analysis</span></code>: case studies or general campaign analysis to answer scientific questions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">processing</span></code>: scripts to generate error/bias corrected, calibrated and shareable/publishable files from raw files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quicklooks</span></code>: quicklooks of measurements (raw and calibrated) and of calibrations</p></li>
+</ul>
+<p>The data is sorted by flight.
+The exact paths are defined in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> and can be adjusted according to your setup.
+More information on how to adjust this file can be found in <a class="reference internal" href="setup.html"><span class="doc std std-doc">Setup</span></a>.</p>
+<p>Documentation can be found <a class="reference external" href="https://jroettenbacher.github.io/phd_base/">here</a>.</p>
+<section id="smart">
+<h2>1. SMART<a class="headerlink" href="#smart" title="Permalink to this heading"></a></h2>
+<p>These scripts work with the SMART calibration and measurement files to generate calibrated measurement files and quicklooks.
+General functions are in <code class="docutils literal notranslate"><span class="pre">smart.py</span></code> and are used in other processing scripts.
+In <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> one can find the paths where the scripts expect to find files and where they will save the files to.</p>
+<p><strong>Folder Structure</strong></p>
+<p>SMART data is organized by flight.
+Each flight folder has one <code class="docutils literal notranslate"><span class="pre">SMART</span></code> folder with the following subfolders:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data_calibrated</span></code>: dark current corrected and calibrated measurement files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_cor</span></code>: dark current corrected measurement files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">raw</span></code>: raw measurement files</p></li>
+</ul>
+<p>In the calibration folder each calibration is saved in its own folder.
+Each calibration is used to generate one calibration file, which is corrected for dark current and saved in the top level calibration folder.</p>
+<p>A few more folders needed are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">raw_only</span></code>: raw measurement files as written by ASP06/07, do not work on those files, but copy them into <code class="docutils literal notranslate"><span class="pre">raw</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lamp_F1587</span></code>: calibration lamp file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">panel_34816</span></code>: reflectance panel file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pixel_wl</span></code>: pixel to wavelength files for each spectrometer</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plots</span></code>: plots and quicklooks</p></li>
+</ul>
+<p><strong>Workflow</strong></p>
+<p>There are two workflows:</p>
+<ol class="arabic simple">
+<li><p>Calibration files</p></li>
+<li><p>Measurement files</p></li>
+</ol>
+<p>Both workflows start with the correction of the dark current.
+After the raw files are copied from ASP06/07 into <code class="docutils literal notranslate"><span class="pre">raw_only</span></code> and <code class="docutils literal notranslate"><span class="pre">raw</span></code> the minutely files are corrected for the dark current and saved with the new ending <code class="docutils literal notranslate"><span class="pre">*_cor.dat</span></code> in <code class="docutils literal notranslate"><span class="pre">data_cor</span></code>.
+Then the minutely files are merged to one file per folder and channel.</p>
+<p><strong>Calibration files</strong></p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">smart_process_transfer_calib.py</span></code> or <code class="docutils literal notranslate"><span class="pre">smart_process_lab_calib.py</span></code> to correct the calibration files for the dark current and merge the minutely files.
+Then run <code class="docutils literal notranslate"><span class="pre">smart_calib_lab_ASP06/07.py</span></code> for the lab calibrations or <code class="docutils literal notranslate"><span class="pre">smart_calib_transfer.py</span></code> for the transfer calibration.
+Each script returns a file in the <code class="docutils literal notranslate"><span class="pre">calib</span></code> folder with the calibration factor.</p>
+<p><strong>Measurement files</strong></p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">smart_write_dark_currented_corrected_file.py</span></code> to correct one flight for the dark current.
+Merge the resulting minutely files with <code class="docutils literal notranslate"><span class="pre">smart_merge_minutely_files.py</span></code>.
+Finally, calibrate the measurement with <code class="docutils literal notranslate"><span class="pre">smart_calibrate_measurment.py</span></code>.
+The resulting calibrated files are saved in the <code class="docutils literal notranslate"><span class="pre">data_calibrated</span></code> folder.
+As a final step the calibrated files can then be converted to netCDF with <code class="docutils literal notranslate"><span class="pre">smart_write_ncfile.py</span></code>.</p>
+<section id="smart-py">
+<h3>1.1 smart.py<a class="headerlink" href="#smart-py" title="Permalink to this heading"></a></h3>
+<p>These are functions in relation with the SMART instrument.
+“_” denotes internal functions which are called inside other functions.
+~~There is also a lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.~~
+~~Another dictionary relates each measurement with the date of the transfer calibration for that measurement.~~
+This has been moved to <code class="docutils literal notranslate"><span class="pre">cirrus-hl.py</span></code>.
+The functions are explained in their docstring and can be tested using the main frame.
+You can:</p>
+<p>~~* read in raw and processed SMART data~~
+~~* read in the pixel to wavelength calibration file for the given spectrometer~~
+~~* read in the lamp standard file~~
+The reader functions were moved to <code class="docutils literal notranslate"><span class="pre">pylim.reader</span></code>.</p>
+<ul class="simple">
+<li><p>find the closest pixel and wavelength to any given wavelength for the given wavelength calibration file</p></li>
+<li><p>get information (date, measured property, channel) from the filename</p></li>
+<li><p>get the dark current for a specified measurement file with either option 1 or 2 and optionally plot it</p></li>
+<li><p>correct the raw measurement by the dark current</p></li>
+<li><p>plot the mean corrected measurement</p></li>
+<li><p>plot smart data either for one wavelength over time or for a range of or all wavelengths</p></li>
+<li><p>use the holoviews functions to create a dynamic map for interactive quicklooks in a jupyter notebook</p></li>
+</ul>
+</section>
+<section id="smart-process-lab-calib-py">
+<h3>1.2 smart_process_lab_calib.py<a class="headerlink" href="#smart-process-lab-calib-py" title="Permalink to this heading"></a></h3>
+<p><strong>TODO:</strong></p>
+<ul class="simple">
+<li><p>[x] make it work for 2021-03-19/29</p></li>
+</ul>
+<p>Script to correct the lab calibration files for the dark current and merge the minutely corrected files into one file.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>calibration folder</p></li>
+</ul>
+</section>
+<section id="smart-process-transfer-calib-py">
+<h3>1.3 smart_process_transfer_calib.py<a class="headerlink" href="#smart-process-transfer-calib-py" title="Permalink to this heading"></a></h3>
+<p>Script to correct SMART transfer calibration measurement for dark current and save it to a new file and merge
+the minutely files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>calibration folder</p></li>
+</ul>
+</section>
+<section id="smart-write-dark-current-corrected-file-py">
+<h3>1.4 smart_write_dark_current_corrected_file.py<a class="headerlink" href="#smart-write-dark-current-corrected-file-py" title="Permalink to this heading"></a></h3>
+<p>Script to correct a directory of raw smart measurements for the dark current. Set the input and output paths
+in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code>.
+Comment in the for loop to correct the calibration files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flight folder in raw_path</p></li>
+</ul>
+</section>
+<section id="smart-merge-minutely-files-py">
+<h3>1.5 smart_merge_minutely_files.py<a class="headerlink" href="#smart-merge-minutely-files-py" title="Permalink to this heading"></a></h3>
+<p>Script to merge minutely dark current corrected measurement files into one file per channel and folder.
+Deletes minutely files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>directory where to find given folder</p></li>
+<li><p>folder which to loop through</p></li>
+</ul>
+</section>
+<section id="smart-calib-lab-asp06-py">
+<h3>1.6 smart_calib_lab_ASP06.py<a class="headerlink" href="#smart-calib-lab-asp06-py" title="Permalink to this heading"></a></h3>
+<p>Calculates the lab calibration factor <code class="docutils literal notranslate"><span class="pre">c_lab</span></code> (unit: W/m^2/count).
+Creates a lab calibration file with the irradiance measurements from the lamp and the calibrated Ulli transfer measurements.
+Needs to be run once for each spectrometer.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>channel which to run (SWIR or VNIR)</p></li>
+<li><p>folder pair (spectrometer pair) (0 or 1)</p></li>
+<li><p>base directory of lab calibration -&gt; should be found in calib folder</p></li>
+<li><p>whether to normalize the measurement by the integration time or not</p></li>
+</ul>
+</section>
+<section id="smart-calib-lab-asp07-py">
+<h3>1.7 smart_calib_lab_ASP07.py<a class="headerlink" href="#smart-calib-lab-asp07-py" title="Permalink to this heading"></a></h3>
+<p>Calculates the lab calibration factor <code class="docutils literal notranslate"><span class="pre">c_lab</span></code> (unit: W/sr/m^2/count).
+Creates a lab calibration file with the radiance measurements from the reflectance panel and the calibrated Ulli transfer measurements.
+Needs to be run once for each channel (SWIR and VNIR).</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>channel which to run (SWIR or VNIR)</p></li>
+<li><p>base directory of lab calibration -&gt; should be found in calib folder</p></li>
+<li><p>whether to normalize the measurement by the integration time or not</p></li>
+</ul>
+</section>
+<section id="smart-calib-transfer-py">
+<h3>1.8 smart_calib_transfer.py<a class="headerlink" href="#smart-calib-transfer-py" title="Permalink to this heading"></a></h3>
+<p>Calculates the field calibration factor <code class="docutils literal notranslate"><span class="pre">c_field</span></code>.
+Creates a transfer calibration file with the radiance/irradiance measurements from the lab and the calibrated measurements from the field.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>transfer calib folder -&gt; should be found in <code class="docutils literal notranslate"><span class="pre">calib</span></code> folder</p></li>
+<li><p>integration time of transfer calibration (T_int) in ms</p></li>
+<li><p>whether to normalize the measurement by the integration time or not</p></li>
+</ul>
+</section>
+<section id="smart-calibrate-measurment-py">
+<h3>1.9 smart_calibrate_measurment.py<a class="headerlink" href="#smart-calibrate-measurment-py" title="Permalink to this heading"></a></h3>
+<p>Reads in dark current corrected measurement file and corresponding transfer calibration to calibrate measurement files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flight folder found in <code class="docutils literal notranslate"><span class="pre">data_cor</span></code></p></li>
+<li><p>integration time of ASP06 and ASP07 measurements (check raw measurement files to get integration times)</p></li>
+<li><p>whether to normalize measurements or not (use normalized calibration factor, necessary if no calibration with the same integration time was made)</p></li>
+<li><p>give date of transfer calib to use for calibrating measurement if not same as measurement date</p></li>
+</ul>
+</section>
+<section id="faq">
+<h3>FAQ<a class="headerlink" href="#faq" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>What do negative measurements in the dark current mean?</p></li>
+</ul>
+<p>Answer: The conversion of the analog signal to a digital can lead to this.</p>
+</section>
+</section>
+<section id="bacardi">
+<h2>2. BACARDI<a class="headerlink" href="#bacardi" title="Permalink to this heading"></a></h2>
+<p>BACARDI is a broadband radiometer mounted on the bottom and top of HALO.
+The data is initially processed by DLR and then
+Anna Luebke used the scripts provided by André Ehrlich and written by Kevin Wolf to process the
+data further.
+During the processing libRadtran simulations of cloud free conditions are done along the flight track of HALO.
+For details of the BACARDI post processing see <span class="xref myst">2.3 BACARDI processing</span>.</p>
+<p><strong>Workflow</strong></p>
+<ul class="simple">
+<li><p>download and process the radiosonde data (needs to be done once for each station)</p></li>
+<li><p>run <span class="xref myst">libRadtran simulation</span> for whole flight</p></li>
+<li><p>run <span class="xref myst">BACARDI processing</span></p></li>
+</ul>
+<section id="radiosonde-data">
+<h3>2.1 Radiosonde data<a class="headerlink" href="#radiosonde-data" title="Permalink to this heading"></a></h3>
+<p>In order to simulate the clear sky broadband irradiance along the flight path and calculate the direct and diffuse
+fraction radiosonde data is used.
+The data is downloaded from the <a class="reference external" href="http://weather.uwyo.edu/upperair/sounding.html">University Wyoming website</a> by copying
+the HTML site into a text file.
+Data can only be downloaded in monthly chunks.
+Then an IDL script from Kevin Wolf is used to extract the necessary data for libRadTran.
+It can be found here: <code class="docutils literal notranslate"><span class="pre">/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_prepare_radiosonde_jr.pro</span></code></p>
+<section id="prepare-radiosonde-jr-pro">
+<h4>00_prepare_radiosonde_jr.pro<a class="headerlink" href="#prepare-radiosonde-jr-pro" title="Permalink to this heading"></a></h4>
+<p><strong>TODO:</strong></p>
+<ul class="simple">
+<li><p>Check what radiosonde input is necessary for libRadtran. Simple interpolation yields negative relative humidity at lowest levels. (case: 21.7.21)</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>station name and number (select station closest to flight path)</p></li>
+<li><p>quicklook flag</p></li>
+<li><p>month</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>radiosonde file</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>daily radiosonde file (12UTC and 00UTC) for libRadtran</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span> /projekt_agmwend/data/Cirrus_HL/00_Tools/02_soundings
+<span class="c1"># start idl</span>
+idl
+<span class="c1"># run script</span>
+idl&gt; .r 00_prepare_radiosonde_jr
+</pre></div>
+</div>
+</section>
+</section>
+<section id="libradtran-simulation">
+<h3>2.2 libRadtran simulation<a class="headerlink" href="#libradtran-simulation" title="Permalink to this heading"></a></h3>
+<p>Run libRadtran simulation for solar and terrestrial wavelengths along flight track with specified radiosonde data as
+input.
+This is then used in the BACARDI processing.
+See libRadtran section for details.</p>
+</section>
+<section id="bacardi-processing">
+<h3>2.3 BACARDI processing<a class="headerlink" href="#bacardi-processing" title="Permalink to this heading"></a></h3>
+<p>For more details see the processing script. From the processing script:</p>
+<section id="solar-downward">
+<h4>Solar downward<a class="headerlink" href="#solar-downward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CMP22 sensors (tau_pyrano=1.20, fcut_pyrano=0.6, rm_length_pyrano=0.5)</p></li>
+<li><p>attitude correction (roll_offset=+0.3, pitch_offset=+2.55)</p></li>
+</ol>
+</section>
+<section id="solar-upward">
+<h4>Solar upward<a class="headerlink" href="#solar-upward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CMP22 sensors (tau_pyrano=1.20, fcut_pyrano=0.6, rm_length_pyrano=0.5)</p></li>
+</ol>
+</section>
+<section id="terrestrial-downward">
+<h4>terrestrial downward<a class="headerlink" href="#terrestrial-downward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CGR4 sensors (tau_pyrano=2.00, fcut_pyrano=0.5, rm_length_pyrano=2.0)</p></li>
+</ol>
+</section>
+<section id="terretrial-upward">
+<h4>terretrial upward<a class="headerlink" href="#terretrial-upward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CGR4 sensors (tau_pyrano=2.00, fcut_pyrano=0.5, rm_length_pyrano=2.0)</p></li>
+</ol>
+</section>
+<section id="process-bacardi-v20210928-pro">
+<h4>00_process_bacardi_V20210928.pro<a class="headerlink" href="#process-bacardi-v20210928-pro" title="Permalink to this heading"></a></h4>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>Flight date</p></li>
+<li><p>Flight number (Fxx)</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>BACARDI quicklook data from DLR (e.g. <code class="docutils literal notranslate"><span class="pre">QL-CIRRUS-HL_F15_20210715_ADLR_BACARDI_v1.nc</span></code>)</p></li>
+<li><p>simulated broadband downward irradiance from libRadtran</p></li>
+<li><p>direct diffuse fraction from libRadtran</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>corrected BACARDI measurement and libRadtran simulations in netCDF file</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span> /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+<span class="c1"># start IDL</span>
+idl
+<span class="c1"># run script</span>
+idl&gt; .r 00_process_bacardi_V20210903.pro
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="bahamas">
+<h2>3. BAHAMAS<a class="headerlink" href="#bahamas" title="Permalink to this heading"></a></h2>
+<p>These scripts work with the BAHAMAS system from HALO.
+BAHAMAS gives in situ and flight data like altitude, temperature, wind speed and other parameters.</p>
+</section>
+<section id="gopro-time-lapse-quicklooks">
+<h2>4. GoPro Time Lapse quicklooks<a class="headerlink" href="#gopro-time-lapse-quicklooks" title="Permalink to this heading"></a></h2>
+<p>During the flight a GoPro was attached to the second window on the left side of HALO.
+Using the time-lapse function a picture was taken every 5 seconds.
+Together with BAHAMAS position data (and SMART spectra measurements) a time-lapse video is created.
+The GoPro was set to UTC time but cannot be synchronized to BAHAMAS.
+At one point it reset its internal time to local time, so the metadata for some flights had to be corrected.
+See the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> in the GoPro Folder for details.
+A list which tracks the processing status can be found there.</p>
+<p>Due to the offset from the BAHAMAS time an offset correction has to be applied to each timestamp.</p>
+<section id="add-timestamp-to-picture-py">
+<h3>4.1 add_timestamp_to_picture.py<a class="headerlink" href="#add-timestamp-to-picture-py" title="Permalink to this heading"></a></h3>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>flight (User input)</p></li>
+<li><p>correct_time flag (User input)</p></li>
+<li><p>filename for a test file (User input)</p></li>
+<li><p>path with all GoPro pictures</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>overwrites meta data in original file with UTC time from BAHAMAS</p></li>
+<li><p>adds a time stamp to the right bottom of the original file</p></li>
+</ul>
+<p>This script reads out the DateTimeOriginal meta data tag of each file and corrects it for the LT to UTC and BAHAMAS offset if necessary.
+It overwrites the original meta data tag and places a time stamp to the right bottom of the file.
+One can test the time correction by replacing <code class="docutils literal notranslate"><span class="pre">path</span></code> with <code class="docutils literal notranslate"><span class="pre">file</span></code> in <code class="docutils literal notranslate"><span class="pre">run()</span></code> (~line 38).
+Run on Linux.</p>
+</section>
+<section id="write-gopro-timestamps-py">
+<h3>4.2 write_gopro_timestamps.py<a class="headerlink" href="#write-gopro-timestamps-py" title="Permalink to this heading"></a></h3>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>flight date (User input)</p></li>
+<li><p>GoPro images</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>txt file with <code class="docutils literal notranslate"><span class="pre">exiftool</span></code> output</p></li>
+<li><p>csv file with datetime from picture meta data and picture number</p></li>
+</ul>
+<p>Reads the metadata time stamps and saves them together with the picture number in a csv file.
+Run on Linux.</p>
+</section>
+<section id="plot-maps-py">
+<h3>4.3 plot_maps.py<a class="headerlink" href="#plot-maps-py" title="Permalink to this heading"></a></h3>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>date of flight (User input)</p></li>
+<li><p>flight number (User input)</p></li>
+<li><p>csv file with time stamp and GoPro picture number</p></li>
+<li><p>BAHAMAS nc file</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>csv file with selected GoPro picture numbers and timestamps which are used for the time lapse video</p></li>
+<li><p>map for each GoPro picture</p></li>
+</ul>
+<p>Reads in the BAHAMAS latitude and longitude data and selects only the time steps which correspond with a GoPro picture.
+In the <code class="docutils literal notranslate"><span class="pre">plot_props</span></code> dictionary the map layout properties for each flight are defined.
+For testing the first four lines of the last cell can be uncommented and the Parallel call can be commented.
+It makes sense to run this script on the server to utilize more cores and increase processing speed.</p>
+</section>
+<section id="add-map-to-picture-py">
+<h3>4.4 add_map_to_picture.py<a class="headerlink" href="#add-map-to-picture-py" title="Permalink to this heading"></a></h3>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>date of flight (User input)</p></li>
+<li><p>flight number (User input)</p></li>
+<li><p>maps</p></li>
+<li><p>map numbers from csv file</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>new GoPro picture with map in the upper right corner and timestamp in the lower right corner</p></li>
+</ul>
+<p>Adds the BAHAMAS plot onto the GoPro picture but only for pictures, which were taken in flight, according to the csv file
+from <code class="docutils literal notranslate"><span class="pre">plot_maps.py</span></code>. Saves those pictures in a new folder: <code class="docutils literal notranslate"><span class="pre">Flight_{yyyymmdda/b}</span></code>.
+Run on Linux.</p>
+</section>
+<section id="make-video-from-pictures-sh">
+<h3>4.5 make_video_from_pictures.sh<a class="headerlink" href="#make-video-from-pictures-sh" title="Permalink to this heading"></a></h3>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>date of flight (User input)</p></li>
+<li><p>number of flight (User input)</p></li>
+<li><p>framerate [12, 24] (User input)</p></li>
+<li><p>start_number, number in filename of first picture in folder (User input)</p></li>
+<li><p>GoPro pictures with map and timestamp</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>video (slow or fast) of flight from GoPro pictures</p></li>
+</ul>
+<p>Uses ffmpeg to create a stop motion video of the GoPro pictures.
+Run on Linux.</p>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ffmpeg 
+</pre></div>
+</div>
+</section>
+</section>
+<section id="libradtran">
+<h2>5. libRadtran<a class="headerlink" href="#libradtran" title="Permalink to this heading"></a></h2>
+<p><a class="reference external" href="https://doi.org/10.5194/gmd-9-1647-2016">libRadtran</a> is a radiative transfer model which can model spectral radiative
+fluxes.</p>
+<section id="libradtran-simulations-along-flight-path">
+<h3>5.0 libRadtran simulations along flight path<a class="headerlink" href="#libradtran-simulations-along-flight-path" title="Permalink to this heading"></a></h3>
+<p>The following scripts use the BAHAMAS data to create libRadtran input files to simulate fluxes along the flightpath.
+The two scripts are meant to allow for flexible settings of the simulation.
+BACARDI versions of these scripts are available which replace the old IDL scripts.
+They are to be used as part of the BACARDI processing.
+Before publishing BACARDI data, the state of the libRadtran input settings should be saved!</p>
+<p><strong>TODO:</strong></p>
+<ul class="simple">
+<li><p>[ ] use specific total column ozone concentrations from OMI</p>
+<ul>
+<li><p>can be downloaded <a class="reference external" href="https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura">here</a></p></li>
+<li><p>you need an Earth Data account and <a class="reference external" href="https://disc.gsfc.nasa.gov/earthdata-login">add the application to your profile</a></p></li>
+<li><p>checkout the instructions for command line download <a class="reference external" href="https://disc.gsfc.nasa.gov/data-access#windows_wget">here</a></p></li>
+</ul>
+</li>
+<li><p>[x] change atmosphere file according to location -&gt; uvspec does this automatically when lat, lon and time are supplied</p>
+<ul>
+<li><p>[x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)</p></li>
+</ul>
+</li>
+<li><p>[x] use ocean or land albedo according to land sea mask</p></li>
+<li><p>[x] include solar zenith angle filter</p></li>
+<li><p>[ ] use altitude (ground height above sea level) from a surface map, when over land -&gt; adjust zout definition accordingly</p></li>
+<li><p>[ ] use self-made surface_type_map for simulations in the Arctic</p></li>
+<li><p>[ ] use sur_temperature for thermal infrared calculations (input from VELOX)</p></li>
+<li><p>BACARDI</p></li>
+<li><p>[ ] use surface_type_map for BACARDI simulations</p></li>
+<li><p>[ ] use surface temperature according to ERA5 reanalysis for BACARDI simulations</p></li>
+</ul>
+<section id="libradtran-write-input-file-py">
+<h4>libradtran_write_input_file.py<a class="headerlink" href="#libradtran-write-input-file-py" title="Permalink to this heading"></a></h4>
+<p>Here one can set all options needed in the libRadtran input file.
+Given the flight and time step, one input file will then be created for every time step with the fitting lat and lon values
+along the flight track.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flight (e.g. ‘Flight_202170715a’)</p></li>
+<li><p>time_step (e.g. ‘minutes=2’)</p></li>
+</ul>
+</section>
+<section id="libradtran-run-uvspec-py">
+<h4>libradtran_run_uvspec.py<a class="headerlink" href="#libradtran-run-uvspec-py" title="Permalink to this heading"></a></h4>
+<p>Given the flight and the path to <code class="docutils literal notranslate"><span class="pre">uvspec</span></code>, this script calls <code class="docutils literal notranslate"><span class="pre">uvspec</span></code> for each input file and writes a log and output file.
+It does so in parallel, checking how many CPUs are available.
+After that the output files are merged into one data frame and information from the input file is added to write one netCDF file.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flight (e.g. ‘Flight_20210715a’)</p></li>
+<li><p>path to uvspec.exe</p></li>
+<li><p>name of netCDF file (optional)</p></li>
+</ul>
+</section>
+</section>
+<section id="id1">
+<h3>5.1 BACARDI processing<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h3>
+<p>The following two scripts ~~are needed~~ were used in order to prepare the BACARDI processing.
+They are superseded by the new python versions of these scripts.</p>
+<ul class="simple">
+<li><p><span class="xref myst">libradtran_write_input_file_bacardi.py</span></p></li>
+<li><p><span class="xref myst">libradtran_run_uvspec_bacardi.py</span></p></li>
+</ul>
+<section id="dirdiff-bbr-cirrus-hl-server-jr-pro">
+<h4>01_dirdiff_BBR_Cirrus_HL_Server_jr.pro<a class="headerlink" href="#dirdiff-bbr-cirrus-hl-server-jr-pro" title="Permalink to this heading"></a></h4>
+<p><strong>Current settings:</strong></p>
+<ul class="simple">
+<li><p>Albedo from Taylor et al. 1996</p></li>
+<li><p>atmosphere file: afglt.dat -&gt; tropical atmosphere</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>Flight date</p></li>
+<li><p>sonde date (mmdd)</p></li>
+<li><p>sounding station (stationname_stationnumber)</p></li>
+<li><p>time interval for modelling (time_step)</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span> /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+<span class="c1"># start IDL</span>
+idl
+<span class="c1"># start logging to a file</span>
+idl&gt; journal, <span class="s1">&#39;filename.log&#39;</span>
+<span class="c1"># run script</span>
+idl&gt; .r 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+<span class="c1"># stop logging</span>
+idl&gt; journal
+</pre></div>
+</div>
+</section>
+<section id="dirdiff-bbr-cirrus-hl-server-ter-pro">
+<h4>03_dirdiff_BBR_Cirrus_HL_Server_ter.pro<a class="headerlink" href="#dirdiff-bbr-cirrus-hl-server-ter-pro" title="Permalink to this heading"></a></h4>
+<p><strong>Current settings:</strong></p>
+<ul class="simple">
+<li><p>Albedo from Taylor et al. 1996</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>Flight date</p></li>
+<li><p>sonde date (mmdd)</p></li>
+<li><p>sounding station (stationname_stationnumber)</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span> /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+<span class="c1"># start IDL</span>
+idl
+<span class="c1"># start logging to a file</span>
+idl&gt; journal, <span class="s1">&#39;filename.log&#39;</span>
+<span class="c1"># run script</span>
+idl&gt; .r 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+<span class="c1"># stop logging</span>
+idl&gt; journal
+</pre></div>
+</div>
+</section>
+<section id="libradtran-write-input-file-bacardi-py">
+<h4>libradtran_write_input_file_bacardi.py<a class="headerlink" href="#libradtran-write-input-file-bacardi-py" title="Permalink to this heading"></a></h4>
+<p>This will write all input files for libRadtran simulations along the flight path.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flights in a list (optional, if not manually specified all flights will be processed)</p></li>
+<li><p>time_step, in what interval should the simulations be done along the flight path?</p></li>
+<li><p>solar_flag, write file for simulation of solar or thermal infrared fluxes?</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+The input files are then saved to a working directory where <code class="docutils literal notranslate"><span class="pre">libradtran_run_uvspec_bacardi.py</span></code> will find them
+and read them in.</p>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python libradtran_write_input_file_bacardi.py
+</pre></div>
+</div>
+</section>
+<section id="libradtran-run-uvspec-bacardi-py">
+<h4>libradtran_run_uvspec_bacardi.py<a class="headerlink" href="#libradtran-run-uvspec-bacardi-py" title="Permalink to this heading"></a></h4>
+<p>This will run libRadtran simulations with the given input files from <code class="docutils literal notranslate"><span class="pre">libradtran_write_input_file_bacardi.py</span></code>.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flights in a list (optional, if not manually specified all flights will be processed)</p></li>
+<li><p>solar_flag, run simulation for solar or for thermal infrared wavelengths?</p></li>
+</ul>
+<p>The script will loop through all files and start simulations for all input files it finds (in parallel for one flight).
+If the script is called via the command line it creates a <code class="docutils literal notranslate"><span class="pre">log</span></code> folder in the working directory if necessary and saves
+a log file to that folder.
+It also displays a progress bar in the terminal.
+After it is done with one flight, it will collect information from the input files and merge all output files in a
+dataframe to which it appends the information from the input files.
+It converts everything to a netCDF file and writes it to disc with a bunch of metadata included.</p>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python libradtran_run_uvspec_bacardi.py
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Arctic Cirrus’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="setup.html" class="btn btn-neutral float-right" title="Setup" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

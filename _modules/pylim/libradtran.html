@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pylim.libradtran &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_documentation.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>pylim.libradtran</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pylim.libradtran</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;Functions to process and plot libRadTran simulation files</span>
+<span class="sd">author: Johannes Röttenbacher</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># %% module import</span>
+<span class="kn">from</span> <span class="nn">pylim.helpers</span> <span class="kn">import</span> <span class="n">get_path</span>
+<span class="kn">from</span> <span class="nn">pylim.cirrus_hl</span> <span class="kn">import</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">radiosonde_stations</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">geopy.distance</span> <span class="kn">import</span> <span class="n">geodesic</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># %% functions</span>
+
+
+<div class="viewcode-block" id="read_libradtran"><a class="viewcode-back" href="../../api_documentation.html#pylim.libradtran.read_libradtran">[docs]</a><span class="k">def</span> <span class="nf">read_libradtran</span><span class="p">(</span><span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read an old libRadtran simulation file generated by 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro and add a DateTime Index.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flight: which flight does the simulation belong to (e.g. Flight_20210629a)</span>
+<span class="sd">        filename: filename</span>
+
+<span class="sd">    Returns: DataFrame with libRadtran output data</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;libradtran&#39;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">bbr_sim</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="n">skiprows</span><span class="o">=</span><span class="mi">34</span><span class="p">)</span>
+    <span class="n">date_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">flight</span><span class="p">[</span><span class="mi">7</span><span class="p">:</span><span class="mi">15</span><span class="p">],</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">date_ts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">year</span><span class="o">=</span><span class="n">date_dt</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">date_dt</span><span class="o">.</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">date_dt</span><span class="o">.</span><span class="n">day</span><span class="p">)</span>
+    <span class="n">bbr_sim</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">bbr_sim</span><span class="p">[</span><span class="s2">&quot;sod&quot;</span><span class="p">],</span> <span class="n">origin</span><span class="o">=</span><span class="n">date_ts</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>  <span class="c1"># add a datetime column</span>
+    <span class="n">bbr_sim</span> <span class="o">=</span> <span class="n">bbr_sim</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>  <span class="c1"># set it as index</span>
+
+    <span class="k">return</span> <span class="n">bbr_sim</span></div>
+
+
+<div class="viewcode-block" id="find_closest_radiosonde_station"><a class="viewcode-back" href="../../api_documentation.html#pylim.libradtran.find_closest_radiosonde_station">[docs]</a><span class="k">def</span> <span class="nf">find_closest_radiosonde_station</span><span class="p">(</span><span class="n">latitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">longitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given longitude and latitude, find the closest radiosonde station from the campaign dictionary</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        latitude: in decimal degrees (N=positive)</span>
+<span class="sd">        longitude: in decimal degrees (E=positive)</span>
+
+<span class="sd">    Returns: Name of the closest radiosonde station</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">station_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">station</span><span class="p">[:</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span> <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="n">radiosonde_stations</span><span class="p">]</span>  <span class="c1"># read out station names from list</span>
+    <span class="c1"># loop through stations and save distance in km</span>
+    <span class="k">for</span> <span class="n">station_name</span> <span class="ow">in</span> <span class="n">station_names</span><span class="p">:</span>
+        <span class="n">lon_lat</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">station_name</span><span class="p">]</span>
+        <span class="n">distances</span><span class="p">[</span><span class="n">station_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">geodesic</span><span class="p">((</span><span class="n">lon_lat</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">lon_lat</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="p">(</span><span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">))</span><span class="o">.</span><span class="n">km</span>
+
+    <span class="n">min_distance</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">distances</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>  <span class="c1"># get minimum distance</span>
+    <span class="n">closest_station</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">station_names</span> <span class="k">if</span> <span class="n">distances</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">==</span> <span class="n">min_distance</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">closest_station</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">radiosonde_stations</span> <span class="k">if</span> <span class="n">closest_station</span> <span class="ow">in</span> <span class="n">s</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># get complete station name</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Closest Radiosonde station </span><span class="si">{</span><span class="n">closest_station</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">min_distance</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km away.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">closest_station</span></div>
+
+
+<div class="viewcode-block" id="get_info_from_libradtran_input"><a class="viewcode-back" href="../../api_documentation.html#pylim.libradtran.get_info_from_libradtran_input">[docs]</a><span class="k">def</span> <span class="nf">get_info_from_libradtran_input</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Open a libRadtran input file and read out some information.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath: path to file</span>
+
+<span class="sd">    Returns: Some variables (latitude, longitude, time, header of output file, wavelength range, integrate flag)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># define all possible output values as None in case the right line is not found</span>
+    <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">time_stamp</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">wavelengths</span><span class="p">,</span> <span class="n">integrate_flag</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">ifile</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">ifile</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;latitude&quot;</span><span class="p">):</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?P&lt;direction&gt;[NS]) (?P&lt;value&gt;[0-9]+\.?[0-9]*)&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;direction&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+                <span class="n">latitude</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;direction&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;Direction is not &#39;N&#39; or &#39;S&#39;! Check input&quot;</span>
+                <span class="n">latitude</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;longitude&quot;</span><span class="p">):</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?P&lt;direction&gt;[EW]) (?P&lt;value&gt;[0-9]+\.?[0-9]*)&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;direction&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;E&quot;</span><span class="p">:</span>
+                <span class="n">longitude</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;direction&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="s2">&quot;Direction is not &#39;W&#39; or &#39;E&#39;! Check input&quot;</span>
+                <span class="n">longitude</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">):</span>
+            <span class="n">time_stamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%Y %m </span><span class="si">%d</span><span class="s2"> %H %M %S&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;output_user&quot;</span><span class="p">):</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">):</span>
+            <span class="n">wavelengths</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">11</span><span class="p">:]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;output_process&quot;</span><span class="p">):</span>
+            <span class="n">integrate_flag</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">15</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;integrate&quot;</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="c1"># there is no output process in a spectral run thus integrate_flag is never updated</span>
+        <span class="k">if</span> <span class="n">integrate_flag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">integrate_flag</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">,</span> <span class="n">time_stamp</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">wavelengths</span><span class="p">,</span> <span class="n">integrate_flag</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

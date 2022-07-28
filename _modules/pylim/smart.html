@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pylim.smart &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_documentation.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>pylim.smart</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pylim.smart</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;Functions for processing and plotting of SMART data</span>
+<span class="sd">author: Johannes Röttenbacher</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">pylim</span> <span class="kn">import</span> <span class="n">helpers</span> <span class="k">as</span> <span class="n">h</span>
+<span class="kn">from</span> <span class="nn">pylim</span> <span class="kn">import</span> <span class="n">reader</span>
+<span class="kn">from</span> <span class="nn">pylim.cirrus_hl</span> <span class="kn">import</span> <span class="n">smart_lookup</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">holoviews</span> <span class="k">as</span> <span class="nn">hv</span>
+<span class="kn">from</span> <span class="nn">holoviews</span> <span class="kn">import</span> <span class="n">opts</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+<span class="n">hv</span><span class="o">.</span><span class="n">extension</span><span class="p">(</span><span class="s1">&#39;bokeh&#39;</span><span class="p">)</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_info_from_filename"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.get_info_from_filename">[docs]</a><span class="k">def</span> <span class="nf">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Using regular expressions some information from the filename is extracted.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename: string in the form yyyy_mm_dd_hh_MM.[F/I][up/dw]_[SWIR/VNIR].dat (eg. &quot;2021_03_29_11_07.Fup_SWIR.dat&quot;)</span>
+
+<span class="sd">    Returns: A date string, the channel and the direction of measurement including the quantity.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># find date string and channel from file</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^(?P&lt;date&gt;\d</span><span class="si">{4}</span><span class="s2">_\d</span><span class="si">{2}</span><span class="s2">_\d</span><span class="si">{2}</span><span class="s2">).*.(?P&lt;direction&gt;[FI][a-z]</span><span class="si">{2}</span><span class="s2">)_(?P&lt;channel&gt;[A-Z]</span><span class="si">{4}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">date_str</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">)</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;channel&#39;</span><span class="p">)</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s1">&#39;direction&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No date, channel or direction information was found! Check filename!&quot;</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+    <span class="k">return</span> <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span></div>
+
+
+<div class="viewcode-block" id="find_pixel"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.find_pixel">[docs]</a><span class="k">def</span> <span class="nf">find_pixel</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">:</span> <span class="nb">float</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given the dataframe with the pixel to wavelength mapping, return the pixel and wavelength closest to the requested</span>
+<span class="sd">    wavelength.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Dataframe with column pixel and wavelength (from read_pixel_to_wavelength)</span>
+<span class="sd">        wavelength: which wavelength are you interested in</span>
+
+<span class="sd">    Returns: closest pixel number and wavelength corresponding to the given wavelength</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># find smallest and greatest wavelength in data frame and check if the given wavelength is in it</span>
+    <span class="n">min_wl</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">max_wl</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">max_wl</span> <span class="o">&gt;=</span> <span class="n">wavelength</span> <span class="o">&gt;=</span> <span class="n">min_wl</span><span class="p">,</span> <span class="s2">&quot;Given wavelength not in data frame!&quot;</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">arg_nearest</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">],</span> <span class="n">wavelength</span><span class="p">)</span>
+    <span class="n">pixel_nr</span><span class="p">,</span> <span class="n">wavelength</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">pixel_nr</span><span class="p">,</span> <span class="n">wavelength</span></div>
+
+
+<div class="viewcode-block" id="merge_vnir_swir_nc"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.merge_vnir_swir_nc">[docs]</a><span class="k">def</span> <span class="nf">merge_vnir_swir_nc</span><span class="p">(</span><span class="n">vnir</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">swir</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Merge the SMART nc files generated by smart_write_ncfile.py</span>
+<span class="sd">    Args:</span>
+<span class="sd">        vnir: VNIR data set</span>
+<span class="sd">        swir: SWIR data set</span>
+
+<span class="sd">    Returns: merged data set</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># rename variables to merge them</span>
+    <span class="n">vnir</span> <span class="o">=</span> <span class="n">vnir</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">Fdw_VNIR</span><span class="o">=</span><span class="s2">&quot;Fdw&quot;</span><span class="p">))</span>
+    <span class="n">swir</span> <span class="o">=</span> <span class="n">swir</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">Fdw_SWIR</span><span class="o">=</span><span class="s2">&quot;Fdw&quot;</span><span class="p">))</span>
+    <span class="c1"># merge datasets</span>
+    <span class="nb">all</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">([</span><span class="n">swir</span><span class="p">,</span> <span class="n">vnir</span><span class="p">])</span>
+    <span class="nb">all</span><span class="p">[</span><span class="s2">&quot;Fdw_bb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">all</span><span class="p">[</span><span class="s2">&quot;Fdw_VNIR_bb&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">all</span><span class="p">[</span><span class="s2">&quot;Fdw_SWIR_bb&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="nb">all</span></div>
+
+
+<span class="k">def</span> <span class="nf">_plot_dark_current</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+                      <span class="n">dark_current</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+                      <span class="n">spectrometer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the dark current over the wavelengths from the specified spectrometer and channel.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        wavelengths: series or list of wavelengths corresponding with the pixel numbers from read_pixel_to_wavelength</span>
+<span class="sd">        dark_current: series or list with mean dark current for each pixel</span>
+<span class="sd">        spectrometer: name of the spectrometer inlet</span>
+<span class="sd">        channel: VNIR or SWIR</span>
+<span class="sd">        **kwargs: save_fig: whether to save the figure in the current directory (True) or just show it (False, default)</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_fig</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;save_fig&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;save_fig&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wavelengths</span><span class="p">,</span> <span class="n">dark_current</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">dark_current</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;orange&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mean&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dark Current from Spectrometer </span><span class="si">{</span><span class="n">spectrometer</span><span class="si">}</span><span class="s2">, channel: </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Netto Counts&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">save_fig</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dark_current_</span><span class="si">{</span><span class="n">spectrometer</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="get_dark_current"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.get_dark_current">[docs]</a><span class="k">def</span> <span class="nf">get_dark_current</span><span class="p">(</span><span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">option</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the corresponding dark current for the specified measurement file to correct the raw SMART measurement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flight: to which flight does the file belong to? (e.g. Flight_20210707a)</span>
+<span class="sd">        filename: filename (e.g. &quot;2021_03_29_11_07.Fup_SWIR.dat&quot;) of measurement file</span>
+<span class="sd">        option: which option to use for VNIR (1, 2 or 3).</span>
+<span class="sd">            Option 1: use measurements below 290 nm.</span>
+<span class="sd">            Option 2: use dark measurements from transfer calibration (CIRRUS-HL folder structure expected).</span>
+<span class="sd">            Option 3: use scaled dark current measurement from transfer calibration (HALO-AC3 folder structure expected).</span>
+<span class="sd">        **kwargs:</span>
+<span class="sd">            path (str): path to measurement file if not standard path from config.toml,</span>
+<span class="sd">            plot (bool): show plot or not (default: True),</span>
+<span class="sd">            date (str): yyyymmdd, date of transfer calibration with dark current measurement to use</span>
+<span class="sd">            dark_filepath (str): complete path to dark current file to use</span>
+<span class="sd">            campaign (str): campaign to which smart file belongs to</span>
+
+<span class="sd">    Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plot</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plot&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;plot&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">True</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;date&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">dark_filepath</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;dark_filepath&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;dark_filepath&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">campaign</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;campaign&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;campaign&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s2">&quot;halo-ac3&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">,</span> <span class="n">campaign</span><span class="o">=</span><span class="n">campaign</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">path</span>
+    <span class="n">pixel_wl_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">calib_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;calib&quot;</span><span class="p">,</span> <span class="n">campaign</span><span class="o">=</span><span class="n">campaign</span><span class="p">)</span>
+    <span class="n">measurement</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">t_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">measurement</span><span class="p">[</span><span class="s2">&quot;t_int&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># get integration time</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">spectrometer</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">pixel_wl</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_wl_path</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">)</span>
+    <span class="c1"># calculate dark current depending on channel:</span>
+    <span class="c1"># SWIR: use measurements during shutter phases</span>
+    <span class="c1"># VNIR: Option 1: use measurements below 290 nm</span>
+    <span class="c1">#       Option 2: use dark measurements from transfer calibration (CIRRUS-HL folder structure expected)</span>
+    <span class="c1">#       Option 3: use scaled dark current measurement from transfer calibration (HALO-AC3 folder structure expected)</span>
+    <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="s2">&quot;VNIR&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">last_dark_pixel</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="mi">290</span><span class="p">)</span>
+            <span class="n">dark_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">last_dark_pixel</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># one could apply a column mean (axis=1) and subtract the mean dark current from every timestep but for</span>
+            <span class="c1"># minutely files this shouldn&#39;t be of much importance</span>
+            <span class="c1"># TODO: Test difference between column mean and mean over rows and columns</span>
+            <span class="n">dark_current</span> <span class="o">=</span> <span class="n">measurement</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">dark_pixels</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">wls</span> <span class="o">=</span> <span class="n">pixel_wl</span><span class="p">[</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">dark_pixels</span><span class="p">)][</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">wls</span> <span class="o">=</span> <span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+            <span class="c1"># read in cali file</span>
+            <span class="c1"># get path depending on spectrometer and inlet</span>
+            <span class="n">instrument</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ASP\d</span><span class="si">{2}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">inlet</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;J\d</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># find right folder and right cali</span>
+            <span class="k">for</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">calib_path</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;.*</span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">.*dark.*&quot;</span><span class="p">,</span> <span class="n">dirpath</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">d_path</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">dirpath</span><span class="p">)</span>
+                    <span class="c1"># check if the date of the calibration matches the date of the file</span>
+                    <span class="n">date_check</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">date_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">d_path</span> <span class="k">else</span> <span class="kc">False</span>
+                    <span class="c1"># overwrite date check if date is given</span>
+                    <span class="k">if</span> <span class="n">date</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">date_check</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">d_path</span> <span class="k">else</span> <span class="kc">False</span>
+                    <span class="c1"># check for the right integration time in folder name</span>
+                    <span class="n">t_int_check</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">t_int</span><span class="p">)</span> <span class="ow">in</span> <span class="n">d</span>
+                    <span class="c1"># ASP06 has 2 SWIR and 2 VNIR inlets thus search for the folder for the given inlet</span>
+                    <span class="k">if</span> <span class="n">instrument</span> <span class="o">==</span> <span class="s2">&quot;ASP06&quot;</span> <span class="ow">and</span> <span class="n">inlet</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                        <span class="n">run</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="c1"># ASP07 has only one SWIR and VNIR inlet -&gt; no need to search</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">run</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">if</span> <span class="n">run</span> <span class="ow">and</span> <span class="n">date_check</span> <span class="ow">and</span> <span class="n">t_int_check</span><span class="p">:</span>
+                        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;.*.</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">.dat&#39;</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">dark_dir</span><span class="p">,</span> <span class="n">dark_file</span> <span class="o">=</span> <span class="n">dirpath</span><span class="p">,</span> <span class="n">file</span>
+                                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calibration file used:</span><span class="se">\n</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dark_dir</span><span class="p">,</span> <span class="n">dark_file</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                                <span class="k">assert</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;More than one possible file was found!</span><span class="se">\n</span><span class="s2"> Check </span><span class="si">{</span><span class="n">dirpath</span><span class="si">}</span><span class="s2">!&quot;</span>
+                                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dark_current</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">dark_dir</span><span class="p">,</span> <span class="n">dark_file</span><span class="p">)</span>
+                <span class="n">dark_current</span> <span class="o">=</span> <span class="n">dark_current</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">UnboundLocalError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No dark current file found for measurement!&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Option should be either 1, 2 or 3!&quot;</span>
+            <span class="n">wls</span> <span class="o">=</span> <span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+            <span class="c1"># check if an explicit dark current file is provided,</span>
+            <span class="c1"># if not assume that a transfer calibration is provided -&gt; this is the campaign mode</span>
+            <span class="k">if</span> <span class="n">dark_filepath</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># find dark current transfer calibration</span>
+                <span class="k">if</span> <span class="n">date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If no &#39;dark_filepath&#39; is provided &#39;date&#39; for transfer calibration needs to be &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;given!&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">transfer_calib_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">calib_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">spectrometer</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">_transfer_calib_</span><span class="si">{</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="c1"># in the transfer calib directory find the dark current measurement folder with the correct</span>
+                <span class="c1"># integration time</span>
+                <span class="n">dark_dir</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">transfer_calib_dir</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;dark&quot;</span> <span class="ow">in</span> <span class="n">d</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">t_int</span><span class="p">)</span> <span class="ow">in</span> <span class="n">d</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">dark_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">transfer_calib_dir</span><span class="p">,</span> <span class="n">dark_dir</span><span class="p">)</span>
+                <span class="n">dark_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">dark_dir</span><span class="p">)</span> <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.dat&quot;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">]</span>
+                <span class="c1"># the normal workflow is to merge all VNIR dark current files and delete all single files, thus only</span>
+                <span class="c1"># one dark current VNIR file should be left in each dark current folder</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dark_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Too many dark current files found for VNIR in </span><span class="si">{</span><span class="n">dark_dir</span><span class="si">}</span><span class="s2">! &quot;</span>
+                                     <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Merge VNIR files first and delete single files!&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dark_file</span> <span class="o">=</span> <span class="n">dark_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># get dark_dir and dark_file from given dark_filepath</span>
+                <span class="n">dark_dir</span><span class="p">,</span> <span class="n">dark_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">dark_filepath</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">dark_filepath</span><span class="p">)</span>
+
+            <span class="c1"># read in dark current measurement, drop t_int and shutter column and take mean over time</span>
+            <span class="n">dark_current</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">dark_dir</span><span class="p">,</span> <span class="n">dark_file</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="c1"># scale dark current to the measured dark pixels</span>
+            <span class="n">dark_scale</span> <span class="o">=</span> <span class="n">dark_current</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">19</span><span class="p">:</span><span class="mi">99</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dark_current</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">19</span><span class="p">:</span><span class="mi">99</span><span class="p">])</span>
+            <span class="c1"># get fluctuations over the rolling mean of the scaled dark current</span>
+            <span class="n">dark_scale</span> <span class="o">=</span> <span class="n">dark_scale</span> <span class="o">-</span> <span class="n">dark_scale</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="c1"># smooth dark current and add offset found in the first dark pixels</span>
+            <span class="n">dark_scale2</span> <span class="o">=</span> <span class="n">dark_current</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">+</span> <span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">19</span><span class="p">:</span><span class="mi">99</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">dark_current</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">19</span><span class="p">:</span><span class="mi">99</span><span class="p">])))</span>
+            <span class="n">dark_current</span> <span class="o">=</span> <span class="n">dark_scale2</span> <span class="o">+</span> <span class="n">dark_scale</span>  <span class="c1"># add both terms together</span>
+
+    <span class="k">elif</span> <span class="n">channel</span> <span class="o">==</span> <span class="s2">&quot;SWIR&quot;</span><span class="p">:</span>
+        <span class="c1"># check if the shutter flag was working: If all values are 1 -&gt; shutter flag is probably not working</span>
+        <span class="c1"># even if the flag is working, does not mean the shutter is working</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">shutter</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">measurement</span><span class="o">.</span><span class="n">shutter</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">dark_current</span> <span class="o">=</span> <span class="n">measurement</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">shutter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">wls</span> <span class="o">=</span> <span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shutter flag is probably wrong in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;channel&#39; should be either &#39;VNIR&#39; or &#39;SWIR&#39; but is </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="n">_plot_dark_current</span><span class="p">(</span><span class="n">wls</span><span class="p">,</span> <span class="n">dark_current</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dark_current</span></div>
+
+
+<div class="viewcode-block" id="plot_mean_corrected_measurement"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_mean_corrected_measurement">[docs]</a><span class="k">def</span> <span class="nf">plot_mean_corrected_measurement</span><span class="p">(</span><span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">measurement</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+                                    <span class="n">measurement_cor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
+                                    <span class="n">option</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the mean dark current corrected SMART measurement over time together with the raw measurement and the dark</span>
+<span class="sd">    current.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flight: to which flight does the file belong to? (e.g. Flight_20210707a)</span>
+<span class="sd">        filename: name of file</span>
+<span class="sd">        measurement: raw SMART measurements for each pixel averaged over time</span>
+<span class="sd">        measurement_cor: corrected SMART measurements for each pixel averaged over time</span>
+<span class="sd">        option: which option was used for VNIR correction</span>
+<span class="sd">        **kwargs: save_fig (bool): save figure to current directory or just show it</span>
+
+<span class="sd">    Returns: plot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_fig</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;save_fig&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;save_fig&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">pixel_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">spectrometer</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">dark_current</span> <span class="o">=</span> <span class="n">get_dark_current</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">wavelength</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">)[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="s2">&quot;VNIR&quot;</span> <span class="ow">and</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">dark_current</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Dark Current&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wavelength</span><span class="p">,</span> <span class="n">dark_current</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Dark Current&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wavelength</span><span class="p">,</span> <span class="n">measurement</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Measurement&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wavelength</span><span class="p">,</span> <span class="n">measurement_cor</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Corrected Measurement&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mean Corrected SMART Measurement </span><span class="si">{</span><span class="n">date_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;Spectrometer </span><span class="si">{</span><span class="n">spectrometer</span><span class="si">}</span><span class="s2">, Channel: </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">, Option: </span><span class="si">{</span><span class="n">option</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Netto Counts&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">save_fig</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">date_str</span><span class="si">}</span><span class="s2">_corrected_smart_measurement.png&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="correct_smart_dark_current"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.correct_smart_dark_current">[docs]</a><span class="k">def</span> <span class="nf">correct_smart_dark_current</span><span class="p">(</span><span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">smart_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">option</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Correct the raw SMART measurement for the dark current of the spectrometer.</span>
+<span class="sd">    Only returns data when the shutter was open.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flight: to which flight does the file belong to? (e.g. Flight_20210707a)</span>
+<span class="sd">        smart_file: filename of file to correct</span>
+<span class="sd">        option: which option should be used to get the dark current? Only relevant for channel &quot;VNIR&quot;.</span>
+<span class="sd">        kwargs: path (str): path to file if not raw file path as given in config.toml,</span>
+<span class="sd">            date (str): (yyyymmdd) date from which the dark current measurement should be used for VNIR (necessary if \</span>
+<span class="sd">            no transfer calibration was made on a measurement day)</span>
+<span class="sd">            campaign (str): campaign to which smart file belongs to</span>
+
+<span class="sd">    Returns: Series with corrected smart measurement</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">campaign</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;campaign&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;campaign&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s2">&quot;halo-ac3&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">,</span> <span class="n">campaign</span><span class="o">=</span><span class="n">campaign</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">path</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">smart_file</span><span class="p">)</span>
+    <span class="n">smart</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">smart_file</span><span class="p">)</span>
+    <span class="n">dark_current</span> <span class="o">=</span> <span class="n">get_dark_current</span><span class="p">(</span><span class="n">flight</span><span class="p">,</span> <span class="n">smart_file</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="s2">&quot;VNIR&quot;</span> <span class="ow">and</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">dark_current</span> <span class="o">=</span> <span class="n">dark_current</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># If get_dark_current returns a column mean, this can to be removed</span>
+    <span class="n">measurement</span> <span class="o">=</span> <span class="n">smart</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">smart</span><span class="o">.</span><span class="n">shutter</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span>  <span class="c1"># only use data when shutter is open</span>
+    <span class="n">measurement_cor</span> <span class="o">=</span> <span class="n">measurement</span> <span class="o">-</span> <span class="n">dark_current</span>
+    <span class="c1"># drop nan values -&gt; dark current measurements at beginning of file</span>
+    <span class="n">measurement_cor</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">measurement_cor</span></div>
+
+
+<div class="viewcode-block" id="plot_smart_data"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_smart_data">[docs]</a><span class="k">def</span> <span class="nf">plot_smart_data</span><span class="p">(</span><span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,</span>
+<span class="sd">    or a time series of one wavelength. Return an axes object to continue plotting or show it.</span>
+<span class="sd">    TODO: add option to plot multiple files</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flight: to which flight does the file belong to? (e.g. Flight_20210707a)</span>
+<span class="sd">        filename: Standard SMART filename</span>
+<span class="sd">        wavelength: list with either one or two wavelengths in nm or &#39;all&#39;</span>
+<span class="sd">        **kwargs: path (str): give path to filename if not default from config.toml,</span>
+<span class="sd">            save_fig (bool): save figure? (default: False),</span>
+<span class="sd">            plot_path (str): where to save figure (default: given in config.toml)</span>
+<span class="sd">            ax (plt.axis): axes to already existing matplotlib axis</span>
+
+<span class="sd">    Returns: Shows a figure or saves it to disc.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">raw_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">pixel_wl_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">data_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">calibrated_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;calibrated&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">plot_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;plot&quot;</span><span class="p">)</span>
+    <span class="c1"># read in keyword arguments</span>
+    <span class="n">raw_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">raw_path</span>
+    <span class="n">data_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">data_path</span>
+    <span class="n">calibrated_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">calibrated_path</span>
+    <span class="n">save_fig</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;save_fig&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;save_fig&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">plot_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plot_path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;plot_path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">plot_path</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;ax&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;ax&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;calibrated&quot;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">smart</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">calibrated_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Corrected for Dark Current and Calibrated&quot;</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Irradiance (W$</span><span class="se">\\</span><span class="s2">,$m$^{-2}</span><span class="se">\\</span><span class="s2">,$nm$^{-1}$)&quot;</span> <span class="k">if</span> <span class="s2">&quot;F&quot;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="k">else</span> <span class="s2">&quot;Radiance (W$</span><span class="se">\\</span><span class="s2">,$sr$^{-1}</span><span class="se">\\</span><span class="s2">,$m$^{-2}</span><span class="se">\\</span><span class="s2">,$nm$^{-1}$)&quot;</span>
+    <span class="k">elif</span> <span class="s2">&quot;cor&quot;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">smart</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Corrected for Dark Current&quot;</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Netto Counts&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">smart</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">smart</span> <span class="o">=</span> <span class="n">smart</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span>  <span class="c1"># remove columns t_int and shutter</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Raw&quot;</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Netto Counts&quot;</span>
+    <span class="n">pixel_wl</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_wl_path</span><span class="p">,</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">pixel_nr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">wl_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">wl</span> <span class="ow">in</span> <span class="n">wavelength</span><span class="p">:</span>
+            <span class="n">pxl</span><span class="p">,</span> <span class="n">wavel</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="n">wl</span><span class="p">)</span>
+            <span class="n">pixel_nr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pxl</span><span class="p">)</span>
+            <span class="n">wl_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wl_str</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">wavel</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">pixel_nr</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># make sure wavelengths are in ascending order</span>
+        <span class="n">smart_sel</span> <span class="o">=</span> <span class="n">smart</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">pixel_nr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>  <span class="c1"># select range of wavelengths</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># read out start and end time</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>  <span class="c1"># calculate mean over time and return a dataframe</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">smart_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>  <span class="c1"># update the index to be numeric</span>
+        <span class="c1"># join the measurement and pixel to wavelength data frames by pixel</span>
+        <span class="n">smart_plot</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">smart_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="n">ylabel</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Time Averaged SMART Measurement </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_dt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">figname</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">wl_str</span><span class="si">}</span><span class="s1">.png&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">pixel_nr</span><span class="p">,</span> <span class="n">wl</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">smart_sel</span> <span class="o">=</span> <span class="n">smart</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr</span><span class="p">]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">time_extend</span> <span class="o">=</span> <span class="n">end_dt</span> <span class="o">-</span> <span class="n">begin_dt</span>
+        <span class="n">smart_sel</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time (UTC)&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="n">ylabel</span><span class="p">,</span>
+                       <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SMART Time Series </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">wl</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> nm </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">set_xticks_and_xlabels</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">time_extend</span><span class="p">)</span>
+        <span class="n">figname</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">wl</span><span class="si">:</span><span class="s1">.1f</span><span class="si">}</span><span class="s1">nm.png&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">wavelength</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">smart</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smart</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">smart_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+        <span class="n">smart_plot</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">smart_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="n">ylabel</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+                        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Time Averaged SMART Measurement </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="s2"> &quot;</span>
+                              <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">begin_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">figname</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.dat&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">wavelength</span><span class="si">}</span><span class="s1">.png&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;wavelength has to be a list of length 1 or 2 or &#39;all&#39;!&quot;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">save_fig</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plot_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">figname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved </span><span class="si">{</span><span class="n">plot_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">figname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ax</span></div>
+
+
+<div class="viewcode-block" id="plot_smart_spectra"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_smart_spectra">[docs]</a><span class="k">def</span> <span class="nf">plot_smart_spectra</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot a spectra from a SMART calibrated measurement file for a given index (time step)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path: where the file can be found</span>
+<span class="sd">        filename: name of the file (standard SMART filename convention)</span>
+<span class="sd">        index: which row to plot</span>
+<span class="sd">        **kwargs: save_fig (bool): Save figure to plot path given in config.toml (default: False),</span>
+<span class="sd">            plot_path (str): Where to save plot if not standard plot path</span>
+
+<span class="sd">    Returns: Shows and or saves a plot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_fig</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;save_fig&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;save_fig&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">plot_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plot_path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;plot_path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;plot&quot;</span><span class="p">)</span>
+    <span class="n">pixel_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">spectrometer</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">pixel_wl</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">)</span>
+    <span class="n">max_id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">df_sel</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Given index &#39;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&#39; out-of-bounds! Using maximum index &#39;</span><span class="si">{</span><span class="n">max_id</span><span class="si">}</span><span class="s2">&#39;!&quot;</span><span class="p">)</span>
+        <span class="n">df_sel</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">max_id</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">time_stamp</span> <span class="o">=</span> <span class="n">df_sel</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># get time stamp which is selected</span>
+    <span class="n">pixel_wl</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sel</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Irradiance (W$</span><span class="se">\\</span><span class="s2">,$m$^{-2}</span><span class="se">\\</span><span class="s2">,$nm$^{-1}$)&quot;</span> <span class="k">if</span> <span class="s2">&quot;F&quot;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="k">else</span> <span class="s2">&quot;Radiance (W$</span><span class="se">\\</span><span class="s2">,$sr$^{-1}</span><span class="se">\\</span><span class="s2">,$m$^{-2}</span><span class="se">\\</span><span class="s2">,$nm$^{-1}$)&quot;</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SMART Spectra </span><span class="si">{</span><span class="n">spectrometer</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">time_stamp</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">save_fig</span><span class="p">:</span>
+        <span class="n">figname</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.dat&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;_spectra_</span><span class="si">{</span><span class="n">time_stamp</span><span class="si">:</span><span class="s2">%Y%m%d_%H%M%S</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+        <span class="n">figpath</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plot_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">figname</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">figpath</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved </span><span class="si">{</span><span class="n">figpath</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="plot_complete_smart_spectra"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_complete_smart_spectra">[docs]</a><span class="k">def</span> <span class="nf">plot_complete_smart_spectra</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path: where the file can be found</span>
+<span class="sd">        filename: name of the file (standard SMART filename convention)</span>
+<span class="sd">        index: which row to plot</span>
+<span class="sd">        **kwargs: save_fig (bool): Save figure to plot path given in config.toml (default: False)</span>
+<span class="sd">            plot_path (str): Where to save plot if not standard plot path</span>
+
+<span class="sd">    Returns: Shows and or saves a plot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_fig</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;save_fig&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;save_fig&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="kc">False</span>
+    <span class="n">plot_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;plot_path&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;plot_path&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;plot&quot;</span><span class="p">)</span>
+    <span class="n">pixel_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">df1</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="s2">&quot;SWIR&quot;</span><span class="p">:</span>
+        <span class="n">channel2</span> <span class="o">=</span> <span class="s2">&quot;VNIR&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">channel2</span> <span class="o">=</span> <span class="s2">&quot;SWIR&quot;</span>
+
+    <span class="n">filename2</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">channel2</span><span class="p">)</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename2</span><span class="p">)</span>
+    <span class="n">spectrometer1</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">spectrometer2</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">pixel_wl1</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectrometer1</span><span class="p">)</span>
+    <span class="n">pixel_wl2</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectrometer2</span><span class="p">)</span>
+    <span class="c1"># merge pixel dfs and sort by wavelength</span>
+    <span class="c1"># pixel_wl = pixel_wl1.append(pixel_wl2, ignore_index=True).sort_values(by=&quot;wavelength&quot;, ignore_index=True)</span>
+    <span class="n">max_id1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">max_id2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">df_sel1</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">df_sel2</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Given index &#39;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&#39; out-of-bounds! Using maximum index &#39;</span><span class="si">{</span><span class="n">max_id1</span><span class="si">}</span><span class="s2">&#39;!&quot;</span><span class="p">)</span>
+        <span class="n">df_sel1</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">max_id1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">df_sel2</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">max_id2</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">time_stamp</span> <span class="o">=</span> <span class="n">df_sel1</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># get time stamp which is selected</span>
+    <span class="k">assert</span> <span class="n">time_stamp</span> <span class="o">==</span> <span class="n">df_sel2</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;Time stamps from VNIR and SWIR are not identical!&quot;</span>
+
+    <span class="n">pixel_wl1</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sel1</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">pixel_wl2</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sel2</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Irradiance (W$</span><span class="se">\\</span><span class="s2">,$m$^{-2}</span><span class="se">\\</span><span class="s2">,$nm$^{-1}$)&quot;</span> <span class="k">if</span> <span class="s2">&quot;F&quot;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="k">else</span> <span class="s2">&quot;Radiance (W$</span><span class="se">\\</span><span class="s2">,$sr$^{-1}</span><span class="se">\\</span><span class="s2">,$m$^{-2}</span><span class="se">\\</span><span class="s2">,$nm$^{-1}$)&quot;</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pixel_wl1</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">],</span> <span class="n">pixel_wl1</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">pixel_wl2</span><span class="p">[</span><span class="s2">&quot;wavelength&quot;</span><span class="p">],</span> <span class="n">pixel_wl2</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># ax.plot(&quot;wavelength&quot;, f&quot;{direction}&quot;, data=pixel_wl1, label=f&quot;{channel}&quot;)</span>
+    <span class="c1"># ax.plot(&quot;wavelength&quot;, f&quot;{direction}&quot;, data=pixel_wl2, label=f&quot;{channel2}&quot;)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SMART Spectra </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">channel2</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">time_stamp</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">save_fig</span><span class="p">:</span>
+        <span class="n">figname</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.dat&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;_spectra_</span><span class="si">{</span><span class="n">time_stamp</span><span class="si">:</span><span class="s2">%Y%m%d_%H%M%S</span><span class="si">}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+        <span class="n">figname</span> <span class="o">=</span> <span class="n">figname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="s2">&quot;VNIR+SWIR&quot;</span><span class="p">)</span>
+        <span class="n">figpath</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">plot_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">figname</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">figpath</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved </span><span class="si">{</span><span class="n">figpath</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="plot_complete_smart_spectra_interactive"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_complete_smart_spectra_interactive">[docs]</a><span class="k">def</span> <span class="nf">plot_complete_smart_spectra_interactive</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">hv</span><span class="o">.</span><span class="n">Overlay</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)</span>
+<span class="sd">    Args:</span>
+<span class="sd">        path: where the file can be found</span>
+<span class="sd">        filename: name of the file (standard SMART filename convention)</span>
+<span class="sd">        index: which row to plot</span>
+
+<span class="sd">    Returns: Shows and or saves a plot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pixel_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">df1</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="s2">&quot;SWIR&quot;</span><span class="p">:</span>
+        <span class="n">channel2</span> <span class="o">=</span> <span class="s2">&quot;VNIR&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">channel2</span> <span class="o">=</span> <span class="s2">&quot;SWIR&quot;</span>
+
+    <span class="n">filename2</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">channel2</span><span class="p">)</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename2</span><span class="p">)</span>
+    <span class="n">spectrometer1</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">spectrometer2</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">pixel_wl1</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectrometer1</span><span class="p">)</span>
+    <span class="n">pixel_wl2</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectrometer2</span><span class="p">)</span>
+    <span class="c1"># merge pixel dfs and sort by wavelength</span>
+    <span class="c1"># pixel_wl = pixel_wl1.append(pixel_wl2, ignore_index=True).sort_values(by=&quot;wavelength&quot;, ignore_index=True)</span>
+    <span class="n">max_id1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">max_id2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">df_sel1</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">df_sel2</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Given index &#39;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&#39; out-of-bounds! Using maximum index &#39;</span><span class="si">{</span><span class="n">max_id1</span><span class="si">}</span><span class="s2">&#39;!&quot;</span><span class="p">)</span>
+        <span class="n">df_sel1</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">max_id1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">df_sel2</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">max_id2</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">time_stamp</span> <span class="o">=</span> <span class="n">df_sel1</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># get time stamp which is selected</span>
+    <span class="k">assert</span> <span class="n">time_stamp</span> <span class="o">==</span> <span class="n">df_sel2</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;Time stamps from VNIR and SWIR are not identical!&quot;</span>
+
+    <span class="n">pixel_wl1</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sel1</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">pixel_wl2</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_sel2</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Irradiance (W m^-2 nm^-1)&quot;</span> <span class="k">if</span> <span class="s2">&quot;F&quot;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="k">else</span> <span class="s2">&quot;Radiance (W sr^-1 m^-2 nm^-1)&quot;</span>
+
+    <span class="n">curve1</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">pixel_wl1</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelenght (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">curve2</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">pixel_wl2</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelenght (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">overlay</span> <span class="o">=</span> <span class="n">curve1</span> <span class="o">*</span> <span class="n">curve2</span>
+    <span class="n">overlay</span><span class="o">.</span><span class="n">opts</span><span class="p">(</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">))</span>
+    <span class="n">overlay</span><span class="o">.</span><span class="n">opts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SMART Spectra </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">channel2</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">time_stamp</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S.%f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                 <span class="n">show_grid</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">overlay</span></div>
+
+
+<div class="viewcode-block" id="plot_smart_data_interactive"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_smart_data_interactive">[docs]</a><span class="k">def</span> <span class="nf">plot_smart_data_interactive</span><span class="p">(</span><span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,</span>
+<span class="sd">    or a time series of one wavelength.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flight: to which flight does the file belong to? (e.g. Flight_20210707a)</span>
+<span class="sd">        filename: Standard SMART filename</span>
+<span class="sd">        wavelength: list with either one or two wavelengths in nm or &#39;all&#39;</span>
+
+
+<span class="sd">    Returns: Creates an interactive figure</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">raw_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">pixel_wl_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">data_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">calibrated_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;calibrated&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="c1"># make sure wavelength is a list</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span> <span class="ow">and</span> <span class="n">wavelength</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">wavelength</span> <span class="o">=</span> <span class="p">[</span><span class="n">wavelength</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;calibrated&quot;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">calibrated_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Corrected for Dark Current and Calibrated&quot;</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Irradiance (W m^-2 nm^-1)&quot;</span> <span class="k">if</span> <span class="s2">&quot;F&quot;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="k">else</span> <span class="s2">&quot;Radiance (W sr^-1 m^-2 nm^-1)&quot;</span>
+    <span class="k">elif</span> <span class="s2">&quot;cor&quot;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Corrected for Dark Current&quot;</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Netto Counts&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span>  <span class="c1"># remove columns t_int and shutter</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Raw&quot;</span>
+        <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Netto Counts&quot;</span>
+    <span class="n">pixel_wl</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_wl_path</span><span class="p">,</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">pixel_nr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">wl</span> <span class="ow">in</span> <span class="n">wavelength</span><span class="p">:</span>
+            <span class="n">pxl</span><span class="p">,</span> <span class="n">wavel</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="n">wl</span><span class="p">)</span>
+            <span class="n">pixel_nr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pxl</span><span class="p">)</span>
+        <span class="n">pixel_nr</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># make sure wavelengths are in ascending order</span>
+        <span class="n">smart_sel</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">pixel_nr</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>  <span class="c1"># select range of wavelengths</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># read out start and end time</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>  <span class="c1"># calculate mean over time and return a dataframe</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">smart_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>  <span class="c1"># update the index to be numeric</span>
+        <span class="c1"># join the measurement and pixel to wavelength data frames by pixel</span>
+        <span class="n">smart_plot</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">smart_plot</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">smart_plot</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)])</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Time Averaged SMART Measurement </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_dt</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">pixel_nr</span><span class="p">,</span> <span class="n">wl</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">smart_sel</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr</span><span class="p">]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smart_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">time_extend</span> <span class="o">=</span> <span class="n">end_dt</span> <span class="o">-</span> <span class="n">begin_dt</span>
+        <span class="n">smart_sel</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">smart_sel</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">smart_sel</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;Time (UTC)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)])</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SMART Time Series </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">wl</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> nm </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="c1">#         ax = jr.set_xticks_and_xlabels(ax, time_extend)</span>
+    <span class="k">elif</span> <span class="n">wavelength</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">smart_mean</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">smart_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+        <span class="n">smart_plot</span> <span class="o">=</span> <span class="n">smart_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">smart_plot</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">smart_plot</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelenght (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)])</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Time Averaged SMART Measurement </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;wavelength has to be a list of length 1 or 2 or &#39;all&#39;!&quot;</span><span class="p">)</span>
+
+    <span class="n">curve</span><span class="o">.</span><span class="n">opts</span><span class="p">(</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">))</span>
+    <span class="n">curve</span><span class="o">.</span><span class="n">opts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">show_grid</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">curve</span></div>
+
+
+<div class="viewcode-block" id="plot_calibrated_irradiance_flux"><a class="viewcode-back" href="../../api_documentation.html#pylim.smart.plot_calibrated_irradiance_flux">[docs]</a><span class="k">def</span> <span class="nf">plot_calibrated_irradiance_flux</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">flight</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">hv</span><span class="o">.</span><span class="n">Overlay</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot upward and downward irradiance as a time averaged series over the wavelength or as a time series for one</span>
+<span class="sd">    wavelength.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename: Standard SMART filename</span>
+<span class="sd">        wavelength: single or range of wavelength or &quot;all&quot;</span>
+<span class="sd">        flight: flight folder (flight_xx)</span>
+
+<span class="sd">    Returns: holoviews overlay plot with two curves</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure wavelength is a list</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span> <span class="ow">and</span> <span class="n">wavelength</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">wavelength</span> <span class="o">=</span> <span class="p">[</span><span class="n">wavelength</span><span class="p">]</span>
+    <span class="c1"># get paths and define input path</span>
+    <span class="n">calibrated_path</span><span class="p">,</span> <span class="n">pixel_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;calibrated&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="o">=</span><span class="n">flight</span><span class="p">),</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">,</span> <span class="n">flight</span><span class="o">=</span><span class="n">flight</span><span class="p">)</span>
+    <span class="n">date_str</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">get_info_from_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">direction2</span> <span class="o">=</span> <span class="s2">&quot;Fdw&quot;</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;Fup&quot;</span> <span class="k">else</span> <span class="s2">&quot;Fup&quot;</span>  <span class="c1"># set opposite direction</span>
+    <span class="n">filename2</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">direction2</span><span class="p">)</span>
+    <span class="c1"># read in both irradiance measurements</span>
+    <span class="n">df1</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">calibrated_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_cor</span><span class="p">(</span><span class="n">calibrated_path</span><span class="p">,</span> <span class="n">filename2</span><span class="p">)</span>
+    <span class="c1"># get spectrometers from smart_lookup dictionary</span>
+    <span class="n">spectro1</span><span class="p">,</span> <span class="n">spectro2</span> <span class="o">=</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span> <span class="n">smart_lookup</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">direction2</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">pixel_wl1</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectro1</span><span class="p">)</span>
+    <span class="n">pixel_wl2</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_path</span><span class="p">,</span> <span class="n">spectro2</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Corrected for Dark Current and Calibrated&quot;</span>
+    <span class="n">ylabel</span> <span class="o">=</span> <span class="s2">&quot;Irradiance (W m^-2 nm^-1)&quot;</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">pixel_nr1</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pixel_nr2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">wl</span> <span class="ow">in</span> <span class="n">wavelength</span><span class="p">:</span>
+            <span class="n">pxl</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl1</span><span class="p">,</span> <span class="n">wl</span><span class="p">)</span>
+            <span class="n">pixel_nr1</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pxl</span><span class="p">)</span>
+            <span class="n">pxl</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl2</span><span class="p">,</span> <span class="n">wl</span><span class="p">)</span>
+            <span class="n">pixel_nr2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pxl</span><span class="p">)</span>
+        <span class="n">pixel_nr1</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># make sure wavelengths are in ascending order</span>
+        <span class="n">pixel_nr2</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">df1_sel</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr1</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">pixel_nr1</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>  <span class="c1"># select range of wavelengths</span>
+        <span class="n">df1_sel</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># sort data frame</span>
+        <span class="n">df2_sel</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr2</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">pixel_nr2</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>  <span class="c1"># select range of wavelengths</span>
+        <span class="n">df2_sel</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># sort data frame</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">df1_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">df1_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># read out start and end time</span>
+        <span class="n">df1_mean</span> <span class="o">=</span> <span class="n">df1_sel</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>  <span class="c1"># calculate mean over time and return a dataframe</span>
+        <span class="n">df1_mean</span> <span class="o">=</span> <span class="n">df1_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df1_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>  <span class="c1"># update the index to be numeric</span>
+        <span class="n">df2_mean</span> <span class="o">=</span> <span class="n">df2_sel</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>  <span class="c1"># calculate mean over time and return a dataframe</span>
+        <span class="n">df2_mean</span> <span class="o">=</span> <span class="n">df2_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df2_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>  <span class="c1"># update the index to be numeric</span>
+        <span class="c1"># join the measurement and pixel to wavelength data frames by pixel</span>
+        <span class="n">df1_plot</span> <span class="o">=</span> <span class="n">df1_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">df1_plot</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="n">df2_plot</span> <span class="o">=</span> <span class="n">df2_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">df2_plot</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="n">curve1</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">df1_plot</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span>
+                          <span class="n">label</span><span class="o">=</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">curve2</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">df2_plot</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelength (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span>
+                          <span class="n">label</span><span class="o">=</span><span class="n">direction2</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Time Averaged SMART Measurement </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_dt</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">curve1</span> <span class="o">*</span> <span class="n">curve2</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">wavelength</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">pixel_nr1</span><span class="p">,</span> <span class="n">wl1</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl1</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">df1_sel</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr1</span><span class="p">]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">pixel_nr2</span><span class="p">,</span> <span class="n">wl2</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl2</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">df2_sel</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">pixel_nr2</span><span class="p">]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">df1_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">df1_sel</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">df1_sel</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">df1_sel</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="n">df2_sel</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">df2_sel</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">]</span>
+        <span class="n">curve1</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">df1_sel</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;Time (UTC)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">curve2</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">df2_sel</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;Time (UTC)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="n">direction2</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SMART Time Series </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">wl1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> nm </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">curve1</span> <span class="o">*</span> <span class="n">curve2</span>
+    <span class="k">elif</span> <span class="n">wavelength</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+        <span class="n">begin_dt</span><span class="p">,</span> <span class="n">end_dt</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">df1</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">df1_mean</span> <span class="o">=</span> <span class="n">df1</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">df1_mean</span> <span class="o">=</span> <span class="n">df1_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df1_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+        <span class="n">df1_plot</span> <span class="o">=</span> <span class="n">df1_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">df1_plot</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="n">df2_mean</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">df2_mean</span> <span class="o">=</span> <span class="n">df2_mean</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df2_mean</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+        <span class="n">df2_plot</span> <span class="o">=</span> <span class="n">df2_mean</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pixel_wl</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">[</span><span class="s2">&quot;pixel&quot;</span><span class="p">]))</span>
+        <span class="n">df2_plot</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel&quot;</span><span class="p">,</span> <span class="s2">&quot;wavelength&quot;</span><span class="p">]</span>
+        <span class="n">curve1</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">df1_plot</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelenght (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">curve2</span> <span class="o">=</span> <span class="n">hv</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">df2_plot</span><span class="p">,</span> <span class="n">kdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;Wavelenght (nm)&quot;</span><span class="p">)],</span> <span class="n">vdims</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)],</span> <span class="n">label</span><span class="o">=</span><span class="n">direction2</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Time Averaged SMART Irradiance Measurement </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">begin_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">end_dt</span><span class="si">:</span><span class="s2">%Y-%m-%d %H:%M:%S</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">overlay</span> <span class="o">=</span> <span class="n">curve1</span> <span class="o">*</span> <span class="n">curve2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;wavelength has to be a list of length 1 or 2 or &#39;all&#39;!&quot;</span><span class="p">)</span>
+
+    <span class="n">overlay</span><span class="o">.</span><span class="n">opts</span><span class="p">(</span>
+        <span class="n">opts</span><span class="o">.</span><span class="n">Curve</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">900</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">))</span>
+    <span class="n">overlay</span><span class="o">.</span><span class="n">opts</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">show_grid</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">overlay</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># test read in functions</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/raw_only/ASP06_transfer_calib_20210616/Tint_500ms&quot;</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;2021_06_16_07_20.Fdw_SWIR.dat&quot;</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_15.Fup_SWIR.dat&quot;</span>
+    <span class="n">smart</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="n">pixel_wl_path</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s2">&quot;pixel_wl&quot;</span><span class="p">)</span>
+    <span class="n">spectrometer</span> <span class="o">=</span> <span class="s2">&quot;ASP06_J3&quot;</span>
+    <span class="n">pixel_wl</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_pixel_to_wavelength</span><span class="p">(</span><span class="n">pixel_wl_path</span><span class="p">,</span> <span class="n">spectrometer</span><span class="p">)</span>
+
+    <span class="c1"># find pixel closest to given wavelength</span>
+    <span class="n">pixel_nr</span><span class="p">,</span> <span class="n">wavelength</span> <span class="o">=</span> <span class="n">find_pixel</span><span class="p">(</span><span class="n">pixel_wl</span><span class="p">,</span> <span class="mi">525</span><span class="p">)</span>
+
+    <span class="c1"># input: spectrometer, filename, option</span>
+    <span class="c1"># option = 2</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_07.Fup_VNIR.dat&quot;</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_07.Fup_SWIR.dat&quot;</span>
+    <span class="c1"># dark_current = get_dark_current(filename, option)</span>
+
+    <span class="c1"># # correct raw measurement with dark current</span>
+    <span class="c1"># # input: smart measurement, option</span>
+    <span class="c1"># option = 2</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_07.Fup_VNIR.dat&quot;</span>
+    <span class="c1"># smart_cor = correct_smart_dark_current(filename, option)</span>
+    <span class="c1">#</span>
+    <span class="c1"># # plot mean corrected smart measurement</span>
+    <span class="c1"># raw_path, _, _, _, _ = set_paths()</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_07.Fup_VNIR.dat&quot;</span>
+    <span class="c1"># option = 2</span>
+    <span class="c1"># smart = read_smart_raw(raw_path, filename)</span>
+    <span class="c1"># smart_cor = correct_smart_dark_current(filename, option=option)</span>
+    <span class="c1"># measurement = smart.mean().iloc[2:]</span>
+    <span class="c1"># measurement_cor = smart_cor.mean()</span>
+    <span class="c1"># plot_mean_corrected_measurement(filename, measurement, measurement_cor, option)</span>
+    <span class="c1">#</span>
+    <span class="c1"># # read corrected file</span>
+    <span class="c1"># _, _, _, data_path, _ = set_paths()</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_07.Fup_VNIR_cor.dat&quot;</span>
+    <span class="c1"># smart_cor = read_smart_cor(data_path, filename)</span>
+    <span class="c1">#</span>
+    <span class="c1"># # plot any smart measurement given a range of wavelengths, one specific one or all</span>
+    <span class="c1"># filename = &quot;2021_03_29_11_07.Fup_VNIR_cor.dat&quot;</span>
+    <span class="c1"># raw_file = &quot;2021_03_29_11_07.Fup_VNIR.dat&quot;</span>
+    <span class="c1"># wavelength = [525]</span>
+    <span class="c1"># plot_smart_data(filename, wavelength)</span>
+    <span class="c1"># plot_smart_data(raw_file, wavelength)</span>
+    <span class="c1">#</span>
+    <span class="c1"># # plot SMART spectra</span>
+    <span class="c1"># file = &quot;2021_06_04_13_40.Fdw_VNIR_cor_calibrated.dat&quot;</span>
+    <span class="c1"># path = &quot;C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calibrated_data/flight_00&quot;</span>
+    <span class="c1"># index = 500</span>
+    <span class="c1"># plot_smart_spectra(path, file, index)</span>
+
+    <span class="c1"># plot a complete spectra from both channels</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;2021_06_21_08_41.Fdw_SWIR_cor_calibrated_norm.dat&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">h</span><span class="o">.</span><span class="n">get_path</span><span class="p">(</span><span class="s1">&#39;calibrated&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">/flight_00&quot;</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="mi">500</span>
+    <span class="n">plot_path</span> <span class="o">=</span> <span class="s2">&quot;C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/plots/quicklooks/flight_00/spectra&quot;</span>
+    <span class="n">plot_complete_smart_spectra</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_path</span><span class="o">=</span><span class="n">plot_path</span><span class="p">)</span>
+
+    <span class="c1"># working section</span>
+    <span class="n">raw_file</span> <span class="o">=</span> <span class="s2">&quot;2021_03_29_11_15.Fdw_SWIR.dat&quot;</span>
+    <span class="n">calibrated_file</span> <span class="o">=</span> <span class="s2">&quot;2021_06_24_10_28.Fdw_VNIR_cor_calibrated_norm.dat&quot;</span>
+    <span class="n">file</span> <span class="o">=</span> <span class="s2">&quot;2021_06_25_06_14.Iup_SWIR.dat&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;C:/Users/Johannes/Documents/Doktor/campaigns/CIRRUS-HL/SMART/calib/ASP07_transfer_calib_20210625/dark_300ms&quot;</span>
+    <span class="n">plot_smart_data</span><span class="p">(</span><span class="s2">&quot;Flight_20210625a&quot;</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">smart</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_smart_raw</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">smart</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">smart</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;dark&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">smart</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">smart</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">21</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;diff&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

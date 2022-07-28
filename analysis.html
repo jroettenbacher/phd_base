@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Documentation" href="api_documentation.html" />
+    <link rel="prev" title="Quicklooks" href="quicklooks.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cirrus-hl">CIRRUS-HL</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cirrus-hl-laboratory-calibration-comparison">CIRRUS-HL laboratory calibration comparison</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_campaign_analysis">cirrus_hl_campaign_analysis.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210625a">cirrus_hl_case_study_20210625a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210629a">cirrus_hl_case_study_20210629a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210712a">cirrus_hl_case_study_20210712a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210715a">cirrus_hl_case_study_20210715a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_overview">cirrus_hl_overview.py</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#halo-ac-3">HALO-(AC)³</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#halo-ac-3-laboratory-calibration-comparison">HALO-(AC)³ Laboratory Calibration comparison</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#results-halo-ac-3">Results HALO-(AC)³</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#smart">SMART</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.smart_cosine_calibration">smart_cosine_calibration.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.smart_cosine_calibration_v2">smart_cosine_calibration_v2.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.smart_effective_receiving_area">smart_effective_receiving_area.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="analysis">
+<h1>Analysis<a class="headerlink" href="#analysis" title="Permalink to this heading"></a></h1>
+<p>Here each analysis script is described in a short summary and by its doc string.</p>
+<section id="cirrus-hl">
+<h2>CIRRUS-HL<a class="headerlink" href="#cirrus-hl" title="Permalink to this heading"></a></h2>
+<section id="cirrus-hl-laboratory-calibration-comparison">
+<h3>CIRRUS-HL laboratory calibration comparison<a class="headerlink" href="#cirrus-hl-laboratory-calibration-comparison" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">cirrus_hl_smart_compare_lab_calibs.py</span></code></p>
+<span class="target" id="module-analysis.cirrus_hl_smart_compare_lab_calibs"></span><p>CIRRUS-HL: Compare laboratory calibrations of SMART</p>
+<p>For CIRRUS-HL two laboratory calibrations were done. Here the two calibrations are compared to each other.</p>
+<p>The first lab calibration did not have the final optical fiber and inlet setting as were used during CIRRUS-HL.
+Thus, a difference between the after and before campaign calibration is to be expected.
+In addition to that, the optical fibers were unplugged after the campaign for the transport of SMART to Leipzig.</p>
+<p>Each lab calibration is processed with <cite>smart_process_lab_calib.py</cite> to correct the files for the dark current.
+After that the calibration factors are calculated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.smart_calib_lab_ASP06.py</span></code> for ASP06 and <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.smart_calib_lab_ASP07.py</span></code> for ASP07.</p>
+<ul class="simple">
+<li><p>compare calibration factors</p></li>
+<li><p>compare Ulli measurements</p></li>
+</ul>
+<section id="results">
+<h4>Results<a class="headerlink" href="#results" title="Permalink to this heading"></a></h4>
+<figure class="align-default" id="id1">
+<img alt="_images/ASP06_lab_calib_comparison.png" src="_images/ASP06_lab_calib_comparison.png" />
+<figcaption>
+<p><span class="caption-text">Comparison of the lab calibration factors before and after CIRRUS-HL for the four channels on ASP06.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Comparing the calibration factors of ASP06 between the before and after calibration shows that the after calibration (red) has a higher magnitude.
+This is due to fewer counts being measured during the after calibration.
+A possible cause of this is that the cable used in the after calibration was longer and also showed signs of damage leading to a loss of photons on the way from the inlet to the spectrometer.
+To account for that a higher calibration factor is needed to calculate the given irradiance which did not change between the calibrations.
+The same result can be observed for the calibrations for ASP07.</p>
+<figure class="align-default" id="id2">
+<img alt="_images/ASP07_lab_calib_comparison.png" src="_images/ASP07_lab_calib_comparison.png" />
+<figcaption>
+<p><span class="caption-text">Comparison of the lab calibration factors before and after CIRRUS-HL for the two channels on ASP07.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Ulli measurements</strong></p>
+<p>Taking a look at ASP06’s measurements of the Ulbricht sphere (Ulli) shows the same difference in magnitude between the calibrations when comparing the dark current corrected counts.</p>
+<figure class="align-default" id="id3">
+<img alt="_images/ASP06_lab_calib_comparison_s-ulli.png" src="_images/ASP06_lab_calib_comparison_s-ulli.png" />
+<figcaption>
+<p><span class="caption-text">Dark current corrected count measurements of the Ulli transfer sphere from ASP06.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id4">
+<img alt="_images/ASP07_lab_calib_comparison_s-ulli.png" src="_images/ASP07_lab_calib_comparison_s-ulli.png" />
+<figcaption>
+<p><span class="caption-text">Dark current corrected count measurements of the Ulli transfer sphere from ASP07.</span><a class="headerlink" href="#id4" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>It can clearly be seen that during the after calibration less photons reached the spectrometers.
+However, this should still result in the same irradiance as long as the Ulli sphere is run with the same power source and the same settings.
+Just like the output of the 1000W calibration lamp should not change between the calibration, so should the output of the Ulli sphere not change.
+Nonetheless, when looking at the calculated irradiance using the corresponding laboratory calibration factors clear differences can be observed for the downward measurements.</p>
+<figure class="align-default" id="id5">
+<img alt="_images/ASP06_lab_calib_comparison_f-ulli.png" src="_images/ASP06_lab_calib_comparison_f-ulli.png" />
+<figcaption>
+<p><span class="caption-text">Calculated irradiance of the Ulli transfer sphere from ASP06.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id6">
+<img alt="_images/ASP07_lab_calib_comparison_I-ulli.png" src="_images/ASP07_lab_calib_comparison_I-ulli.png" />
+<figcaption>
+<p><span class="caption-text">Calculated radiance of the Ulli transfer sphere from ASP07.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Plotting the actual difference between the two shows a more detailed picture.</p>
+<figure class="align-default" id="id7">
+<img alt="_images/ASP06_lab_calib_comparison_f-ulli-diff.png" src="_images/ASP06_lab_calib_comparison_f-ulli-diff.png" />
+<figcaption>
+<p><span class="caption-text">Difference between measured irradiances from Ulli sphere (before - after).</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id8">
+<img alt="_images/ASP07_lab_calib_comparison_I-ulli-diff.png" src="_images/ASP07_lab_calib_comparison_I-ulli-diff.png" />
+<figcaption>
+<p><span class="caption-text">Difference between measured radiances from Ulli sphere (before - after).</span><a class="headerlink" href="#id8" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="module-analysis.cirrus_hl_campaign_analysis">
+<span id="cirrus-hl-campaign-analysis-py"></span><h3>cirrus_hl_campaign_analysis.py<a class="headerlink" href="#module-analysis.cirrus_hl_campaign_analysis" title="Permalink to this heading"></a></h3>
+<p>Analysis script for statistics about the whole campaign</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210625a">
+<span id="cirrus-hl-case-study-20210625a-py"></span><h3>cirrus_hl_case_study_20210625a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210625a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL
+* 25.06.2021: Radiation Square for BACARDI
+author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210629a">
+<span id="cirrus-hl-case-study-20210629a-py"></span><h3>cirrus_hl_case_study_20210629a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210629a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL - 29. June 2021</p>
+<p>Cirrus over Atlantic west and north of Iceland</p>
+<p>-&gt; Poster HALO Status Colloquium 2021
+-&gt; Presentation for CIRRUS-HL workshop 2. - 3.12.2021
+-&gt; 1. PhD Talk
+-&gt; Presentation for CIRRUS-HL workshop 30. - 31.05.2022</p>
+<p><strong>author</strong>: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210712a">
+<span id="cirrus-hl-case-study-20210712a-py"></span><h3>cirrus_hl_case_study_20210712a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210712a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL
+* 12.07.2021: First day with SMART fixed
+author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210715a">
+<span id="cirrus-hl-case-study-20210715a-py"></span><h3>cirrus_hl_case_study_20210715a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210715a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL
+* 15.07.2021 SMART fixed - contrail outbreak over Spain - Radiation Square
+author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_overview">
+<span id="cirrus-hl-overview-py"></span><h3>cirrus_hl_overview.py<a class="headerlink" href="#module-analysis.cirrus_hl_overview" title="Permalink to this heading"></a></h3>
+<p>Prepare overview plots for each flight
+author: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="halo-ac-3">
+<h2>HALO-(AC)³<a class="headerlink" href="#halo-ac-3" title="Permalink to this heading"></a></h2>
+<section id="halo-ac-3-laboratory-calibration-comparison">
+<h3>HALO-(AC)³ Laboratory Calibration comparison<a class="headerlink" href="#halo-ac-3-laboratory-calibration-comparison" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_smart_compare_lab_calibs.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_smart_compare_lab_calibs"></span><p>HALO-(AC)³: Compare laboratory calibrations of SMART</p>
+<p>For HALO-(AC)³ two laboratory calibrations were done. Here the two calibrations are compared to each other.</p>
+<p><strong>Important:</strong> It was decided to use the other spectrometer pair (J5, J6) because the dark current looks better and does not have as many high offsets on some pixels. Also see the note on the effective receiving area!
+Due to technical difficulties the spectrometer pair J3, J4 was used during HALO-AC3. This calibration was therefore used for the transfer calibration. However, a different inlet was used (VN05). The first calib was done with inlet VN11.</p>
+<p><strong>Note on effective receiving area:</strong> Effective receiving area is in front of inlet not inside it, but was interpreted otherwise. Thus, the distance between the effective receiving area and the lamp is off by 44mm!</p>
+<p>The second lab calibration after the campaign was done with the correct inlet and the correct channels: VN05 and J3, J4</p>
+<p>Each lab calibration is processed with <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_process_lab_calib_halo_ac3.py</span></code> to correct the files for the dark current.
+After that the calibration factors are calculated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.smart_calib_lab_ASP06_halo_ac3.py</span></code> for ASP06.</p>
+<ul class="simple">
+<li><p>compare calibration factors</p></li>
+<li><p>compare Ulli measurements</p></li>
+</ul>
+<section id="results-halo-ac-3">
+<h4>Results HALO-(AC)³<a class="headerlink" href="#results-halo-ac-3" title="Permalink to this heading"></a></h4>
+<figure class="align-default" id="id9">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison.png" />
+<figcaption>
+<p><span class="caption-text">Comparison of the lab calibration factors before and after HALO-(AC)³ for the two channels on ASP06.</span><a class="headerlink" href="#id9" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Comparing the calibration factors of ASP06 between the before and after calibration shows that the after calibration (red) has a lower magnitude in the wavelength range from 250 to 350 nm for the VNIR channel.
+This means less signal in the before calibration for those pixels.</p>
+<p><strong>Ulli measurements</strong></p>
+<p>Taking a look at ASP06’s measurements of the Ulbricht sphere (Ulli2) shows only a minor difference in magnitude between the calibrations when comparing the dark current corrected and normalized counts.
+Especially in the VNIR part between 180 and 350nm a lot of noise can be seen, which might already explain the difference in calibration factors for those wavelengths.</p>
+<figure class="align-default" id="id10">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison_s-ulli2.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison_s-ulli2.png" />
+<figcaption>
+<p><span class="caption-text">Dark current corrected, normalized count measurements of the Ulli transfer sphere (Ulli2) from ASP06.</span><a class="headerlink" href="#id10" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id11">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png" />
+<figcaption>
+<p><span class="caption-text">Calculated irradiance of the Ulli transfer sphere (Ulli2) from ASP06 measurements.</span><a class="headerlink" href="#id11" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Plotting the actual difference between the two shows a more detailed picture.</p>
+<figure class="align-default" id="id12">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2-diff.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2-diff.png" />
+<figcaption>
+<p><span class="caption-text">Difference between measured irradiances from Ulli sphere (Ulli2) (before - after).</span><a class="headerlink" href="#id12" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The after campaign calibration shows a higher irradiance with increasing wavelength in the VNIR channel (J4).</p>
+<p>There were several problems with the before calibration on 15. November 2021:</p>
+<ul class="simple">
+<li><p>wrong inlet used (VN11 instead of VN05)</p></li>
+<li><p>the effective receiving area was wrongly interpreted leading to an offset of 44mm in the distance between the calibration lamp and the inlet (should be 50cm)</p></li>
+<li><p>the power supply for Ulli3 had a voltage limit in place instead of a current limit -&gt; only relevant for the transfer calibration at Oberpfaffenhofen before the campaign</p></li>
+</ul>
+<p>Thus, it is decided to use the after campaign calibration for all transfer calibrations.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+<section id="smart">
+<h2>SMART<a class="headerlink" href="#smart" title="Permalink to this heading"></a></h2>
+<section id="module-analysis.smart_cosine_calibration">
+<span id="smart-cosine-calibration-py"></span><h3>smart_cosine_calibration.py<a class="headerlink" href="#module-analysis.smart_cosine_calibration" title="Permalink to this heading"></a></h3>
+<p>Cosine Response Calibration of irradiance inlets of SMART for CIRRUS-HL and HALO-(AC)3</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 16.11.2021: </span>The measurements were done with the inlets switched and not all measurements were performed so it was
+decided to repeat the whole calibration (see <a class="reference internal" href="#module-analysis.smart_cosine_calibration_v2"><span class="std std-ref">smart_cosine_calibration_v2.py</span></a>).
+This script is kept for archiving only.</p>
+</div>
+<ul class="simple">
+<li><p>ASP06 J3, J4 (Fdw) with inlet ASP02 done on 5th November 2021 by Anna Luebke and Johannes Röttenbacher</p></li>
+<li><p>ASP06 J6, J6 (Fup) with inlet ASP01 done on 8th November 2021 by Anna Luebke and Johannes Röttenbacher</p></li>
+</ul>
+<p>Lamp used: FEL-1587</p>
+<p>The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
+Each measurement lasted about 30 seconds with 1000 ms integration time.
+Data is stored in folders which denote the angle the inlet was turned to.</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_turned</span></code>: The inlet was turned 90deg around the horizontal axis to evaluate all four azimuth directions</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_diffuse</span></code>: A baffle was placed before the inlet to shade it (dark measurements)</p></li>
+</ul>
+<p>author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.smart_cosine_calibration_v2">
+<span id="smart-cosine-calibration-v2-py"></span><h3>smart_cosine_calibration_v2.py<a class="headerlink" href="#module-analysis.smart_cosine_calibration_v2" title="Permalink to this heading"></a></h3>
+<p>Cosine Response Calibration of irradiance inlets of SMART for CIRRUS-HL and HALO-(AC)3 2nd try</p>
+<ul class="simple">
+<li><p>ASP06 J3, J4 (Fdw) with inlet VN05 (ASP_01) done on 16th November 2021 by Anna Luebke and Johannes Röttenbacher and finished on 22th November by Benjamin Kirbus and Johannes</p></li>
+<li><p>ASP06 J5, J6 (Fup) with inlet VN11 (ASP_02) done on 22th November 2021 by Benjamin Kirbus and Johannes Röttenbacher</p></li>
+</ul>
+<p>Lamp used: cheap 1000W lamp
+optical fiber: 22b
+-&gt; 21b has very little output from the SWIR fiber, thus the 22b fiber was chosen for both inlets as it is identical to 21b</p>
+<p>The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
+Each measurement lasted about 42 seconds with 700 ms integration time for VN05 and about 48s with 800ms integration time
+for VN11.
+Data is stored in folders which denote the angle the inlet was turned to.</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_turned</span></code>: The inlet was turned 90deg clockwise around the horizontal axis to evaluate all four azimuth directions</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_diffuse</span></code>: A baffle was placed before the inlet to shade it (dark measurements)</p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.smart_effective_receiving_area">
+<span id="smart-effective-receiving-area-py"></span><h3>smart_effective_receiving_area.py<a class="headerlink" href="#module-analysis.smart_effective_receiving_area" title="Permalink to this heading"></a></h3>
+<p>Calculate the effective receiving area of an irradiance inlet according to the R^2 law</p>
+<p>author: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quicklooks.html" class="btn btn-neutral float-left" title="Quicklooks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api_documentation.html" class="btn btn-neutral float-right" title="API Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

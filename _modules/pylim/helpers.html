@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pylim.helpers &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api_documentation.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>pylim.helpers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pylim.helpers</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;General helper functions</span>
+<span class="sd">author: Johannes Röttenbacher</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">toml</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># ecRad bands in nanometers</span>
+<span class="n">ecRad_bands</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Band1</span><span class="o">=</span><span class="p">(</span><span class="mi">3077</span><span class="p">,</span> <span class="mi">3846</span><span class="p">),</span> <span class="n">Band2</span><span class="o">=</span><span class="p">(</span><span class="mi">2500</span><span class="p">,</span> <span class="mi">3076</span><span class="p">),</span> <span class="n">Band3</span><span class="o">=</span><span class="p">(</span><span class="mi">2150</span><span class="p">,</span> <span class="mi">2500</span><span class="p">),</span> <span class="n">Band4</span><span class="o">=</span><span class="p">(</span><span class="mi">1942</span><span class="p">,</span> <span class="mi">2150</span><span class="p">),</span> <span class="n">Band5</span><span class="o">=</span><span class="p">(</span><span class="mi">1626</span><span class="p">,</span> <span class="mi">1941</span><span class="p">),</span>
+                   <span class="n">Band6</span><span class="o">=</span><span class="p">(</span><span class="mi">1299</span><span class="p">,</span> <span class="mi">1625</span><span class="p">),</span> <span class="n">Band7</span><span class="o">=</span><span class="p">(</span><span class="mi">1242</span><span class="p">,</span> <span class="mi">1298</span><span class="p">),</span> <span class="n">Band8</span><span class="o">=</span><span class="p">(</span><span class="mi">778</span><span class="p">,</span> <span class="mi">1241</span><span class="p">),</span> <span class="n">Band9</span><span class="o">=</span><span class="p">(</span><span class="mi">625</span><span class="p">,</span> <span class="mi">777</span><span class="p">),</span> <span class="n">Band10</span><span class="o">=</span><span class="p">(</span><span class="mi">442</span><span class="p">,</span> <span class="mi">624</span><span class="p">),</span>
+                   <span class="n">Band11</span><span class="o">=</span><span class="p">(</span><span class="mi">345</span><span class="p">,</span> <span class="mi">442</span><span class="p">),</span> <span class="n">Band12</span><span class="o">=</span><span class="p">(</span><span class="mi">263</span><span class="p">,</span> <span class="mi">344</span><span class="p">),</span> <span class="n">Band13</span><span class="o">=</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">262</span><span class="p">),</span> <span class="n">Band14</span><span class="o">=</span><span class="p">(</span><span class="mi">3846</span><span class="p">,</span> <span class="mi">12195</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="get_path"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.get_path">[docs]</a><span class="k">def</span> <span class="nf">get_path</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">flight</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">campaign</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cirrus-hl&quot;</span><span class="p">,</span> <span class="n">instrument</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read paths from the toml file according to the current working directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            key: which path to return, see config.toml for possible values</span>
+<span class="sd">            flight: for which flight should the path be provided (eg. Flight_20210625a for CIRRUS-HL or RF18 for HALO-AC3)</span>
+<span class="sd">            campaign: campaign for which the paths should be generated</span>
+<span class="sd">            instrument: if key=all which instrument to generate the path to? (e.g. BAHAMAS)</span>
+
+<span class="sd">        Returns: Path to specified data</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure to search for the config file in the project directory</span>
+    <span class="n">wk_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Searching for config.toml in </span><span class="si">{</span><span class="n">wk_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">wk_dir</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wk_dir</span><span class="si">}</span><span class="s2">/config.toml&quot;</span><span class="p">)[</span><span class="n">campaign</span><span class="p">][</span><span class="s2">&quot;jr_local&quot;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">wk_dir</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/mnt&quot;</span><span class="p">):</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wk_dir</span><span class="si">}</span><span class="s2">/config.toml&quot;</span><span class="p">)[</span><span class="n">campaign</span><span class="p">][</span><span class="s2">&quot;jr_ubuntu&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">wk_dir</span><span class="si">}</span><span class="s2">/config.toml&quot;</span><span class="p">)[</span><span class="n">campaign</span><span class="p">][</span><span class="s2">&quot;lim_server&quot;</span><span class="p">]</span>
+
+    <span class="n">flight</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">flight</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">flight</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;base_dir&quot;</span><span class="p">)</span>
+    <span class="n">paths</span><span class="p">[</span><span class="s2">&quot;base&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_dir</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="n">paths</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">flight</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;calib&quot;</span><span class="p">,</span> <span class="s2">&quot;pixel_wl&quot;</span><span class="p">,</span> <span class="s2">&quot;lamp&quot;</span><span class="p">,</span> <span class="s2">&quot;panel&quot;</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">paths</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found no path for key: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> and campaign </span><span class="si">{</span><span class="n">campaign</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">paths</span><span class="p">[</span><span class="s1">&#39;all&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">instrument</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">paths</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="make_dir"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.make_dir">[docs]</a><span class="k">def</span> <span class="nf">make_dir</span><span class="p">(</span><span class="n">folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates folder if it doesn&#39;t exist already.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        folder: folder name or full path</span>
+
+<span class="sd">    Returns: nothing, but creates a new folder if possible</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileExistsError</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="arg_nearest"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.arg_nearest">[docs]</a><span class="k">def</span> <span class="nf">arg_nearest</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the index of the nearest value in an array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array: Input has to be convertible to an ndarray</span>
+<span class="sd">        value: Value to search for</span>
+
+<span class="sd">    Returns: index of closest value</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanargmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">array</span> <span class="o">-</span> <span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">idx</span></div>
+
+
+<span class="c1"># from pyLARDA.Transformations</span>
+<div class="viewcode-block" id="set_xticks_and_xlabels"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.set_xticks_and_xlabels">[docs]</a><span class="k">def</span> <span class="nf">set_xticks_and_xlabels</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">,</span> <span class="n">time_extend</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function sets the ticks and labels of the x-axis (only when the x-axis is time in UTC).</span>
+
+<span class="sd">    Options:</span>
+<span class="sd">        -   time_extend &gt; 7 days:               major ticks every 2 day,  minor ticks every 12 hours</span>
+<span class="sd">        -   7 days &gt; time_extend &gt; 2 days:      major ticks every day, minor ticks every  6 hours</span>
+<span class="sd">        -   2 days &gt; time_extend &gt; 1 days:      major ticks every 12 hours, minor ticks every  3 hours</span>
+<span class="sd">        -   1 days &gt; time_extend &gt; 12 hours:    major ticks every 2 hours, minor ticks every  30 minutes</span>
+<span class="sd">        -   12hours &gt; time_extend &gt; 6 hours:    major ticks every 1 hours, minor ticks every  30 minutes</span>
+<span class="sd">        -   6 hours &gt; time_extend &gt; 2 hour:     major ticks every hour, minor ticks every  15 minutes</span>
+<span class="sd">        -   2 hours &gt; time_extend &gt; 15 min:     major ticks every 15 minutes, minor ticks every 5 minutes</span>
+<span class="sd">        -   15 min &gt; time_extend &gt; 5 min:       major ticks every 15 minutes, minor ticks every 5 minutes</span>
+<span class="sd">        -   else:                               major ticks every minute, minor ticks every 10 seconds</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ax: axis in which the x-ticks and labels have to be set</span>
+<span class="sd">        time_extend: time difference of t_end - t_start (format datetime.timedelta)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ax - axis with new ticks and labels</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">time_extend</span> <span class="o">&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%b </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DayLocator</span><span class="p">(</span><span class="n">bymonthday</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">byhour</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">12</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%b </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">byhour</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">byhour</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">6</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">25</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%b </span><span class="si">%d</span><span class="se">\n</span><span class="s1">%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">byhour</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">12</span><span class="p">)))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">byhour</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">byhour</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">30</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">6</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">())</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">30</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">HourLocator</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">15</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">15</span><span class="p">)))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">5</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">time_extend</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">15</span><span class="p">)))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">5</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_formatter</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">DateFormatter</span><span class="p">(</span><span class="s1">&#39;%H:%M&#39;</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_major_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">MinuteLocator</span><span class="p">(</span><span class="n">byminute</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">dates</span><span class="o">.</span><span class="n">SecondLocator</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+
+<div class="viewcode-block" id="set_cb_friendly_colors"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.set_cb_friendly_colors">[docs]</a><span class="k">def</span> <span class="nf">set_cb_friendly_colors</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Set new colorblind friendly color cycle.</span>
+
+<span class="sd">    Returns: Modifies the standard pyplot color cycle</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cb_color_cycle</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#88CCEE&quot;</span><span class="p">,</span> <span class="s2">&quot;#CC6677&quot;</span><span class="p">,</span> <span class="s2">&quot;#DDCC77&quot;</span><span class="p">,</span> <span class="s2">&quot;#117733&quot;</span><span class="p">,</span> <span class="s2">&quot;#332288&quot;</span><span class="p">,</span> <span class="s2">&quot;#AA4499&quot;</span><span class="p">,</span> <span class="s2">&quot;#44AA99&quot;</span><span class="p">,</span> <span class="s2">&quot;#999933&quot;</span><span class="p">,</span> <span class="s2">&quot;#882255&quot;</span><span class="p">,</span>
+                      <span class="s2">&quot;#661100&quot;</span><span class="p">,</span> <span class="s2">&quot;#6699CC&quot;</span><span class="p">,</span> <span class="s2">&quot;#888888&quot;</span><span class="p">]</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cycler</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">cb_color_cycle</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="nested_dict_values_iterator"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.nested_dict_values_iterator">[docs]</a><span class="k">def</span> <span class="nf">nested_dict_values_iterator</span><span class="p">(</span><span class="n">dict_obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Loop over all values in a nested dictionary</span>
+<span class="sd">    See: https://thispointer.com/python-iterate-loop-over-all-nested-dictionary-values/</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_obj: nested dictionary</span>
+
+<span class="sd">    Returns: Each value in a nested dictionary</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Iterate over all values of dict argument</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dict_obj</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="c1"># Check if value is of dict type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># If value is dict then iterate over all its values</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">nested_dict_values_iterator</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">v</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If value is not dict type then yield the value</span>
+            <span class="k">yield</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="nested_dict_pairs_iterator"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.nested_dict_pairs_iterator">[docs]</a><span class="k">def</span> <span class="nf">nested_dict_pairs_iterator</span><span class="p">(</span><span class="n">dict_obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Loop over all values in a nested dictionary and return the key, value pair</span>
+<span class="sd">    See: https://thispointer.com/python-how-to-iterate-over-nested-dictionary-dict-of-dicts/</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dict_obj: nested dictionary</span>
+
+<span class="sd">    Returns: Each value in a nested dictionary with its key</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Iterate over all values of dict argument</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dict_obj</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Check if value is of dict type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># If value is dict then iterate over all its values</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">nested_dict_pairs_iterator</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="n">pair</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If value is not dict type then yield the key, value pair</span>
+            <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="setup_logging"><a class="viewcode-back" href="../../api_documentation.html#pylim.helpers.setup_logging">[docs]</a><span class="k">def</span> <span class="nf">setup_logging</span><span class="p">(</span><span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">custom_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Setup up logging to file if script is called from console. If it is executed inside a console setup logging only</span>
+<span class="sd">    to console.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dir: Directory where to save logging file. Gets created if it doesn&#39;t exist yet.</span>
+<span class="sd">        file: Name of the file which called the function. Should be given via the __file__ attribute.</span>
+<span class="sd">        custom_string: Custom String to append to logging file name. Logging file always starts with date and the name</span>
+<span class="sd">                       of the script being called.</span>
+
+<span class="sd">    Returns: Logger</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;pylim&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="c1"># create file handler which logs even debug messages</span>
+        <span class="n">make_dir</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+        <span class="n">fh</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">dir</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="si">:</span><span class="s1">%Y%m%d</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">file</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">custom_string</span><span class="si">}</span><span class="s1">.log&#39;</span><span class="p">)</span>
+        <span class="n">fh</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="c1"># create console handler with a higher log level</span>
+        <span class="n">ch</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+        <span class="n">ch</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+        <span class="c1"># create formatter and add it to the handlers</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> : </span><span class="si">%(levelname)s</span><span class="s1"> - </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%c</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">ch</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">fh</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="c1"># add the handlers to logger</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># __file__ is undefined if script is executed in console, set a normal logger instead</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">())</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">log</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

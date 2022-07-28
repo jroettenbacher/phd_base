@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Documentation &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Analysis" href="analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.bacardi">bacardi</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#functions-for-processing-and-plotting-bacardi-data">Functions for processing and plotting BACARDI data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#postprocessing">Postprocessing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.bahamas">bahamas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.cirrus_hl">cirrus_hl</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.helpers">helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.libradtran">libradtran</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.reader">reader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pylim.smart">smart</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>API Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api_documentation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-documentation">
+<h1>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this heading"></a></h1>
+<section id="module-pylim.bacardi">
+<span id="bacardi"></span><h2>bacardi<a class="headerlink" href="#module-pylim.bacardi" title="Permalink to this heading"></a></h2>
+<section id="functions-for-processing-and-plotting-bacardi-data">
+<h3>Functions for processing and plotting BACARDI data<a class="headerlink" href="#functions-for-processing-and-plotting-bacardi-data" title="Permalink to this heading"></a></h3>
+<section id="postprocessing">
+<h4>Postprocessing<a class="headerlink" href="#postprocessing" title="Permalink to this heading"></a></h4>
+<p>Postprocessing of the BACARDI data is done by the DLR and the LIM.
+For details on the postprocessing see the IDL postprocessing script.
+Some values are filtered out during the postprocessing.
+We set an aircraft attitude limit in the processing routine, and if the attitude exceeds this threshold, then the data is filtered out.
+For example, this would be the case during sharp turns.
+The threshold also takes the attitude correction factor into account.
+For CIRRUS-HL, if this factor is below 0.25, then we filter out data where the roll or pitch exceeds 8°.
+If this factor is above 0.25, then we begin filtering at 5°.
+For EUREC4A, the limits were not as strict because the SZAs were usually higher.
+Since this is not the case for the Arctic, something stricter was needed.</p>
+<p><strong>author</strong>: Johannes Röttenbacher</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.bacardi.decon_rt">
+<span class="sig-prename descclassname"><span class="pre">pylim.bacardi.</span></span><span class="sig-name descname"><span class="pre">decon_rt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xdatacon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xrsp_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xfcut</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xrm_length</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">NO_RM</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xfsigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_spectra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'show_spectra'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectra_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'spectra'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/bacardi.html#decon_rt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.bacardi.decon_rt" title="Permalink to this definition"></a></dt>
+<dd><p>Deconvolution of a time series smoothed due to the respons time of the sensor</p>
+<ul class="simple">
+<li><p>Deconvolution is applied via the convolution theorem using fourier transformation</p></li>
+<li><p>see Numerical Recipies 13.1</p></li>
+<li><dl class="simple">
+<dt>additional filters are applied to reduce the influence of sensor noise</dt><dd><ul>
+<li><p>cuting off the fourier series at noise level</p></li>
+<li><p>additional running mean filter (rectangular window)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>[</strong><strong>s</strong><strong>]</strong> (<em>xdt        </em><em>...</em><em> Time step between two measurements</em>) – </p></li>
+<li><p><strong>measured</strong> (<em>xdatacon   </em><em>...</em><em> data series as</em>) – </p></li>
+<li><p><strong>[</strong><strong>s</strong><strong>]</strong> – </p></li>
+<li><p><strong>[</strong><strong>Hz</strong><strong>]</strong> (<em>xfcut      </em><em>...</em><em> Cut off frequenzy for noise filtering in</em>) – </p></li>
+<li><p><strong>[</strong><strong>s</strong><strong>]</strong> – </p></li>
+<li><p><strong>[</strong><strong>s</strong><strong>]</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: xdata      … deconvoluted data</p>
+<dl class="simple">
+<dt>Optional output:</dt><dd><dl class="simple">
+<dt>spectra_out … The name of the variable to receive the fourier coefficients calculated within the routine.</dt><dd><p>The output is an array containing following parameter
+[0] … frequency
+[1] … fourier coeff. of original data
+[2] … fourier coeff. of deconvolutetd data
+[3] … fourier coeff. of deconvolutetd data + cut if freq. applied
+[4] … fourier coeff. of deconvolutetd data + cut if freq. + running mean applied
+[5] … fourier coeff. of convolution function</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>set</strong> (<em>/NO_RM </em><em>...</em><em>  If</em>) – </p></li>
+<li><p><strong>applied</strong> (<em>the running mean filter is not</em>) – </p></li>
+<li><p><strong>routine</strong> (<em>/show_spectra </em><em>...</em><em> can be specified to give a plot of the power spectra as calculated within the</em>) – “ENTER” hast to be pressed to continue the calculation after the plot opened.</p></li>
+<li><p><strong>Gibbs-Phenomenon</strong> (<em>SIGMA=*.** </em><em>...</em><em> choose to apply the Lanczos sigma factor reducing the</em>) – value given to SIGMA=*.**  is the max. frequency xfsigma for which Sigma-Approx. is applied
+==&gt; SIGMA is somehow redundant as the running mean makes nothing else than sigma approximation…</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.bacardi.fdw_attitude_correction">
+<span class="sig-prename descclassname"><span class="pre">pylim.bacardi.</span></span><span class="sig-name descname"><span class="pre">fdw_attitude_correction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fdw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roll</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pitch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yaw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sza</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_off</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_off</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/bacardi.html#fdw_attitude_correction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.bacardi.fdw_attitude_correction" title="Permalink to this definition"></a></dt>
+<dd><p>Attitude Correction for downward irradiance.
+Corrects downward irradiance for misalignment of the sensor (deviation from hoizontal alignment).</p>
+<ul class="simple">
+<li><p>only direct fraction of irradiance can be corrected by the equation, therefore a direct fraction (fdir) has to be provided</p></li>
+<li><p>please check correct definition of the attitude angle</p></li>
+<li><p>for differences between the sensor attitude and the attitude given by an INS the offset angles (p_off and r_off) can be defined.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fdw</strong> – downward irradiance [W m-2] or [W m-2 nm-1]</p></li>
+<li><p><strong>roll</strong> – roll angle [deg] - defined positive for left wing up</p></li>
+<li><p><strong>pitch</strong> – pitch angle [deg] - defined positive for nose down</p></li>
+<li><p><strong>yaw</strong> – yaw angle [deg] - defined clockwise with North=0°</p></li>
+<li><p><strong>sza</strong> – solar zenith angle [deg]</p></li>
+<li><p><strong>saa</strong> – solar azimuth angle [deg] - defined clockwise with North=0°</p></li>
+<li><p><strong>r_off</strong> – roll offset angle between INS and sensor [deg] - defined positive for left wing up</p></li>
+<li><p><strong>p_off</strong> – pitch offset angle between INS and sensor [deg] - defined positive for nose down</p></li>
+<li><p><strong>fdir</strong> – fraction of direct radiation [0..1] (0=pure diffuse, 1=pure direct)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: corrected downward irradiance [W m-2] or [W m-2 nm-1]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.bacardi.read_bacardi_raw">
+<span class="sig-prename descclassname"><span class="pre">pylim.bacardi.</span></span><span class="sig-name descname"><span class="pre">read_bacardi_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/pylim/bacardi.html#read_bacardi_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.bacardi.read_bacardi_raw" title="Permalink to this definition"></a></dt>
+<dd><p>Read raw BACARDI data as provided by DLR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – name of file</p></li>
+<li><p><strong>path</strong> – path to file</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Dataset with BACARDI data and time as dimension</p>
+</dd></dl>
+
+</section>
+</section>
+</section>
+<section id="module-pylim.bahamas">
+<span id="bahamas"></span><h2>bahamas<a class="headerlink" href="#module-pylim.bahamas" title="Permalink to this heading"></a></h2>
+<p>Functions to work with BAHAMAS data
+author: Johannes Röttenbacher</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.bahamas.get_position">
+<span class="sig-prename descclassname"><span class="pre">pylim.bahamas.</span></span><span class="sig-name descname"><span class="pre">get_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Timestamp</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/pylim/bahamas.html#get_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.bahamas.get_position" title="Permalink to this definition"></a></dt>
+<dd><p>Given the flight and the exact time, get HALOs position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – Which flight to read in</p></li>
+<li><p><strong>timestamp</strong> – exact time</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: latitude (deg), longitude (deg), altitude (m)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.bahamas.plot_bahamas_flight_track">
+<span class="sig-prename descclassname"><span class="pre">pylim.bahamas.</span></span><span class="sig-name descname"><span class="pre">plot_bahamas_flight_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/bahamas.html#plot_bahamas_flight_track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.bahamas.plot_bahamas_flight_track" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a map of the flight track from BAHAMAS data with the location of HALO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – Flight name (eg. Flight_20210707a)</p></li>
+<li><p><strong>**kwargs</strong> – outpath (str): where to save plot (default: bahamas_dir/plots)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Saves a png file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.bahamas.preprocess_bahamas">
+<span class="sig-prename descclassname"><span class="pre">pylim.bahamas.</span></span><span class="sig-name descname"><span class="pre">preprocess_bahamas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/pylim/bahamas.html#preprocess_bahamas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.bahamas.preprocess_bahamas" title="Permalink to this definition"></a></dt>
+<dd><p>Preprocessing function for xarray.read_mfdataset()</p>
+<p>Returns: Dataset with dimension time</p>
+</dd></dl>
+
+</section>
+<section id="module-pylim.cirrus_hl">
+<span id="cirrus-hl"></span><h2>cirrus_hl<a class="headerlink" href="#module-pylim.cirrus_hl" title="Permalink to this heading"></a></h2>
+<p>General information about the CIRRUS-HL campaign
+author: Johannes Röttenbacher</p>
+</section>
+<section id="module-pylim.helpers">
+<span id="helpers"></span><h2>helpers<a class="headerlink" href="#module-pylim.helpers" title="Permalink to this heading"></a></h2>
+<p>General helper functions
+author: Johannes Röttenbacher</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.arg_nearest">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">arg_nearest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/helpers.html#arg_nearest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.arg_nearest" title="Permalink to this definition"></a></dt>
+<dd><p>Find the index of the nearest value in an array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> – Input has to be convertible to an ndarray</p></li>
+<li><p><strong>value</strong> – Value to search for</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: index of closest value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.get_path">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">get_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">campaign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cirrus-hl'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/pylim/helpers.html#get_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.get_path" title="Permalink to this definition"></a></dt>
+<dd><p>Read paths from the toml file according to the current working directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – which path to return, see config.toml for possible values</p></li>
+<li><p><strong>flight</strong> – for which flight should the path be provided (eg. Flight_20210625a for CIRRUS-HL or RF18 for HALO-AC3)</p></li>
+<li><p><strong>campaign</strong> – campaign for which the paths should be generated</p></li>
+<li><p><strong>instrument</strong> – if key=all which instrument to generate the path to? (e.g. BAHAMAS)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Path to specified data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.make_dir">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">make_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pylim/helpers.html#make_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.make_dir" title="Permalink to this definition"></a></dt>
+<dd><p>Creates folder if it doesn’t exist already.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>folder</strong> – folder name or full path</p>
+</dd>
+</dl>
+<p>Returns: nothing, but creates a new folder if possible</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.nested_dict_pairs_iterator">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">nested_dict_pairs_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/helpers.html#nested_dict_pairs_iterator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.nested_dict_pairs_iterator" title="Permalink to this definition"></a></dt>
+<dd><p>Loop over all values in a nested dictionary and return the key, value pair
+See: <a class="reference external" href="https://thispointer.com/python-how-to-iterate-over-nested-dictionary-dict-of-dicts/">https://thispointer.com/python-how-to-iterate-over-nested-dictionary-dict-of-dicts/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dict_obj</strong> – nested dictionary</p>
+</dd>
+</dl>
+<p>Returns: Each value in a nested dictionary with its key</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.nested_dict_values_iterator">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">nested_dict_values_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/helpers.html#nested_dict_values_iterator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.nested_dict_values_iterator" title="Permalink to this definition"></a></dt>
+<dd><p>Loop over all values in a nested dictionary
+See: <a class="reference external" href="https://thispointer.com/python-iterate-loop-over-all-nested-dictionary-values/">https://thispointer.com/python-iterate-loop-over-all-nested-dictionary-values/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dict_obj</strong> – nested dictionary</p>
+</dd>
+</dl>
+<p>Returns: Each value in a nested dictionary</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.set_cb_friendly_colors">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">set_cb_friendly_colors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/helpers.html#set_cb_friendly_colors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.set_cb_friendly_colors" title="Permalink to this definition"></a></dt>
+<dd><p>Set new colorblind friendly color cycle.</p>
+<p>Returns: Modifies the standard pyplot color cycle</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.set_xticks_and_xlabels">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">set_xticks_and_xlabels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_extend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">timedelta</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">axis</span></span></span><a class="reference internal" href="_modules/pylim/helpers.html#set_xticks_and_xlabels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.set_xticks_and_xlabels" title="Permalink to this definition"></a></dt>
+<dd><p>This function sets the ticks and labels of the x-axis (only when the x-axis is time in UTC).</p>
+<dl class="simple">
+<dt>Options:</dt><dd><ul class="simple">
+<li><p>time_extend &gt; 7 days:               major ticks every 2 day,  minor ticks every 12 hours</p></li>
+<li><p>7 days &gt; time_extend &gt; 2 days:      major ticks every day, minor ticks every  6 hours</p></li>
+<li><p>2 days &gt; time_extend &gt; 1 days:      major ticks every 12 hours, minor ticks every  3 hours</p></li>
+<li><p>1 days &gt; time_extend &gt; 12 hours:    major ticks every 2 hours, minor ticks every  30 minutes</p></li>
+<li><p>12hours &gt; time_extend &gt; 6 hours:    major ticks every 1 hours, minor ticks every  30 minutes</p></li>
+<li><p>6 hours &gt; time_extend &gt; 2 hour:     major ticks every hour, minor ticks every  15 minutes</p></li>
+<li><p>2 hours &gt; time_extend &gt; 15 min:     major ticks every 15 minutes, minor ticks every 5 minutes</p></li>
+<li><p>15 min &gt; time_extend &gt; 5 min:       major ticks every 15 minutes, minor ticks every 5 minutes</p></li>
+<li><p>else:                               major ticks every minute, minor ticks every 10 seconds</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> – axis in which the x-ticks and labels have to be set</p></li>
+<li><p><strong>time_extend</strong> – time difference of t_end - t_start (format datetime.timedelta)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>ax - axis with new ticks and labels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.helpers.setup_logging">
+<span class="sig-prename descclassname"><span class="pre">pylim.helpers.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/helpers.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.helpers.setup_logging" title="Permalink to this definition"></a></dt>
+<dd><p>Setup up logging to file if script is called from console. If it is executed inside a console setup logging only
+to console.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dir</strong> – Directory where to save logging file. Gets created if it doesn’t exist yet.</p></li>
+<li><p><strong>file</strong> – Name of the file which called the function. Should be given via the __file__ attribute.</p></li>
+<li><p><strong>custom_string</strong> – Custom String to append to logging file name. Logging file always starts with date and the name
+of the script being called.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Logger</p>
+</dd></dl>
+
+</section>
+<section id="module-pylim.libradtran">
+<span id="libradtran"></span><h2>libradtran<a class="headerlink" href="#module-pylim.libradtran" title="Permalink to this heading"></a></h2>
+<p>Functions to process and plot libRadTran simulation files
+author: Johannes Röttenbacher</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.libradtran.find_closest_radiosonde_station">
+<span class="sig-prename descclassname"><span class="pre">pylim.libradtran.</span></span><span class="sig-name descname"><span class="pre">find_closest_radiosonde_station</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/libradtran.html#find_closest_radiosonde_station"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.libradtran.find_closest_radiosonde_station" title="Permalink to this definition"></a></dt>
+<dd><p>Given longitude and latitude, find the closest radiosonde station from the campaign dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latitude</strong> – in decimal degrees (N=positive)</p></li>
+<li><p><strong>longitude</strong> – in decimal degrees (E=positive)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Name of the closest radiosonde station</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.libradtran.get_info_from_libradtran_input">
+<span class="sig-prename descclassname"><span class="pre">pylim.libradtran.</span></span><span class="sig-name descname"><span class="pre">get_info_from_libradtran_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">filepath:</span> <span class="pre">str)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'pandas._libs.tslibs.timestamps.Timestamp'&gt;,</span> <span class="pre">typing.List[str],</span> <span class="pre">typing.List[str],</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/libradtran.html#get_info_from_libradtran_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.libradtran.get_info_from_libradtran_input" title="Permalink to this definition"></a></dt>
+<dd><p>Open a libRadtran input file and read out some information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filepath</strong> – path to file</p>
+</dd>
+</dl>
+<p>Returns: Some variables (latitude, longitude, time, header of output file, wavelength range, integrate flag)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.libradtran.read_libradtran">
+<span class="sig-prename descclassname"><span class="pre">pylim.libradtran.</span></span><span class="sig-name descname"><span class="pre">read_libradtran</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/libradtran.html#read_libradtran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.libradtran.read_libradtran" title="Permalink to this definition"></a></dt>
+<dd><p>Read an old libRadtran simulation file generated by 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro and add a DateTime Index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – which flight does the simulation belong to (e.g. Flight_20210629a)</p></li>
+<li><p><strong>filename</strong> – filename</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: DataFrame with libRadtran output data</p>
+</dd></dl>
+
+</section>
+<section id="module-pylim.reader">
+<span id="reader"></span><h2>reader<a class="headerlink" href="#module-pylim.reader" title="Permalink to this heading"></a></h2>
+<p>A collection of reader functions for instruments operated on HALO and model output files
+author: Johannes Röttenbacher</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_bacardi_raw">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_bacardi_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_bacardi_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_bacardi_raw" title="Permalink to this definition"></a></dt>
+<dd><p>Read raw BACARDI data as provided by DLR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – name of file</p></li>
+<li><p><strong>path</strong> – path to file</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Dataset with BACARDI data and time as dimension</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_bahamas">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_bahamas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bahamas_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_bahamas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_bahamas" title="Permalink to this definition"></a></dt>
+<dd><p>Reader function for netcdf BAHAMAS data as provided by DLR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>bahamas_path</strong> – full path of netcdf file</p>
+</dd>
+</dl>
+<p>Returns: xr.DataSet with BAHAMAS data and time as dimension</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_ecrad_output">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_ecrad_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_ecrad_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_ecrad_output" title="Permalink to this definition"></a></dt>
+<dd><p>Read in and preprocess a merged ecRad output file from :py:module:ecrad_processing.py
+- Assign coordinates to dimensions
+- Calculate pressure height in m
+:param filepath: Full path to file</p>
+<p>Returns: xarray DataSet with added coordinates to all dimensions of the file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_ins_gps_pos">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_ins_gps_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_ins_gps_pos"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_ins_gps_pos" title="Permalink to this definition"></a></dt>
+<dd><p>Read in a GPS position file as returned by the HALO-SMART INS system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filepath</strong> – complete path to Nav_GPSPosxxxx.Asc file</p>
+</dd>
+</dl>
+<p>Returns: time series with the GPS position data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_ins_gps_vel">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_ins_gps_vel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_ins_gps_vel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_ins_gps_vel" title="Permalink to this definition"></a></dt>
+<dd><p>Read in a GPS velocity file as returned by the HALO-SMART INS system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filepath</strong> – complete path to Nav_GPSVelxxxx.Asc file</p>
+</dd>
+</dl>
+<p>Returns: time series with the GPS velocity data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_lamp_file">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_lamp_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">campaign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cirrus-hl'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_fig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_lamp_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_lamp_file" title="Permalink to this definition"></a></dt>
+<dd><p>Read in the 1000W lamp specification file interpolated to 1nm steps. Converts W/cm^2 to W/m^2.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>campaign</strong> – for which campaign should the lamp file be read in?</p></li>
+<li><p><strong>filename</strong> – name of lamp file to be read in</p></li>
+<li><p><strong>plot</strong> – plot lamp file?</p></li>
+<li><p><strong>save_fig</strong> – save figure to standard plot path defined in config.toml?</p></li>
+<li><p><strong>save_file</strong> – save lamp file to standard calib path deined in config.toml?</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: A data frame with the irradiance in W/m² and the corresponding wavelength in nm</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_libradtran">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_libradtran</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_libradtran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_libradtran" title="Permalink to this definition"></a></dt>
+<dd><p>Read an old libRadtran simulation file generated by 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro and add a DateTime Index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – which flight does the simulation belong to (e.g. Flight_20210629a)</p></li>
+<li><p><strong>filename</strong> – filename</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: DataFrame with libRadtran output data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_nav_data">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_nav_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nav_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_nav_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_nav_data" title="Permalink to this definition"></a></dt>
+<dd><p>Reader function for Navigation data file from the INS used by the stabilization of SMART</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nav_path</strong> – path to IMS file including filename</p>
+</dd>
+</dl>
+<p>Returns: pandas DataFrame with headers and a DateTimeIndex</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_ozone_sonde">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_ozone_sonde</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/reader.html#read_ozone_sonde"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_ozone_sonde" title="Permalink to this definition"></a></dt>
+<dd><p>Reader function for ames formatted ozone sonde data from <a class="reference external" href="http://www.ndaccdemo.org/">http://www.ndaccdemo.org/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filepath</strong> – complete path to file</p>
+</dd>
+</dl>
+<p>Returns: pandas DataFrame with ozone volume mixing ratio</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_pixel_to_wavelength">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_pixel_to_wavelength</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectrometer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_pixel_to_wavelength"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_pixel_to_wavelength" title="Permalink to this definition"></a></dt>
+<dd><p>Read file which maps each pixel to a certain wavelength for a specified spectrometer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Path where to find file</p></li>
+<li><p><strong>spectrometer</strong> – For which spectrometer the pixel to wavelength mapping should be read in, refer to lookup table for possible
+spectrometers (e.g. ASP06_J3)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: pandas DataFrame relating pixel number to wavelength</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_smart_cor">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_smart_cor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_smart_cor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_smart_cor" title="Permalink to this definition"></a></dt>
+<dd><p>Read dark current corrected SMART data files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Path where to find file</p></li>
+<li><p><strong>filename</strong> – Name of file</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: pandas DataFrame with column names and datetime index</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_smart_raw">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_smart_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_smart_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_smart_raw" title="Permalink to this definition"></a></dt>
+<dd><p>Read raw SMART data files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Path where to find file</p></li>
+<li><p><strong>filename</strong> – Name of file</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: pandas DataFrame with column names and datetime index</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.reader.read_stabbi_data">
+<span class="sig-prename descclassname"><span class="pre">pylim.reader.</span></span><span class="sig-name descname"><span class="pre">read_stabbi_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stabbi_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/pylim/reader.html#read_stabbi_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.reader.read_stabbi_data" title="Permalink to this definition"></a></dt>
+<dd><p>Read in stabilization platform data from SMART.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stabbi_path</strong> – full path to dat file</p>
+</dd>
+</dl>
+<p>Returns: pandas DataFrame with headers and a DateTimeIndex</p>
+</dd></dl>
+
+</section>
+<section id="module-pylim.smart">
+<span id="smart"></span><h2>smart<a class="headerlink" href="#module-pylim.smart" title="Permalink to this heading"></a></h2>
+<p>Functions for processing and plotting of SMART data
+author: Johannes Röttenbacher</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.correct_smart_dark_current">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">correct_smart_dark_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smart_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#correct_smart_dark_current"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.correct_smart_dark_current" title="Permalink to this definition"></a></dt>
+<dd><p>Correct the raw SMART measurement for the dark current of the spectrometer.
+Only returns data when the shutter was open.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – to which flight does the file belong to? (e.g. Flight_20210707a)</p></li>
+<li><p><strong>smart_file</strong> – filename of file to correct</p></li>
+<li><p><strong>option</strong> – which option should be used to get the dark current? Only relevant for channel “VNIR”.</p></li>
+<li><p><strong>kwargs</strong> – path (str): path to file if not raw file path as given in config.toml,
+date (str): (yyyymmdd) date from which the dark current measurement should be used for VNIR (necessary if             no transfer calibration was made on a measurement day)
+campaign (str): campaign to which smart file belongs to</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Series with corrected smart measurement</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.find_pixel">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">find_pixel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/pylim/smart.html#find_pixel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.find_pixel" title="Permalink to this definition"></a></dt>
+<dd><p>Given the dataframe with the pixel to wavelength mapping, return the pixel and wavelength closest to the requested
+wavelength.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – Dataframe with column pixel and wavelength (from read_pixel_to_wavelength)</p></li>
+<li><p><strong>wavelength</strong> – which wavelength are you interested in</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: closest pixel number and wavelength corresponding to the given wavelength</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.get_dark_current">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">get_dark_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">figure</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/pylim/smart.html#get_dark_current"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.get_dark_current" title="Permalink to this definition"></a></dt>
+<dd><p>Get the corresponding dark current for the specified measurement file to correct the raw SMART measurement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – to which flight does the file belong to? (e.g. Flight_20210707a)</p></li>
+<li><p><strong>filename</strong> – filename (e.g. “2021_03_29_11_07.Fup_SWIR.dat”) of measurement file</p></li>
+<li><p><strong>option</strong> – which option to use for VNIR (1, 2 or 3).
+Option 1: use measurements below 290 nm.
+Option 2: use dark measurements from transfer calibration (CIRRUS-HL folder structure expected).
+Option 3: use scaled dark current measurement from transfer calibration (HALO-AC3 folder structure expected).</p></li>
+<li><p><strong>**kwargs</strong> – path (str): path to measurement file if not standard path from config.toml,
+plot (bool): show plot or not (default: True),
+date (str): yyyymmdd, date of transfer calibration with dark current measurement to use
+dark_filepath (str): complete path to dark current file to use
+campaign (str): campaign to which smart file belongs to</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.get_info_from_filename">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">get_info_from_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/pylim/smart.html#get_info_from_filename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.get_info_from_filename" title="Permalink to this definition"></a></dt>
+<dd><p>Using regular expressions some information from the filename is extracted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> – string in the form yyyy_mm_dd_hh_MM.[F/I][up/dw]_[SWIR/VNIR].dat (eg. “2021_03_29_11_07.Fup_SWIR.dat”)</p>
+</dd>
+</dl>
+<p>Returns: A date string, the channel and the direction of measurement including the quantity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.merge_vnir_swir_nc">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">merge_vnir_swir_nc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vnir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#merge_vnir_swir_nc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.merge_vnir_swir_nc" title="Permalink to this definition"></a></dt>
+<dd><p>Merge the SMART nc files generated by smart_write_ncfile.py
+:param vnir: VNIR data set
+:param swir: SWIR data set</p>
+<p>Returns: merged data set</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_calibrated_irradiance_flux">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_calibrated_irradiance_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Overlay</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#plot_calibrated_irradiance_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_calibrated_irradiance_flux" title="Permalink to this definition"></a></dt>
+<dd><p>Plot upward and downward irradiance as a time averaged series over the wavelength or as a time series for one
+wavelength.
+:param filename: Standard SMART filename
+:param wavelength: single or range of wavelength or “all”
+:param flight: flight folder (flight_xx)</p>
+<p>Returns: holoviews overlay plot with two curves</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_complete_smart_spectra">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_complete_smart_spectra</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#plot_complete_smart_spectra"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_complete_smart_spectra" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – where the file can be found</p></li>
+<li><p><strong>filename</strong> – name of the file (standard SMART filename convention)</p></li>
+<li><p><strong>index</strong> – which row to plot</p></li>
+<li><p><strong>**kwargs</strong> – save_fig (bool): Save figure to plot path given in config.toml (default: False)
+plot_path (str): Where to save plot if not standard plot path</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Shows and or saves a plot</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_complete_smart_spectra_interactive">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_complete_smart_spectra_interactive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Overlay</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#plot_complete_smart_spectra_interactive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_complete_smart_spectra_interactive" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)
+:param path: where the file can be found
+:param filename: name of the file (standard SMART filename convention)
+:param index: which row to plot</p>
+<p>Returns: Shows and or saves a plot</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_mean_corrected_measurement">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_mean_corrected_measurement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measurement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measurement_cor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pylim/smart.html#plot_mean_corrected_measurement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_mean_corrected_measurement" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the mean dark current corrected SMART measurement over time together with the raw measurement and the dark
+current.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – to which flight does the file belong to? (e.g. Flight_20210707a)</p></li>
+<li><p><strong>filename</strong> – name of file</p></li>
+<li><p><strong>measurement</strong> – raw SMART measurements for each pixel averaged over time</p></li>
+<li><p><strong>measurement_cor</strong> – corrected SMART measurements for each pixel averaged over time</p></li>
+<li><p><strong>option</strong> – which option was used for VNIR correction</p></li>
+<li><p><strong>**kwargs</strong> – save_fig (bool): save figure to current directory or just show it</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: plot</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_smart_data">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_smart_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">axes</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#plot_smart_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_smart_data" title="Permalink to this definition"></a></dt>
+<dd><p>Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
+or a time series of one wavelength. Return an axes object to continue plotting or show it.
+TODO: add option to plot multiple files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – to which flight does the file belong to? (e.g. Flight_20210707a)</p></li>
+<li><p><strong>filename</strong> – Standard SMART filename</p></li>
+<li><p><strong>wavelength</strong> – list with either one or two wavelengths in nm or ‘all’</p></li>
+<li><p><strong>**kwargs</strong> – path (str): give path to filename if not default from config.toml,
+save_fig (bool): save figure? (default: False),
+plot_path (str): where to save figure (default: given in config.toml)
+ax (plt.axis): axes to already existing matplotlib axis</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Shows a figure or saves it to disc.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_smart_data_interactive">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_smart_data_interactive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wavelength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Curve</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#plot_smart_data_interactive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_smart_data_interactive" title="Permalink to this definition"></a></dt>
+<dd><p>Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
+or a time series of one wavelength.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flight</strong> – to which flight does the file belong to? (e.g. Flight_20210707a)</p></li>
+<li><p><strong>filename</strong> – Standard SMART filename</p></li>
+<li><p><strong>wavelength</strong> – list with either one or two wavelengths in nm or ‘all’</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Creates an interactive figure</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pylim.smart.plot_smart_spectra">
+<span class="sig-prename descclassname"><span class="pre">pylim.smart.</span></span><span class="sig-name descname"><span class="pre">plot_smart_spectra</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/pylim/smart.html#plot_smart_spectra"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pylim.smart.plot_smart_spectra" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a spectra from a SMART calibrated measurement file for a given index (time step)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – where the file can be found</p></li>
+<li><p><strong>filename</strong> – name of the file (standard SMART filename convention)</p></li>
+<li><p><strong>index</strong> – which row to plot</p></li>
+<li><p><strong>**kwargs</strong> – save_fig (bool): Save figure to plot path given in config.toml (default: False),
+plot_path (str): Where to save plot if not standard plot path</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: Shows and or saves a plot</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="analysis.html" class="btn btn-neutral float-left" title="Analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

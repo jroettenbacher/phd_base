@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processing &mdash; Arctic Cirrus 0.4.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quicklooks" href="quicklooks.html" />
+    <link rel="prev" title="Setup" href="setup.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Arctic Cirrus
+          </a>
+              <div class="version">
+                0.4.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#smart">SMART</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.smart_calib_lab_ASP06">smart_calib_lab_ASP06.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.smart_process_transfer_calib_cirrus_hl">smart_process_transfer_calib_cirrus_hl.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Processing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/processing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="processing">
+<h1>Processing<a class="headerlink" href="#processing" title="Permalink to this heading"></a></h1>
+<p>With data processing one usually refers to the process of converting the raw measurement files as delivered by the instrument PC into error/bias corrected, calibrated and distributable/publishable files.
+For this work the netCDF standard is defined as the preferred output format.</p>
+<p>Each instrument has different requirements before, after and during the campaign.
+In general these scripts are <strong>not</strong> meant for analysing the data to answer specific science questions or for producing quicklooks.
+This is handled by the scripts in the folders <a class="reference internal" href="analysis.html#analysis"><span class="std std-ref">Analysis</span></a> and <a class="reference internal" href="quicklooks.html#quicklooks"><span class="std std-ref">Quicklooks</span></a>.</p>
+<section id="smart">
+<h2>SMART<a class="headerlink" href="#smart" title="Permalink to this heading"></a></h2>
+<p>SMART has to be calibrated in the lab and in the field so there are processing routines for both cases.
+Some scripts are designated for postprocessing specific campaign data as sometimes the normal processing does not cover all possible cases which occur during a campaign.</p>
+<p><strong>Folder Structure</strong></p>
+<p>SMART data is organized by flight.
+Each flight folder has one <cite>SMART</cite> folder with the following subfolders:</p>
+<ul class="simple">
+<li><p><cite>data_calibrated</cite>: dark current corrected and calibrated measurement files</p></li>
+<li><p><cite>data_cor</cite>: dark current corrected measurement files</p></li>
+<li><p><cite>raw</cite>: raw measurement files</p></li>
+</ul>
+<p>Each campaign also has a calibration folder.
+In the calibration folder each calibration is saved in its own folder.
+Each calibration is used to generate one calibration file, which is corrected for dark current and saved in the top level calibration folder.</p>
+<p>A few more folders needed are:</p>
+<ul class="simple">
+<li><p><cite>raw_only</cite>: raw measurement files as written by ASP06/07, do not work on those files, but copy them into <cite>raw</cite></p></li>
+<li><p><cite>lamp_F1587</cite>: calibration lamp file</p></li>
+<li><p><cite>panel_34816</cite>: reflectance panel file</p></li>
+<li><p><cite>pixel_wl</cite>: pixel to wavelength files for each spectrometer</p></li>
+</ul>
+<p><strong>Workflow</strong></p>
+<p>There are two workflows:
+1. Calibration files
+2. Measurement files</p>
+<p>Both workflows start with the correction of the dark current.
+After the raw files are copied from ASP06/07 into <cite>raw_only</cite> and <cite>raw</cite> the minutely files are corrected for the dark current and saved with the new ending <cite>*_cor.dat</cite> in <cite>data_cor</cite>.
+Then the minutely files are merged to one file per folder and channel.</p>
+<p><strong>Calibration files</strong></p>
+<p>Use <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_process_transfer_calib.py</span></code> or <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_process_lab_calib.py</span></code> to correct the calibration files for the dark current and merge the minutely files.
+Then run <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_calib_lab_ASP06/07.py</span></code> for the lab calibrations or <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_calib_transfer.py</span></code> for the transfer calibration.
+Each script returns a file in the <cite>calib</cite> folder with the calibration factors.</p>
+<p><strong>Measurement files</strong></p>
+<p>Use <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_write_dark_currented_corrected_file.py</span></code> to correct one flight for the dark current.
+Merge the resulting minutely files with <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_merge_minutely_files.py</span></code>.
+Finally, calibrate the measurement with <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_calibrate_measurment.py</span></code>.
+The resulting calibrated files are saved in the <cite>data_calibrated</cite> folder.
+As a final step the calibrated files can then be converted to netCDF with <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_write_ncfile.py</span></code>.</p>
+<section id="module-processing.smart_calib_lab_ASP06">
+<span id="smart-calib-lab-asp06-py"></span><h3>smart_calib_lab_ASP06.py<a class="headerlink" href="#module-processing.smart_calib_lab_ASP06" title="Permalink to this heading"></a></h3>
+<p>Script to read in calibration files and calculate calibration factors for lab calibration of ASP06</p>
+<ol class="arabic simple">
+<li><p>read in 1000W lamp file, plot it and save to data file</p></li>
+<li><p>set channel to work with</p></li>
+<li><p>set which folder pair to work with</p></li>
+<li><p>read in calibration lamp measurements</p></li>
+<li><p>read in pixel to wavelength mapping and interpolate lamp output onto pixel/wavelength of spectrometer</p></li>
+<li><p>plot lamp measurements</p></li>
+<li><p>read in ulli sphere measurements</p></li>
+<li><p>plot ulli measurements</p></li>
+<li><p>write dat file with all information</p></li>
+</ol>
+<p>author: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.smart_process_transfer_calib_cirrus_hl">
+<span id="smart-process-transfer-calib-cirrus-hl-py"></span><h3>smart_process_transfer_calib_cirrus_hl.py<a class="headerlink" href="#module-processing.smart_process_transfer_calib_cirrus_hl" title="Permalink to this heading"></a></h3>
+<p>Script to correct SMART SWIR transfer calibration measurement from the CIRRUS-HL campaign for dark current and save it to a new file and merge the minutely files</p>
+<p><strong>Input</strong>: raw SMART transfer calibration measurements</p>
+<p><strong>Output</strong>: dark current corrected and merged SMART measurements</p>
+<p>This script needs to be run <strong>after</strong> <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.smart_process_transfer_calib.py</span></code> and <strong>before</strong> <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.smart_calib_transfer.py</span></code>.</p>
+<p>During the campaign the LabView program controlling the shutter on the SWIR spectrometers of ASP06 somehow decided to change the way it works.
+Usually every SWIR measurement would start with four dark current measurements (=shutter closed).
+That way one can use the first measurements to correct the file for the dark current.
+That behaviour changed starting with the transfer calibration on the 22. July 2021.
+Now the shutter flag was still set to 0 (=closed) for the first four measurements but the shutter was not actually closed.
+However, once the second file would be written after one minute of measurements the shutter would actually close.
+Thus, only the first measurement file was affected by this behaviour and this is therefore only a problem for the transfer calibrations, where one would only record one file for each spectrometer.
+This weird behaviour was detected during the laboratory calibration of ASP06 for HALO-(AC)<sup>3</sup> and is now accounted for in the LabView program.</p>
+<p>The result of this is that the field calibration factors for the ASP06 SWIR spectrometers are wrong starting on the 22. July 2021.</p>
+<figure class="align-default" id="id1">
+<img alt="_images/SMART_calib_factors_Fdw_SWIR.png" src="_images/SMART_calib_factors_Fdw_SWIR.png" />
+<figcaption>
+<p><span class="caption-text">Evolution of the field calibration factor for ASP06 Fdw SWIR channel.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id2">
+<img alt="_images/SMART_calib_factors_Fup_SWIR.png" src="_images/SMART_calib_factors_Fup_SWIR.png" />
+<figcaption>
+<p><span class="caption-text">Evolution of the field calibration factor for ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>In order to fix this wrong correction of the dark current in the SWIR files the dark current measurements, which were routinely done during the transfer calibrations, can be used.
+Instead of using the first four measurements the mean of the dark current measurement is used to correct the transfer calibration measurements for the dark current.</p>
+<p>After calculating the new field calibration factors with the newly corrected SWIR measurements for all dates after the 22. July it was discovered that the 29. June and the 11. July also show a significantly different field calibration factor for Fup SWIR.</p>
+<figure class="align-default" id="id3">
+<img alt="_images/SMART_calib_factors_Fup_SWIR_new.png" src="_images/SMART_calib_factors_Fup_SWIR_new.png" />
+<figcaption>
+<p><span class="caption-text">Evolution of the field calibration factor after new correction of the dark current for 22. - 30. July for ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Transfer Calib Fup SWIR 29. June</strong></p>
+<p>Looking at the raw measurement from the calibration on 29. June shows that there was a dark current measurement at the beginning, however it seems that the shutter only opened slowly.
+Usually a jump in the counts should be happening, here only a steady increase in the counts is happening.</p>
+<figure class="align-default" id="id4">
+<img alt="_images/SMART_transfer_calib_raw_Fup_SWIR_20210629.png" src="_images/SMART_transfer_calib_raw_Fup_SWIR_20210629.png" />
+<figcaption>
+<p><span class="caption-text">All wavelengths from the transfer calib measurement of ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id4" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Using this information the part where the counts gradually increase is cut out from the dark current corrected file before the field calibration factor is calculated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.smart_calib_transfer.py</span></code> .
+However, this also does not seem to yield a reasonable field calibration factor from that transfer calibration.
+The most reasonable explanation seems to be that the SWIR spectrometer was unstable during the calibration.
+<strong>In that case it is best to discard this transfer calibration and use another one for the 29. June 2021.</strong></p>
+<p><strong>Transfer Calib Fup SWIR 11. July</strong></p>
+<figure class="align-default" id="id5">
+<img alt="_images/SMART_transfer_calib_raw_Fup_SWIR_20210711.png" src="_images/SMART_transfer_calib_raw_Fup_SWIR_20210711.png" />
+<figcaption>
+<p><span class="caption-text">All wavelengths from the transfer calib measurement of ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The first row of the file (2021_07_11_14_19.Fup_SWIR.dat) is deleted as its timestamp lies 12 seconds before the next measurement (see the raw file).
+Looking at the plot after that first correction was made still shows some weird behaviour.
+At first the counts decrease during the dark current measurement, then they jump up to a plateau where they increase slightly for a few measurements and then jump down again and slowly decrease until stable conditions are reached roughly at the minute mark (14:20 UTC).
+Some wavelengths even decrease back to the level of the dark current measurement, hinting at the possibility that the shutter was not working perfectly.</p>
+<p>Looking at the corresponding dark current measurement file shows, that the dark current dropped significantly after the first couple of measurements.
+Thus, to correct the transfer calibration measurement of Fup SWIR only the dark current measurements <strong>before</strong> the drop in counts at 14:21:03.78 UTC are used to calculate the mean dark current and then correct the calibration measurement by that.
+The corresponding rows are deleted in the dark current measurement file (everything before 14:21:03.78).</p>
+<p>After the dark current correction the rows exhibiting the described weird behaviour are then deleted (everything before before 14:19:50.6).</p>
+<p><strong>Transfer Calib Fup SWIR 16. July</strong></p>
+<figure class="align-default" id="id6">
+<img alt="_images/SMART_calib_factors_Fup_SWIR_new2.png" src="_images/SMART_calib_factors_Fup_SWIR_new2.png" />
+<figcaption>
+<p><span class="caption-text">Evolution of the field calibration factor for ASP06 Fup SWIR channel after the corrections.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>After correcting the 11. July the 16. July also shows up as a rather high calibration factor.
+Looking into the dark current corrected data reveals that the first pixels show only negative values, hinting at a bad dark current measurement at the beginning of the file.
+<strong>Thus, the transfer calibration from the 16. July is also discarded.</strong></p>
+<p>The finally used transfer calibrations can be found in the <code class="code docutils literal notranslate"><span class="pre">transfer_calibs</span></code> dictionary in <a class="reference external" href="https://github.com/jroettenbacher/phd_base/blob/0604f52c525b8db555486e8328e4fa6595d02485/src/pylim/cirrus_hl.py#L26">cirrus_hl.py</a> .</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="setup.html" class="btn btn-neutral float-left" title="Setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quicklooks.html" class="btn btn-neutral float-right" title="Quicklooks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
