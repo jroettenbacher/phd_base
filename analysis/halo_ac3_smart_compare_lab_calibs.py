@@ -10,14 +10,14 @@ Due to technical difficulties the spectrometer pair J3, J4 was used during HALO-
 
 The second lab calibration after the campaign was done with the correct inlet and the correct channels: VN05 and J3, J4
 
-Each lab calibration is processed with `smart_process_lab_calib_halo_ac3.py` to correct the files for the dark current.
+Each lab calibration is processed with :py:mod:`smart_process_lab_calib_halo_ac3.py` to correct the files for the dark current.
 After that the calibration factors are calculated with :py:mod:`analysis.smart_calib_lab_ASP06_halo_ac3.py` for ASP06.
 
 - compare calibration factors
 - compare Ulli measurements
 
-Results
-^^^^^^^^
+Results HALO-(AC)³
+^^^^^^^^^^^^^^^^^^
 
 .. figure:: figures/HALO-AC3_ASP06_lab_calib_comparison.png
 
@@ -35,23 +35,25 @@ Especially in the VNIR part between 180 and 350nm a lot of noise can be seen, wh
 
     Dark current corrected, normalized count measurements of the Ulli transfer sphere (Ulli2) from ASP06.
 
-.. figure:: figures/ASP06_lab_calib_comparison_f-ulli.png
+.. figure:: figures/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png
 
-    Calculated irradiance of the Ulli transfer sphere from ASP06.
-
-.. figure:: figures/ASP07_lab_calib_comparison_I-ulli.png
-
-    Calculated radiance of the Ulli transfer sphere from ASP07.
+    Calculated irradiance of the Ulli transfer sphere (Ulli2) from ASP06 measurements.
 
 Plotting the actual difference between the two shows a more detailed picture.
 
-.. figure:: figures/ASP06_lab_calib_comparison_f-ulli-diff.png
+.. figure:: figures/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2-diff.png
 
-    Difference between measured irradiances from Ulli sphere (before - after).
+    Difference between measured irradiances from Ulli sphere (Ulli2) (before - after).
 
-.. figure:: figures/ASP07_lab_calib_comparison_I-ulli-diff.png
+The after campaign calibration shows a higher irradiance with increasing wavelength in the VNIR channel (J4).
 
-    Difference between measured radiances from Ulli sphere (before - after).
+There were several problems with the before calibration on 15. November 2021:
+
+* wrong inlet used (VN11 instead of VN05)
+* the effective receiving area was wrongly interpreted leading to an offset of 44mm in the distance between the calibration lamp and the inlet (should be 50cm)
+* the power supply for Ulli3 had a voltage limit in place instead of a current limit -> only relevant for the transfer calibration at Oberpfaffenhofen before the campaign
+
+Thus, it is decided to use the after campaign calibration for all transfer calibrations.
 
 *author*: Johannes Röttenbacher
 """
@@ -170,10 +172,10 @@ if __name__ == "__main__":
 
     fig.suptitle("HALO-(AC)³ Laboratory Calibrations ASP06 - Ulli (2) Irradiance")
     plt.tight_layout()
-    plt.show()
-    # figname = f"{plot_path}/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png"
-    # plt.savefig(figname, dpi=200)
-    # print(f"Saved {figname}")
+    # plt.show()
+    figname = f"{plot_path}/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
     plt.close()
 
 # %% plot difference between Ulli irradiance for ASP06
@@ -198,8 +200,8 @@ if __name__ == "__main__":
 
     fig.suptitle("HALO-(AC)³ Laboratory Calibrations ASP06 - Difference in Ulli (2) irradiance (before-after)")
     plt.tight_layout()
-    plt.show()
-    # figname = f"{plot_path}/HALO-AC3_ASP06_lab_calib_comparison_f-ulli-diff.png"
-    # plt.savefig(figname, dpi=200)
-    # print(f"Saved {figname}")
+    # plt.show()
+    figname = f"{plot_path}/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2-diff.png"
+    plt.savefig(figname, dpi=200)
+    print(f"Saved {figname}")
     plt.close()

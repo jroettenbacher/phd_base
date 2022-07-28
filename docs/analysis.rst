@@ -48,6 +48,17 @@ cirrus_hl_overview.py
 .. automodule:: analysis.cirrus_hl_overview
    :members:
 
+HALO-(AC)³
+-----------
+
+HALO-(AC)³ Laboratory Calibration comparison
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Script:* :py:mod:`halo_ac3_smart_compare_lab_calibs.py`
+
+.. automodule:: analysis.halo_ac3_smart_compare_lab_calibs
+
+
 SMART
 -----
 
