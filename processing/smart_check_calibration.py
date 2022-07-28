@@ -23,8 +23,6 @@ if __name__ == "__main__":
     campaign = "halo-ac3"
     calib_path = h.get_path("calib", campaign=campaign)
     plot_path = f"{h.get_path('plot', campaign=campaign)}/quality_check_calibration"
-    if campaign == "halo-ac3":
-        lookup = smart_lookup
 
 # %% list all files from one spectrometer
     prop = "Fdw_VNIR"
@@ -72,7 +70,7 @@ if __name__ == "__main__":
     else:
         zoom = ""
     ax.set_ylabel("$S_{ulli, lab} / S_{ulli, field}$")
-    ax.set_xlabel("Wavenlength (nm)")
+    ax.set_xlabel("Wavelength (nm)")
     ax.set_title(f"Relation between Lab Calib measurement \nand Transfer Calib measurement - {prop}")
     ax.grid()
     ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
