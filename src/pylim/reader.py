@@ -185,6 +185,7 @@ def read_stabbi_data(stabbi_path: str) -> pd.DataFrame:
     df = pd.read_csv(stabbi_path, skipinitialspace=True, sep="\t")
     df["PCTIME"] = pd.to_datetime(df["DATE"] + " " + df["PCTIME"], format='%Y/%m/%d %H:%M:%S.%f')
     df.set_index("PCTIME", inplace=True)
+    df.index.name = "time"
 
     return df
 
