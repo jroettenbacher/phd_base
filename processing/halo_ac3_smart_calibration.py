@@ -144,6 +144,7 @@ for file in files:
     # filter to high correction factors which come from low sensitivity of the spectrometers at lower wavelengths and
     # lower output of the calibration standard
     k_cos = k_cos.where(k_cos < 1.1, 1.1)  # allow a maximum correction of 10%
+    k_cos = k_cos.drop("angle")
 
     # add sza, saa and correction factor to dataset
     ds["sza"] = sza
@@ -163,13 +164,16 @@ for file in files:
     # %% create stabilization flag for Fdw
     hori_file = [f for f in os.listdir(hori_dir) if ".dat" in f][0]
     horidata = reader.read_stabbi_data(f"{hori_dir}/{hori_file}")
-    horidata.index.name = "time"
+    # Stabilization was turned off in curves. Use the difference between Target positions to make out those sections
+    horidata["DIFF3"] = horidata["TARGET3"].diff()  # diff is exactly 0 when stabbi is off
+
     # interpolate to SMART data
     horidata_ds = horidata.to_xarray()
     horidata_ds = horidata_ds.interp_like(ds.time)
     abs_diff = np.abs(horidata_ds["TARGET3"] - horidata_ds["POSN3"])  # difference between roll target and actuall roll
     stabbi_threshold = 0.1
     stabbi_flag = (abs_diff > stabbi_threshold).astype(int)
+    stabbi_flag = stabbi_flag + (horidata_ds["DIFF3"] == 0).astype(int)  # add 1 if stabbi was off
     ds["stabilization_flag"] = stabbi_flag
     # save intermediate output
     # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.9.nc")
@@ -200,12 +204,13 @@ for file in files:
                           units="W m-2 nm-1",
                           standard_name="solar_irradiance_per_unit_wavelength",
                           comment="Actively stabilized and corrected for cosine response of the inlet assuming"
-                                  "only diffuse radiation"),
+                                  " only diffuse radiation"),
         stabilization_flag=dict(long_name="Stabilization flag", units="1",
                                 comment=f"0: Roll Stabilization performed good "
                                         f"(Offset between target and actual roll <= {stabbi_threshold} deg), "
                                         f"1: Roll Stabilization was not performing good "
-                                        f"(Offset between target and actual roll > {stabbi_threshold} deg)"),
+                                        f"(Offset between target and actual roll > {stabbi_threshold} deg) "
+                                        f"2: Stabilization was off (strong curves)"),
         # Fdw_flagged=dict(long_name="Stabilization flagged, cosine corrected spectral downward solar irradiance",
         #                  units="W m-2 nm-1", standard_name="solar_irradiance_per_unit_wavelength",
         #                  comment="Actively stabilized, corrected for cosine response of the inlet and "
