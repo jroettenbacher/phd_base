@@ -20,13 +20,13 @@ if __name__ == "__main__":
 
     # combine minutely files to one file
     # User input
-    campaign = "cirrus-hl"
-    flight = "Flight_20210629a"  # set flight folder
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_20220412_HALO_RF18"  # set flight folder
     data_path = h.get_path("data", flight=flight, campaign=campaign)  # dark current corrected files
     directory = data_path
 
     channels = ["SWIR", "VNIR"]
-    props = ["Fdw", "Fup", "Iup"]
+    props = ["Fdw"]
     corrected = True  # merge dark current corrected files
     cor = "_cor" if corrected else ""
     for dirpath, dirs, files in os.walk(directory):
