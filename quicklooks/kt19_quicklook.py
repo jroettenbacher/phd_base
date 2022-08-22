@@ -11,10 +11,12 @@
 # %% module import
 import pylim.helpers as h
 import pylim.halo_ac3 as campaign_meta
+import intake
 import xarray as xr
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 # %% set up paths and options
 campaign = "halo-ac3"
@@ -24,6 +26,12 @@ flight = f"HALO-AC3_{date}_HALO_{key}"
 kt19_dir = h.get_path("kt19", flight, campaign)
 kt19_file = f"HALO-AC3_HALO_KT19_BrightnessTemperature_{date}_{key}_new.nc"
 start, end = campaign_meta.take_offs_landings[key]
+
+# %% read in KT19 via intake
+cat = intake.open_catalog("C:/Users/Johannes/PycharmProjects/phd_base/ac3airborne-intake/catalog.yaml")["HALO-AC3"]
+kwds = {'simplecache': dict(same_names=True)}
+credentials = {"user": os.environ.get("AC3_CLOUD_USER"), "password": os.environ.get("AC3_CLOUD_PASSWORD")}
+kt19 = cat["HALO"]["KT19"][f"HALO-AC3_HALO_{key}"](storage_options=kwds, **credentials).to_dask()
 
 # %% read in file
 kt19 = xr.open_dataset(f"{kt19_dir}/{kt19_file}")
