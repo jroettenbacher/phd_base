@@ -624,3 +624,23 @@ if __name__ == "__main__":
     VN11.to_csv(f"{outfile_path}/HALO_SMART_VN11_cosine_correction_factors.csv", index=False)
     VN05.to_csv(f"{outfile_path}/HALO_SMART_VN05_cosine_correction_factors.csv", index=False)
 
+# %% interpolate correction factors to 1 deg and save to file, one for each inlet
+    out_df = k_cos_dir_df.reset_index(drop=True)
+    out_df["angle"] = out_df["angle"].astype(int)  # convert angle from str to int
+
+    tmp = out_df.set_index(["pixel", "prop", "position"])
+    func = interpolate.interp1d(tmp["angle"], tmp["k_cos"])
+    int_kcos = func(np.arange(-90, 91, 1))
+    # separate inlets
+    VN05_channels, VN11_channels = ["Fdw_VNIR", "Fdw_SWIR"], ["Fup_VNIR", "Fup_SWIR"]
+    VN05 = out_df.loc[out_df["prop"].isin(VN05_channels)]
+    VN11 = out_df.loc[out_df["prop"].isin(VN11_channels)]
+    # split up information in the prop column
+    VN05[["direction", "property"]] = VN05["prop"].str.split("_", expand=True)
+    VN11[["direction", "property"]] = VN11["prop"].str.split("_", expand=True)
+    VN05["channel"] = [cirrus_hl.smart_lookup[prop] for prop in VN05["prop"]]
+    VN11["channel"] = [cirrus_hl.smart_lookup[prop] for prop in VN11["prop"]]
+
+    # save file like this for further use
+    VN11.to_csv(f"{outfile_path}/HALO_SMART_VN11_cosine_correction_factors.csv", index=False)
+    VN05.to_csv(f"{outfile_path}/HALO_SMART_VN05_cosine_correction_factors.csv", index=False)
