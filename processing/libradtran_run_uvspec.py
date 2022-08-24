@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
 # %% set options and get files
     campaign = "cirrus-hl"
-    flight = "Flight_20210629a"
+    flight = "Flight_20210625a"
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     wavelength = "smart_spectral"  # will be used as directory name and in outfile name (e.g. smart, bacardi, 500-600nm, ...)
@@ -131,32 +131,36 @@ if __name__ == "__main__":
     # set up global attributes
     # CIRRUS-HL
     attributes = dict(
-        comment=f'CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}',
-        contact='PI: m.wendisch@uni-leipzig.de, Data: johannes.roettenbacher@uni-leipzig.de',
-        Conventions='CF-1.9',
-        history=f'Created {dt.datetime.utcnow():%c} UTC',
-        institution='Leipzig Institute for Meteorology, Leipzig University, Stephanstr.3, 04103 Leipzig, Germany',
-        references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
-        source='libRadtran 2.0',
-        title='Simulated clear sky downward and upward irradiance along flight track',
+        title="Simulated clear sky downward and upward irradiance along flight track",
+        Conventions="CF-1.9",
+        camapign_id=f"{campaign.swapcase()}",
+        platform_id="HALO",
+        instrument_id="SMART",
+        version_id="1",
+        comment=f"CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}",
+        contact="PI: m.wendisch@uni-leipzig.de, Data: johannes.roettenbacher@uni-leipzig.de",
+        history=f"Created {dt.datetime.utcnow():%c} UTC",
+        institution="Leipzig Institute for Meteorology, Leipzig University, Stephanstr.3, 04103 Leipzig, Germany",
+        source="libRadtran 2.0",
+        references="Emde et al. 2016, 10.5194/gmd-9-1647-2016"
     )
     # HALO-AC3
     global_attrs = dict(
         title="Simulated clear sky downward and upward irradiance along flight track",
-        Conventions='CF-1.9',
+        Conventions="CF-1.9",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
         instrument_id="SMART",
         version_id="1",
-        institution="Leipzig Institute for Meteorology, Leipzig, Germany",
+        institution="Leipzig Institute for Meteorology, Leipzig, Germany, Stephanstr.3, 04103 Leipzig, Germany",
         history=f"created {dt.datetime.utcnow():%c} UTC",
         contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
         PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
-        source='libRadtran 2.0.4',
-        references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
+        source="libRadtran 2.0.4",
+        references="Emde et al. 2016, 10.5194/gmd-9-1647-2016",
     )
 
-    encoding = dict(time=dict(units='seconds since 2017-01-01'))
+    encoding = dict(time=dict(units="seconds since 2017-01-01"))
 
     ds = output.to_xarray()
     # overwrite zout and sza in the spectral case

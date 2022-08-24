@@ -3,7 +3,7 @@
 
 * behind some options you find the page number of the manual, where the option is explained in more detail
 * set options to "None" if you don't want to use them
-* Variables which start with "_" are for internal use only and will not be used as a option for the input file.
+* Variables which start with "_" are for internal use only and will not be used as an option for the input file.
 
 author: Johannes Röttenbacher
 """
@@ -15,7 +15,6 @@ if __name__ == "__main__":
     from pylim import reader, solar_position
     from pylim.libradtran import find_closest_radiosonde_station
     import os
-    import re
     import datetime
     import numpy as np
     import pandas as pd
