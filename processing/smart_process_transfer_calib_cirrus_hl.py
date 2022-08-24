@@ -17,6 +17,7 @@ Thus, only the first measurement file was affected by this behaviour and this is
 This weird behaviour was detected during the laboratory calibration of ASP06 for |haloac3| and is now accounted for in the LabView program.
 
 The result of this is that the field calibration factors for the ASP06 SWIR spectrometers are wrong starting on the 22. July 2021.
+For the calculation of the final field calibration factors the laboratory calibration which was done after the campaign is used.
 
 .. figure:: figures/SMART_calib_factors_Fdw_SWIR.png
 
@@ -68,7 +69,7 @@ After the dark current correction the rows exhibiting the described weird behavi
 
 **Transfer Calib Fup SWIR 16. July**
 
-.. figure:: figures/SMART_calib_factors_Fup_SWIR_new2.png
+.. figure:: figures/SMART_calib_factors_after_Fup_SWIR_new2.png
 
     Evolution of the field calibration factor for ASP06 Fup SWIR channel after the corrections.
 
@@ -86,7 +87,6 @@ if __name__ == "__main__":
     from pylim import smart, reader
     import os
     import pandas as pd
-    import numpy as np
     import logging
 
     log = logging.getLogger("pylim")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     # list all erroneous transfer calib dates
     dates = ["20210711", "20210722", "20210725", "20210729", "20210730"]
     folders = [f"ASP06_transfer_calib_{d}" for d in dates]
-    folders = [folders[0]]  # select a single date to run
+    # folders = [folders[0]]  # select a single date to run
 
 # %% loop through all folders where the SWIR files need to be corrected by their dark current measurement
     for folder in folders:
