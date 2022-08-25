@@ -203,7 +203,8 @@ if __name__ == "__main__":
     ds = output.to_xarray()
     # overwrite zout and sza in the spectral case
     ds = ds.assign(zout=xr.DataArray(zout, coords={"time": ds.time})) if not integrate_flag else ds
-    ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
+    ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time})) if not integrate_flag else ds
+
     # add the time dependent variables from the input files
     ds = ds.assign(saa=xr.DataArray(saa, coords={"time": ds.time}))
     ds = ds.assign(latitude=xr.DataArray(latitudes, coords={"time": ds.time}))
