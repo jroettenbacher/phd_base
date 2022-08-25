@@ -17,7 +17,12 @@ smart_lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_
                     irradiance_standard="FEL-1587"  # irradiance standard used for calibration
                     )
 
-flight_numbers = dict(Flight_20210629a="F05")
+flight_numbers = dict(Flight_20210624a="F01", Flight_20210625a="F02", Flight_20210626a="F03", Flight_20210628a="F04",
+                      Flight_20210629a="F05", Flight_20210629b="F06", Flight_20210701a="F07", Flight_20210705a="F08",
+                      Flight_20210705b="F09", Flight_202100707a="F10", Flight_20210707b="F11", Flight_20210708a="F12",
+                      Flight_20210712a="F13", Flight_20210712b="F14", Flight_20210713a="F15", Flight_20210715a="F16",
+                      Flight_20210715b="F17", Flight_20210719a="F18", Flight_20210719b="F19", Flight_20210721a="F20",
+                      Flight_20210721b="F21", Flight_20210723a="F22", Flight_20210728a="F23", Flight_20210729a="F24")
 # BACARDI pitch and roll offset of upward facing sensor
 roll_offset = 0.3
 pitch_offset = 2.55
