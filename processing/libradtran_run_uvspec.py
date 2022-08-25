@@ -22,8 +22,8 @@ if __name__ == "__main__":
 # %% set options and get files
     campaign = "cirrus-hl"
     # uncomment to run for all flights
-    # flights = list(transfer_calibs.keys())[2:]
-    flights = ["Flight_20210628a"]
+    flights = list(transfer_calibs.keys())[4:]
+    # flights = ["Flight_20210628a"]
     for flight in flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
