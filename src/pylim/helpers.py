@@ -225,6 +225,8 @@ def setup_logging(dir: str, file: str = None, custom_string: str = None):
     Returns: Logger
     """
     log = logging.getLogger("pylim")
+    # remove existing handlers, necessary when function is called in a loop
+    log.handlers = []
     if file is not None:
         file = os.path.basename(file)
         log.setLevel(logging.DEBUG)
