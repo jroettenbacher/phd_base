@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 # %% set options and get files
     campaign = "cirrus-hl"
-    flight = "Flight_20210625a"
+    flight = "Flight_20210626a"
     # uncomment to run for all flights
     flights = list(transfer_calibs.keys())[2:]
     for flight in flights:
@@ -65,6 +65,40 @@ if __name__ == "__main__":
             # this will remove elements of the set which are also in the list
             # the list has only terminated processes in it, p.poll returns a non None value if the process is still running
             processes.difference_update([p for p in processes if p.poll() is not None])
+
+    # %% check if simulation was successful by checking size of each output file, run at least once
+        while True:
+            filesizes = list()
+            # get size of each output file
+            for f in output_files:
+                filesizes.append(os.path.getsize(f))
+            median_filesize = np.median(filesizes)  # get median filesize to compare all filesizes with
+            # if the filesize is smaller than the median add the file to the rerun list
+            rerun = [f for f in output_files if os.path.getsize(f) < median_filesize]
+
+            # rerun simulations or break loop
+            if len(rerun) > 0:
+                rerun_output_files = rerun
+                rerun_input_files = [f.replace(".out", ".inp") for f in rerun_output_files]
+                rerun_error_logs = [f.replace(".out", ".log") for f in rerun_output_files]
+                processes = set()
+                max_processes = cpu_count() - 4
+                for infile, outfile, log_file in zip(tqdm(rerun_input_files, desc="libRadtran simulations"),
+                                                     rerun_output_files, rerun_error_logs):
+                    with open(infile, "r") as ifile, open(outfile, "w") as ofile, open(log_file, "w") as lfile:
+                        processes.add(Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile))
+                    if len(processes) >= max_processes:
+                        os.wait()
+                        processes.difference_update([p for p in processes if p.poll() is not None])
+
+                # wait for all simulations to finish
+                while len(processes) > 0:
+                    os.wait()
+                    # this will remove elements of the set which are also in the list
+                    # the list has only terminated processes in it, p.poll returns a non None value if the process is still running
+                    processes.difference_update([p for p in processes if p.poll() is not None])
+            else:
+                break
 
     # %% merge output files and write a netCDF file
 
