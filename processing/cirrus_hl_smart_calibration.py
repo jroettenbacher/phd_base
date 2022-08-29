@@ -30,8 +30,8 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set some options
-flight = "Flight_20210629a"
-prop = "Fup"
+flight = "Flight_20210625a"
+prop = "Fup"  # Fup or Fdw
 normalize = True  # use normalized calibration factor (counts are divided by the integration time)
 lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
 t_int_asp06 = 300  # give integration time of field measurement for ASP06
@@ -143,12 +143,16 @@ for file in files:
     k_cos = cosine_ds["k_cos"].sel(angle=sza, method="nearest", drop=True)
     # filter to high correction factors which come from low sensitivity of the spectrometers at lower wavelengths and
     # lower output of the calibration standard
-    k_cos = k_cos.where(k_cos < 1.1, 1.1)  # allow a maximum correction of 10%
+    max_cor = 0.1  # maximum correction
+    # replace correction factors above or below maximum correction with maximum/minimum correction factor
+    k_cos = k_cos.where(k_cos < 1 + max_cor, 1 + max_cor).where(k_cos > 1 - max_cor, 1 - max_cor)
+    k_cos_diff = cosine_diffuse_ds["k_cos_diff"]
+    k_cos_diff = k_cos_diff.where(k_cos_diff < 1 + max_cor, 1 + max_cor).where(k_cos_diff > 1 - max_cor, 1 - max_cor)
 
     # add sza, saa and correction factor to dataset
     ds["sza"] = sza
     ds["saa"] = bacardi["saa"].interp_like(ds.time)
-    ds["k_cos_diff"] = cosine_diffuse_ds.k_cos_diff
+    ds["k_cos_diff"] = k_cos_diff
 
     # save intermediate output file as backup
     # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.5.nc")
@@ -223,14 +227,12 @@ for file in files:
             c_field=dict(long_name="Field calibration factor", units="1",
                          comment=f"Field calibration factor calculated from transfer calibration on {transfer_calib_date}"),
             Fup=dict(long_name="Spectral upward solar irradiance", units="W m-2 nm-1",
-                     standard_name="solar_irradiance_per_unit_wavelength",
-                     comment="Actively stabilized"),
+                     standard_name="solar_irradiance_per_unit_wavelength"),
             k_cos_diff=dict(long_name="Diffuse cosine correction factor", units="1",
                             comment="Fup_cor = Fup * k_cos_diff"),
             Fup_cor=dict(long_name="Spectral upward solar irradiance", units="W m-2 nm-1",
                          standard_name="solar_irradiance_per_unit_wavelength",
-                         comment="Actively stabilized and corrected for cosine response of the inlet assuming only "
-                                 "diffuse radiation"),
+                         comment="Corrected for cosine response of the inlet assuming only diffuse radiation"),
             wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
 
     global_attrs = dict(
@@ -303,11 +305,32 @@ else:
 ds = xr.merge([ds_vnir, ds_swir])  # merge vnir and swir
 # remove faulty pixels
 ds = ds.where(~ds.wavelength.isin(faulty_pixels), drop=True)
-# drop introduced wavelength dimension from 1D variables
+# drop introduced wavelength dimension from 1D variables, remove them
 ds[["sza", "saa"]] = ds[["sza", "saa"]].isel(wavelength=0, drop=True)
+# replace negative values with 0
+ds[f"{prop}"] = ds[f"{prop}"].where(ds[f"{prop}"] > 0, 0)  # set values < 0 to 0
+ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, 0)  # set values < 0 to 0
+if prop == "Fdw":
+    ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, 0)  # set values < 0 to 0
+
 if prop == "Fdw":
     ds["stabilization_flag"] = ds["stabilization_flag"].isel(wavelength=0, drop=True)
 
+# %% read in bahamas data and add lat lon and altitude to SMART data
+bahamas_filepath = os.path.join(bahamas_dir, f"CIRRUSHL_{flight_number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc")
+bahamas_ds = reader.read_bahamas(bahamas_filepath)
+
+ds["lat"] = bahamas_ds["IRS_LAT"].interp_like(ds, method="nearest")
+ds["lon"] = bahamas_ds["IRS_LON"].interp_like(ds, method="nearest")
+ds["altitude"] = bahamas_ds["IRS_ALT"].interp_like(ds, method="nearest")
+ds["lat"].attrs = dict(units="degrees_north", long_name="WGS84 Datum/Latitude", standard_name="latitude",
+                       comment="Latitude measured by the BAHAMAS system on board HALO")
+ds["lon"].attrs = dict(units="degrees_east", long_name="WGS84 Datum/Longitude", standard_name="longitude",
+                       comment="Longitude measured by the BAHAMAS system on board HALO")
+ds["altitude"].attrs = dict(units="m", long_name="WGS84 Datum/Elliptical Height",
+                            comment="Altitude above ground measured by the BAHAMAS system on board HALO")
+
+# %% set encoding and save file
 encoding = dict(time=dict(units="seconds since 2021-01-01 00:00:00 UTC", _FillValue=None),
                 wavelength=dict(_FillValue=None))
 for var in ds:
@@ -315,7 +338,7 @@ for var in ds:
 
 # set scale factor to reduce file size
 if prop == "Fdw":
-    for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts"]:
+    for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts", "altitude"]:
         encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
 else:
     for var in ["Fup", "Fup_cor", "counts"]:
@@ -324,4 +347,3 @@ else:
 filename = f"{outpath}/CIRRUS-HL_HALO_SMART_{prop}_{flight[7:-1]}_{flight}_v1.0.nc"
 ds.to_netcdf(filename, format="NETCDF4_CLASSIC", encoding=encoding)
 log.info(f"Saved {filename}")
-
