@@ -21,7 +21,7 @@ campaign = "cirrus-hl"  # adjust bahamas filename when using for HALO-AC3
 flights = list(meta.flight_numbers.keys())[1:]
 # flights = ["Flight_20210625a"]  # single flight mode
 for flight in flights:
-    prop = "Fdw"
+    prop = "Fup"
     wavelengths = [422, 532, 648, 858, 1240, 1640]  # five wavelengths to plot individually
     calibrated_path = h.get_path("calibrated", flight, campaign)  # path to calibrated nc files
     plot_path = calibrated_path  # output path of plot
@@ -144,7 +144,9 @@ for flight in flights:
                     path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
         fig.suptitle(f"SMART upward Irradiance for {flight} - {flight_no}")
-        plt.savefig(f"{plot_path}/CIRRUS-HL_{flight_no}_SMART_calibrated-Fup_quicklook_{flight[7:-1]}.png", dpi=300)
+        figname = f"{plot_path}/CIRRUS-HL_{flight_no}_SMART_calibrated-Fup_quicklook_{flight[7:-1]}.png"
+        plt.savefig(figname, dpi=300)
+        print(f"Saved {figname}")
         plt.show()
         plt.close()
 
@@ -265,6 +267,8 @@ for flight in flights:
                     path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
         fig.suptitle(f"SMART downward Irradiance for {flight} - {flight_no}")
-        plt.savefig(f"{plot_path}/CIRRUS-HL_{flight_no}_SMART_calibrated-Fdw_quicklook_{flight[7:-1]}.png", dpi=300)
+        figname = f"{plot_path}/CIRRUS-HL_{flight_no}_SMART_calibrated-Fdw_quicklook_{flight[7:-1]}.png"
+        plt.savefig(figname, dpi=300)
+        print(f"Saved {figname}")
         plt.show()
         plt.close()
