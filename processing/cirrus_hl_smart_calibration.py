@@ -24,6 +24,7 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 from datetime import datetime
+from tqdm import tqdm
 import logging
 
 log = logging.getLogger("pylim")
@@ -33,7 +34,7 @@ log.setLevel(logging.INFO)
 # %% set some options
 flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
 # flights = ["Flight_20210721a"]  # uncomment for single flight
-for flight in flights:
+for flight in tqdm(flights):
     prop = "Fup"  # Fup or Fdw
     normalize = True  # use normalized calibration factor (counts are divided by the integration time)
     lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
