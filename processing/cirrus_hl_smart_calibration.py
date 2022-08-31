@@ -49,6 +49,7 @@ for flight in flights:
     pixel_dir = h.get_path("pixel_wl")
     hori_dir = h.get_path("horidata", flight)
     bacardi_dir = h.get_path("bacardi", flight)
+    bahamas_dir = h.get_path("bahamas", flight)
     libradtran_dir = h.get_path("libradtran", flight)
     cosine_dir = h.get_path("cosine")
 
@@ -319,71 +320,130 @@ for flight in flights:
         ds["stabilization_flag"] = ds["stabilization_flag"].isel(wavelength=0, drop=True)
 
     # %% add SMART IMS data
-    gps_attrs = dict(
-        lat=dict(
-            long_name="latitude",
-            units="degrees_north",
-            comment="GPS latitude measured by the SMART IMS"),
-        lon=dict(
-            long_name="longitude",
-            units="degrees_east",
-            comment="GPS longitude measured by the SMART IMS"),
-        alt=dict(
-            long_name="altitude",
-            units="m",
-            comment="GPS altitude measured by the SMART IMS"),
-        v_east=dict(
-            long_name="Eastward velocity",
-            unit="m s^-1",
-            comment="Eastward velocity component as derived from the GPS sensor."),
-        v_north=dict(
-            long_name="Northward velocity",
-            unit="m s^-1",
-            comment="Northward velocity component as derived from the GPS sensor."),
-        v_up=dict(
-            long_name="Upward velocity",
-            unit="m s^-1",
-            comment="Vertical velocity as derived from the GPS sensor."),
-        vel=dict(
-            long_name="Ground speed",
-            unit="m s^-1",
-            comment="Ground speed calculated from northward and eastward velocity component: vel = sqrt(v_north^2 + v_east^2)")
-    )
-    ims_attrs = dict(
-        roll=dict(
-            long_name="Roll angle",
-            units="deg",
-            comment="Roll angle: positive = left wing up"),
-        pitch=dict(
-            long_name="Pitch angle",
-            units="deg",
-            comment="Pitch angle: positive = nose up"),
-        yaw=dict(
-            long_name="Yaw angle",
-            units="deg",
-            comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180")
-    )
-    hori_files = os.listdir(hori_dir)
-    nav_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_IMS" in f]
-    gps_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_GPSPos" in f]
-    vel_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_GPSVel" in f]
-    ims = pd.concat([reader.read_nav_data(f) for f in nav_filepaths])
-    gps = pd.concat([reader.read_ins_gps_pos(f) for f in gps_filepaths])
-    vel = pd.concat([reader.read_ins_gps_vel(f) for f in vel_filepaths])
-    gps = gps.merge(vel, how="outer", on="time")
-    # IMS pitch is opposite to BAHAMAS pitch, switch signs so that they follow the same convention
-    ims["pitch"] = -ims["pitch"]
-    # calculate velocity from northerly and easterly part
-    gps["vel"] = np.sqrt(gps["v_east"]**2 + gps["v_north"]**2)
-    gps = gps.to_xarray()
-    ims = ims.to_xarray()
+    if flight != "Flight_20210705a":
+        gps_attrs = dict(
+            lat=dict(
+                long_name="latitude",
+                units="degrees_north",
+                comment="GPS latitude measured by the SMART IMS"),
+            lon=dict(
+                long_name="longitude",
+                units="degrees_east",
+                comment="GPS longitude measured by the SMART IMS"),
+            alt=dict(
+                long_name="altitude",
+                units="m",
+                comment="GPS altitude measured by the SMART IMS"),
+            v_east=dict(
+                long_name="Eastward velocity",
+                unit="m s^-1",
+                comment="Eastward velocity component as derived from the GPS sensor."),
+            v_north=dict(
+                long_name="Northward velocity",
+                unit="m s^-1",
+                comment="Northward velocity component as derived from the GPS sensor."),
+            v_up=dict(
+                long_name="Upward velocity",
+                unit="m s^-1",
+                comment="Vertical velocity as derived from the GPS sensor."),
+            vel=dict(
+                long_name="Ground speed",
+                unit="m s^-1",
+                comment="Ground speed calculated from northward and eastward velocity component: vel = sqrt(v_north^2 + v_east^2)")
+        )
+        ims_attrs = dict(
+            roll=dict(
+                long_name="Roll angle",
+                units="deg",
+                comment="Roll angle: positive = left wing up"),
+            pitch=dict(
+                long_name="Pitch angle",
+                units="deg",
+                comment="Pitch angle: positive = nose up"),
+            yaw=dict(
+                long_name="Yaw angle",
+                units="deg",
+                comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180")
+        )
+        hori_files = os.listdir(hori_dir)
+        nav_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_IMS" in f]
+        gps_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_GPSPos" in f]
+        vel_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_GPSVel" in f]
+        ims = pd.concat([reader.read_nav_data(f) for f in nav_filepaths])
+        gps = pd.concat([reader.read_ins_gps_pos(f) for f in gps_filepaths])
+        vel = pd.concat([reader.read_ins_gps_vel(f) for f in vel_filepaths])
+        gps = gps.merge(vel, how="outer", on="time")
+        # IMS pitch is opposite to BAHAMAS pitch, switch signs so that they follow the same convention
+        ims["pitch"] = -ims["pitch"]
+        # calculate velocity from northerly and easterly part
+        gps["vel"] = np.sqrt(gps["v_east"]**2 + gps["v_north"]**2)
+        gps = gps.to_xarray()
+        ims = ims.to_xarray()
 
-    for var in gps_attrs:
-        ds[var] = gps[var].interp_like(ds, method="nearest")
-        ds[var].attrs = gps_attrs[var]
-    for var in ims_attrs:
-        ds[var] = ims[var].interp_like(ds, method="nearest")
-        ds[var].attrs = ims_attrs[var]
+        for var in gps_attrs:
+            ds[var] = gps[var].interp_like(ds, method="nearest")
+            ds[var].attrs = gps_attrs[var]
+        for var in ims_attrs:
+            ds[var] = ims[var].interp_like(ds, method="nearest")
+            ds[var].attrs = ims_attrs[var]
+        # %% read in bahamas data and add lat lon and altitude and add to SMART data (Flight_20210705a)
+    else:
+        assert flight == "Flight_20210705a", "Using BAHAMAS data for different flight than Flight_20210705a!"
+        bahamas_filepath = os.path.join(bahamas_dir, f"CIRRUSHL_{flight_number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc")
+        bahamas_ds = reader.read_bahamas(bahamas_filepath)
+        # rename variables to fit SMART IMS naming convention
+        bahamas_ds = bahamas_ds.rename_vars(
+            dict(IRS_LAT="lat", IRS_LON="lon", IRS_ALT="alt", IRS_EWV="v_east", IRS_NSV="v_north", IRS_VV="v_up",
+                 IRS_GS="vel", IRS_PHI="roll", IRS_THE="pitch", IRS_HDG="yaw"))
+        bahamas_attrs = dict(
+            lat=dict(
+                long_name="latitude",
+                units="degrees_north",
+                comment="GPS latitude measured by BAHAMAS"),
+            lon=dict(
+                long_name="longitude",
+                units="degrees_east",
+                comment="GPS longitude measured by BAHAMAS"),
+            alt=dict(
+                long_name="altitude",
+                units="m",
+                comment="GPS altitude measured by BAHAMAS"),
+            v_east=dict(
+                long_name="Eastward velocity",
+                unit="m s^-1",
+                comment="Eastward velocity component from BAHAMAS."),
+            v_north=dict(
+                long_name="Northward velocity",
+                unit="m s^-1",
+                comment="Northward velocity component  from BAHAMAS."),
+            v_up=dict(
+                long_name="Upward velocity",
+                unit="m s^-1",
+                comment="Vertical velocity  from BAHAMAS."),
+            vel=dict(
+                long_name="Ground speed",
+                unit="m s^-1",
+                comment="IRS Groundspeed from corrected IGI data (BAHAMAS)"),
+            roll=dict(
+                long_name="Roll angle",
+                units="deg",
+                comment="Roll angle: positive = left wing up (BAHAMAS)"),
+            pitch=dict(
+                long_name="Pitch angle",
+                units="deg",
+                comment="Pitch angle: positive = nose up (BAHAMAS)"),
+            yaw=dict(
+                long_name="Yaw angle",
+                units="deg",
+                comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180 (converted from 0-360 with 0 = North, BAHAMAS)")
+        )
+        yaw = bahamas_ds["yaw"] - 90  # convert East from 90 to 0°
+        yaw = yaw.where(yaw > 180, yaw * -1)  # switch signs for 1st, 3rd and 4th quadrant
+        yaw = yaw.where(yaw < 180, yaw - 180)  # reduce values in 2nd quadrant from 270 to 180 to 90 to 180
+        bahamas_ds["yaw"] = yaw
+        for var in bahamas_attrs:
+            ds[var] = bahamas_ds[var].interp_like(ds, method="nearest")
+            ds[var].attrs = bahamas_attrs[var]
 
     # %% set encoding and save file
     encoding = dict(time=dict(units="seconds since 2021-01-01 00:00:00 UTC", _FillValue=None),
