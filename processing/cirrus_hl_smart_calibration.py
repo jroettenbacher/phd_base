@@ -31,16 +31,16 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set some options
-# flights = list(campaign_meta.flight_numbers.keys())[11:]  # run all flights
-flights = ["Flight_20210625a"]  # uncomment for single flight
+flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
+# flights = ["Flight_20210721a"]  # uncomment for single flight
 for flight in flights:
-    prop = "Fdw"  # Fup or Fdw
+    prop = "Fup"  # Fup or Fdw
     normalize = True  # use normalized calibration factor (counts are divided by the integration time)
     lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
     t_int_asp06 = 300  # give integration time of field measurement for ASP06
     t_int_asp07 = 300  # give integration time of field measurement for ASP07
 
-    # %% set paths
+# %% set paths
     cor_data_dir = h.get_path("data", flight)
     inpath = cor_data_dir
     calib_data_dir = h.get_path("calibrated", flight)
@@ -53,14 +53,14 @@ for flight in flights:
     libradtran_dir = h.get_path("libradtran", flight)
     cosine_dir = h.get_path("cosine")
 
-    # %% get metadata
+# %% get metadata
     transfer_calib_date = campaign_meta.transfer_calibs[flight]
     date = f"{transfer_calib_date[:4]}_{transfer_calib_date[4:6]}_{transfer_calib_date[6:]}"  # reformat date to match file name
     norm = "_norm" if normalize else ""
     to, td = campaign_meta.take_offs_landings[flight]
     flight_number = campaign_meta.flight_numbers[flight]
 
-    # %% read in dark current corrected measurement files
+# %% read in dark current corrected measurement files
     files = [f for f in os.listdir(inpath) if prop in f]
     for file in files:
         date_str, channel, direction = smart.get_info_from_filename(file)
@@ -73,7 +73,7 @@ for flight in flights:
         # cut measurement to take off and landing times
         measurement = measurement[to:td]
 
-        # %% read in matching transfer calibration file from same day or from given day with matching t_int
+# %% read in matching transfer calibration file from same day or from given day with matching t_int
         cali_file = f"{calib_dir}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
         log.info(f"Calibration file used:\n {cali_file}")
         cali = pd.read_csv(cali_file)
@@ -85,7 +85,7 @@ for flight in flights:
         # merge field calibration factor to long df on pixel column
         df = m_long.join(cali.set_index(cali.pixel)["c_field"], on="pixel")
 
-        # %% calibrate measurement with transfer calibration
+# %% calibrate measurement with transfer calibration
         df[direction] = df["counts"] * df["c_field"]  # calculate calibrated radiance/irradiance
         df = df[~np.isnan(df[f"{prop}"])]  # remove rows with nan (dark current measurements)
         df = df.reset_index().merge(pixel_wl, how="left", on="pixel").set_index(["time", "wavelength"])
@@ -99,7 +99,7 @@ for flight in flights:
         ds = df.to_xarray()  # convert to xr.DataSet
         ds["c_field"] = c_field
 
-        # %% correct measurement for cosine dependence of inlet
+# %% correct measurement for cosine dependence of inlet
         bacardi_file = f"CIRRUS-HL_{flight_number}_{flight[7:]}_ADLR_BACARDI_BroadbandFluxes_v1.1.nc"
         libradtran_file = f"CIRRUS-HL_HALO_libRadtran_clearsky_simulation_smart_spectral_{flight[7:-1]}_{flight}.nc"
         bacardi = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
@@ -116,7 +116,7 @@ for flight in flights:
         # replace values which seem to low (4 standard deviations below the mean) with the mean
         f_dir = f_dir.where(f_dir > (f_dir.mean() - 4 * f_dir.std()), f_dir.mean())
 
-        # %% read in cosine correction factors
+# %% read in cosine correction factors
         cosine_file = f"HALO_SMART_{inlet}_cosine_correction_factors.csv"
         cosine_diffuse_file = f"HALO_SMART_{inlet}_diffuse_cosine_correction_factors.csv"
         cosine_cor = pd.read_csv(f"{cosine_dir}/{cosine_file}")
@@ -130,7 +130,7 @@ for flight in flights:
         cosine_cor = cosine_cor.loc[pos_sel]  # select only normal position
         cosine_cor["k_cos"] = mean_k_cos  # overwrite correction factor with mean
 
-        # %% create netCDF file to merge with smart measurements
+# %% create netCDF file to merge with smart measurements
         cosine_cor = cosine_cor.merge(pixel_wl, on="pixel")  # merge wavelength to dataframe
         cosine_diffuse_cor = cosine_diffuse_cor.merge(pixel_wl, on="pixel")  # merge wavelength to dataframe
         # drop useless columns
@@ -152,7 +152,7 @@ for flight in flights:
         k_cos_diff = cosine_diffuse_ds["k_cos_diff"]
         k_cos_diff = k_cos_diff.where(k_cos_diff < 1 + max_cor, 1 + max_cor).where(k_cos_diff > 1 - max_cor, 1 - max_cor)
 
-        # %% add sza, saa and correction factor to dataset
+# %% add sza, saa and correction factor to dataset
         ds["sza"] = sza
         ds["saa"] = bacardi["saa"].interp_like(ds.time)
         ds["k_cos_diff"] = k_cos_diff
@@ -171,7 +171,7 @@ for flight in flights:
             ds[f"{prop}_cor"] = f_dir * ds["k_cos"] * ds[f"{prop}"] + (1 - f_dir) * ds["k_cos_diff"] * ds[f"{prop}"]
             ds[f"{prop}_cor_diff"] = ds["k_cos_diff"] * ds[f"{prop}"]  # correct for cosine assuming only diffuse radiation
 
-        # %% create stabilization flag for Fdw
+# %% create stabilization flag for Fdw
         if prop == "Fdw":
             try:
                 hori_file = [f for f in os.listdir(hori_dir) if ".dat" in f][0]
@@ -190,13 +190,13 @@ for flight in flights:
             # save intermediate output
             # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.9.nc")
 
-        # %% filter output
-        ds[f"{prop}"] = ds[f"{prop}"].where(ds[f"{prop}"] > 0, 0)  # set values < 0 to 0
-        ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, 0)  # set values < 0 to 0
+# %% filter output
+        ds[f"{prop}"] = ds[f"{prop}"].where(ds[f"{prop}"] > 0, np.nan)  # set values < 0 to nan
+        ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to nan
         if prop == "Fdw":
-            ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, 0)  # set values < 0 to 0
+            ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to nan
 
-        # %% prepare meta data
+# %% prepare meta data
         if prop == "Fdw":
             var_attributes = dict(
                 counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
@@ -276,7 +276,7 @@ for flight in flights:
         ds.to_netcdf(outfile, format="NETCDF4_CLASSIC", encoding=encoding)
         log.info(f"Saved {outfile}")
 
-    # %% merge SWIR and VNIR file
+# %% merge SWIR and VNIR file
     ds_vnir = xr.open_dataset(f"{outpath}/CIRRUS-HL_HALO_SMART_{prop}_VNIR_{flight[7:-1]}_{flight}_v1.0.nc")
     ds_swir = xr.open_dataset(f"{outpath}/CIRRUS-HL_HALO_SMART_{prop}_SWIR_{flight[7:-1]}_{flight}_v1.0.nc")
 
@@ -311,15 +311,15 @@ for flight in flights:
     # drop introduced wavelength dimension from 1D variables, remove them
     ds[["sza", "saa"]] = ds[["sza", "saa"]].isel(wavelength=0, drop=True)
     # replace negative values with 0
-    ds[f"{prop}"] = ds[f"{prop}"].where(ds[f"{prop}"] > 0, 0)  # set values < 0 to 0
-    ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, 0)  # set values < 0 to 0
+    ds[f"{prop}"] = ds[f"{prop}"].where(ds[f"{prop}"] > 0, np.nan)  # set values < 0 to nan
+    ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to nan
     if prop == "Fdw":
-        ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, 0)  # set values < 0 to 0
+        ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to 0
 
     if prop == "Fdw":
         ds["stabilization_flag"] = ds["stabilization_flag"].isel(wavelength=0, drop=True)
 
-    # %% add SMART IMS data
+# %% add SMART IMS data
     if flight != "Flight_20210705a":
         gps_attrs = dict(
             lat=dict(
@@ -386,8 +386,8 @@ for flight in flights:
         for var in ims_attrs:
             ds[var] = ims[var].interp_like(ds, method="nearest")
             ds[var].attrs = ims_attrs[var]
-        # %% read in bahamas data and add lat lon and altitude and add to SMART data (Flight_20210705a)
     else:
+        # read in bahamas data and add lat lon and altitude and add to SMART data (Flight_20210705a)
         assert flight == "Flight_20210705a", "Using BAHAMAS data for different flight than Flight_20210705a!"
         bahamas_filepath = os.path.join(bahamas_dir, f"CIRRUSHL_{flight_number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc")
         bahamas_ds = reader.read_bahamas(bahamas_filepath)
@@ -445,7 +445,7 @@ for flight in flights:
             ds[var] = bahamas_ds[var].interp_like(ds, method="nearest")
             ds[var].attrs = bahamas_attrs[var]
 
-    # %% set encoding and save file
+# %% set encoding and save file
     encoding = dict(time=dict(units="seconds since 2021-01-01 00:00:00 UTC", _FillValue=None),
                     wavelength=dict(_FillValue=None))
     for var in ds:
