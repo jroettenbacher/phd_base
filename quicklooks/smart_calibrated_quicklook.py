@@ -18,6 +18,7 @@ import cartopy.crs as ccrs
 
 # %% set paths
 campaign = "cirrus-hl"  # adjust bahamas filename when using for HALO-AC3
+ql_path = h.get_path("all", instrument="quicklooks")
 flights = list(meta.flight_numbers.keys())[1:]
 # flights = ["Flight_20210625a"]  # single flight mode
 for flight in flights:
@@ -36,6 +37,7 @@ for flight in flights:
     ds = xr.open_dataset(filepath)
     F_cor = ds[f"{prop}_cor"]  # extract corrected F
     F_cor_flat = F_cor.values.flatten()  # flatten 2D array for statistics
+    F_cor_flat = F_cor_flat[~np.isnan(F_cor_flat)]  # drop nans for boxplot
     time_range = pd.to_timedelta((F_cor.time[-1] - F_cor.time[0]).values)  # get time range for time axis formatting
 
     # %% set plotting aesthetics
@@ -144,8 +146,9 @@ for flight in flights:
                     path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
         fig.suptitle(f"SMART upward Irradiance for {flight} - {flight_no}")
-        figname = f"{plot_path}/CIRRUS-HL_{flight_no}_SMART_calibrated-Fup_quicklook_{flight[7:-1]}.png"
-        plt.savefig(figname, dpi=300)
+        figname = f"CIRRUS-HL_{flight_no}_SMART_calibrated-Fup_quicklook_{flight[7:-1]}.png"
+        plt.savefig(f"{plot_path}/{figname}", dpi=300)
+        plt.savefig(f"{ql_path}/{figname}", dpi=300)
         print(f"Saved {figname}")
         plt.show()
         plt.close()
@@ -267,8 +270,9 @@ for flight in flights:
                     path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
         fig.suptitle(f"SMART downward Irradiance for {flight} - {flight_no}")
-        figname = f"{plot_path}/CIRRUS-HL_{flight_no}_SMART_calibrated-Fdw_quicklook_{flight[7:-1]}.png"
-        plt.savefig(figname, dpi=300)
+        figname = f"CIRRUS-HL_{flight_no}_SMART_calibrated-Fdw_quicklook_{flight[7:-1]}.png"
+        plt.savefig(f"{plot_path}/{figname}", dpi=300)
+        plt.savefig(f"{ql_path}/{figname}", dpi=300)
         print(f"Saved {figname}")
         plt.show()
         plt.close()
