@@ -77,6 +77,9 @@ After correcting the 11. July the 16. July also shows up as a rather high calibr
 Looking into the dark current corrected data reveals that the first pixels show only negative values, hinting at a bad dark current measurement at the beginning of the file.
 **Thus, the transfer calibration from the 16. July is also discarded.**
 
+Quicklooks generated from the final calibrated files show that the SWIR data is way out of bounds which can be traced back to a very high calibration factor starting on the 21.07.21.
+Thus, for flights after that date the transfer calibration from 20.07.2021 is used for calibration.
+
 The finally used transfer calibrations can be found in the :code:`transfer_calibs` dictionary in `cirrus_hl.py <https://github.com/jroettenbacher/phd_base/blob/0604f52c525b8db555486e8328e4fa6595d02485/src/pylim/cirrus_hl.py#L26>`_ .
 
 *author*: Johannes Röttenbacher

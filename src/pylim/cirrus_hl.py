@@ -28,14 +28,14 @@ roll_offset = 0.3
 pitch_offset = 2.55
 
 # transfer calibrations to each flight
-transfer_calibs = dict(Flight_20210624a="20210616", Flight_20210625a="20210625", Flight_20210626a="20210627",
+transfer_calibs = dict(Flight_20210624a="20210625", Flight_20210625a="20210625", Flight_20210626a="20210627",
                        Flight_20210628a="20210627", Flight_20210629a="20210630", Flight_20210629b="20210630",
                        Flight_20210701a="20210702", Flight_20210705a="20210706", Flight_20210705b="20210706",
                        Flight_20210707a="20210708", Flight_20210707b="20210708", Flight_20210708a="20210708",
                        Flight_20210712a="20210711", Flight_20210712b="20210711", Flight_20210713a="20210713",
                        Flight_20210715a="20210714", Flight_20210715b="20210714", Flight_20210719a="20210720",
-                       Flight_20210719b="20210720", Flight_20210721a="20210722", Flight_20210721b="20210722",
-                       Flight_20210723a="20210725", Flight_20210728a="20210729", Flight_20210729a="20210730")
+                       Flight_20210719b="20210720", Flight_20210721a="20210720", Flight_20210721b="20210720",
+                       Flight_20210723a="20210720", Flight_20210728a="20210720", Flight_20210729a="20210720")
 
 take_offs_landings = dict(Flight_20210624a=(Ts(2021, 6, 24, 11, 58, 59), Ts(2021, 6, 24, 15, 29, 6)),
                           Flight_20210625a=(Ts(2021, 6, 25, 11, 3, 20), Ts(2021, 6, 25, 16, 50, 58)),
