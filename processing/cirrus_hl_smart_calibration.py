@@ -32,10 +32,12 @@ log.addHandler(logging.StreamHandler())
 log.setLevel(logging.INFO)
 
 # %% set some options
+stabilized_flights = list(campaign_meta.flight_numbers.keys())[:12]
+unstabilized_flights = list(campaign_meta.flight_numbers.keys())[12:]
 flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
-# flights = ["Flight_20210721a"]  # uncomment for single flight
+# flights = ["Flight_20210624a"]  # uncomment for single flight
 for flight in tqdm(flights):
-    prop = "Fup"  # Fup or Fdw
+    prop = "Fdw"  # Fup or Fdw
     normalize = True  # use normalized calibration factor (counts are divided by the integration time)
     lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
     t_int_asp06 = 300  # give integration time of field measurement for ASP06
@@ -187,7 +189,7 @@ for flight in tqdm(flights):
                 ds["stabilization_flag"] = xr.DataArray(stabbi_flag, coords=dict(time=ds.time))
             except IndexError:
                 # no stabilization data file can be found -> Stabbi was fixed on 12.07.2021
-                ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time), dtype=int), coords=dict(time=ds.time))
+                ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time) + 1, dtype=int), coords=dict(time=ds.time))
             # save intermediate output
             # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.9.nc")
 
@@ -198,7 +200,7 @@ for flight in tqdm(flights):
             ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to nan
 
 # %% prepare meta data
-        if prop == "Fdw":
+        if prop == "Fdw" and flight in stabilized_flights:
             var_attributes = dict(
                 counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
                 c_field=dict(long_name="Field calibration factor", units="1",
@@ -224,6 +226,30 @@ for flight in tqdm(flights):
                                                 f"(Offset between target and actual roll <= {stabbi_threshold} deg), "
                                                 f"1: Roll Stabilization was not performing good "
                                                 f"(Offset between target and actual roll > {stabbi_threshold} deg)"),
+                wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
+        elif prop == "Fdw" and flight in unstabilized_flights:
+            var_attributes = dict(
+                counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
+                c_field=dict(long_name="Field calibration factor", units="1",
+                             comment=f"Field calibration factor calculated from transfer calibration on {transfer_calib_date}"),
+                Fdw=dict(long_name="Spectral downward solar irradiance", units="W m-2 nm-1",
+                         standard_name="solar_irradiance_per_unit_wavelength",
+                         comment="Not stabilized"),
+                k_cos=dict(long_name="Direct cosine correction factor along track", units="1",
+                           comment="Fdw_cor = direct_fraction * k_cos * Fdw + (1 - direct_fraction) * k_cos_diff * Fdw"),
+                k_cos_diff=dict(long_name="Diffuse cosine correction factor", units="1",
+                                comment="Fup_cor = Fup * k_cos_diff"),
+                Fdw_cor=dict(long_name="Spectral downward solar irradiance",
+                             units="W m-2 nm-1",
+                             standard_name="solar_irradiance_per_unit_wavelength",
+                             comment="Attitude corrected and corrected for cosine response of the inlet"),
+                Fdw_cor_diff=dict(long_name="Spectral downward solar irradiance",
+                                  units="W m-2 nm-1",
+                                  standard_name="solar_irradiance_per_unit_wavelength",
+                                  comment="Attitude corrected and corrected for cosine response of the inlet assuming "
+                                          "only diffuse radiation"),
+                stabilization_flag=dict(long_name="Stabilization flag", units="1",
+                                        comment="2: Stabilization was turned off"),
                 wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
         else:
             var_attributes = dict(
