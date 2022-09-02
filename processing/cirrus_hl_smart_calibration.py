@@ -18,7 +18,7 @@ The dark current corrected SMART measurement files are calibrated and filtered.
 # %% module import
 from pylim import helpers as h
 from pylim import cirrus_hl as campaign_meta
-from pylim import smart, reader
+from pylim import smart, reader, bacardi
 import os
 import pandas as pd
 import numpy as np
@@ -105,10 +105,10 @@ for flight in tqdm(flights):
 # %% correct measurement for cosine dependence of inlet
         bacardi_file = f"CIRRUS-HL_{flight_number}_{flight[7:]}_ADLR_BACARDI_BroadbandFluxes_v1.1.nc"
         libradtran_file = f"CIRRUS-HL_HALO_libRadtran_clearsky_simulation_smart_spectral_{flight[7:-1]}_{flight}.nc"
-        bacardi = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
+        bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
         libradtran = xr.open_dataset(f"{libradtran_dir}/{libradtran_file}")
         # extract sza from BACARDI file
-        sza = bacardi["sza"]
+        sza = bacardi_ds["sza"]
         # extract direct fraction from libRadtran
         f_dir = libradtran["direct_fraction"]
         # interpolate to SMART time
@@ -157,21 +157,24 @@ for flight in tqdm(flights):
 
 # %% add sza, saa and correction factor to dataset
         ds["sza"] = sza
-        ds["saa"] = bacardi["saa"].interp_like(ds.time)
+        ds["saa"] = bacardi_ds["saa"].interp_like(ds.time)
         ds["k_cos_diff"] = k_cos_diff
 
         # save intermediate output file as backup
         # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.5.nc")
 
-        # correct for cosine response of inlet
+#  %% correct for cosine response of inlet and attitude correct Fdw
         if prop == "Fup":
             # only diffuse radiation -> use only diffuse cosine correction factor
             ds[f"{prop}_cor"] = ds[f"{prop}"] * ds["k_cos_diff"]
         else:
             ds["k_cos"] = k_cos
             ds["direct_fraction"] = f_dir
+            # correct attitude with current roll and pitch offset
+            fdw_cor, factor = bacardi.fdw_attitude_correction(ds.Fdw.values, )
+            ds[f"{prop}_cor"], ds["attitude_correction_factor"] = fdw_cor, factor
             # combine direct and diffuse cosine correction factor
-            ds[f"{prop}_cor"] = f_dir * ds["k_cos"] * ds[f"{prop}"] + (1 - f_dir) * ds["k_cos_diff"] * ds[f"{prop}"]
+            ds[f"{prop}_cor"] = f_dir * ds["k_cos"] * ds[f"{prop}_cor"] + (1 - f_dir) * ds["k_cos_diff"] * ds[f"{prop}_cor"]
             ds[f"{prop}_cor_diff"] = ds["k_cos_diff"] * ds[f"{prop}"]  # correct for cosine assuming only diffuse radiation
 
 # %% create stabilization flag for Fdw

@@ -18,11 +18,16 @@ import cartopy.crs as ccrs
 
 # %% set paths
 campaign = "cirrus-hl"  # adjust bahamas filename when using for HALO-AC3
+stabilized_flights = list(meta.flight_numbers.keys())[:12]
+# remove two flight because no stabbi data is available
+stabilized_flights.remove("Flight_20210707a")
+stabilized_flights.remove("Flight_20210707b")
+unstabilized_flights = list(meta.flight_numbers.keys())[12:]
 ql_path = h.get_path("all", instrument="quicklooks")
-flights = list(meta.flight_numbers.keys())[1:]
+flights = list(meta.flight_numbers.keys())[9:]
 # flights = ["Flight_20210625a"]  # single flight mode
 for flight in flights:
-    prop = "Fup"
+    prop = "Fdw"
     wavelengths = [422, 532, 648, 858, 1240, 1640]  # five wavelengths to plot individually
     calibrated_path = h.get_path("calibrated", flight, campaign)  # path to calibrated nc files
     plot_path = calibrated_path  # output path of plot
@@ -207,14 +212,15 @@ for flight in flights:
         stabbi_working = stabbi.where(stabbi == 0, drop=True) + 2
         stabbi_not_working = stabbi.where(stabbi == 1, drop=True) - 1.05 + 2
         ds["roll"].plot(ax=ax, x="time", color="#999933")
-        stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
-        stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+        if flight in stabilized_flights:
+            stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+            stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+            handles_roll, labels_roll = ax.get_legend_handles_labels()
         h.set_xticks_and_xlabels(ax, time_range)
         ax.set_xlabel("Time (UTC)")
         ax.set_ylabel("Roll Angle (°)")
         ax.grid()
         ax.set_ylim([-2, 2.02])
-        handles_roll, labels_roll = ax.get_legend_handles_labels()
 
         # legend for 5 wavelength plot - first subrow, second column
         ax = fig.add_subplot(gs02[0])
@@ -236,8 +242,13 @@ for flight in flights:
         # legend for roll angle and Stabbi
         ax = fig.add_subplot(gs02[3])
         ax.axis("off")
-        ax.legend(handles=handles_roll, labels=labels_roll, markerscale=6, title="Stabilization", loc='upper center',
-                  bbox_to_anchor=[0.2, 1.1])
+        if flight in stabilized_flights:
+            ax.legend(handles=handles_roll, labels=labels_roll, markerscale=6, title="Stabilization",
+                      loc='upper center', bbox_to_anchor=[0.2, 1.1])
+        else:
+            ax.text(-0.5, 0.9, "Stabilization\nwas turned off!", horizontalalignment='left', verticalalignment='top',
+                    transform=ax.transAxes)
+
         # map of flight track - second row, both columns
         data_crs = ccrs.PlateCarree()
         props = bahamas.plot_props[flight]  # get plot properties
