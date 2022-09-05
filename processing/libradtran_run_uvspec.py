@@ -8,7 +8,7 @@ if __name__ == "__main__":
 # %% module import
     import pylim.helpers as h
     from pylim.libradtran import get_info_from_libradtran_input
-    from pylim.cirrus_hl import transfer_calibs
+    from pylim.halo_ac3 import transfer_calibs
     import numpy as np
     import pandas as pd
     import xarray as xr
@@ -20,10 +20,10 @@ if __name__ == "__main__":
     from pysolar.solar import get_azimuth
 
 # %% set options and get files
-    campaign = "cirrus-hl"
+    campaign = "halo-ac3"
     # uncomment to run for all flights
-    flights = list(transfer_calibs.keys())[4:]
-    # flights = ["Flight_20210628a"]
+    # flights = list(transfer_calibs.keys())[2:]
+    flights = ["HALO-AC3_20220312_HALO_RF02"]
     for flight in flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
@@ -206,7 +206,7 @@ if __name__ == "__main__":
             history=f"created {dt.datetime.utcnow():%c} UTC",
             contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
             PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
-            source="libRadtran 2.0.4",
+            source="libRadtran 2.0.3",
             references="Emde et al. 2016, 10.5194/gmd-9-1647-2016",
         )
 
