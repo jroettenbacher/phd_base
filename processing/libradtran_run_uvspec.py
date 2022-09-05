@@ -8,7 +8,7 @@ if __name__ == "__main__":
 # %% module import
     import pylim.helpers as h
     from pylim.libradtran import get_info_from_libradtran_input
-    from pylim.halo_ac3 import transfer_calibs
+    from pylim.halo_ac3 import flight_names
     import numpy as np
     import pandas as pd
     import xarray as xr
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 # %% set options and get files
     campaign = "halo-ac3"
     # uncomment to run for all flights
-    flights = list(transfer_calibs.keys())[3:]
+    flights = [flight_names[k] for k in flight_names][3:-1]
     # flights = ["HALO-AC3_20220312_HALO_RF02"]
     for flight in flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
