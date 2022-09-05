@@ -22,8 +22,8 @@ if __name__ == "__main__":
 # %% set options and get files
     campaign = "halo-ac3"
     # uncomment to run for all flights
-    # flights = list(transfer_calibs.keys())[2:]
-    flights = ["HALO-AC3_20220312_HALO_RF02"]
+    flights = list(transfer_calibs.keys())[3:]
+    # flights = ["HALO-AC3_20220312_HALO_RF02"]
     for flight in flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
@@ -227,6 +227,7 @@ if __name__ == "__main__":
         # set attributes of each variable
         for var in ds:
             ds[var].attrs = var_attrs[var]
+            encoding[var] = dict(_FillValue=None)  # remove the default _FillValue attribute from each variable
         # save file
         nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_clearsky_simulation_{wavelength}_{date}_{flight_key}.nc"
         ds.to_netcdf(nc_filepath, encoding=encoding)
