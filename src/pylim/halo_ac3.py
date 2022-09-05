@@ -26,6 +26,18 @@ coordinates = dict(EDMO=(11.28, 48.08), Keflavik=(-22.6307, 63.976), Kiruna=(20.
 # radiosonde stations
 radiosonde_stations = ["Torshavn_06011", "Muenchen_Oberschleissheim_10868", "Meiningen_10548", "Lerwick_03005",
                        "Ittoqqortoormiit_04339", "Tasiilaq_04360", "Norderney_10113"]
+# long flight names
+flight_names = dict(EMV="HALO-AC3_20220221_HALO_EMV", RF00="HALO-AC3_20220225_HALO_RF00",
+                    RF01="HALO-AC3_20220311_HALO_RF01", RF02="HALO-AC3_20220312_HALO_RF02",
+                    RF03="HALO-AC3_20220313_HALO_RF03", RF04="HALO-AC3_20220314_HALO_RF04",
+                    RF05="HALO-AC3_20220315_HALO_RF05", RF06="HALO-AC3_20220316_HALO_RF06",
+                    RF07="HALO-AC3_20220320_HALO_RF07", RF08="HALO-AC3_20220321_HALO_RF08",
+                    RF09="HALO-AC3_20220328_HALO_RF09", RF10="HALO-AC3_20220329_HALO_RF10",
+                    RF11="HALO-AC3_20220330_HALO_RF11", RF12="HALO-AC3_20220401_HALO_RF12",
+                    RF13="HALO-AC3_20220404_HALO_RF13", RF14="HALO-AC3_20220407_HALO_RF14",
+                    RF15="HALO-AC3_20220408_HALO_RF15", RF16="HALO-AC3_20220410_HALO_RF16",
+                    RF17="HALO-AC3_20220411_HALO_RF17", RF18="HALO-AC3_20220412_HALO_RF18",
+                    RF19="HALO-AC3_20220414_HALO_RF19")
 
 # transfer calibrations to each flight
 transfer_calibs = dict(EMV="20220222", RF00="20220222", RF01="20220313", RF02="20220313", RF03="20220314",
