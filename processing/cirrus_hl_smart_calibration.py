@@ -189,7 +189,7 @@ for flight in tqdm(flights):
                 ds["stabilization_flag"] = xr.DataArray(stabbi_flag, coords=dict(time=ds.time))
             except IndexError:
                 # no stabilization data file can be found -> Stabbi was fixed on 12.07.2021
-                ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time) + 1, dtype=int), coords=dict(time=ds.time))
+                ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time), dtype=int) + 1, coords=dict(time=ds.time))
             # save intermediate output
             # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.9.nc")
 
