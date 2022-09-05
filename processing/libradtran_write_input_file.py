@@ -22,12 +22,12 @@ if __name__ == "__main__":
     from global_land_mask import globe
 
     # %% user input
-    campaign = "cirrus-hl"
-    flight = "Flight_20210629a"
+    campaign = "halo-ac3"
+    flight = "HALO-AC3_20220225_HALO_RF01"
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
-    use_dropsonde = False
+    use_dropsonde = True
     integrate = False
 
 # %% setup logging
@@ -84,8 +84,8 @@ if __name__ == "__main__":
             dropsonde_file = dropsonde_files[idx]
             radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
         else:
-            radiosonde_station = find_closest_radiosonde_station(lat, lon)
-            # radiosonde_station = "Longyearbyen_01004" # standard for HALO-(AC)3
+            # radiosonde_station = find_closest_radiosonde_station(lat, lon)
+            radiosonde_station = "Longyearbyen_01004" # standard for HALO-(AC)3
             station_nr = radiosonde_station[-5:]
             if campaign == "halo-ac3":
                 radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
