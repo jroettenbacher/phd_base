@@ -163,16 +163,13 @@ for flight in tqdm(flights):
         # save intermediate output file as backup
         # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.5.nc")
 
-#  %% correct for cosine response of inlet and attitude correct Fdw
+#  %% correct for cosine response of inlet
         if prop == "Fup":
             # only diffuse radiation -> use only diffuse cosine correction factor
             ds[f"{prop}_cor"] = ds[f"{prop}"] * ds["k_cos_diff"]
         else:
             ds["k_cos"] = k_cos
             ds["direct_fraction"] = f_dir
-            # correct attitude with current roll and pitch offset
-            fdw_cor, factor = bacardi.fdw_attitude_correction(ds.Fdw.values, )
-            ds[f"{prop}_cor"], ds["attitude_correction_factor"] = fdw_cor, factor
             # combine direct and diffuse cosine correction factor
             ds[f"{prop}_cor"] = f_dir * ds["k_cos"] * ds[f"{prop}_cor"] + (1 - f_dir) * ds["k_cos_diff"] * ds[f"{prop}_cor"]
             ds[f"{prop}_cor_diff"] = ds["k_cos_diff"] * ds[f"{prop}"]  # correct for cosine assuming only diffuse radiation
@@ -208,6 +205,8 @@ for flight in tqdm(flights):
                 counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
                 c_field=dict(long_name="Field calibration factor", units="1",
                              comment=f"Field calibration factor calculated from transfer calibration on {transfer_calib_date}"),
+                direct_fraction=dict(long_name="direct fraction of downward irradiance", units="1",
+                                     comment="Calculated from a libRadtran clearsky simulation"),
                 Fdw=dict(long_name="Spectral downward solar irradiance", units="W m-2 nm-1",
                          standard_name="solar_irradiance_per_unit_wavelength",
                          comment="Actively stabilized"),
@@ -235,6 +234,8 @@ for flight in tqdm(flights):
                 counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
                 c_field=dict(long_name="Field calibration factor", units="1",
                              comment=f"Field calibration factor calculated from transfer calibration on {transfer_calib_date}"),
+                direct_fraction=dict(long_name="direct fraction of downward irradiance", units="1",
+                                     comment="Calculated from a libRadtran clearsky simulation"),
                 Fdw=dict(long_name="Spectral downward solar irradiance", units="W m-2 nm-1",
                          standard_name="solar_irradiance_per_unit_wavelength",
                          comment="Not stabilized"),
@@ -249,8 +250,8 @@ for flight in tqdm(flights):
                 Fdw_cor_diff=dict(long_name="Spectral downward solar irradiance",
                                   units="W m-2 nm-1",
                                   standard_name="solar_irradiance_per_unit_wavelength",
-                                  comment="Attitude corrected and corrected for cosine response of the inlet assuming "
-                                          "only diffuse radiation"),
+                                  comment="Corrected for cosine response of the inlet assuming only diffuse "
+                                          "radiation"),
                 stabilization_flag=dict(long_name="Stabilization flag", units="1",
                                         comment="2: Stabilization was turned off"),
                 wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
@@ -350,7 +351,7 @@ for flight in tqdm(flights):
         ds["stabilization_flag"] = ds["stabilization_flag"].isel(wavelength=0, drop=True)
 
 # %% add SMART IMS data
-    if flight != "Flight_20210705a":
+    if flight != "Flight_20210705a" and flight != "Flight_20210729a":
         gps_attrs = dict(
             lat=dict(
                 long_name="latitude",
@@ -418,7 +419,6 @@ for flight in tqdm(flights):
             ds[var].attrs = ims_attrs[var]
     else:
         # read in bahamas data and add lat lon and altitude and add to SMART data (Flight_20210705a)
-        assert flight == "Flight_20210705a", "Using BAHAMAS data for different flight than Flight_20210705a!"
         bahamas_filepath = os.path.join(bahamas_dir, f"CIRRUSHL_{flight_number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc")
         bahamas_ds = reader.read_bahamas(bahamas_filepath)
         # rename variables to fit SMART IMS naming convention
@@ -475,6 +475,20 @@ for flight in tqdm(flights):
             ds[var] = bahamas_ds[var].interp_like(ds, method="nearest")
             ds[var].attrs = bahamas_attrs[var]
 
+# %% correct attitude with current roll and pitch offset
+    if prop == "Fdw" and flight in unstabilized_flights:
+        # convert smart from -180 - 180 to 0 - 360
+        yaw = ds.yaw - 90
+        yaw = yaw.where(yaw < 0, 360 - yaw)
+        yaw = yaw.where(yaw > 0, yaw * -1)
+        fdw_cor, factor = bacardi.fdw_attitude_correction(ds.Fdw_cor.values, ds["roll"].values, ds.pitch.values,
+                                                          yaw.values, ds.sza.values, ds.saa.values,
+                                                          ds.direct_fraction, -1.4, 2.9)
+        ds[f"{prop}_cor"].values = fdw_cor
+        ds["attitude_correction_factor"] = xr.DataArray(factor, coords={"time": ds.time},
+                                                        attrs=dict(long_name="Attitude correction factor", units="1",
+                                                                   comment="Correction factor for attitude of aircraft for a fixed inlet."
+                                                                           "fdw_cor = fdir * fdw * factor + (1 - fdir) * fdw, fdir=direct fraction"))
 # %% set encoding and save file
     encoding = dict(time=dict(units="seconds since 2021-01-01 00:00:00 UTC", _FillValue=None),
                     wavelength=dict(_FillValue=None))
