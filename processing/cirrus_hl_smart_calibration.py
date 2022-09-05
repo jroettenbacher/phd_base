@@ -34,7 +34,7 @@ log.setLevel(logging.INFO)
 # %% set some options
 stabilized_flights = list(campaign_meta.flight_numbers.keys())[:12]
 unstabilized_flights = list(campaign_meta.flight_numbers.keys())[12:]
-flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
+flights = list(campaign_meta.flight_numbers.keys())[9:]  # run all flights
 # flights = ["Flight_20210624a"]  # uncomment for single flight
 for flight in tqdm(flights):
     prop = "Fdw"  # Fup or Fdw
@@ -176,6 +176,7 @@ for flight in tqdm(flights):
 
 # %% create stabilization flag for Fdw
         if prop == "Fdw":
+            stabbi_threshold = 0.1
             try:
                 hori_file = [f for f in os.listdir(hori_dir) if ".dat" in f][0]
                 horidata = reader.read_stabbi_data(f"{hori_dir}/{hori_file}")
@@ -184,7 +185,6 @@ for flight in tqdm(flights):
                 horidata_ds = horidata.to_xarray()
                 horidata_ds = horidata_ds.interp_like(ds.time)
                 abs_diff = np.abs(horidata_ds["TARGET3"] - horidata_ds["POSN3"])  # difference between roll target and actuall roll
-                stabbi_threshold = 0.1
                 stabbi_flag = (abs_diff > stabbi_threshold).astype(int)
                 ds["stabilization_flag"] = xr.DataArray(stabbi_flag, coords=dict(time=ds.time))
             except IndexError:
@@ -227,7 +227,8 @@ for flight in tqdm(flights):
                                         comment=f"0: Roll Stabilization performed good "
                                                 f"(Offset between target and actual roll <= {stabbi_threshold} deg), "
                                                 f"1: Roll Stabilization was not performing good "
-                                                f"(Offset between target and actual roll > {stabbi_threshold} deg)"),
+                                                f"(Offset between target and actual roll > {stabbi_threshold} deg), "
+                                                f"2: Stabilization was turned off"),
                 wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
         elif prop == "Fdw" and flight in unstabilized_flights:
             var_attributes = dict(
