@@ -171,7 +171,7 @@ for flight in tqdm(flights):
             ds["k_cos"] = k_cos
             ds["direct_fraction"] = f_dir
             # combine direct and diffuse cosine correction factor
-            ds[f"{prop}_cor"] = f_dir * ds["k_cos"] * ds[f"{prop}"] + (1 - f_dir) * ds["k_cos_diff"] * ds[f"{prop}_cor"]
+            ds[f"{prop}_cor"] = f_dir * ds["k_cos"] * ds[f"{prop}"] + (1 - f_dir) * ds["k_cos_diff"] * ds[f"{prop}"]
             ds[f"{prop}_cor_diff"] = ds["k_cos_diff"] * ds[f"{prop}"]  # correct for cosine assuming only diffuse radiation
 
 # %% create stabilization flag for Fdw
