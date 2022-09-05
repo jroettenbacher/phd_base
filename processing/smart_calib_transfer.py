@@ -20,18 +20,18 @@ if __name__ == "__main__":
 
     # %% set variables
     campaign = "halo-ac3"
-    field_folder = "ASP06_transfer_calib_20220313"  # transfer calib folder
-    lab_cali_date = "2022_05_02"  # set lab calib to relate measurement to
     calib_path = h.get_path("calib", campaign=campaign)
+    field_folders = ["ASP06_transfer_calib_20220222"]  # single transfer calib folder
+    # uncomment for loop through all transfer calib folders
+    # field_folders = [d for d in next(os.walk(calib_path))[1] if "transfer_calib_" in d]
+    lab_cali_date = "2022_05_02"  # set lab calib to relate measurement to
     plot_path = f"{h.get_path('plot', campaign=campaign)}/transfer_calibs"
     t_int = 300  # integration time of transfer calibration measurement
     t_int_str = "_300ms" if campaign == "halo-ac3" else ""
     normalize = True  # normalize counts by integration time
     ulli_nr = "2" if campaign == "halo-ac3" else ""  # which Ulli sphere to use: 2 or 3 for halo-ac3 else ""
     norm = "_norm" if normalize else ""
-    # loop through all transfer calib folders
-    field_folders = [d for d in next(os.walk(calib_path))[1] if "transfer_calib" in d]
-    for field_folder in field_folders[2:-1]:
+    for field_folder in field_folders:
         # list transfer calibration files
         field_cali_files = [f for f in os.listdir(f"{calib_path}/{field_folder}/Tint_{t_int}ms") if f.endswith("cor.dat")]
         # list lab calibration files for selecting the right one
