@@ -64,7 +64,7 @@ def read_bacardi_raw(filename: str, path: str) -> xr.Dataset:
 
 def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float = 0, p_off: float = 0):
     """Attitude Correction for downward irradiance.
-    Corrects downward irradiance for misalignment of the sensor (deviation from hoizontal alignment).
+    Corrects downward irradiance for misalignment of the sensor (deviation from horizontal alignment).
 
     - only direct fraction of irradiance can be corrected by the equation, therefore a direct fraction (fdir) has to be provided
     - please check correct definition of the attitude angle
@@ -92,8 +92,11 @@ def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float 
              (np.cos(h0) * np.sin(r) * np.sin(np.deg2rad(saa - yaw)) +
               np.cos(h0) * np.sin(p) * np.cos(r) * np.cos(np.deg2rad(saa - yaw)) +
               np.sin(h0) * np.cos(p) * np.cos(r))
-
-    fdw_cor = fdir * fdw * factor + (1 - fdir) * fdw
+    try:
+        fdw_cor = fdir * fdw * factor + (1 - fdir) * fdw
+    except ValueError:
+        # fdw and fdir are 2 dimensional, add an empty axis to the factor two make it 2D as well
+        fdw_cor = fdir * fdw * factor[:, None] + (1 - fdir) * fdw
 
     return fdw_cor, factor
 
