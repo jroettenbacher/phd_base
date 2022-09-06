@@ -35,8 +35,8 @@ log.setLevel(logging.INFO)
 campaign = "halo-ac3"
 stabilized_flights = list(campaign_meta.flight_names.keys())[:-2]
 unstabilized_flights = list(campaign_meta.flight_names.keys())[-2:-1]
-# flights = list(campaign_meta.transfer_calibs.keys())[9:]  # run all flights
-flights = ["RF02"]  # uncomment for single flight
+# flights = list(campaign_meta.transfer_calibs.keys())[1:]  # run all flights
+flights = ["RF17"]  # uncomment for single flight
 for flight in tqdm(flights):
     flight_name = campaign_meta.flight_names[flight]
     flight_date = flight_name[9:17]
@@ -181,9 +181,20 @@ for flight in tqdm(flights):
             # interpolate to SMART data
             horidata_ds = horidata.to_xarray()
             horidata_ds = horidata_ds.interp_like(ds.time)
-            abs_diff = np.abs(horidata_ds["TARGET3"] - horidata_ds["POSN3"])  # difference between roll target and actuall roll
-            stabbi_flag = (abs_diff > stabbi_threshold).astype(int)
-            ds["stabilization_flag"] = xr.DataArray(stabbi_flag, coords=dict(time=ds.time))
+            # difference between roll target and actuall roll
+            abs_diff = np.abs(horidata_ds["TARGET3"] - horidata_ds["POSN3"])
+            # find times when stabbi was turned off -> TARGET3 becomes stationary -> diff = 0
+            stabbi_off = xr.DataArray(np.diff(horidata_ds["TARGET3"], prepend=1), coords={"time": horidata_ds.time})
+            stabbi_off = stabbi_off.where(stabbi_off == 0, 1)  # set all other differences to 1 (stabbi on)
+            # calculate a rolling sum over 5 timesteps to filter random times when diff = 0
+            stabbi_off_sum = stabbi_off.rolling(time=5).sum()
+            # when sum is neither 5 nor 0 and stabbi is set to off, replace value with 1 (stabbi on)
+            cond = ((stabbi_off_sum == 5) | (stabbi_off_sum == 0)) | (stabbi_off == 1)
+            stabbi_off = stabbi_off.where(cond, 1)
+            stabbi_flag = (abs_diff > stabbi_threshold).astype(int)  # create flag
+            comb = stabbi_flag.where(stabbi_off == 1, 2)  # replace flag with 2 when stabbi is off
+
+            ds["stabilization_flag"] = xr.DataArray(comb, coords=dict(time=ds.time))
         except IndexError:
             # no stabilization data file can be found
             ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time), dtype=int) + 1, coords=dict(time=ds.time))
