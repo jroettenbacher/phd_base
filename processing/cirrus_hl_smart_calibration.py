@@ -34,8 +34,8 @@ log.setLevel(logging.INFO)
 # %% set some options
 stabilized_flights = list(campaign_meta.flight_numbers.keys())[:12]
 unstabilized_flights = list(campaign_meta.flight_numbers.keys())[12:]
-flights = list(campaign_meta.flight_numbers.keys())[9:]  # run all flights
-# flights = ["Flight_20210624a"]  # uncomment for single flight
+flights = list(campaign_meta.flight_numbers.keys())[12:]  # run all flights
+# flights = ["Flight_20210713a"]  # uncomment for single flight
 for flight in tqdm(flights):
     prop = "Fdw"  # Fup or Fdw
     normalize = True  # use normalized calibration factor (counts are divided by the integration time)
@@ -247,11 +247,11 @@ for flight in tqdm(flights):
                 Fdw_cor=dict(long_name="Spectral downward solar irradiance",
                              units="W m-2 nm-1",
                              standard_name="solar_irradiance_per_unit_wavelength",
-                             comment="Attitude corrected and corrected for cosine response of the inlet"),
+                             comment="Attitude corrected (max 40%) and corrected for cosine response of the inlet (max 10%)"),
                 Fdw_cor_diff=dict(long_name="Spectral downward solar irradiance",
                                   units="W m-2 nm-1",
                                   standard_name="solar_irradiance_per_unit_wavelength",
-                                  comment="Corrected for cosine response of the inlet assuming only diffuse "
+                                  comment="Corrected for cosine response of the inlet (max 10%) assuming only diffuse "
                                           "radiation"),
                 stabilization_flag=dict(long_name="Stabilization flag", units="1",
                                         comment="2: Stabilization was turned off"),
@@ -485,7 +485,8 @@ for flight in tqdm(flights):
         fdw_cor, factor = bacardi.fdw_attitude_correction(ds.Fdw_cor.values, ds["roll"].values, ds.pitch.values,
                                                           yaw.values, ds.sza.values, ds.saa.values,
                                                           ds.direct_fraction, -1.4, 2.9)
-        ds[f"{prop}_cor"].values = fdw_cor
+        # only correct irradiance by a maximum of 40%
+        ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where((np.abs(factor - 1) > 0.4)[:, None], fdw_cor)
         ds["attitude_correction_factor"] = xr.DataArray(factor, coords={"time": ds.time},
                                                         attrs=dict(long_name="Attitude correction factor", units="1",
                                                                    comment="Correction factor for attitude of aircraft for a fixed inlet."
