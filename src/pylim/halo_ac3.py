@@ -9,8 +9,6 @@ from pandas import Timestamp as Ts
 smart_lookup = dict(ASP06_J3="PGS_5_(ASP_06)", ASP06_J4="VIS_6_(ASP_06)", ASP06_J5="PGS_6_(ASP_06)",
                     ASP06_J6="VIS_7_(ASP_06)",  # spectrometers
                     J3="dw", J4="dw",  # direction of channel
-                    # TODO: Change J5 and J6 to J3 and J4 -> look out for breaking stuff
-                    # The problem is the lab calibration
                     Fdw_SWIR="ASP06_J3", Fdw_VNIR="ASP06_J4",  # direction, property of channel
                     Fdw="VN05",  # inlet name
                     irradiance_standard="FEL-1587"  # irradiance standard used for calibration
@@ -43,7 +41,8 @@ flight_names = dict(EMV="HALO-AC3_20220221_HALO_EMV", RF00="HALO-AC3_20220225_HA
 transfer_calibs = dict(EMV="20220222", RF00="20220222", RF01="20220313", RF02="20220313", RF03="20220314",
                        RF04="20220315", RF05="20220316", RF06="20220318", RF07="20220320", RF08="20220321",
                        RF09="20220328", RF10="20220329", RF11="20220330", RF12="20220401", RF13="20220403",
-                       RF14="20220405", RF15="20220408", RF16="20220410", RF17="20220411", RF18="20220411")
+                       RF14="20220405", RF15="20220408", RF16="20220410", RF17="20220411", RF18="20220411",
+                       RF19="20220411")
 
 take_offs_landings = dict(EMV=(Ts(2022, 2, 21, 10, 25), Ts(2022, 2, 21, 13, 42)),
                           RF00=(Ts(2022, 2, 25, 7, 31, 6), Ts(2022, 2, 25, 12, 12, 27)),
