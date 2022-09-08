@@ -17,8 +17,8 @@ The dark current corrected SMART measurement files are calibrated and filtered.
 
 # %% module import
 from pylim import helpers as h
-from pylim import halo_ac3 as campaign_meta
-from pylim import smart, reader, bacardi
+from pylim import halo_ac3 as meta
+from pylim import smart, reader
 import os
 import pandas as pd
 import numpy as np
@@ -33,12 +33,10 @@ log.setLevel(logging.INFO)
 
 # %% set some options
 campaign = "halo-ac3"
-stabilized_flights = list(campaign_meta.flight_names.keys())[:-2]
-unstabilized_flights = list(campaign_meta.flight_names.keys())[-2:-1]
-flights = list(campaign_meta.transfer_calibs.keys())[12:19]  # run all flights
+flights = list(meta.transfer_calibs.keys())[3:8]  # run all flights
 # flights = ["RF17"]  # uncomment for single flight
 for flight in tqdm(flights):
-    flight_name = campaign_meta.flight_names[flight]
+    flight_name = meta.flight_names[flight]
     flight_date = flight_name[9:17]
     prop = "Fdw"  # Fdw
     normalize = True  # use normalized calibration factor (counts are divided by the integration time)
@@ -59,19 +57,19 @@ for flight in tqdm(flights):
     cosine_dir = h.get_path("cosine")
 
 # %% get metadata
-    transfer_calib_date = campaign_meta.transfer_calibs[flight]
+    transfer_calib_date = meta.transfer_calibs[flight]
     date = f"{transfer_calib_date[:4]}_{transfer_calib_date[4:6]}_{transfer_calib_date[6:]}"  # reformat date to match file name
     norm = "_norm" if normalize else ""
-    to, td = campaign_meta.take_offs_landings[flight]
+    to, td = meta.take_offs_landings[flight]
     flight_number = flight
 
 # %% read in dark current corrected measurement files
     files = [f for f in os.listdir(inpath) if prop in f]
     for file in files:
         date_str, channel, direction = smart.get_info_from_filename(file)
-        inlet = campaign_meta.smart_lookup[direction]
+        inlet = meta.smart_lookup[direction]
         date_str = date if len(date) > 0 else date_str  # overwrite date_str if date is given
-        spectrometer = campaign_meta.smart_lookup[f"{direction}_{channel}"]
+        spectrometer = meta.smart_lookup[f"{direction}_{channel}"]
         pixel_wl = reader.read_pixel_to_wavelength(pixel_dir, spectrometer)  # read in pixel to wavelength mapping
         t_int = t_int_asp06  # select relevant integration time
         measurement = reader.read_smart_cor(inpath, file)
@@ -183,18 +181,21 @@ for flight in tqdm(flights):
             horidata_ds = horidata_ds.interp_like(ds.time)
             # difference between roll target and actuall roll
             abs_diff = np.abs(horidata_ds["TARGET3"] - horidata_ds["POSN3"])
-            # find times when stabbi was turned off -> TARGET3 becomes stationary -> diff = 0
-            stabbi_off = xr.DataArray(np.diff(horidata_ds["TARGET3"], prepend=1), coords={"time": horidata_ds.time})
-            stabbi_off = stabbi_off.where(stabbi_off == 0, 1)  # set all other differences to 1 (stabbi on)
-            # calculate a rolling sum over 5 timesteps to filter random times when diff = 0
-            stabbi_off_sum = stabbi_off.rolling(time=5).sum()
-            # when sum is neither 5 nor 0 and stabbi is set to off, replace value with 1 (stabbi on)
-            cond = ((stabbi_off_sum == 5) | (stabbi_off_sum == 0)) | (stabbi_off == 1)
-            stabbi_off = stabbi_off.where(cond, 1)
-            stabbi_flag = (abs_diff > stabbi_threshold).astype(int)  # create flag
-            comb = stabbi_flag.where(stabbi_off == 1, 2)  # replace flag with 2 when stabbi is off
+            if flight in meta.stabbi_offs:
+                # find times when stabbi was turned off -> TARGET3 becomes stationary -> diff = 0
+                stabbi_off = xr.DataArray(np.diff(horidata_ds["TARGET3"], prepend=1), coords={"time": horidata_ds.time})
+                stabbi_off = stabbi_off.where(stabbi_off == 0, 1)  # set all other differences to 1 (stabbi on)
+                # calculate a rolling sum over 5 timesteps to filter random times when diff = 0
+                stabbi_off_sum = stabbi_off.rolling(time=5).sum()
+                # when sum is neither 5 nor 0 and stabbi is set to off, replace value with 1 (stabbi on)
+                cond = ((stabbi_off_sum == 5) | (stabbi_off_sum == 0)) | (stabbi_off == 1)
+                stabbi_off = stabbi_off.where(cond, 1)
+                stabbi_flag = (abs_diff > stabbi_threshold).astype(int)  # create flag
+                stabbi_flag = stabbi_flag.where(stabbi_off == 1, 2)  # replace flag with 2 when stabbi is off
+            else:
+                stabbi_flag = (abs_diff > stabbi_threshold).astype(int)  # create flag
 
-            ds["stabilization_flag"] = xr.DataArray(comb, coords=dict(time=ds.time))
+            ds["stabilization_flag"] = xr.DataArray(stabbi_flag, coords=dict(time=ds.time))
         except IndexError:
             log.debug(f"Error with stabilization flag for {prop} and {flight}!")
             # no stabilization data file can be found
@@ -209,7 +210,7 @@ for flight in tqdm(flights):
             ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to nan
 
 # %% prepare meta data
-        if flight in stabilized_flights:
+        if flight in meta.stabilized_flights:
             var_attributes = dict(
                 counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
                 c_field=dict(long_name="Field calibration factor", units="1",
@@ -330,7 +331,7 @@ for flight in tqdm(flights):
     ds["stabilization_flag"] = ds["stabilization_flag"].isel(wavelength=0, drop=True)
 
 # %% add SMART IMS data
-    if flight in stabilized_flights:
+    if flight in meta.stabilized_flights:
         gps_attrs = dict(
             lat=dict(
                 long_name="latitude",
