@@ -19,12 +19,12 @@ import cartopy.crs as ccrs
 # %% set paths
 campaign = "cirrus-hl"  # adjust bahamas filename when using for HALO-AC3
 stabilized_flights = list(meta.flight_numbers.keys())[:12]
-# remove two flight because no stabbi data is available
+# remove two flights because no stabbi data is available
 stabilized_flights.remove("Flight_20210707a")
 stabilized_flights.remove("Flight_20210707b")
 unstabilized_flights = list(meta.flight_numbers.keys())[12:]
 ql_path = h.get_path("all", instrument="quicklooks")
-flights = list(meta.flight_numbers.keys())[9:]
+flights = list(meta.flight_numbers.keys())[12:]
 # flights = ["Flight_20210625a"]  # single flight mode
 for flight in flights:
     prop = "Fdw"
@@ -41,8 +41,6 @@ for flight in flights:
     filepath = os.path.join(calibrated_path, file)
     ds = xr.open_dataset(filepath)
     F_cor = ds[f"{prop}_cor"]  # extract corrected F
-    F_cor_flat = F_cor.values.flatten()  # flatten 2D array for statistics
-    F_cor_flat = F_cor_flat[~np.isnan(F_cor_flat)]  # drop nans for boxplot
     time_range = pd.to_timedelta((F_cor.time[-1] - F_cor.time[0]).values)  # get time range for time axis formatting
 
     # %% set plotting aesthetics
@@ -52,8 +50,11 @@ for flight in flights:
     plt.rc("font", **font)
 
     # %% calculate statistics
-    Fmin, Fmax, Fmean, Fmedian, Fstd = F_cor.min(), F_cor.max(), F_cor.mean(), F_cor.median(), F_cor.std()
-    stats_text = f"Statistics \n(W$\,$m$^{{-2}}$)\nMax: {Fmax:.2f}\nMean: {Fmean:.2f}\nMedian: {Fmedian:.2f}" \
+    F_int = F_cor.integrate("wavelength")
+    F_int_flat = F_int.values.flatten()  # flatten 2D array for statistics
+    F_int_flat = F_int_flat[~np.isnan(F_int_flat)]  # drop nans for boxplot
+    Fmin, Fmax, Fmean, Fmedian, Fstd = F_int.min(), F_int.max(), F_int.mean(), F_int.median(), F_int.std()
+    stats_text = f"Statistics \n(W$\,$m$^{{-2}}$)\nMin: {Fmin:.2f}\nMax: {Fmax:.2f}\nMean: {Fmean:.2f}\nMedian: {Fmedian:.2f}" \
                  f"\nStd: {Fstd:.2f}"
 
     # %% Plot Fup overview plot
@@ -110,14 +111,14 @@ for flight in flights:
 
         # boxplot - second subrow, second column
         ax = fig.add_subplot(gs02[1])
-        ax.boxplot(F_cor_flat, vert=True, labels=[""], widths=0.7)
-        ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+        ax.boxplot(F_int_flat, vert=True, labels=[""], widths=0.7)
+        ax.set_ylabel("Integrated Irradiance (W$\,$m$^{-2}$)")
         ax.grid()
 
         # textbox with statistics - third subrow, second column
         ax = fig.add_subplot(gs02[2])
         ax.axis("off")  # hide axis
-        ax.text(-0.2, 0.9, stats_text, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+        ax.text(0.5, 1, stats_text, horizontalalignment='center', verticalalignment='top', transform=ax.transAxes)
 
         # map of flight track - second row, both columns
         data_crs = ccrs.PlateCarree()
@@ -230,14 +231,14 @@ for flight in flights:
 
         # boxplot - second subrow, second column
         ax = fig.add_subplot(gs02[1])
-        ax.boxplot(F_cor_flat, vert=True, labels=[""], widths=0.7)
-        ax.set_ylabel("Irradiance (W$\,$m$^{-2}$)")
+        ax.boxplot(F_int_flat, vert=True, labels=[""], widths=0.6)
+        ax.set_ylabel("Integrated Irradiance (W$\,$m$^{-2}$)")
         ax.grid()
 
         # textbox with statistics - third subrow, second column
         ax = fig.add_subplot(gs02[2])
         ax.axis("off")  # hide axis
-        ax.text(-0.2, 0.9, stats_text, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+        ax.text(0.5, 1, stats_text, horizontalalignment='center', verticalalignment='top', transform=ax.transAxes)
 
         # legend for roll angle and Stabbi
         ax = fig.add_subplot(gs02[3])
@@ -246,7 +247,7 @@ for flight in flights:
             ax.legend(handles=handles_roll, labels=labels_roll, markerscale=6, title="Stabilization",
                       loc='upper center', bbox_to_anchor=[0.2, 1.1])
         else:
-            ax.text(-0.5, 0.9, "Stabilization\nwas turned off!", horizontalalignment='left', verticalalignment='top',
+            ax.text(0.5, 1, "Stabilization\nwas turned off!", horizontalalignment='center', verticalalignment='top',
                     transform=ax.transAxes)
 
         # map of flight track - second row, both columns
