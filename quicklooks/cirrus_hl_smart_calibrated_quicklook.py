@@ -6,7 +6,6 @@ author: Johannes Roettenbacher
 # %% import modules
 import pylim.helpers as h
 from pylim import cirrus_hl as meta
-from pylim import bahamas
 import os
 import xarray as xr
 import pandas as pd
@@ -122,7 +121,6 @@ for flight in flights:
 
         # map of flight track - second row, both columns
         data_crs = ccrs.PlateCarree()
-        props = bahamas.plot_props[flight]  # get plot properties
         x_edmo, y_edmo = meta.coordinates["EDMO"]
         airport = meta.stop_over_locations[flight] if flight in meta.stop_over_locations else None
         # get extent of map plot
@@ -252,7 +250,6 @@ for flight in flights:
 
         # map of flight track - second row, both columns
         data_crs = ccrs.PlateCarree()
-        props = bahamas.plot_props[flight]  # get plot properties
         x_edmo, y_edmo = meta.coordinates["EDMO"]
         airport = meta.stop_over_locations[flight] if flight in meta.stop_over_locations else None
         # get extent of map plot
