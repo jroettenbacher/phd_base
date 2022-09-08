@@ -33,35 +33,35 @@ log.setLevel(logging.INFO)
 
 # %% set some options
 campaign = "halo-ac3"
-flights = list(meta.transfer_calibs.keys())[3:8]  # run all flights
-# flights = ["RF17"]  # uncomment for single flight
+flights = list(meta.flight_names.values())[3:8]  # run all flights
+flights = ["HALO-AC3_20220411_HALO_RF17"]  # uncomment for single flight
 for flight in tqdm(flights):
-    flight_name = meta.flight_names[flight]
-    flight_date = flight_name[9:17]
+    flight_key = flight[-4:]
+    flight_date = flight[9:17]
     prop = "Fdw"  # Fdw
     normalize = True  # use normalized calibration factor (counts are divided by the integration time)
     lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
     t_int_asp06 = 300  # give integration time of field measurement for ASP06
 
 # %% set paths
-    cor_data_dir = h.get_path("data", flight_name, campaign)
+    cor_data_dir = h.get_path("data", flight, campaign)
     inpath = cor_data_dir
-    calib_data_dir = h.get_path("calibrated", flight_name, campaign)
+    calib_data_dir = h.get_path("calibrated", flight, campaign)
     outpath = calib_data_dir
     calib_dir = f"{h.get_path('calib', campaign=campaign)}/transfer_calibs_{lab_calib}_campaign"  # path to transfer calibration files
     pixel_dir = h.get_path("pixel_wl")
-    hori_dir = h.get_path("horidata", flight_name, campaign)
-    bacardi_dir = h.get_path("bacardi", flight_name, campaign)
-    bahamas_dir = h.get_path("bahamas", flight_name, campaign)
-    libradtran_dir = h.get_path("libradtran", flight_name, campaign)
+    hori_dir = h.get_path("horidata", flight, campaign)
+    bacardi_dir = h.get_path("bacardi", flight, campaign)
+    bahamas_dir = h.get_path("bahamas", flight, campaign)
+    libradtran_dir = h.get_path("libradtran", flight, campaign)
     cosine_dir = h.get_path("cosine")
 
 # %% get metadata
-    transfer_calib_date = meta.transfer_calibs[flight]
+    transfer_calib_date = meta.transfer_calibs[flight_key]
     date = f"{transfer_calib_date[:4]}_{transfer_calib_date[4:6]}_{transfer_calib_date[6:]}"  # reformat date to match file name
     norm = "_norm" if normalize else ""
-    to, td = meta.take_offs_landings[flight]
-    flight_number = flight
+    to, td = meta.take_offs_landings[flight_key]
+    flight_number = flight_key
 
 # %% read in dark current corrected measurement files
     files = [f for f in os.listdir(inpath) if prop in f]
@@ -103,8 +103,8 @@ for flight in tqdm(flights):
         ds["c_field"] = c_field
 
 # %% correct measurement for cosine dependence of inlet
-        bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{flight_date}_{flight}.nc"
-        libradtran_file = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_spectral_{flight_date}_{flight}.nc"
+        bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{flight_date}_{flight_key}.nc"
+        libradtran_file = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_spectral_{flight_date}_{flight_key}.nc"
         bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
         libradtran = xr.open_dataset(f"{libradtran_dir}/{libradtran_file}")
         # extract sza from BACARDI file
@@ -161,7 +161,7 @@ for flight in tqdm(flights):
         ds["k_cos_diff"] = k_cos_diff
 
         # save intermediate output file as backup
-        # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v0.5.nc")
+        # ds.to_netcdf(f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight_key}_v0.5.nc")
 
 #  %% correct for cosine response of inlet
         ds["k_cos"] = k_cos
@@ -271,7 +271,7 @@ for flight in tqdm(flights):
             title="Spectral irradiance measured by SMART",
             project="(AC)³ and SPP 1294 HALO",
             mission="HALO-(AC)³",
-            ongoing_subset=flight,
+            ongoing_subset=flight_key,
             platform="HALO",
             instrument="Spectral Modular Airborne Radiation measurement sysTem (SMART)",
             version="1.0",
@@ -297,13 +297,13 @@ for flight in tqdm(flights):
         for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff"]:
             encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
 
-        outfile = f"{outpath}/HALO-AC3_HALO_SMART_{direction}_{channel}_{flight_date}_{flight}_v1.0.nc"
+        outfile = f"{outpath}/HALO-AC3_HALO_SMART_{direction}_{channel}_{flight_date}_{flight_key}_v1.0.nc"
         ds.to_netcdf(outfile, format="NETCDF4_CLASSIC", encoding=encoding)
         log.info(f"Saved {outfile}")
 
 # %% merge SWIR and VNIR file
-    ds_vnir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_VNIR_{flight_date}_{flight}_v1.0.nc")
-    ds_swir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_SWIR_{flight_date}_{flight}_v1.0.nc")
+    ds_vnir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_VNIR_{flight_date}_{flight_key}_v1.0.nc")
+    ds_swir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_SWIR_{flight_date}_{flight_key}_v1.0.nc")
 
     # from 900/950nm onward use the SWIR data
     ds_vnir = ds_vnir.sel(wavelength=slice(300, 899))
@@ -399,7 +399,7 @@ for flight in tqdm(flights):
             ds[var].attrs = ims_attrs[var]
     else:
         # read in bahamas data and add lat lon and altitude and add to SMART data
-        bahamas_filepath = os.path.join(bahamas_dir, f"CIRRUSHL_{flight_number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc")
+        bahamas_filepath = os.path.join(bahamas_dir, f"HALO-AC3_HALO_BAHAMAS_{date}_{flight_key}_v1.nc")
         bahamas_ds = reader.read_bahamas(bahamas_filepath)
         # rename variables to fit SMART IMS naming convention
         bahamas_ds = bahamas_ds.rename_vars(
