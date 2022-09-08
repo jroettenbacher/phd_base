@@ -35,8 +35,8 @@ log.setLevel(logging.INFO)
 campaign = "halo-ac3"
 stabilized_flights = list(campaign_meta.flight_names.keys())[:-2]
 unstabilized_flights = list(campaign_meta.flight_names.keys())[-2:-1]
-# flights = list(campaign_meta.transfer_calibs.keys())[1:]  # run all flights
-flights = ["RF17"]  # uncomment for single flight
+flights = list(campaign_meta.transfer_calibs.keys())[3:19]  # run all flights
+# flights = ["RF17"]  # uncomment for single flight
 for flight in tqdm(flights):
     flight_name = campaign_meta.flight_names[flight]
     flight_date = flight_name[9:17]
@@ -196,6 +196,7 @@ for flight in tqdm(flights):
 
             ds["stabilization_flag"] = xr.DataArray(comb, coords=dict(time=ds.time))
         except IndexError:
+            log.debug(f"Error with stabilization flag for {prop} and {flight}!")
             # no stabilization data file can be found
             ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time), dtype=int) + 1, coords=dict(time=ds.time))
         # save intermediate output
@@ -315,7 +316,9 @@ for flight in tqdm(flights):
     # list faulty pixels
     faulty_pixels = [316, 318, 321, 325, 328, 329, 330, 334, 337, 338, 345, 348, 350, 355, 370, 1410, 1415]
 
-    ds = xr.merge([ds_vnir, ds_swir])  # merge vnir and swir
+    # merge vnir and swir, use override function due to stabilization flag which is different for SWIR and VNIR
+    # the difference comes from different time axes due to the dark current measurements in the SWIR files
+    ds = xr.merge([ds_vnir, ds_swir], compat="override")
     # remove faulty pixels
     ds = ds.where(~ds.wavelength.isin(faulty_pixels), drop=True)
     # drop introduced wavelength dimension from 1D variables, remove them
