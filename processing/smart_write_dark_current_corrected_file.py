@@ -49,26 +49,35 @@ if __name__ == "__main__":
 
     # User input
     campaign = "halo-ac3"
-    flight = "HALO-AC3_20220412_HALO_RF18"  # which flight do the files in raw belong to?
-    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-    # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
-    transfer_cali_date = transfer_calibs[flight_key]
+    # uncomment for single flight use
+    flights = ["HALO-AC3_20220312_HALO_RF02"]  # which flight do the files in raw belong to?
+    # uncomment for all flights
+    # flights = list(transfer_calibs.keys())  # get all flight keys for loop
+    for flight in flights:
+        flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+        # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
+        transfer_cali_date = transfer_calibs[flight_key]
 
-    # Set paths in config.toml
-    inpath = h.get_path("raw", flight, campaign=campaign)
-    outdir = h.get_path("data", flight, campaign=campaign)
-    h.make_dir(outdir)
-    # create list of input files and add a progress bar to it
-    files = tqdm([file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))])
-    files_debug = [file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))]
+        # Set paths in config.toml
+        inpath = h.get_path("raw", flight, campaign=campaign)
+        outdir = h.get_path("data", flight, campaign=campaign)
+        h.make_dir(outdir)
+        # create list of input files and add a progress bar to it
+        files = tqdm([file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))])
+        files_debug = [file for file in os.listdir(inpath) if os.path.isfile(os.path.join(inpath, file))]
 
-    # test one file
-    # file = files_debug[1]
-    # make_dark_cur_cor_file(flight, file, inpath, transfer_cali_date, outdir)
-    # for file in files_debug:
-    #     make_dark_cur_cor_file(flight, file, inpath, transfer_cali_date, outdir)
-    # run job in parallel
-    Parallel(n_jobs=cpu_count()-2)(delayed(make_dark_cur_cor_file)(flight, file, inpath, transfer_cali_date, outdir)
-                                   for file in files)
+        # test one file
+        # file = files_debug[1]
+        # make_dark_cur_cor_file(flight, file, inpath, transfer_cali_date, outdir)
+        # for file in files_debug:
+        #     try:
+        #         make_dark_cur_cor_file(flight, file, inpath, transfer_cali_date, outdir)
+        #     except:
+        #         print(f"{file} not corrected.")
+        #         os.remove(f"{inpath}/{file}")
+        #         pass
+        # run job in parallel
+        Parallel(n_jobs=cpu_count()-2)(delayed(make_dark_cur_cor_file)(flight, file, inpath, transfer_cali_date, outdir)
+                                       for file in files)
 
-    print(f"Done with smart_write_dark_current_corrected_file.py for {flight}")
+        print(f"Done with smart_write_dark_current_corrected_file.py for {flight}")
