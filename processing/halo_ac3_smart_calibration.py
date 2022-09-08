@@ -35,7 +35,7 @@ log.setLevel(logging.INFO)
 campaign = "halo-ac3"
 stabilized_flights = list(campaign_meta.flight_names.keys())[:-2]
 unstabilized_flights = list(campaign_meta.flight_names.keys())[-2:-1]
-flights = list(campaign_meta.transfer_calibs.keys())[3:19]  # run all flights
+flights = list(campaign_meta.transfer_calibs.keys())[12:19]  # run all flights
 # flights = ["RF17"]  # uncomment for single flight
 for flight in tqdm(flights):
     flight_name = campaign_meta.flight_names[flight]
@@ -175,8 +175,8 @@ for flight in tqdm(flights):
 # %% create stabilization flag for Fdw
         stabbi_threshold = 0.1
         try:
-            hori_file = [f for f in os.listdir(hori_dir) if ".dat" in f][0]
-            horidata = reader.read_stabbi_data(f"{hori_dir}/{hori_file}")
+            hori_files = [f for f in os.listdir(hori_dir) if ".dat" in f]
+            horidata = pd.concat([reader.read_stabbi_data(f"{hori_dir}/{f}") for f in hori_files])
             horidata.index.name = "time"
             # interpolate to SMART data
             horidata_ds = horidata.to_xarray()
