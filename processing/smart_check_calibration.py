@@ -6,7 +6,7 @@
 if __name__ == "__main__":
 # %% module import
     from pylim import reader
-    from pylim.halo_ac3 import smart_lookup, transfer_calibs
+    from pylim.cirrus_hl import smart_lookup, transfer_calibs
     from pylim.smart import plot_smart_data
     import pylim.helpers as h
     import os
@@ -20,12 +20,13 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
 # %% set paths
-    campaign = "halo-ac3"
+    campaign = "cirrus-hl"
     calib_path = h.get_path("calib", campaign=campaign)
     plot_path = f"{h.get_path('plot', campaign=campaign)}/quality_check_calibration"
 
 # %% list all files from one spectrometer
-    prop = "Fdw_VNIR"
+    prop = "Iup_SWIR"
+    lab_calib = "after"  # which lab calib was used for the calibration of the transfer calib (after or before)
     files = [f for f in os.listdir(calib_path) if smart_lookup[prop] in f]
 
 # %% select only normalized and transfer calib files
@@ -36,6 +37,8 @@ if __name__ == "__main__":
             files.pop(2)  # remove 500ms file from the 16th
         elif prop == "Fup_SWIR":
             files.pop(1)  # remove 500ms file from the 16th
+        # elif prop == "Iup":
+        #     files.pop(-1)  # remove last transfer calib since it shows an anomaly
         else:
             pass
 
@@ -58,7 +61,7 @@ if __name__ == "__main__":
     plt.rc('font', family="serif", size=14)
 
 # %% plot relation between lab calib measurement and each transfer calib measurement
-    zoom = True  # zoom in on y axis
+    zoom = False  # zoom in on y axis
 
     fig, ax = plt.subplots(figsize=(10, 6))
     for date_str in date_strs:
@@ -76,7 +79,7 @@ if __name__ == "__main__":
     ax.legend(bbox_to_anchor=(1.04, 1.1), loc="upper left")
     plt.tight_layout()
     # plt.show()
-    figname = f"{plot_path}/SMART_calib_rel_lab-field_{prop}{zoom}.png"
+    figname = f"{plot_path}/SMART_calib_rel_lab-field_{lab_calib}_{prop}{zoom}.png"
     plt.savefig(figname, dpi=100)
     print(f"Saved {figname}")
     plt.close()
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     ax.legend()
     plt.tight_layout()
     # plt.show()
-    figname = f"{plot_path}/SMART_calib_factors_{prop}.png"
+    figname = f"{plot_path}/SMART_calib_factors_{lab_calib}_{prop}.png"
     plt.savefig(figname, dpi=100)
     print(f"Saved {figname}")
     plt.close()
