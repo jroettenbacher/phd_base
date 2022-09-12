@@ -138,9 +138,12 @@ def get_sza(t0, lat, lon, year, month, day, pres, temp):
     # refcor = fltarr(n_elements(height))
     refcor = np.zeros(height.size)
 
-    h1 = np.where(height >= -0.087)  # corrects only for angles > -5�
+    h1 = np.where(height >= -0.087)  # corrects only for angles > -5deg
     # if len(h1[0]) > 0: refcor[h1[0]]=refract(height[h1[0]],pres,temp)
-    if len(h1[0]) > 0: refcor = refract(height, pres, temp)
+    if len(h1[0]) > 0:
+        refcor = refract(height, pres, temp)
+    else:
+        refcor = 0
 
     sza = 90. - (height + refcor) * 180. / np.pi
 
