@@ -117,7 +117,7 @@ if __name__ == "__main__":
                 mol_modify="O3 300 DU",  # page 105
                 radiosonde=radiosonde,  # page 114
                 time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
-                source=f"solar {solar_source_path}" if solar_flag else "thermal",  # page 119
+                source=f"solar {solar_source_path}/NewGuey2003_BBR.dat" if solar_flag else "thermal",  # page 119
                 sur_temperature="293.15",  # page 121; set to 20 degC for now
                 # sza=f"{sza_libradtran:.4f}",  # page 122
                 # verbose="",  # page 123
