@@ -59,9 +59,9 @@ if __name__ == "__main__":
     sat_ds = rasterio.open(f"{sat_dir}/{sat_image}")
 
     smart_fdw_vnir_file = [f for f in os.listdir(smart_dir) if "Fdw_VNIR" in f][0]
-    smart_fdw_vnir = smart.read_smart_cor(smart_dir, smart_fdw_vnir_file)
+    smart_fdw_vnir = reader.read_smart_cor(smart_dir, smart_fdw_vnir_file)
     smart_fdw_swir_file = [f for f in os.listdir(smart_dir) if "Fdw_SWIR" in f][0]
-    smart_fdw_swir = smart.read_smart_cor(smart_dir, smart_fdw_swir_file)
+    smart_fdw_swir = reader.read_smart_cor(smart_dir, smart_fdw_swir_file)
 
     fdw_sim_file = [f for f in os.listdir(libradtran_dir) if "smart_bb" in f][0]
     fdw_sim = xr.open_dataset(f"{libradtran_dir}/{fdw_sim_file}")
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     smart_fdw_rs = smart_fdw.loc[slice(rs_start, rs_end)]
 
     # %% select one wavelength with low diffuse part for correction
-    pixel_wl = smart.read_pixel_to_wavelength(pixel_wl_dir, smart_lookup["Fdw_VNIR"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_dir, smart_lookup["Fdw_VNIR"])
     pixel, wl = smart.find_pixel(pixel_wl, 800)
     smart_800 = smart_fdw_vnir.iloc[:, pixel]
     smart_800_rs = smart_800.loc[slice(rs_start, rs_end)]
