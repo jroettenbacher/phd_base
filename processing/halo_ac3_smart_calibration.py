@@ -33,8 +33,8 @@ log.setLevel(logging.INFO)
 
 # %% set some options
 campaign = "halo-ac3"
-flights = list(meta.flight_names.values())[3:8]  # run all flights
-flights = ["HALO-AC3_20220411_HALO_RF17"]  # uncomment for single flight
+flights = list(meta.flight_names.values())[3:19]  # run all flights
+# flights = ["HALO-AC3_20220411_HALO_RF17"]  # uncomment for single flight
 for flight in tqdm(flights):
     flight_key = flight[-4:]
     flight_date = flight[9:17]
@@ -306,20 +306,21 @@ for flight in tqdm(flights):
     ds_swir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_SWIR_{flight_date}_{flight_key}_v1.0.nc")
 
     # from 900/950nm onward use the SWIR data
-    ds_vnir = ds_vnir.sel(wavelength=slice(300, 899))
+    ds_vnir = ds_vnir.sel(wavelength=slice(320, 899))
     ds_swir = ds_swir.sel(wavelength=slice(900, 2100))
 
     # interpolate VNIR wavelength to 1nm resolution
-    ds_vnir = ds_vnir.interp(wavelength=range(300, 900), kwargs={"fill_value": "extrapolate"})
+    ds_vnir = ds_vnir.interp(wavelength=range(320, 900), kwargs={"fill_value": "extrapolate"})
     # interpolate SWIR wavelength to 5nm resolution
     ds_swir = ds_swir.interp(wavelength=range(900, 2100, 5), kwargs={"fill_value": "extrapolate"})
 
     # list faulty pixels
     faulty_pixels = [316, 318, 321, 325, 328, 329, 330, 334, 337, 338, 345, 348, 350, 355, 370, 1410, 1415]
 
-    # merge vnir and swir, use override function due to stabilization flag which is different for SWIR and VNIR
+    # merge vnir and swir, use overwrite for stabilization flag which is different for SWIR and VNIR
     # the difference comes from different time axes due to the dark current measurements in the SWIR files
-    ds = xr.merge([ds_vnir, ds_swir], compat="override")
+    # the VNIR flag is used in the end
+    ds = ds_vnir.merge(ds_swir, overwrite_vars=["stabilization_flag"])
     # remove faulty pixels
     ds = ds.where(~ds.wavelength.isin(faulty_pixels), drop=True)
     # drop introduced wavelength dimension from 1D variables, remove them
@@ -468,6 +469,6 @@ for flight in tqdm(flights):
     for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts"]:
         encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
 
-    filename = f"{outpath}/HALO-AC3_HALO_SMART_spectral-irradiance-{prop}_{flight_date}_{flight}_v1.0.nc"
+    filename = f"{outpath}/HALO-AC3_HALO_SMART_spectral-irradiance-{prop}_{flight_date}_{flight_key}_v1.0.nc"
     ds.to_netcdf(filename, format="NETCDF4_CLASSIC", encoding=encoding)
     log.info(f"Saved {filename}")
