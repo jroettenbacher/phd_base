@@ -32,8 +32,10 @@ if __name__ == "__main__":
     # %% run for all flights
     for flight in all_flights:
         log.info(f"Working on {flight}")
+        flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+        date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # get files
-        libradtran_base_dir = h.get_path("libradtran", flight)
+        libradtran_base_dir = h.get_path("libradtran", flight, campaign)
         libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", solar_str)
         input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
         input_files.sort()  # sort input files -> output files will be sorted as well
@@ -45,7 +47,7 @@ if __name__ == "__main__":
             file = __file__
         except NameError:
             file = None
-        log = h.setup_logging("./logs", file, flight)
+        log = h.setup_logging("./logs", file, flight_key)
         log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {solar_str}\n"
                  f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
         # %% call uvspec for all files
@@ -202,6 +204,6 @@ if __name__ == "__main__":
         for var in ds:
             ds[var].attrs = var_attrs[var]
         # save file
-        nc_filepath = f"{libradtran_base_dir}/{flight}_libRadtran_clearsky_bb_simulation_{solar_str}.nc"
+        nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_bb_clearsky_simulation_{solar_str}_{date}_{flight_key}.nc"
         ds.to_netcdf(nc_filepath, encoding=encoding)
         log.info(f"Saved {nc_filepath}")
