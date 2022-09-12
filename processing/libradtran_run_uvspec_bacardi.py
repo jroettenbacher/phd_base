@@ -7,7 +7,7 @@ if __name__ == "__main__":
     import pylim.helpers as h
     import pandas as pd
     from pylim.libradtran import get_info_from_libradtran_input
-    from pylim.cirrus_hl import transfer_calibs
+    import pylim.halo_ac3 as meta
     import os
     from subprocess import Popen
     from tqdm import tqdm
@@ -17,8 +17,10 @@ if __name__ == "__main__":
     import logging
 
     # %% set options
-    all_flights = [key for key in transfer_calibs.keys()]  # get all flights from dictionary
-    all_flights = all_flights[17:]  # select specific flight[s] if needed
+    campaign = "halo-ac3"
+    # get all flights from dictionary
+    all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(meta.flight_names.values())
+    all_flights = all_flights[18:19]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
     solar_flag = True
@@ -190,14 +192,18 @@ if __name__ == "__main__":
 
         # set up global attributes
         attributes = dict(
-            comment=f'CIRRUS-HL Campaign, Oberpfaffenhofen, Germany, {flight}',
-            contact='PI: m.wendisch@uni-leipzig.de, Data: johannes.roettenbacher@uni-leipzig.de',
-            Conventions='CF-1.9',
-            history=f'Created {dt.datetime.utcnow():%c} UTC',
-            institution='Leipzig Institute for Meteorology, Leipzig University, Stephanstr.3, 04103 Leipzig, Germany',
-            references='Emde et al. 2016, 10.5194/gmd-9-1647-2016',
-            source='libRadtran 2.0',
-            title='Simulated clear sky downward and upward irradiance along flight track',
+            title="Simulated clear sky downward and upward irradiance along flight track",
+            Conventions="CF-1.9",
+            campaign_id=f"{campaign.swapcase()}",
+            platform_id="HALO",
+            instrument_id="SMART",
+            version_id="1",
+            institution="Leipzig Institute for Meteorology, Leipzig, Germany, Stephanstr.3, 04103 Leipzig, Germany",
+            history=f"created {dt.datetime.utcnow():%c} UTC",
+            contact="Johannes Röttenbacher, johannes.roettenbacher@uni-leipzig.de",
+            PI="André Ehrlich, a.ehrlich@uni-leipzig.de",
+            source="libRadtran 2.0.4",
+            references="Emde et al. 2016, 10.5194/gmd-9-1647-2016",
         )
 
         encoding = dict(time=dict(units='seconds since 2021-01-01'))
