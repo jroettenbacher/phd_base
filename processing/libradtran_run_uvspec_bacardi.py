@@ -28,28 +28,6 @@ if __name__ == "__main__":
 
     # %% set up logging to console and file when calling script from console
     log = logging.getLogger("pylim")
-    try:
-        log.setLevel(logging.DEBUG)
-        # create file handler which logs even debug messages
-        h.make_dir("./logs")
-        fh = logging.FileHandler(f'./logs/{dt.datetime.utcnow():%Y%m%d}_{__file__[:-3]}_{solar_str}.log')
-        fh.setLevel(logging.DEBUG)
-        # create console handler with a higher log level
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter('%(asctime)s : %(levelname)s - %(message)s', datefmt="%c")
-        ch.setFormatter(formatter)
-        fh.setFormatter(formatter)
-        # add the handlers to logger
-        log.addHandler(ch)
-        log.addHandler(fh)
-    except NameError:
-        # __file__ is undefined if script is executed in console, set a normal logger instead
-        log.addHandler(logging.StreamHandler())
-        log.setLevel(logging.INFO)
-
-    log.info(f"Settings passed:\nsolar_flag: {solar_flag}\nuvspec_exe: {uvspec_exe}")
 
     # %% run for all flights
     for flight in all_flights:
@@ -62,6 +40,14 @@ if __name__ == "__main__":
         output_files = [f.replace(".inp", ".out") for f in input_files]
         error_logs = [f.replace(".out", ".log") for f in output_files]
 
+        # %% setup logging
+        try:
+            file = __file__
+        except NameError:
+            file = None
+        log = h.setup_logging("./logs", file, flight)
+        log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {solar_str}\n"
+                 f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
         # %% call uvspec for all files
         processes = set()
         max_processes = cpu_count() - 4
