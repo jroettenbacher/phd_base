@@ -85,7 +85,6 @@ if __name__ == "__main__":
     for i in tqdm(range(len(year))):
         sza.extend(solar_position.get_sza(dezimal_hours[i], df["lat"][i], df["lon"][i], year[i], month[i], day[i], 1013,
                                           15).flatten())
-        # TODO: check SZA function why it returns sometimes an array sometimes a float
         saa.append(solar_position.get_saa(dezimal_hours[i], df["lat"][i], df["lon"][i], year[i], month[i], day[i]))
 
     # %% add to dataframe
