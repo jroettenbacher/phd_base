@@ -34,7 +34,7 @@ log.setLevel(logging.INFO)
 # %% set some options
 campaign = "halo-ac3"
 flights = list(meta.flight_names.values())[3:19]  # run all flights
-# flights = ["HALO-AC3_20220411_HALO_RF17"]  # uncomment for single flight
+flights = ["HALO-AC3_20220412_HALO_RF18"]  # uncomment for single flight
 for flight in tqdm(flights):
     flight_key = flight[-4:]
     flight_date = flight[9:17]
@@ -400,7 +400,7 @@ for flight in tqdm(flights):
             ds[var].attrs = ims_attrs[var]
     else:
         # read in bahamas data and add lat lon and altitude and add to SMART data
-        bahamas_filepath = os.path.join(bahamas_dir, f"HALO-AC3_HALO_BAHAMAS_{date}_{flight_key}_v1.nc")
+        bahamas_filepath = os.path.join(bahamas_dir, f"HALO-AC3_HALO_BAHAMAS_{flight_date}_{flight_key}_v1.nc")
         bahamas_ds = reader.read_bahamas(bahamas_filepath)
         # rename variables to fit SMART IMS naming convention
         bahamas_ds = bahamas_ds.rename_vars(
