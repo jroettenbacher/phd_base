@@ -23,7 +23,7 @@ if __name__ == "__main__":
     all_flights = all_flights[18:19]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-    solar_flag = True
+    solar_flag = False
     solar_str = "solar" if solar_flag else "thermal"
 
     # %% set up logging to console and file when calling script from console
@@ -204,6 +204,6 @@ if __name__ == "__main__":
         for var in ds:
             ds[var].attrs = var_attrs[var]
         # save file
-        nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_bb_clearsky_simulation_{solar_str}_{date}_{flight_key}.nc"
+        nc_filepath = f"{libradtran_base_dir}/{campaign.swapcase()}_HALO_libRadtran_bb_clearsky_simulation_{solar_str}_si_{date}_{flight_key}.nc"
         ds.to_netcdf(nc_filepath, encoding=encoding)
         log.info(f"Saved {nc_filepath}")
