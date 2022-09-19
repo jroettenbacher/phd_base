@@ -37,15 +37,17 @@ halo_flight = f"HALO-AC3_{date}_HALO_{halo_key}"
 
 plot_path = f"{h.get_path('plot', halo_flight, campaign)}/{halo_flight}"
 smart_path = h.get_path("calibrated", halo_flight, campaign)
-calibrated_file = f"HALO-AC3_HALO_SMART_spectral-irradiance-Fdw_20220411_RF17_v1.0.nc"
+calibrated_file = f"HALO-AC3_HALO_SMART_spectral-irradiance-Fdw_{date}_{halo_key}_v1.0.nc"
 libradtran_path = h.get_path("libradtran", halo_flight, campaign)
-libradtran_spectral = "HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_spectral_20220411_RF17.nc"
-libradtran_bb_solar = "HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_solar_20220411_RF17.nc"
-libradtran_bb_thermal = "HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_20220411_RF17.nc"
+libradtran_spectral = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_spectral_{date}_{halo_key}.nc"
+libradtran_bb_solar = f"HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_solar_{date}_{halo_key}.nc"
+libradtran_bb_thermal = f"HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_{date}_{halo_key}.nc"
+libradtran_bb_solar_si = f"HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_solar_si_{date}_{halo_key}.nc"
+libradtran_bb_thermal_si = f"HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_si_{date}_{halo_key}.nc"
 bahamas_path = h.get_path("bahamas", halo_flight, campaign)
-bahamas_file = "QL_HALO-AC3_HALO_BAHAMAS_20220411_RF17_v1.nc"
+bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{halo_key}_v1.nc"
 bacardi_path = h.get_path("bacardi", halo_flight, campaign)
-bacardi_file = "HALO-AC3_HALO_BACARDI_BroadbandFluxes_20220411_RF17_R1.nc"
+bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{halo_key}_R1.nc"
 
 # flight tracks from halo-ac3 cloud
 kwds = {'simplecache': dict(cache_storage='E:/HALO-AC3/cloud', same_names=True)}
@@ -54,15 +56,23 @@ cat = ac3airborne.get_intake_catalog()
 ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_{halo_key}"](storage_options=kwds, **credentials).to_dask()
 
 # %% get flight segmentation and select below and above cloud section
-meta = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"]["HALO-AC3_HALO_RF17"]
+meta = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{halo_key}"]
 segments = flightphase.FlightPhaseFile(meta)
 above_cloud, below_cloud = dict(), dict()
-above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
-above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
-below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
-below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
-above_slice = slice(above_cloud["start"], above_cloud["end"])
-below_slice = slice(below_cloud["start"], below_cloud["end"])
+if "RF17" in halo_flight:
+    above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
+    above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
+    below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
+    below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
+    above_slice = slice(above_cloud["start"], above_cloud["end"])
+    below_slice = slice(below_cloud["start"], below_cloud["end"])
+else:
+    above_cloud["start"] = segments.select("name", "polygon pattern 1")[0]["start"]
+    above_cloud["end"] = segments.select("name", "polygon pattern 1")[0]["parts"][-1]["start"]
+    below_cloud["start"] = segments.select("name", "polygon pattern 2")[0]["start"]
+    below_cloud["end"] = segments.select("name", "polygon pattern 2")[0]["end"]
+    above_slice = slice(above_cloud["start"], above_cloud["end"])
+    below_slice = slice(below_cloud["start"], below_cloud["end"])
 
 # %% read in HALO smart data
 smart_ds = xr.open_dataset(f"{smart_path}/{calibrated_file}")
@@ -71,8 +81,8 @@ smart_ds = xr.open_dataset(f"{smart_path}/{calibrated_file}")
 spectral_sim = xr.open_dataset(f"{libradtran_path}/{libradtran_spectral}")
 bb_sim_solar = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_solar}")
 bb_sim_thermal = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_thermal}")
-# libradtran is simulated with the BAHAMAS time, cut it to SMART time
-spectral_sim = spectral_sim.where(spectral_sim.time <= (smart_ds.time[-1] + pd.Timedelta(1, "min")), drop=True)
+bb_sim_solar_si = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_solar_si}")
+bb_sim_thermal_si = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_thermal_si}")
 
 # %% read in BACARDI data
 bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
@@ -84,11 +94,12 @@ smart_ds_filtered = smart_ds.where(smart_ds.stabilization_flag == 0)
 ins = ins.resample(time="1Min").asfreq()
 ins = ins.where(ins.time <= smart_ds_filtered.time)
 smart_ds_filtered = smart_ds_filtered.resample(time="1Min").asfreq()
-spectral_sim["time"] = smart_ds_filtered.time  # replace libRadtran time with SMART time for merging
+spectral_sim = spectral_sim.resample(time="1Min").asfreq()
 
 # %% plotting aesthetics
 h.set_cb_friendly_colors()
 time_extend = pd.to_timedelta((ins.time[-1] - ins.time[0]).values)  # get time extend for x-axis labeling
+time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 
 # %% relation between simulation and measurement
 relation = smart_ds_filtered.Fdw.sel(wavelength=500) / spectral_sim.fdw.sel(wavelength=500)
@@ -107,8 +118,8 @@ df1 = viewing_dir.to_dataframe(name="viewing_dir")
 df2 = relation.to_dataframe(name="relation")
 df = df1.merge(df2, on="time")
 df["sza"] = ins.sza
-df = df.sort_values(by="viewing_dir")
 # df = df[df.relation > 0.7]
+df = df.sort_values(by="viewing_dir")
 
 # %% plot relation as function of viewing direction as polar plot
 fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
@@ -126,7 +137,7 @@ ax.set_title("Relation between SMART Fdw measurement and libRadtran simulation\n
 ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure)
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.2)
-figname = f"{plot_path}/HALO-AC3_20220411_HALO_RF17_inlet_directional_dependence.png"
+figname = f"{plot_path}/{halo_flight}_inlet_directional_dependence.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
@@ -166,13 +177,13 @@ ax.set_title("Relation between SMART Fdw measurement and libRadtran simulation\n
              " according to solar zenith angle")
 ax.legend()
 plt.tight_layout()
-figname = f"{plot_path}/HALO-AC3_20220411_HALO_RF17_inlet_sza_dependence.png"
+figname = f"{plot_path}/{halo_flight}_inlet_sza_dependence.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
 # %% plot simulation and measurement for different wavelengths
-wavelength = 900
+wavelength = 1450
 h.set_cb_friendly_colors()
 fig, ax = plt.subplots(figsize=(8, 4))
 smart_ds_filtered.Fdw.sel(wavelength=wavelength).plot(ax=ax, label="SMART")
@@ -191,11 +202,6 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
-# %% histogram of viewing direction
-df["viewing_dir"].hist()
-plt.show()
-plt.close()
-
 # %% plot measurements of below and above cloud section
 h.set_cb_friendly_colors()
 smart_above = smart_ds_filtered.Fdw.sel(time=above_slice).mean(dim="time", skipna=True)
@@ -204,9 +210,6 @@ fig, ax = plt.subplots(figsize=(8, 4))
 # Fdw SMART
 ax.plot(smart_above.wavelength, smart_above, label="SMART above")
 ax.plot(smart_below.wavelength, smart_below, label="SMART below")
-# Fdw libRadtran
-# ax.plot(sim_above.wavelength, sim_above, label="libRadtran above")
-# ax.plot(sim_below.wavelength, sim_below, label="libRadtran below")
 ax.set_xlabel("Wavelength (nm)")
 ax.set_ylabel("Spectral Downward Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)")
 ax.set_title(f"Mean SMART spectra above and below cloud - {halo_flight}")
@@ -225,35 +228,112 @@ for var in ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestria
     ax.plot(bacardi_ds_slice[var].time, bacardi_ds_slice[var], label=f"{var}")
 
 ax.axvline(x=above_cloud["end"], label="End above cloud section", color="#6699CC")
-ax.axvline(x=below_cloud["start"], label="Start above cloud section", color="#888888")
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color="#888888")
 ax.grid()
 ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
 h.set_xticks_and_xlabels(ax, (below_cloud["end"] - above_cloud["start"]))
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+ax.set_title("BACARDI broadband irradiance")
 plt.tight_layout()
-plt.subplots_adjust(bottom=0.3)
+plt.subplots_adjust(bottom=0.25)
+figname = f"{plot_path}/{halo_flight}_BACARDI_bb_irradiance_above_below.png"
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
 # %% calculate statistics from BACARDI measurements
 bacardi_above, bacardi_below = dict(), dict()
 for var in ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]:
-    bacardi_above[var] = bacardi_ds[var].sel(time=above_slice)
-    bacardi_below[var] = bacardi_ds[var].sel(time=below_slice)
-# %% calculate CRE
-# cre_solar = (bacardi_ds.F_down_solar - bacardi_ds.F_up_solar) - (bbr_sim.F_dw - bbr_sim.F_up)
-# cre_terrestrial = (bacardi_ds.F_down_terrestrial - bacardi_ds.F_up_terrestrial).sel(time=bbr_sim_ter.index) - (
-#         bbr_sim_ter.F_dw - bbr_sim_ter.F_up)
-# # use measured F_up as real
-# F_dw_meas = bacardi_ds.F_down_solar.sel(time=bbr_sim.index)
-# F_up_meas = bacardi_ds.F_up_solar.sel(time=bbr_sim.index)
+    bacardi_above[var] = bacardi_ds[var].sel(time=above_slice).mean(skipna=True)
+    bacardi_below[var] = bacardi_ds[var].sel(time=below_slice).mean(skipna=True)
+
+# %% calculate CRE with libradtran
+cre_solar = (bacardi_ds.F_down_solar - bacardi_ds.F_up_solar) - (bb_sim_solar.fdw - bb_sim_solar.eup)
+cre_terrestrial = (bacardi_ds.F_down_terrestrial - bacardi_ds.F_up_terrestrial) - (bb_sim_thermal.edn - bb_sim_thermal.eup)
+
+# cut above and below cloud sections and plot it
+cre_solar_above = cre_solar.sel(time=above_slice)
+cre_terrestrial_above = cre_terrestrial.sel(time=above_slice)
+cre_solar_below = cre_solar.sel(time=below_slice)
+cre_terrestrial_below = cre_terrestrial.sel(time=below_slice)
+
+# %% plot CRE above and below cloud
+h.set_cb_friendly_colors()
+
+fig, ax = plt.subplots(figsize=(8, 4))
+# above
+cre_solar_above.plot(ax=ax, label="CRE solar above")
+cre_terrestrial_above.plot(ax=ax, label="CRE terrestrial above")
+# below
+cre_solar_below.plot(ax=ax, label="CRE solar below")
+cre_terrestrial_below.plot(ax=ax, label="CRE terrestrial below")
+
+ax.legend()
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Cloud Radiative Effect (W$\,$m$^{-2}$)")
+ax.set_title(f"BACARDI/libRadtran cloud radiative effect {halo_flight}")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bacardi_libradtran_cre_above_below.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% calcalate cre statistics
+cre_solar_above.mean(skipna=True)
+cre_terrestrial_above.mean(skipna=True)
+cre_solar_below.mean(skipna=True)
+cre_terrestrial_below.mean(skipna=True)
+
+# %% calculate CRE with BACARDI and sea ice simulation
+bacardi_ds_above = bacardi_ds.sel(time=above_slice)
+bacardi_ds_below = bacardi_ds.sel(time=below_slice)
+Fdw_clear = bacardi_ds_above.F_down_solar.mean(skipna=True)
+Fup_clear = bb_sim_solar_si.sel(time=above_slice).eup.mean(skipna=True)
+Fdw_cloudy = bacardi_ds_below.F_down_solar.mean(skipna=True)
+Fup_cloudy = bacardi_ds_below.F_up_solar.mean(skipna=True)
+cre_solar = (Fdw_cloudy - Fup_cloudy) - (Fdw_clear - Fup_clear)
+
+Fdw_clear = bacardi_ds_above.F_down_terrestrial.mean(skipna=True)
+Fup_clear = bb_sim_thermal_si.sel(time=above_slice).eup.mean(skipna=True)
+Fdw_cloudy = bacardi_ds_below.F_down_solar.mean(skipna=True)
+Fup_cloudy = bacardi_ds_below.F_up_solar.mean(skipna=True)
+cre_terrestrial = (Fdw_cloudy - Fup_cloudy) - (Fdw_clear - Fup_clear)
+
+# %% plot CRE above and below cloud
+h.set_cb_friendly_colors()
+
+fig, ax = plt.subplots(figsize=(8, 4))
+# above
+cre_solar_above.plot(ax=ax, label="CRE solar above")
+cre_terrestrial_above.plot(ax=ax, label="CRE terrestrial above")
+# below
+cre_solar_below.plot(ax=ax, label="CRE solar below")
+cre_terrestrial_below.plot(ax=ax, label="CRE terrestrial below")
+
+ax.legend()
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Cloud Radiative Effect (W$\,$m$^{-2}$)")
+ax.set_title(f"BACARDI/libRadtran cloud radiative effect {halo_flight}")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bacardi_libradtran_cre_above_below.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# use measured F_up as real
+# F_dw_meas = bacardi_ds.F_down_solar
+# F_up_meas = bacardi_ds.F_up_solar
 # cre_solar = (F_dw_meas - F_up_meas) - (bbr_sim.F_dw - F_up_meas)
 # F_dw_meas = bacardi_ds.F_down_terrestrial.sel(time=bbr_sim_ter.index)
 # F_up_meas = bacardi_ds.F_up_terrestrial.sel(time=bbr_sim_ter.index)
 # cre_terrestrial = (F_dw_meas - F_up_meas) - (bbr_sim_ter.F_dw - F_up_meas)
 # cre_net = cre_solar + cre_terrestrial
-# # apply rolling average
+# apply rolling average
 # cre_solar = cre_solar.rolling(time=2).mean(skipna=True)
 # cre_terrestrial = cre_terrestrial.rolling(time=2).mean(skipna=True)
 # cre_net = cre_net.rolling(time=2).mean(skipna=True)
