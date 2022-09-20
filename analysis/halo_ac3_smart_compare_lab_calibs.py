@@ -8,6 +8,23 @@ Due to technical difficulties the spectrometer pair J3, J4 was used during HALO-
 
 **Note on effective receiving area:** Effective receiving area is in front of inlet not inside it, but was interpreted otherwise. Thus, the distance between the effective receiving area and the lamp is off by 44mm!
 
+Timeline
+^^^^^^^^
+
+- **15.11.2021**: First lab calibration before -> Used wrong inlet VN11, channels J3 and J4, assumed wrong effective receiving area
+- **23.11.2021**: Second lab calibration before -> Used wrong inlet VN11, channels J5 and J6
+- **15.02.2022**: First transfer calibration in Oberpfaffenhofen with Ulli2 (packed in container for Kiruna afterwards) and Ulli3 (stays in Oberpfaffenhofen) using VN05 and J5 and J6
+- **21.02.2022**: EMI test flight -> J3, J4
+- **22.02.2022**: saved new offsets for SMART stabilization, transfer calibration with Ulli2 and multiple integration times -> J5, J6
+- **25.02.2022**: Scientific test flight -> J5, J6
+- **11.03.2022**: Transfer flight to Kiruna -> J3, J4
+- **13.03.2022**: First transfer calibration in Kiruna -> J3, J4
+- **11.04.2022**: Final transfer calibration in Kiruna
+- **02.05.2022**: Transfer calibration in lab in Leipzig (optical fibers were detached from Spectrometers in between)
+- **02.05.2022**: Laboratory calibration after campaign -> VN05, channels J3 and J4
+- **06.05.2022**: Wavelength calibration
+
+
 The second lab calibration after the campaign was done with the correct inlet and the correct channels: VN05 and J3, J4
 
 Each lab calibration is processed with :py:mod:`smart_process_lab_calib_halo_ac3.py` to correct the files for the dark current.
