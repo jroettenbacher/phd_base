@@ -72,3 +72,8 @@ gopro_offsets = dict(EMV=-2, RF00=24, RF01=118, RF02=123, RF03=127, RF04=0, RF05
 stabilized_flights = list(flight_names.values())[:-2]  # flights during which the stabilization was running
 unstabilized_flights = list(flight_names.values())[-2:]  # flights with no stabilization running
 stabbi_offs = list(flight_names.values())[8:]  # flights during which the stabilization was turned off in curves
+
+radiation_square = dict(s_leg=(Ts(2022, 2, 25, 9, 17), Ts(2022, 2, 25, 9, 19, 45)),
+                        w_leg=(Ts(2022, 2, 25, 9, 21, 7), Ts(2022, 2, 25, 9, 23, 30)),
+                        n_leg=(Ts(2022, 2, 25, 9, 25), Ts(2022, 2, 25, 9, 27, 40)),
+                        e_leg=(Ts(2022, 2, 25, 9, 31, 20), Ts(2022, 2, 25, 9, 33, 50)))
