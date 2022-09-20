@@ -16,6 +16,12 @@ Data is stored in folders which denote the angle the inlet was turned to.
 * :file:`{angle}_turned`: The inlet was turned 90deg clockwise around the horizontal axis to evaluate all four azimuth directions
 * :file:`{angle}_diffuse`: A baffle was placed before the inlet to shade it (dark measurements)
 
+Results Cosine Resopnse Calibration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+See PowerPoint `20211122_SMART_cosine_calibration.pptx` under `instruments/SMART`.
+
+
 *author*: Johannes Röttenbacher
 
 """
