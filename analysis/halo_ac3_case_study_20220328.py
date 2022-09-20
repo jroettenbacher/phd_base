@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""Case Study for RF17 2022-04-11
-
-Arctic Dragon. Flight to the North with a west-east cross-section above and below the cirrus.
+"""Case Study for RF09 2022-03-28
 
 *author*: Johannes Röttenbacher
 """
