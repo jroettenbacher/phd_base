@@ -131,7 +131,7 @@ The GoPro was set to UTC time but cannot be synchronized to BAHAMAS.
 Thus, a foto of the BAHAMAS time server is taken at the start of each recording to determine the offset of the camera from the fotos metadata.
 
 During CIRRUS-HL the camera reset its internal time to local time, so the metadata for some flights had to be corrected for that as well.
-See the `README.md` in the CIRRUS-HL GoPro folder for details.
+See the ``README.md`` in the CIRRUS-HL GoPro folder for details.
 A list which tracks the processing status can be found there.
 For |haloac3| this table is part of the ``processing_diary.md`` which can be found in the upper level folder ``HALO-AC3``.
 
@@ -161,7 +161,7 @@ gopro_make_video_from_pictures.sh
 
 Uses ffmpeg to create a stop-motion video of the GoPro pictures.
 
-**Run on Linux**
+**Run on Linux!**
 
 **Required User Input:**
 

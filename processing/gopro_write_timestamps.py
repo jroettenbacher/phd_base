@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Read out timestamps from GoPro images and write to a text file
 
-**Run on Linux**
+**Run on Linux!**
 
 Reads the metadata time stamps and saves them together with the picture number in a csv file.
 

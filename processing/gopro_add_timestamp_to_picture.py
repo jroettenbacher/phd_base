@@ -1,7 +1,7 @@
 #!\usr\bin\env python
 """Add a timestamp to a GoPro picture and correct the metadata
 
-**Run on Linux.**
+**Run on Linux!**
 
 This script reads out the DateTimeOriginal metadata tag of each file and corrects it for the Local Time to UTC and BAHAMAS offset if necessary.
 It overwrites the original metadata tag and places a time stamp to the right bottom of the file.
