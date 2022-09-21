@@ -72,6 +72,10 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# global includes
+rst_prolog = """
+.. include:: <isonum.txt>"""
+
 # variables which should be available for every rst file in the docs
 rst_epilog = f"""
 .. |version| replace:: {version}
