@@ -1,5 +1,15 @@
 #!/usr/bin/env python
-"""Given a SMART input file write a well documented netCDF file.
+"""Given a SMART input file write a well documented quicklook netCDF file.
+
+**Required User Input:**
+
+* campaign
+* date
+* flightkey
+* property and channel (Fdw/Fup and SWIR/VNIR)
+* uncomment import of metadata information depending on campaign
+
+**Output:** Calibrated and documented netCDF file
 
 Two options:
 
@@ -10,9 +20,10 @@ Option 2 might result in a huge file but would be easier to distribute.
 With option 1 one could still merge all single files quite easily with xarray.
 Go with option 1 for now.
 
-The netCDF file could be writen as a standard output from smart_calibrate_measurement.py or as a separate step in this script. Start with this script and write a function that can then be used in the calibration script.
+The netCDF file could be writen as a standard output from smart_calibrate_measurement.py or as a separate step in this script.
+Stick with this script for now.
 
-author: Johannes Röttenbacher
+*author*: Johannes Röttenbacher
 """
 
 if __name__ == "__main__":
@@ -40,6 +51,7 @@ if __name__ == "__main__":
     # prop_channel = "Fdw_SWIR"
     # prop_channel = "Fup_VNIR"
     # prop_channel = "Fup_SWIR"
+    prop = "downward" if "dw" in prop_channel else "upward"
     to, td = take_offs_landings[flight_key]
 
     # %% get paths and read in files
@@ -67,11 +79,11 @@ if __name__ == "__main__":
     # %% create metadata for ncfile
     var_attrs = {
         f"{prop_channel}": dict(
-            long_name="Spectral downward irradiance (SMART)",
+            long_name=f"Spectral {prop} irradiance (SMART)",
             standard_name="solar_irradiance_per_unit_wavelength",
             units="W m-2 nm-1"),
         f"{prop_channel}_bb": dict(
-            long_name="Broadband downward irradiance (SMART)",
+            long_name=f"Broadband {prop} irradiance (SMART)",
             units="W m-2",
             comment="Summed over all available wavelengths"),
         "pixel": dict(
@@ -84,11 +96,11 @@ if __name__ == "__main__":
     }
 
     global_attrs = dict(
-        title="Spectral downward irradiance measured by SMART",
+        title=f"Spectral {prop} irradiance measured by SMART",
         campaign_id=f"{campaign.swapcase()}",
         platform_id="HALO",
         instrument_id="SMART",
-        version_id="0.1",
+        version_id="QL",
         description="Calibrated SMART measurements corrected for dark current",
         institution="Leipzig Institute for Meteorology, Leipzig, Germany",
         history=f"created {datetime.strftime(datetime.utcnow(), '%c UTC')}",
@@ -113,7 +125,7 @@ if __name__ == "__main__":
 
     # %% create ncfile
     date_str, prop, direction = smart.get_info_from_filename(smart_file)
-    outfile = f"{campaign.swapcase()}_HALO_SMART_{direction}_{prop}_{date}_{flight_key}.nc"
+    outfile = f"{campaign.swapcase()}_HALO_SMART_{direction}_{prop}_{date}_{flight_key}_ql.nc"
     outpath = os.path.join(smart_dir, outfile)
     ds.to_netcdf(outpath, format="NETCDF4_CLASSIC", encoding=encoding)
     log.info(f"Saved {outpath}")

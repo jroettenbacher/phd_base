@@ -1,13 +1,28 @@
 #!/usr/bin/env python
 """Script to calculate field calibration factor and save a file for each PC and channel
-1. set user defined variables and list field calibration files and lab calibration files
-2. for each field cali file:
-    2.1 read field file and corresponding lab calibration file
-    2.2 calculate field calibration factor and the relation between lab and field counts of the ulli sphere
-    2.3 plot transfer calib measurements and save the plot
-    2.4 save transfer calibration file in calib folder
 
-author: Johannes Roettenbacher
+**Required User Input:**
+
+* campaign
+* transfer calibration folder |rarr| should be found in calib folder
+* laboratory calibration date to relate transfer calibration to
+* integration time of transfer calibration (T_int) in ms
+* whether to normalize the measurement by the integration time or not
+
+**Output:** transfer calibration file with field calibration factor ``c_field`` (unit: :math:`W\\,m^{-2}\\, count^{-1}`)
+
+**Steps:**
+
+#. set user defined variables and list field calibration files and lab calibration files
+#. for each field cali file:
+
+   #. read field file and corresponding lab calibration file
+   #. calculate field calibration factor and the relation between lab and field counts of the ulli sphere
+   #. plot transfer calib measurements and save the plot
+   #. save transfer calibration file in calib folder
+
+
+*author*: Johannes Roettenbacher
 """
 if __name__ == "__main__":
     # %% module import and set paths

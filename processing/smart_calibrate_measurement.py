@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 """Calibrate measurement files with the transfer calibration
 
+Reads in dark current corrected measurement file and corresponding transfer calibration to calibrate measurement files.
+
+**Required User Input:**
+
+* campaign
+* flight folder
+* integration time of ASP06 and ASP07 measurements (check raw measurement files to get integration times)
+* whether to normalize measurements or not (use normalized calibration factor, necessary if no calibration with the same integration time was made)
+
+**Output:** Calibrated SMART measurement files in .dat format
+
 *author*: Johannes Roettenbacher
 """
 if __name__ == "__main__":

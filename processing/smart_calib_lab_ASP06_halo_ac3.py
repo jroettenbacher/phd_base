@@ -12,9 +12,9 @@
 9. write dat file with all information
 
 The smart lookup from CIRRUS-HL is used because the filenames were not changed before the calibration.
-See :ref:`analysis:smart_process_lab_calib_halo_ac3.py` for details.
+See :ref:`processing:smart_process_lab_calib_halo_ac3.py` for details.
 
-Due to changes of the setup the lookup from CIRRUS-HL is identical with the lookup from HALO-AC3.
+Due to changes of the setup the lookup from CIRRUS-HL is identical with the lookup from |haloac3|.
 
 author: Johannes Roettenbacher
 """

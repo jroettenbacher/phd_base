@@ -1,5 +1,23 @@
 #!/usr/bin/env python
-"""Script to read in calibration files and calculate calibration factors for lab calibration of ASP06
+"""Calculates the lab calibration factor for ASP06
+
+Creates a lab calibration file with the irradiance measurements from the lamp and the calibrated Ulli transfer measurements.
+Needs to be run once for each spectrometer (SWIR, VNIR).
+
+**Required User Input:**
+
+* channel which to run (SWIR or VNIR)
+* folder pair (spectrometer pair) (0 or 1)
+* folder of lab calibration |rarr| should be found in calib folder
+* whether to normalize the measurement by the integration time or not
+
+**Output:**
+
+* plot of counts and irradiance of lamp lab calibration
+* plot of Ulli transfer measurement from laboratory
+* dat file with all data from the calibration and the calibration factor for each wavelength ``c_lab`` (unit: :math:`W\\,m^{-2}\\, count^{-1}`)
+
+**Steps:**
 
 1. read in 1000W lamp file, plot it and save to data file
 2. set channel to work with
@@ -11,10 +29,10 @@
 8. plot ulli measurements
 9. write dat file with all information
 
-author: Johannes Roettenbacher
+*author*: Johannes Roettenbacher
 """
 if __name__ == "__main__":
-    # %%
+    # %% module import
     import pylim.helpers as h
     from pylim import reader, smart
     from pylim.cirrus_hl import smart_lookup
@@ -35,6 +53,7 @@ if __name__ == "__main__":
     base = "ASP06_Calib_Lab_20210809"
     folder_pairs = [["calib_J3_4", "Ulli_trans_J3_4"], ["calib_J5_6", "Ulli_trans_J5_6"]]
     folders = folder_pairs[1]  # which folder pair to work on (0 or 1)
+
     dirpath = os.path.join(calib_path, base, folders[0])
     dirpath_ulli = os.path.join(calib_path, base, folders[1])
     lamp_measurement = [f for f in os.listdir(dirpath) if f.endswith(f"{channel}_cor.dat")]

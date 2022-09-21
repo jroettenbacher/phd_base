@@ -1,5 +1,21 @@
 #!/usr/bin/env python
-"""Functions for processing and plotting of SMART data
+"""These are functions in relation with the SMART instrument.
+
+"_" denotes internal functions which are called inside other functions.
+
+The functions are explained in their docstring and can be tested using the main frame.
+You can:
+
+The reader functions were moved to ``pylim.reader``.
+
+* find the closest pixel and wavelength to any given wavelength for the given wavelength calibration file
+* get information (date, measured property, channel) from the filename
+* get the dark current for a specified measurement file with either option 1 or 2 and optionally plot it
+* correct the raw measurement by the dark current
+* plot the mean corrected measurement
+* plot smart data either for one wavelength over time or for a range of or all wavelengths
+* use the holoviews functions to create a dynamic map for interactive quicklooks in a jupyter notebook
+
 author: Johannes Röttenbacher
 """
 

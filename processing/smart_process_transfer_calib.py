@@ -2,7 +2,7 @@
 """Script to correct SMART transfer calibration measurement for dark current and save it to a new file and merge the
 minutely files
 
-**Input**: raw smart transfer calibration measurements
+**Required User Input**: transfer calibration folder and campaign
 
 **Output**: dark current corrected and merged smart measurements
 

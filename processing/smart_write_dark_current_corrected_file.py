@@ -1,9 +1,21 @@
 #!/usr/bin/env python
 """Script to correct all SMART measurements from one flight for the dark current and save them to new files
 
-**input**: raw smart measurements
+Set the input and output paths in ``config.toml``.
 
-**output**: dark current corrected smart measurements
+**Required User Input**: campaign and flight(s)
+
+**Output**: dark current corrected smart measurements
+
+You can uncomment some lines to change the behavior of the script.
+
+- run for all flights of a campaign
+- run for one file
+- correct a selection of files in a for loop and skip uncorrectable files
+
+The default behavior is to run for one flight and execute everything in parallel.
+This is the campaign mode.
+
 
 *author*: Johannes Roettenbacher
 """
@@ -55,7 +67,6 @@ if __name__ == "__main__":
     # flights = list(transfer_calibs.keys())  # get all flight keys for loop
     for flight in flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-        # date of transfer cali with dark current measurements to use for VNIR, set to "" if not needed
         transfer_cali_date = transfer_calibs[flight_key]
 
         # Set paths in config.toml

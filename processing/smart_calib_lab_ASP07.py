@@ -1,5 +1,24 @@
 #!/usr/bin/env python
-"""Script to read in calibration files and calculate calibration factors for lab calibration of ASP07
+"""Calculates the lab calibration factor for ASP07
+
+Creates a lab calibration file with the radiance measurements from the reflectance panel and the calibrated Ulli transfer measurements.
+Needs to be run once for each spectrometer (SWIR and VNIR).
+
+**Required User Input:**
+
+* channel which to run (SWIR or VNIR)
+* folder pair (spectrometer pair) (0 or 1)
+* folder of lab calibration |rarr| should be found in calib folder
+* whether to normalize the measurement by the integration time or not
+
+**Output:**
+
+* plot of counts and radiance of lamp laboratory calibration
+* plot of Ulli transfer measurement from laboratory
+* dat file with all data from the calibration and calibration factor for each wavelength ``c_lab`` (unit: :math:`W\\,sr^{-1}\\,m^{-2}\\, count^{-1}`)
+
+**Steps:**
+
 1. read in 1000W lamp file and reflectance panel file
 2. set channel to work with
 3. read in calibration lamp measurements
@@ -8,7 +27,8 @@
 6. read in ulli sphere measurements
 7. plot ulli measurements
 8. write dat file with all information
-author: Johannes Roettenbacher
+
+*author*: Johannes Roettenbacher
 """
 if __name__ == "__main__":
     # %%

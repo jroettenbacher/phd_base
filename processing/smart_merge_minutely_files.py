@@ -1,11 +1,20 @@
 #!/usr/bin/env python
-"""
-ASP06 and ASP07 were configured to write minutely files during calibration.
+"""Script to merge minutely dark current corrected measurement files into one file per channel and folder.
+
+**Required User Input:** campaign and flight
+
+**Output:** one file with all dark current corrected measurements for one channel
+
+ASP06 and ASP07 were configured to write minutely files.
 This script
+
 * merges the minutely files into one file,
 * deletes the minutely files,
-* saves the merged file to the first found filename.
-author: Johannes Röttenbacher
+* saves the merged files with the first found filename.
+
+By uncommenting some lines you can switch between single flight (campaign mode) and multi flight mode.
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     import pylim.helpers as h

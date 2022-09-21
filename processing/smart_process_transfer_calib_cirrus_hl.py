@@ -5,7 +5,7 @@
 
 **Output**: dark current corrected and merged SMART measurements
 
-This script needs to be run **after** :py:mod:`processing.smart_process_transfer_calib.py` and **before** :py:mod:`processing.smart_calib_transfer.py`.
+This script needs to be run **after** :ref:`processing:smart_process_transfer_calib.py` and **before** :ref:`processing:smart_calib_transfer.py`.
 
 During the campaign the LabView program controlling the shutter on the SWIR spectrometers of ASP06 somehow decided to change the way it works.
 Usually every SWIR measurement would start with four dark current measurements (=shutter closed).
