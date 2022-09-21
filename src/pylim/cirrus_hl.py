@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """General information about the CIRRUS-HL campaign
-author: Johannes Röttenbacher
+
+- There is a lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.
+- Another dictionary relates each measurement with the date of the transfer calibration for that measurement.
+
+*author*: Johannes Röttenbacher
 """
 import numpy as np
 import pandas as pd
