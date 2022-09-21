@@ -120,3 +120,55 @@ smart_process_transfer_calib_cirrus_hl.py
 smart_process_lab_calib_halo_ac3.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_process_lab_calib_halo_ac3
+
+GoPro Time Lapse quicklooks
+============================
+
+During the flight a GoPro was attached to one of the windows of HALO.
+Using the time-lapse function a picture was taken every 5 seconds.
+Together with BAHAMAS position data (and SMART spectra measurements) a time-lapse video is created.
+The GoPro was set to UTC time but cannot be synchronized to BAHAMAS.
+Thus, a foto of the BAHAMAS time server is taken at the start of each recording to determine the offset of the camera from the fotos metadata.
+
+During CIRRUS-HL the camera reset its internal time to local time, so the metadata for some flights had to be corrected for that as well.
+See the `README.md` in the CIRRUS-HL GoPro folder for details.
+A list which tracks the processing status can be found there.
+For |haloac3| this table is part of the ``processing_diary.md`` which can be found in the upper level folder ``HALO-AC3``.
+
+gopro_copy_files_to_disc.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.gopro_copy_files_to_disc
+
+add_timestamp_to_picture.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.add_timestamp_to_picture
+
+write_gopro_timestamps.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.write_gopro_timestamps
+
+gopro_plot_maps.py
+^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.gopro_plot_maps
+
+add_map_to_picture.py
+^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.add_map_to_picture
+
+
+gopro_make_video_from_pictures.sh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Uses ffmpeg to create a stop-motion video of the GoPro pictures.
+
+**Run on Linux**
+
+**Required User Input:**
+
+* flight
+* base directory of GoPro images
+* framerate [12, 24]
+* start_number, number in filename of first picture in folder
+
+
+**Output:** video (slow or fast) of flight from GoPro pictures

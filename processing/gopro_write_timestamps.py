@@ -1,5 +1,21 @@
 #!/usr/bin/env python
-"""Read out timestamps from GoPro images and write to a text file (run on Ubuntu)
+"""Read out timestamps from GoPro images and write to a text file
+
+**Run on Linux**
+
+Reads the metadata time stamps and saves them together with the picture number in a csv file.
+
+**Required User Input:**
+
+* campaign
+* flight
+
+**Output:**
+
+* txt file with `exiftool` output
+* csv file with datetime from picture metadata and picture number
+
+**Steps:**
 
 * use exiftool to get timestamps of GoPro images
 * write the output to a textfile

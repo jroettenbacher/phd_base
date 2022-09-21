@@ -1,9 +1,27 @@
 #!\usr\bin\env python
-"""Plotting script for map plots to be used in time lapse videos of GoPro
+"""Plotting script for map plots to be used in time-lapse videos of GoPro
 
-1. Plot a map of the flight track together with a marker for HALO
+**Required User Input:**
 
-author: Johannes Röttenbacher
+* campaign
+* flight
+* use_smart_ins flag
+* second airport to add to map
+* csv file with time stamp and GoPro picture number (output from :ref:`processing:write_gopro_timestamps.py`)
+* BAHAMAS nc file
+
+**Output:**
+
+* csv file with selected GoPro picture numbers and timestamps which are used for the time-lapse video
+* map for each GoPro picture
+
+Reads in the BAHAMAS latitude and longitude data and selects only the time steps which correspond with a GoPro picture.
+In the ``plot_props`` dictionary the map layout properties for each flight are defined.
+For testing the first four lines of the last cell can be uncommented and the Parallel call can be commented.
+It makes sense to run this script on the server to utilize more cores and increase processing speed.
+
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     # %% import libraries
@@ -75,7 +93,7 @@ if __name__ == "__main__":
     # %% select lon and lat values corresponding with the picture timestamps
     # get first and last bahamas time step
     first_ts, last_ts = pd.to_datetime(time[0].values), pd.to_datetime(time[-1].values)
-    # make strings with the only the time from timestamps
+    # make strings with only the time from timestamps
     first_ts, last_ts = first_ts.strftime("%H:%M:%S"), last_ts.strftime("%H:%M:%S")
     # read timestamps
     timestamps = pd.read_csv(f"{gopro_dir}/{flight}_timestamps.csv", index_col="datetime", parse_dates=True)
@@ -98,7 +116,7 @@ if __name__ == "__main__":
         """
         Plot a map of the flight track from BAHAMAS or INS data with the location of HALO.
         Args:
-            flight: Flight name (eg. Flight_20210707a for CIRRUS-HL or HALO-AC3_20220225_HALO_RF00 for HALO-AC3)
+            flight: Flight name (e.g. Flight_20210707a for CIRRUS-HL or HALO-AC3_20220225_HALO_RF00 for HALO-AC3)
             campaign: Campaign keyword (eg. halo-ac3)
             lon: array with longitude values for flight track
             lat: array with latitude values for flight track

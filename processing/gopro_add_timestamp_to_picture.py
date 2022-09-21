@@ -1,7 +1,27 @@
 #!\usr\bin\env python
-"""Add the timstamp to a picture (run on Ubuntu)
-corrects the meta data timestamp in an image for a
-author: Johannes Röttenbacher
+"""Add a timestamp to a GoPro picture and correct the metadata
+
+**Run on Linux.**
+
+This script reads out the DateTimeOriginal metadata tag of each file and corrects it for the Local Time to UTC and BAHAMAS offset if necessary.
+It overwrites the original metadata tag and places a time stamp to the right bottom of the file.
+One can test the time correction by replacing ``path`` with ``file`` in ``run()`` (line 66).
+
+**Required User Input:**
+
+* campaign
+* flight
+* correct_time flag
+* filename for a test file
+* LT_to_UTC flag (CIRRUS-HL only)
+* path with all GoPro pictures
+
+**Output:**
+
+* overwrites metadata in original file with UTC time from BAHAMAS
+* adds a time stamp to the right bottom of the original file
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     # %% import libraries and set paths
@@ -18,15 +38,15 @@ if __name__ == "__main__":
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     date = flight[9:17]
     correct_time = True
+    LT_to_UTC = False  # only for CIRRUS-HL, uncomment line further down (49)
     start_file = 0
-    # file = f"/mnt/c/Users/Johannes/Pictures/GoPro/{date}/{date}_Gopro_0001.JPG"
+    # file = f"/mnt/c/Users/Johannes/Pictures/GoPro/{date}/{date}_Gopro_0001.JPG"  # uncomment for testing one file
 
     path = f"{h.get_path('gopro', campaign='halo-ac3')}/{flight}"  # path to all files
     # path = f"/mnt/c/Users/Johannes/Pictures/GoPro/{date}"
     sync_to_bahamas = True if flight_key in gopro_offsets else False
     # needed for CIRRUS-HL when camera switched to local time
     # LT_to_UTC = gopro_lt[flight] if flight in gopro_lt else False
-    LT_to_UTC = False
     files = [os.path.join(path, f) for f in os.listdir(path) if f.endswith(".JPG")][start_file:]
     processes = set()
     max_processes = 10
@@ -53,7 +73,7 @@ if __name__ == "__main__":
 #         os.wait()
 #         processes.difference_update([p for p in processes if p.poll() is not None])
 
-# %% add the time stamp from the exif meta data in the right lower corner
+# %% add the time stamp from the exif metadata in the right lower corner
     # set fill to white or black depending on background
     for f in tqdm(files, desc="Add Time Stamp"):
         processes.add(Popen(['convert', f, '-fill', 'black', '-pointsize', '72', '-annotate', '+3100+2900',

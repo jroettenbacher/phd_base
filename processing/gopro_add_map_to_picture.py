@@ -1,7 +1,23 @@
 #!\usr\bin\env python
-"""Add the bahamas map to a picture (run on Ubuntu)
-saves to a new directory
-author: Johannes Röttenbacher
+"""Add the bahamas map to a picture
+
+**Run on Linux!**
+
+**Required User Input:**
+
+* campaign
+* flight
+* maps
+* map numbers from csv file (output of :ref:`processing:gopro_plot_maps.py`)
+
+**Output:** new GoPro picture with map in the upper right corner and timestamp in the lower right corner
+
+**Saves to a new directory!**
+
+Adds the BAHAMAS plot onto the GoPro picture but only for pictures, which were taken in flight, according to a csv file.
+Saves those pictures in a new folder: ``{flight}_map``.
+
+*author*: Johannes Roettenbacher
 """
 if __name__ == "__main__":
     # %%

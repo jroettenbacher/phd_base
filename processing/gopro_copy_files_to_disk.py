@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 """Copy all files from the GoPro SD Card into one folder
 
-*author*: Johannes Röttenbacher
+**Required User Input:**
+
+* date
+* src, source directory
+* dst_dir, destination directory
+
+*author*: Johannes Roettenbacher
 """
 
 import pylim.helpers as h
