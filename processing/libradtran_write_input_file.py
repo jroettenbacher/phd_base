@@ -1,13 +1,32 @@
 #!/usr/bin/env python
-"""Create an input file for libRadtran
+"""Create an input files along flight track for libRadtran
 
-* behind some options you find the page number of the manual, where the option is explained in more detail
-* set options to "None" if you don't want to use them
-* Variables which start with "_" are for internal use only and will not be used as an option for the input file.
+Here one can set all options needed in the libRadtran input file.
+Given the flight and time step, one input file will then be created for every time step with the fitting lat and lon values along the flight track.
 
-author: Johannes Röttenbacher
+**Required User Input:**
+
+* campaign
+* flight (e.g. 'Flight_202170715a' or 'HALO-AC3_20220225_HALO_RF01')
+* time_step (e.g. 'minutes=1')
+* use_smart_ins flag
+* use_dropsonde flag (only available for |haloac3|)
+* integrate flag
+* input_path, this is where the files will be saved to
+
+**Output:**
+
+* log file
+* input files for libRadtran simulation along flight track
+
+The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to "None" if you don't want to use them.
+Variables which start with "_" are for internal use only and will not be used as an option for the input file.
+
+*author*: Johannes Röttenbacher
 """
-import re
 
 if __name__ == "__main__":
     # %% module import

@@ -1,23 +1,26 @@
 #!/usr/bin/env python
-"""Run uvspec
-author: Johannes Röttenbacher
+"""Run single libRadtran simulation.
+
+**Required User Input:**
+
+* campaign
+* flight
+* input_file
+
+**Output:**
+
+* log file
+* out and log file from uvspec
+
+*author*: Johannes Röttenbacher
 """
-import sys
 
 if __name__ == "__main__":
 # %% module import
     import pylim.helpers as h
-    from pylim.libradtran import get_info_from_libradtran_input
-    from pylim.cirrus_hl import transfer_calibs
-    import numpy as np
-    import pandas as pd
-    import xarray as xr
     import os
     from subprocess import Popen
-    from tqdm import tqdm
-    from joblib import cpu_count
     import datetime as dt
-    from pysolar.solar import get_azimuth
 
 # %% set options and get files
     campaign = "cirrus-hl"

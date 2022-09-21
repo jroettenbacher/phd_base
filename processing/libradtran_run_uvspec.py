@@ -1,8 +1,28 @@
 #!/usr/bin/env python
-"""Run uvspec
-author: Johannes Röttenbacher
+"""Run libRadtran simulation (uvspec) for a flight
+
+Given the flight and the path to the uvspec executable, this script calls ``uvspec`` for each input file and writes a log and output file.
+It does so in parallel, checking how many CPUs are available.
+After that the output files are merged into one data frame and information from the input file is added to write one netCDF file.
+
+The script can be run for one flight or for all flights.
+
+**Required User Input:**
+
+* campaign
+* flight (e.g. "Flight_20210715a" or "HALO-AC3_20220225_HALO_RF01")
+* path to uvspec executable
+* wavelength, defines the input folder name which is defined in :ref:`processing:libradtran_write_input_file.py`
+* name of netCDF file (optional)
+
+**Output:**
+
+* out and log file for each simulation
+* log file for script
+* netCDF file with simulation in- and output
+
+*author*: Johannes Röttenbacher
 """
-import sys
 
 if __name__ == "__main__":
 # %% module import

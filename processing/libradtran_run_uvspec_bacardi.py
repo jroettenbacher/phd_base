@@ -1,6 +1,33 @@
 #!/usr/bin/env python
-"""Run uvspec
-author: Johannes Röttenbacher
+"""Run clearsky broadband libRadtran simulations for comparison with BACARDI measurements.
+
+The input files come from :ref:`processing:libradtran_write_input_file_bacardi.py`.
+
+**Required User Input:**
+
+* campaign
+* flights in a list (optional, if not manually specified all flights will be processed)
+* solar_flag, run simulation for solar or for thermal infrared wavelengths?
+
+The script will loop through all files and start simulations for all input files it finds (in parallel for one flight).
+If the script is called via the command line it creates a `log` folder in the working directory if necessary and saves a log file to that folder.
+It also displays a progress bar in the terminal.
+After it is done with one flight, it will collect information from the input files and merge all output files in a dataframe to which it appends the information from the input files.
+It converts everything to a netCDF file and writes it to disc with a bunch of metadata included.
+
+**Output:**
+
+* out and log file for each simulation
+* log file for script
+* netCDF file with simulation in- and output
+
+Run like this:
+
+.. code-block:: shell
+
+    python libradtran_run_uvspec_bacardi.py
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     # %% module import

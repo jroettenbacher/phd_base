@@ -121,6 +121,142 @@ smart_process_lab_calib_halo_ac3.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_process_lab_calib_halo_ac3
 
+libRadtran
+==========
+
+`libRadtran <https://doi.org/10.5194/gmd-9-1647-2016>`_ is a radiative transfer model which can model spectral radiative fluxes.
+
+libRadtran simulations along flight path
+----------------------------------------
+
+The following scripts use the BAHAMAS data to create libRadtran input files to simulate fluxes along the flightpath.
+The two scripts are meant to allow for flexible settings of the simulation.
+
+BACARDI versions of these scripts are available which replace the old IDL scripts.
+They are to be used as part of the BACARDI processing.
+Before publishing BACARDI data, the state of the libRadtran input settings should be saved!
+
+SMART versions of the scripts are also available which run a standard SMART setup for campaign purposes.
+
+**TODO:**
+
+- [ ] use specific total column ozone concentrations from OMI
+
+   - can be downloaded here: https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura
+   - you need an Earth Data account and `add the application to your profile <https://disc.gsfc.nasa.gov/earthdata-login>`_
+   - checkout the `instructions for command line download <https://disc.gsfc.nasa.gov/data-access#windows_wget>`_
+
+- [x] change atmosphere file according to location -> uvspec does this automatically when lat, lon and time are supplied
+
+   - [x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)
+
+- [x] use ocean or land albedo according to land sea mask
+- [x] include solar zenith angle filter
+- [ ] use altitude (ground height above sea level) from a surface map, when over land |rarr| adjust zout definition accordingly
+- [ ] use self-made surface_type_map for simulations in the Arctic
+- [ ] use sur_temperature for thermal infrared calculations (input from VELOX)
+- BACARDI
+- [ ] use surface_type_map for BACARDI simulations
+- [ ] use surface temperature according to ERA5 reanalysis for BACARDI simulations
+
+libradtran_write_input_file.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.libradtran_write_input_file
+
+libradtran_run_uvspec.py
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.libradtran_run_uvspec
+
+
+BACARDI processing
+------------------
+
+The following two scripts were used in order to prepare the BACARDI processing.
+They are superseded by the new python versions of these scripts.
+
+* :ref:`processing:libradtran_write_input_file_bacardi.py`
+* :ref:`processing:libradtran_run_uvspec_bacardi.py`
+
+01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Current settings:**
+
+* Albedo from Taylor et al. 1996
+* atmosphere file: afglt.dat -> tropical atmosphere
+
+**Required User Input:**
+
+* Flight date
+* sonde date (mmdd)
+* sounding station (stationname_stationnumber)
+* time interval for modelling (time_step)
+
+Run like this:
+
+.. code-block:: shell
+
+   # cd into script folder
+   cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+   # start IDL
+   idl
+   # start logging to a file
+   idl> journal, 'filename.log'
+   # run script
+   idl> .r 01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+   # stop logging
+   idl> journal
+
+
+03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Current settings:**
+
+* Albedo from Taylor et al. 1996
+
+**Required User Input:**
+
+* Flight date
+* sonde date (mmdd)
+* sounding station (stationname_stationnumber)
+
+Run like this:
+
+.. code-block:: shell
+
+   # cd into script folder
+   cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+   # start IDL
+   idl
+   # start logging to a file
+   idl> journal, 'filename.log'
+   # run script
+   idl> .r 03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+   # stop logging
+   idl> journal
+
+libradtran_write_input_file_bacardi.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.libradtran_write_input_file_bacardi
+
+libradtran_run_uvspec_bacardi.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.libradtran_run_uvspec_bacardi
+
+SMART processing
+----------------
+
+For the calibration of SMART the incoming direct radiation needs to be corrected for the cosine response of the inlet.
+In order to get the direct fraction of incoming radiation a clearsky simulation is necessary.
+For this purpose the scripts :ref:`processing:libradtran_write_input_file_smart.py` and :ref:`processing:libradtran_run_uvspec.py` are used.
+To be able to repeat the simulation the state of the first script which produced the input files for the simulation should not be changed.
+
+libradtran_write_input_file_smart.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.libradtran_write_input_file_smart
+
+
 GoPro Time Lapse quicklooks
 ============================
 

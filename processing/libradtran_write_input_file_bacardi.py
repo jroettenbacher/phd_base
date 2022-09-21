@@ -1,12 +1,33 @@
 #!/usr/bin/env python
-"""Create an input file for libRadtran simulation to be used in BACARDI processing
+"""Create input files for libRadtran simulation to be used in BACARDI processing
 
-* behind some options you find the page number of the manual, where the option is explained in more detail
-* set options to "None" if you don't want to use them
-* Variables which start with "_" are for internal use
-* for HALO-AC3 a fixed radiosonde location (Longyearbyen) is used. Uncomment the find_closest_station line for CIRRUS-HL
+This will write all input files for a clearsky broadband libRadtran simulations along the flight path to be compared to BACARDI measurements.
 
-author: Johannes Röttenbacher
+**Required User Input:**
+
+* flights in a list (optional, if not manually specified all flights will be processed)
+* time_step, in what interval should the simulations be done along the flight path?
+* solar_flag, write file for simulation of solar or thermal infrared fluxes?
+* use_dropsonde flag, only available for |haloac3|
+
+**Output:**
+
+* log file
+* input files for libRadtran simulation along flight track
+
+Run like this:
+
+.. code-block:: shell
+
+    python libradtran_write_input_file_bacardi.py
+
+Behind some options you find the page number of the manual, where the option is explained in more detail.
+Set options to "None" if you don't want to use them.
+* Variables which start with "_" are for internal use.
+For |haloac3| a fixed radiosonde location (Longyearbyen) is used.
+Uncomment the find_closest_station line for CIRRUS-HL.
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     # %% module import

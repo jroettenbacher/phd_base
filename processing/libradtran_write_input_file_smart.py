@@ -1,11 +1,27 @@
 #!/usr/bin/env python
-"""Create an input file for libRadtran to run a SMART clearsky spectral run to calibrate the SMART files
+"""Create an input file for libRadtran to run a SMART clearsky spectral run to calibrate the SMART files.
 
-* behind some options you find the page number of the manual, where the option is explained in more detail
-* set options to "None" if you don't want to use them
-* Variables which start with "_" are for internal use only and will not be used as an option for the input file.
+**Required User Input:**
 
-author: Johannes Röttenbacher
+* campaign
+* flight (e.g. 'Flight_202170715a' or 'HALO-AC3_20220225_HALO_RF01')
+* time_step (e.g. 'minutes=1')
+* use_smart_ins flag
+* use_dropsonde flag (only available for |haloac3|)
+
+**Output:**
+
+* log file
+* input files for libRadtran simulation along flight track
+
+Behind some options you find the page number of the manual, where the option is explained in more detail.
+
+**Do not change the options in this file!**
+
+This file is part of the SMART calibration and is needed to repeat the calibration.
+Variables which start with "_" are for internal use only and will not be used as an option for the input file.
+
+*author*: Johannes Röttenbacher
 """
 
 if __name__ == "__main__":
@@ -27,7 +43,6 @@ if __name__ == "__main__":
     time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     use_dropsonde = True if campaign == "halo-ac3" else False
-    integrate = False
 
 # %% setup logging
     try:
@@ -142,15 +157,9 @@ if __name__ == "__main__":
         )
 
         # set options for libRadtran run - post-processing
-        if integrate:
-            postprocess_settings = dict(
-                output_user="sza albedo zout edir edn eup",  # page 109
-                output_process="integrate",  # page 108
-            )
-        else:
-            postprocess_settings = dict(
-                output_user="wavelength sza albedo zout edir edn eup",  # page 109
-            )
+        postprocess_settings = dict(
+            output_user="wavelength sza albedo zout edir edn eup",  # page 109
+        )
         # %% write input file
         with open(_input_filepath, "w") as ifile:
             ifile.write(f"# libRadtran input file generated with libradtran_write_input_file.py "
