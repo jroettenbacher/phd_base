@@ -58,6 +58,13 @@ HALO-(AC)³ Laboratory Calibration comparison
 
 .. automodule:: analysis.halo_ac3_smart_compare_lab_calibs
 
+|haloac3| Transfer Calibrations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Script:* :py:mod:`halo_ac3_smart_check_transfer_calibrations.py`
+
+.. automodule:: analysis.halo_ac3_smart_check_transfer_calibrations
+
 
 SMART
 -----
