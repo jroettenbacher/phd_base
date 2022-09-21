@@ -7,7 +7,7 @@
 * flight
 * use_smart_ins flag
 * second airport to add to map
-* csv file with time stamp and GoPro picture number (output from :ref:`processing:write_gopro_timestamps.py`)
+* csv file with time stamp and GoPro picture number (output from :ref:`processing:gopro_write_timestamps.py`)
 * BAHAMAS nc file
 
 **Output:**

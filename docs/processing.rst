@@ -135,29 +135,29 @@ See the `README.md` in the CIRRUS-HL GoPro folder for details.
 A list which tracks the processing status can be found there.
 For |haloac3| this table is part of the ``processing_diary.md`` which can be found in the upper level folder ``HALO-AC3``.
 
-gopro_copy_files_to_disc.py
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.gopro_copy_files_to_disc
+gopro_copy_files_to_disk.py
+---------------------------
+.. automodule:: processing.gopro_copy_files_to_disk
 
-add_timestamp_to_picture.py
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.add_timestamp_to_picture
+gopro_add_timestamp_to_picture.py
+---------------------------------
+.. automodule:: processing.gopro_add_timestamp_to_picture
 
-write_gopro_timestamps.py
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.write_gopro_timestamps
+gopro_write_timestamps.py
+-------------------------
+.. automodule:: processing.gopro_write_timestamps
 
 gopro_plot_maps.py
-^^^^^^^^^^^^^^^^^^^
+------------------
 .. automodule:: processing.gopro_plot_maps
 
-add_map_to_picture.py
-^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.add_map_to_picture
+gopro_add_map_to_picture.py
+---------------------------
+.. automodule:: processing.gopro_add_map_to_picture
 
 
 gopro_make_video_from_pictures.sh
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 Uses ffmpeg to create a stop-motion video of the GoPro pictures.
 
@@ -169,6 +169,5 @@ Uses ffmpeg to create a stop-motion video of the GoPro pictures.
 * base directory of GoPro images
 * framerate [12, 24]
 * start_number, number in filename of first picture in folder
-
 
 **Output:** video (slow or fast) of flight from GoPro pictures
