@@ -4,6 +4,7 @@
 *author*: Johannes Röttenbacher
 """
 import os
+import sys
 import toml
 import numpy as np
 import matplotlib
@@ -17,6 +18,36 @@ log = logging.getLogger(__name__)
 ecRad_bands = dict(Band1=(3077, 3846), Band2=(2500, 3076), Band3=(2150, 2500), Band4=(1942, 2150), Band5=(1626, 1941),
                    Band6=(1299, 1625), Band7=(1242, 1298), Band8=(778, 1241), Band9=(625, 777), Band10=(442, 624),
                    Band11=(345, 442), Band12=(263, 344), Band13=(200, 262), Band14=(3846, 12195))
+
+# sea ice albedo in 6-spectral intervals for each month
+ci_albedo = np.empty((12, 6))
+# Sea ice surf. albedo for 0.185-0.25 micron (snow covered; Ebert and Curry, 1993)
+ci_albedo[:, 0] = (0.975, 0.975, 0.975, 0.975,
+                   0.975, 0.876, 0.778, 0.778,
+                   0.975, 0.975, 0.975, 0.975)
+# Sea ice surf. albedo for 0.25-0.44 micron (snow covered; Ebert and Curry, 1993)
+ci_albedo[:, 1] = (0.975, 0.975, 0.975, 0.975,
+                   0.975, 0.876, 0.778, 0.778,
+                   0.975, 0.975, 0.975, 0.975)
+# Sea ice surf. albedo for 0.44-0.69 micron (snow covered; Ebert and Curry, 1993)
+ci_albedo[:, 2] = (0.975, 0.975, 0.975, 0.975,
+                   0.975, 0.876, 0.778, 0.778,
+                   0.975, 0.975, 0.975, 0.975)
+# Sea ice surf. albedo for 0.69-1.19 micron (snow covered; Ebert and Curry, 1993)
+ci_albedo[:, 3] = (0.832, 0.832, 0.832, 0.832,
+                   0.832, 0.638, 0.443, 0.443,
+                   0.832, 0.832, 0.832, 0.832)
+# Sea ice surf. albedo for 1.19-2.38 micron (snow covered; Ebert and Curry, 1993)
+ci_albedo[:, 4] = (0.250, 0.250, 0.250, 0.250,
+                   0.250, 0.153, 0.055, 0.055,
+                   0.250, 0.250, 0.250, 0.250)
+# Sea ice surf. albedo for 2.38-4.00 microns (snow covered; Ebert and Curry, 1993)
+ci_albedo[:, 5] = (0.025, 0.025, 0.025, 0.025,
+                   0.025, 0.030, 0.036, 0.036,
+                   0.025, 0.025, 0.025, 0.025)
+
+# ozone sonde stations
+ozone_files = dict(Flight_20210629a="sc210624.b11")
 
 
 def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:
@@ -315,4 +346,35 @@ def setup_logging(dir: str, file: str = None, custom_string: str = None):
         log.setLevel(logging.INFO)
 
     return log
+
+
+# from pyLARDA.SpectraProcessing
+def seconds_to_fstring(time_diff):
+    return datetime.datetime.fromtimestamp(time_diff).strftime("%H:%M:%S")
+
+
+def read_command_line_args():
+    """
+    Read out command line arguments and save them to a dictionary. Expects arguments in the form key=value.
+    Working key value pairs:
+
+    - t_interp=t/f
+    - date=yyyymmdd
+
+    Returns: dictionary with command line arguments as dict[key] = value
+
+    """
+    args = dict()
+    for arg in sys.argv[1:]:
+        if arg.count('=') == 1:
+            key, value = arg.split('=')
+            args[key] = value
+
+    return args
+
+
+def set_cdo_path(path: str = "/home/jroettenbacher/.conda/envs/phd_base/bin/cdo"):
+    # add cdo path to python environment
+    os.environ["CDO"] = path
+
 

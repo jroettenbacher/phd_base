@@ -403,6 +403,47 @@ libradtran_write_input_file_smart.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.libradtran_write_input_file_smart
 
+ecRad
+=====
+
+`ecRad <https://confluence.ecmwf.int/display/ECRAD>_ is the radiation scheme used in the ECMWF's IFS numerical weather prediction model.
+For my PhD we are comparing measured radiative fluxes with simulated fluxes along the flight track.
+For this we run ecRad in a offline mode and adjust input parameters.
+Those experiments are documented in :ref:`experiments`.
+Here the general processing of ecRad is described.
+
+General Notes on setting up ecRad
+---------------------------------
+
+- To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once.
+Somehow the data link is needed to avoid this error.
+
+Workflow with ecRad
+-------------------
+
+IFS raw output as downloaded by Jan + navigation data from aircraft
+    -> create ecRad input files which correspond to the columns which the aircraft passed during flight\
+    -> run ecrad for aircraft track \
+SMART measurements during flight + ecRad output files for aircraft track \
+    -> compare upward and downward irradiance
+
+1. Download IFS data for campaign (TODO: Ask Hanno for instructions)
+2. Run :ref:`processing:IFS preprocessing` to convert grib to nc files
+3. Decide which flight to work on -> set date in `read_ifs.py`
+4. Run `read_ifs.py` with the options `step` and `t_interp` as you want them to be (see Scripts)
+5. Update namelist in the `ecrad_input/{yyyymmdd}` folder with the decorrelation length
+6. Run `execute_IFS.sh` which runs ecrad for each file in `ecrad_input` (maybe set verbosity level lower to avoid cluttering your screen)
+
+IFS preprocessing
+^^^^^^^^^^^^^^^^^
+
+IFS data comes in grib format.
+To convert it to netcdf and rename the parameters according to the ecmwf codes run
+.. code-block:: shell
+
+   cdo -t ecmwf -f nc copy infile.grb outfile.nc
+
+on each file.
 
 GoPro Time Lapse quicklooks
 ============================
