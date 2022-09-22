@@ -1,5 +1,36 @@
 #!/usr/bin/env python
-"""Data extraction from IFS
+"""Data extraction from IFS along the flight track
+
+**TODO:**
+
+- [ ] more precise read in of navigation data
+- [ ] test if it is necessary to generate one file per time step
+- [ ] Include an option to interpolate in space
+- [ ] check why file 1919-1925 + 6136-6180 + 7184-7194 cause a floating-point exception when processed with ecrad (discovered 2021-04-26) -> probably has to do the way ecrad is called (see execute_IFS.sh)
+
+**Input:**
+
+* IFS model level (ml) file
+* IFS surface (sur) file
+* SMART horidata with flight track (TODO: add option for BAHAMAS)
+
+**Required User Input:**
+
+Can be passed via the command line.
+
+* ozone_flag ('default' or 'sonde')
+* date (yyyymmdd)
+* init_time (00 or 12)
+* flight (e.g. 'Flight_20210629a' or 'HALO-AC3_20220412_HALO_RF18')
+* aircraft ('halo')
+* campaign ('cirrus-hl' or 'halo-ac3')
+* step, one can choose how many time steps should be used from the navigation data to interpolate the IFS data on
+
+**Output:**
+
+* processed IFS file for input to :ref:`processing:ecrad_write_input_files.py`
+* decorrelation length for ecRad namelist file |rarr| manually change that in the namelist file
+
 
 *author*: Hanno Müller, Johannes Röttenbacher
 """
@@ -14,14 +45,10 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 from tqdm import tqdm
-import logging
 import time
 from scipy.interpolate import interp1d
 
 start = time.time()
-log = logging.getLogger(__name__)
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
 
 # %% add solar functions
 from pylim.solar_position import get_sza
@@ -37,6 +64,14 @@ flight = args["flight"] if "flight" in args else 'Flight_20210629a'
 aircraft = args["aircraft"] if "aircraft" in args else "halo"
 campaign = args["campaign"] if "campaign" in args else "cirrus-hl"
 dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
+flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+# setup logging
+try:
+    file = __file__
+except NameError:
+    file = None
+log = h.setup_logging("./logs", file, flight_key)
+
 # print options to user
 log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
          f"\ninit time: {init_time}\nozone: {ozone_flag}")
@@ -85,7 +120,7 @@ else:
     nav_data["seconds"] = nav_data.time * 3600  # convert time to seconds of day
 
 # %% select every step row of nav_data to interpolate IFS data on
-step = 2
+step = 2  # User input
 nav_data_ip = nav_data[::step]
 idx = len(nav_data_ip)
 

@@ -417,6 +417,7 @@ General Notes on setting up ecRad
 
 - To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once.
 Somehow the data link is needed to avoid this error.
+- changing the verbosity in the namelist files causes an floating point error
 
 Workflow with ecRad
 -------------------
@@ -427,12 +428,14 @@ IFS raw output as downloaded by Jan + navigation data from aircraft
 SMART measurements during flight + ecRad output files for aircraft track \
     -> compare upward and downward irradiance
 
-1. Download IFS data for campaign (TODO: Ask Hanno for instructions)
-2. Run :ref:`processing:IFS preprocessing` to convert grib to nc files
-3. Decide which flight to work on -> set date in `read_ifs.py`
-4. Run `read_ifs.py` with the options `step` and `t_interp` as you want them to be (see Scripts)
-5. Update namelist in the `ecrad_input/{yyyymmdd}` folder with the decorrelation length
-6. Run `execute_IFS.sh` which runs ecrad for each file in `ecrad_input` (maybe set verbosity level lower to avoid cluttering your screen)
+#. Download IFS data for campaign (TODO: Ask Hanno for instructions)
+#. Run :ref:`processing:IFS preprocessing` to convert grib to nc files
+#. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py`
+#. Run :ref:`processing:ecrad_read_ifs.py` with the options ``step`` and as you want them to be (see scripts)
+#. Update namelist in the ``ecrad_input/{yyyymmdd}`` folder with the decorrelation length
+#. Run :ref:`processing:ecrad_write_input_files.py`
+#. Run :ref:`processing:ecrad_execute_IFS.sh` which runs ecRad for each file in ``ecrad_input``
+#. Run :ref:`processing:ecrad_processing.py` to generate merged input and output files for and from the ecRad simulation
 
 IFS preprocessing
 ^^^^^^^^^^^^^^^^^
@@ -444,6 +447,62 @@ To convert it to netcdf and rename the parameters according to the ecmwf codes r
    cdo -t ecmwf -f nc copy infile.grb outfile.nc
 
 on each file.
+
+ecrad_read_ifs.py
+^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_read_ifs
+
+ecard_write_input_files.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecard_write_input_files
+
+ecrad_execute_IFS.sh
+^^^^^^^^^^^^^^^^^^^^
+
+This script loops through all input files and runs ecrad with the setup given in ``IFS_namelist_x.nam``.
+
+**Attention:** ecRad has to be run without full paths for the input and output nc file.
+Only the namelist has to be given with its full path.
+The namelist has to be in the same folder as the input files and the output files have to be written in the same folder.
+
+The date defines the input path which is generally ``/projekt_agmwend/data/{campaign}/{ecrad/ifs_folder}/ecrad_input/yyyymmdd/``.
+It then writes the output to the same path, one output file per input file.
+The ``radiative_properties.nc`` file which is generated in each run is renamed and moved to a separate folder to avoid overwriting the file.
+
+**Input:**
+
+* ecrad input files
+* IFS namelist
+
+**Required User Input:**
+
+* -t: use the time interpolated data
+* -d yyyymmdd: give the date to be processed
+* -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments` for details on version)
+
+**Output:**
+
+* ecrad output files in same folder as input files
+* ``radiative_properties.nc`` moved to a separate folder and renamed according to input file
+
+**Run like this:**
+
+This will write all output to the console and to the specified file.
+
+.. code-block:: shell
+
+   ./execute_IFS.sh [-t] [-d yyyymmdd] [-v v1] 2>&1 | tee ./log/today_ecrad_yyyymmdd.log
+
+
+ecrad_execute_IFS_single.sh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As above but runs only one file which has to be given in the script.
+
+ecrad_processing.py
+^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_processing
+
 
 GoPro Time Lapse quicklooks
 ============================

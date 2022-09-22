@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""Use a processed IFS output file and generate one ecrad input file for each time step
+"""Use a processed IFS output file and generate one ecRad input file for each time step
 
 **Required User Input:**
 
-* step: at which intervals should the IFS data be interpolated on the aircraft data
+* step: at which intervals should the IFS data be interpolated on the aircraft data (default: 2s from :ref:`processing:ecrad_read_ifs.py`)
 
 **Output:**
 
@@ -21,14 +21,11 @@ import os
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-import logging
 import time
 from distutils.util import strtobool
 
 start = time.time()
-log = logging.getLogger(__name__)
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.INFO)
+
 
 # %% read in command line arguments
 args = h.read_command_line_args()
@@ -40,6 +37,13 @@ flight = args["flight"] if "flight" in args else "Flight_20210629a"
 aircraft = args["aircraft"] if "aircraft" in args else "halo"
 campaign = args["campaign"] if "campaign" in args else "cirrus-hl"
 dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
+flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+# setup logging
+try:
+    file = __file__
+except NameError:
+    file = None
+log = h.setup_logging("./logs", file, flight_key)
 # print options to user
 log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
          f"\ninit time: {init_time}Z\nt_interp: {t_interp}")

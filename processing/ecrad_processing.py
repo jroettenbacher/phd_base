@@ -1,17 +1,45 @@
 #!\usr\bin\env python
-"""This script bundles postprocessing steps for ecRad input and output files
+"""Bundle postprocessing steps for ecRad input and output files
+
+This script takes all in- and outfiles for and from ecRad and merges them together on a given time axis which is constructed from the file names.
+It takes about one hour to merge one day but that should rapidly increase further work with ecRad data.
+It merges stepwise to reduce IO.
+In a selectable step the merged input and output files can also be merged.
 
 It can be run via the command line and accepts several keyword arguments.
-e.g. :
+
+**Run like this:**
+
 .. code-block:: shell
 
-    python ecrad_processing.py io_flag=input t_interp=False base_dir="./data_jr" date=20170525 merge_io=T
+    python ecrad_processing.py io_flag=input t_interp=False base_dir="./data_jr" date=yyyymmdd merge_io=T
 
-This would merge all ecrad input files which are not time interpolated and can be found in ``base_dir/date/ecrad_input/``.
+This would merge all ecrad input files which are not time interpolated and can be found in ``{base_dir}/{date}/ecrad_input/``.
 After that the script would try to merge the merged in- and outfiles into one file.
-If only ``merge_io`` is given only this would happen.
+If only ``merge_io`` is given only this would happen:
+
+.. code-block:: shell
+
+    # merge merged in- and outfiles
+    python ecrad_processing.py merge_io=T date=yyyymmdd
 
 Usually one would first call it to merge all input files and then a second time to merge all output files and merge them with the merged input files.
+
+**User Input:**
+
+* io_flag (input, output or None, default: None)
+* date (yyyymmdd)
+* version (vx, default:v1)
+* t_interp (True or False, default: False)
+* base_dir (directory)
+* merge_io (T, optional)
+
+**Output:**
+
+* log file
+* intermediate merged files in ``{base_dir}/ecrad_merged/``
+* final merged file: ``{base_dir}/ecrad_merged_(input/output)_{yyyymmdd}(_inp).nc``
+* possibly ``{base_dir}/ecrad_merged_inout_{yyyymmdd}(_inp).nc``
 
 *author*: Johannes Röttenbacher
 """
@@ -59,7 +87,7 @@ def _merge_ecrad_files(files: list,  date: str, outpath: str, version: str = "v1
         pattern = r".*_(?P<sod>\d{,5}\.\d{1}).*"  # match maximum of 5 digits followed by one decimal
         sod_ecrad = [float(re.match(pattern, file).group('sod')) for file in files]
 
-        ecrad = xr.open_mfdataset(files, combine="nested", concat_dim=["time"])
+        ecrad = xr.open_mfdataset(files, combine="nested", concat_dim="time")
         ecrad = ecrad.assign_coords(dict(time=sod_ecrad))
         ecrad = ecrad.squeeze()  # remove dimension column
         # assign attributes to time
@@ -162,6 +190,12 @@ if __name__ == "__main__":
     t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("cirrus-hl", "ecrad")
     flag = strtobool(args["merge_io"]) if "merge_io" in args else False
+    # setup logging
+    try:
+        file = __file__
+    except NameError:
+        file = None
+    log = h.setup_logging("./logs", file, f"{io_flag}_tinp-{t_interp}_{date}")
     log.info(f"The following options have been passed:\nio_flag: {io_flag}\nt_interp: {t_interp}\nversion: {version}\n"
              f"base_dir: {base_dir}\ndate: {date}\nmerge_io: {flag}")
     # create input path according to given base_dir and date
