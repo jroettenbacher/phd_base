@@ -121,6 +121,145 @@ smart_process_lab_calib_halo_ac3.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_process_lab_calib_halo_ac3
 
+
+BACARDI
+=======
+
+BACARDI is a broadband radiometer mounted on the bottom and top of HALO.
+The data is initially processed by DLR and then Anna Luebke used the scripts provided by André Ehrlich and written by Kevin Wolf to process the data further.
+During the processing libRadtran simulations of cloud free conditions are done along the flight track of HALO.
+For details on the BACARDI post processing see :ref:`processing:BACARDI postprocessing`.
+
+**Workflow**
+
+* download and process the radiosonde data (needs to be done once for each station)
+* run libRadtran simulation as explained in :ref:`processing:BACARDI processing` for the whole flight
+* run :ref:`processing:BACARDI postprocessing`
+
+Radiosonde data
+---------------
+
+In order to simulate the clear sky broadband irradiance along the flight path and calculate the direct and diffuse fraction radiosonde data is used as input for libRadtran.
+The data is downloaded from the `University Wyoming website <http://weather.uwyo.edu/upperair/sounding.html>`_ by copying the HTML site into a text file.
+Data can only be downloaded in monthly chunks.
+Then an IDL script from Kevin Wolf is used to extract the necessary data for libRadTran.
+It can be found here: ``/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_prepare_radiosonde_jr.pro``
+
+00_prepare_radiosonde_jr.pro
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**TODO:**
+
+- [ ] Check what radiosonde input is necessary for libRadtran. Simple interpolation yields negative relative humidity at lowest levels. (case: 21.7.21)
+
+**Required User Input:**
+
+* station name and number (select station closest to flight path)
+* quicklook flag
+* month
+
+**Input:**
+
+* monthly radiosonde file
+
+**Output:**
+
+* daily radiosonde file (12UTC and 00UTC) for libRadtran
+
+Run like this:
+
+.. code-block:: shell
+
+   # cd into script folder
+   cd /projekt_agmwend/data/Cirrus_HL/00_Tools/02_soundings
+   # start idl
+   idl
+   # run script
+   idl> .r 00_prepare_radiosonde_jr
+
+libRadtran simulation
+---------------------
+
+Run libRadtran simulation for solar and terrestrial wavelengths along flight track with specified radiosonde data as input.
+This is then used in the BACARDI processing.
+See the section on :ref:`processing:BACARDI processing` for details.
+
+BACARDI postprocessing
+----------------------
+
+For more details see the processing script. From the processing script:
+
+Solar downward
+^^^^^^^^^^^^^^
+
+1. smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec
+2. correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&Zonen calibration)
+3. correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)
+4. apply inertness correction of CMP22 sensors (tau_pyrano=1.20, fcut_pyrano=0.6, rm_length_pyrano=0.5)
+5. attitude correction (roll_offset=+0.3, pitch_offset=+2.55)
+
+Solar upward
+^^^^^^^^^^^^
+
+1. smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec
+2. correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&Zonen calibration)
+3. correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)
+4. apply inertness correction of CMP22 sensors (tau_pyrano=1.20, fcut_pyrano=0.6, rm_length_pyrano=0.5)
+
+Terrestrial downward
+^^^^^^^^^^^^^^^^^^^^
+
+1. smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec
+2. correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&Zonen calibration)
+3. correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)
+4. apply inertness correction of CGR4 sensors (tau_pyrano=2.00, fcut_pyrano=0.5, rm_length_pyrano=2.0)
+
+Terretrial upward
+^^^^^^^^^^^^^^^^^
+
+1. smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec
+2. correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&Zonen calibration)
+3. correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)
+4. apply inertness correction of CGR4 sensors (tau_pyrano=2.00, fcut_pyrano=0.5, rm_length_pyrano=2.0)
+
+00_process_bacardi_V20210928.pro
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Required User Input:**
+
+* Flight date
+* Flight number (Fxx)
+
+**Input:**
+
+* BACARDI quicklook data from DLR (e.g. ``QL-CIRRUS-HL_F15_20210715_ADLR_BACARDI_v1.nc``)
+* simulated broadband downward irradiance from libRadtran
+* direct diffuse fraction from libRadtran
+
+**Output:**
+
+* corrected BACARDI measurement and libRadtran simulations in netCDF file
+
+Run like this:
+
+.. code-block:: shell
+
+   # cd into script folder
+   cd /projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+   # start IDL
+   idl
+   # run script
+   idl> .r 00_process_bacardi_V20210903.pro
+
+
+BAHAMAS
+=======
+
+BAHAMAS records meteorological and location data during the flight.
+It is mostly used for map plots and information about general flight conditions such as outside temperature, pressure, altitude, speed and so on.
+It is processed by DLR and there are quicklook files provided during campaign and quality controlled files after the campaign.
+
+
 libRadtran
 ==========
 

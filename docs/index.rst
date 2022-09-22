@@ -8,13 +8,14 @@ Welcome to Arctic Cirrus's documentation!
 This is the documentation to my PhD work (2021-2024).
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
    Overview <readme_link>
    setup
    processing
    quicklooks
+   experiments
    analysis
    api_documentation
 
