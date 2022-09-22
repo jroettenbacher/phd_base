@@ -415,8 +415,7 @@ Here the general processing of ecRad is described.
 General Notes on setting up ecRad
 ---------------------------------
 
-- To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once.
-Somehow the data link is needed to avoid this error.
+- To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once. Somehow the data link is needed to avoid this error.
 - changing the verbosity in the namelist files causes an floating point error
 
 Workflow with ecRad
@@ -452,9 +451,9 @@ ecrad_read_ifs.py
 ^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_read_ifs
 
-ecard_write_input_files.py
+ecrad_write_input_files.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.ecard_write_input_files
+.. automodule:: processing.ecrad_write_input_files
 
 ecrad_execute_IFS.sh
 ^^^^^^^^^^^^^^^^^^^^
@@ -478,7 +477,7 @@ The ``radiative_properties.nc`` file which is generated in each run is renamed a
 
 * -t: use the time interpolated data
 * -d yyyymmdd: give the date to be processed
-* -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments` for details on version)
+* -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments:ecRad namelists` for details on version)
 
 **Output:**
 

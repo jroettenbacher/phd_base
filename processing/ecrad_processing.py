@@ -44,22 +44,6 @@ Usually one would first call it to merge all input files and then a second time 
 *author*: Johannes Röttenbacher
 """
 
-# %% import modules and set up logging
-import pylim.helpers as h
-import xarray as xr
-from distutils.util import strtobool
-import os
-import logging
-import time
-import glob
-import re
-import datetime
-from tqdm import tqdm
-
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
-log.addHandler(logging.StreamHandler())
-
 # %% functions (a leading underscore (_) denotes functions which are used by other functions)
 
 
@@ -179,6 +163,17 @@ def merge_ecrad_files(base_dir: str, _type: str, date: str, t_interp: bool = Fal
 
 # %% run script
 if __name__ == "__main__":
+    # %% import modules
+    import pylim.helpers as h
+    import xarray as xr
+    from distutils.util import strtobool
+    import os
+    import time
+    import glob
+    import re
+    import datetime
+    from tqdm import tqdm
+
     start = time.time()
     # read in command line arguments or set defaults
     args = h.read_command_line_args()
