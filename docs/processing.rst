@@ -121,6 +121,19 @@ smart_process_lab_calib_halo_ac3.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.smart_process_lab_calib_halo_ac3
 
+Final calibration
+-----------------
+
+These scripts are used for the final calibration of the measurement data.
+They are designed to take care of everything necessary given the correct input files.
+
+cirrus_hl_smart_calibration.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.cirrus_hl_smart_calibration
+
+halo_ac3_smart_calibration.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.halo_ac3_smart_calibration
 
 BACARDI
 =======
@@ -406,11 +419,19 @@ libradtran_write_input_file_smart.py
 ecRad
 =====
 
-`ecRad <https://confluence.ecmwf.int/display/ECRAD>_ is the radiation scheme used in the ECMWF's IFS numerical weather prediction model.
+`ecRad <https://confluence.ecmwf.int/display/ECRAD>`_ is the radiation scheme used in the ECMWF's IFS numerical weather prediction model.
 For my PhD we are comparing measured radiative fluxes with simulated fluxes along the flight track.
 For this we run ecRad in a offline mode and adjust input parameters.
-Those experiments are documented in :ref:`experiments`.
+Those experiments are documented in :ref:`experiments:Experiments`.
 Here the general processing of ecRad is described.
+
+**Notes**
+
+*Questions:*
+
+* What is the difference between flux_dn_direct_sw and flux_dn_sw in ecrad output? |rarr| The second includes diffuse radiation.
+* What does gpoint_sw stand for?
+
 
 General Notes on setting up ecRad
 ---------------------------------
@@ -418,20 +439,34 @@ General Notes on setting up ecRad
 - To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once. Somehow the data link is needed to avoid this error.
 - changing the verbosity in the namelist files causes an floating point error
 
+**Folder Structure**
+
+.. code-block:: shell
+
+   ├── 0X_ecRad
+   │   ├── yyyymmdd
+   │   │   ├── ecrad_input
+   │   │   ├── ecrad_output
+   │   │   ├── ecrad_merged
+   │   │   ├── radiative_properties_vX
+   │   │   └── ncfiles.nc
+
+
 Workflow with ecRad
 -------------------
 
-IFS raw output as downloaded by Jan + navigation data from aircraft
-    -> create ecRad input files which correspond to the columns which the aircraft passed during flight\
-    -> run ecrad for aircraft track \
-SMART measurements during flight + ecRad output files for aircraft track \
-    -> compare upward and downward irradiance
+| IFS raw output + navigation data from aircraft
+| |rarr| create ecRad input files which correspond to the columns which the aircraft passed during flight
+| |rarr| run ecrad for aircraft track
+
+| SMART measurements during flight + ecRad output files for aircraft track
+| |rarr| compare upward and downward (spectral/banded) irradiance
 
 #. Download IFS data for campaign (TODO: Ask Hanno for instructions)
 #. Run :ref:`processing:IFS preprocessing` to convert grib to nc files
 #. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py`
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options ``step`` and as you want them to be (see scripts)
-#. Update namelist in the ``ecrad_input/{yyyymmdd}`` folder with the decorrelation length
+#. Update namelist in the ``{yyyymmdd}/ecrad_input`` folder with the decorrelation length
 #. Run :ref:`processing:ecrad_write_input_files.py`
 #. Run :ref:`processing:ecrad_execute_IFS.sh` which runs ecRad for each file in ``ecrad_input``
 #. Run :ref:`processing:ecrad_processing.py` to generate merged input and output files for and from the ecRad simulation
@@ -553,3 +588,16 @@ Uses ffmpeg to create a stop-motion video of the GoPro pictures.
 * start_number, number in filename of first picture in folder
 
 **Output:** video (slow or fast) of flight from GoPro pictures
+
+Other
+=====
+
+Instrument independent processing scripts.
+
+halo_calculate_attitude_correction.py
+-------------------------------------
+.. automodule:: processing.halo_calculate_attitude_correction
+
+ifs_calculate_along_track_stats.py
+----------------------------------
+.. automodule:: processing.ifs_calculate_along_track_stats

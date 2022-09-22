@@ -17,3 +17,13 @@ ecRad namelists
 * ``IFS_namelist_jr_20210629a_v2.nam``: for flight 20210629a with Baran2017 ice model
 * ``IFS_namelist_jr_20210629a_v3.nam``: for flight 20210629a with Baran2016 ice model
 * ``IFS_namelist_jr_20210629a_v4.nam``: for flight 20210629a with Yi2013 ice model
+
+ecRad setups
+============
+
+Setup ala Hanno
+---------------
+
+* manually enter decorrelation length in namelist depending on latitude (output from :ref:`processing:ecrad_read_ifs.py`)
+* solar constant: distance sun-earth from `heavens above website <https://www.heavens-above.com/sun.aspx?lat=0&lng=0&loc=Unspecified&alt=0&tz=UCT>`_, calculate solar constant in Excel ({campaign}_solar_constant.xlsx)
+* use ozone data from ozone sondes |rarr| http://www.ndaccdemo.org/

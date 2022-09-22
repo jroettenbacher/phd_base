@@ -16,25 +16,12 @@ NetCDF files in the IFS input directory with the statistics.
 
 TODO: Add option to vary amount of surrounding grid cells
 
-**author**: Johannes Röttenbacher
+*author*: Johannes Röttenbacher
 """
-
-# %% import modules
-import datetime
-
-import pylim.helpers as h
-from pylim import reader
-import os
-import numpy as np
-import pandas as pd
-import xarray as xr
-from tqdm import tqdm
-import multiprocessing as mp
-import datetime
-import logging
-
-
 # %% functions
+import xarray as xr
+
+
 def calculate_ifs_along_flighttrack(ifs: xr.Dataset, lat_circles: list, lon_circles: list,
                                     aircraft_height_level: list, bahamas_time: xr.DataArray, i: int):
     """
@@ -64,6 +51,17 @@ def calculate_ifs_along_flighttrack(ifs: xr.Dataset, lat_circles: list, lon_circ
 
 
 if __name__ == "__main__":
+    # %% import modules
+    import datetime
+    import pylim.helpers as h
+    from pylim import reader
+    import os
+    import numpy as np
+    import pandas as pd
+    from tqdm import tqdm
+    import multiprocessing as mp
+    import datetime
+    import logging
     # %% set up logging
     start = pd.to_datetime(datetime.datetime.now())
     log = logging.getLogger(__name__)
