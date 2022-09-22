@@ -9,7 +9,7 @@ import numpy as np
 def dec(julian, year):
     """
     Declination calculated after Michalsky, J.  1988.
-    **Reference**: Michalsky, J.  1988. The Astronomical Almanac's algorithm for approximate solar position (1950-2050).  Solar Energy 40 (3), pp. 227-235.
+    **Reference**: Michalsky, J.  1988. The Astronomical Almanac's algorithm for approximate solar position (1950-2050). Solar Energy 40 (3), pp. 227-235.
 
     Args:
         julian: julian day (day of year) as calculated with julian2.pro

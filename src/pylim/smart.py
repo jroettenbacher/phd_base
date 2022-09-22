@@ -6,7 +6,7 @@
 The functions are explained in their docstring and can be tested using the main frame.
 You can:
 
-The reader functions were moved to ``pylim.reader``.
+The reader functions were moved to :py:mod:`pylim.reader`.
 
 * find the closest pixel and wavelength to any given wavelength for the given wavelength calibration file
 * get information (date, measured property, channel) from the filename
@@ -16,7 +16,7 @@ The reader functions were moved to ``pylim.reader``.
 * plot smart data either for one wavelength over time or for a range of or all wavelengths
 * use the holoviews functions to create a dynamic map for interactive quicklooks in a jupyter notebook
 
-author: Johannes Röttenbacher
+*author*: Johannes Röttenbacher
 """
 
 from pylim import helpers as h

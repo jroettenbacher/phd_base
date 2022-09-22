@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 """Background information and lookup dictionaries for the HALO-AC3 campaign
 
-- There is a lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.
-- Another dictionary relates each measurement with the date of the transfer calibration for that measurement.
+- dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.
+- coordinates of airports and specific locations
+- radiosonde stations
+- flight names dictionary relates flight key to complete flight name
+- dictionary which relates each measurement with the date of the transfer calibration for that measurement.
+- take off and landing times
+- gopro offsets from BAHAMAS time
+- information on stabilization performance
+- radiation square times
 
 *author*: Johannes Röttenbacher
 """

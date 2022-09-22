@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-"""General helper functions
-author: Johannes Röttenbacher
+"""General helper functions and general information
+
+*author*: Johannes Röttenbacher
 """
 import os
 import toml

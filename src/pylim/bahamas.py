@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 """Functions to work with BAHAMAS data
-author: Johannes Röttenbacher
+
+- dictionary with plot properties for quicklook maps
+- function to plot BAHAMAS map
+- get position
+- preprocess function for multiple file read in
+
+*author*: Johannes Röttenbacher
 """
 from pylim import reader
 import pylim.helpers as h
@@ -165,10 +171,3 @@ def preprocess_bahamas(ds: xr.Dataset) -> xr.Dataset:
     ds = ds.rename({"TIME": "time"})
     return ds
 
-
-if __name__ == "__main__":
-    # plot flight track with time stamps
-    date = 20210629
-    number = "a"
-    flight = f"Flight_{date}{number}"
-    plot_bahamas_flight_track(flight)

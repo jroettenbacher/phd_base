@@ -1,8 +1,18 @@
 #!/usr/bin/env python
 """General information about the CIRRUS-HL campaign
 
-- There is a lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel.
-- Another dictionary relates each measurement with the date of the transfer calibration for that measurement.
+- lookup dictionary to look up which spectrometer belongs to which inlet, which inlet is measuring up or downward irradiance and which filename part belongs to which channel
+- dictionary relating flight with flight number
+- BACARDI offsets
+- dictionary which relates each measurement with the date of the transfer calibration for that measurement.
+- take off and landing times according to BAHAMAS
+- gopro local time and BAHAMAS time offset
+- stop over locations for each double flight
+- coordinates of airports
+- radiosonde stations
+- specific flight sections
+- flight hours
+- ozone files
 
 *author*: Johannes Röttenbacher
 """
