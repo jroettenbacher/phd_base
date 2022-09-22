@@ -19,7 +19,7 @@ More information on how to adjust this file can be found in [Setup](./docs/setup
 Documentation can be found [here](https://jroettenbacher.github.io/phd_base/).
 
 
-### FAQ
+## FAQ
 
 * What do negative measurements in the SMART dark current mean?
 
