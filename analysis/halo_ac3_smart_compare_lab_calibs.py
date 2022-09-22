@@ -11,17 +11,17 @@ Due to technical difficulties the spectrometer pair J3, J4 was used during HALO-
 Timeline
 ^^^^^^^^
 
-- **15.11.2021**: First lab calibration before -> Used wrong inlet VN11, channels J3 and J4, assumed wrong effective receiving area
-- **23.11.2021**: Second lab calibration before -> Used wrong inlet VN11, channels J5 and J6
+- **15.11.2021**: First lab calibration before |rarr| Used wrong inlet VN11, channels J3 and J4, assumed wrong effective receiving area
+- **23.11.2021**: Second lab calibration before |rarr| Used wrong inlet VN11, channels J5 and J6
 - **15.02.2022**: First transfer calibration in Oberpfaffenhofen with Ulli2 (packed in container for Kiruna afterwards) and Ulli3 (stays in Oberpfaffenhofen) using VN05 and J5 and J6
-- **21.02.2022**: EMI test flight -> J3, J4
-- **22.02.2022**: saved new offsets for SMART stabilization, transfer calibration with Ulli2 and multiple integration times -> J5, J6
-- **25.02.2022**: Scientific test flight -> J5, J6
-- **11.03.2022**: Transfer flight to Kiruna -> J3, J4
-- **13.03.2022**: First transfer calibration in Kiruna -> J3, J4
+- **21.02.2022**: EMI test flight |rarr| J3, J4
+- **22.02.2022**: saved new offsets for SMART stabilization, transfer calibration with Ulli2 and multiple integration times |rarr| J5, J6
+- **25.02.2022**: Scientific test flight |rarr| J5, J6
+- **11.03.2022**: Transfer flight to Kiruna |rarr| J3, J4
+- **13.03.2022**: First transfer calibration in Kiruna |rarr| J3, J4
 - **11.04.2022**: Final transfer calibration in Kiruna
 - **02.05.2022**: Transfer calibration in lab in Leipzig (optical fibers were detached from Spectrometers in between)
-- **02.05.2022**: Laboratory calibration after campaign -> VN05, channels J3 and J4
+- **02.05.2022**: Laboratory calibration after campaign |rarr| VN05, channels J3 and J4
 - **06.05.2022**: Wavelength calibration
 
 
@@ -68,7 +68,7 @@ There were several problems with the before calibration on 15. November 2021:
 
 * wrong inlet used (VN11 instead of VN05)
 * the effective receiving area was wrongly interpreted leading to an offset of 44mm in the distance between the calibration lamp and the inlet (should be 50cm)
-* the power supply for Ulli3 had a voltage limit in place instead of a current limit -> only relevant for the transfer calibration at Oberpfaffenhofen before the campaign
+* the power supply for Ulli3 had a voltage limit in place instead of a current limit |rarr| only relevant for the transfer calibration at Oberpfaffenhofen before the campaign
 
 Thus, it is decided to use the after campaign calibration for all transfer calibrations.
 

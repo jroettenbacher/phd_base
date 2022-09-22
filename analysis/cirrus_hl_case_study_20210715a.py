@@ -1,6 +1,10 @@
 #!/usr/bin/env python
-"""Case study for Cirrus-HL
+"""Case study for CIRRUS-HL Flight_20210715a
+
 * 15.07.2021 SMART fixed - contrail outbreak over Spain - Radiation Square
+
+See ``CIRRUS-HL_radiation_square_SMART.pptx`` in ``campaigns/CIRRUS-HL/case_studies/Flight_20210715a`` for results.
+
 author: Johannes Röttenbacher
 """
 if __name__ == "__main__":
