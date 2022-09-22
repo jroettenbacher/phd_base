@@ -6,6 +6,9 @@
 
 import numpy as np
 import xarray as xr
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PLAT):

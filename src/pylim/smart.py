@@ -25,7 +25,6 @@ from pylim.cirrus_hl import smart_lookup
 import os
 import re
 import logging
-import sys
 import pandas as pd
 from typing import Tuple, Union
 import numpy as np
@@ -800,6 +799,65 @@ def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, 
     overlay.opts(title=title, show_grid=True)
 
     return overlay
+
+
+def _set_adjust(nr_bands: int) -> float:
+    """Define bottom adjust according to number of bands displayed
+
+    Args:
+        nr_bands: number of bands shown in plot
+
+    Returns: bottom adjust
+
+    """
+    if nr_bands < 4:
+        b_adjust = 0.3
+    elif nr_bands in range(3, 7):
+        b_adjust = 0.35
+    elif nr_bands in range(6, 10):
+        b_adjust = 0.37
+    elif nr_bands in range(9, 13):
+        b_adjust = 0.4
+    else:
+        b_adjust = 0.43
+
+    return b_adjust
+
+
+def plot_smart_ecrad_bands(smart: xr.Dataset, bands: list, path: str = None, save_fig: bool = False):
+    """Plot banded upward and downward irradiance for given ecRad bands
+
+    Args:
+        smart: SMART data set containing variables fdn_banded and fup_banded
+        bands: ecRad band numbers
+        path: where to save figure to
+        save_fig: whether to save figure
+
+    Returns: figure
+
+    """
+    for dir, var in zip(["downward", "upward"], ["fdn_banded", "fup_banded"]):
+        fig, ax = plt.subplots()
+        for i, band in enumerate(h.ecRad_bands):
+            if i + 1 in bands:
+                smart[var].loc[dict(band=i + 1)].plot.line(ax=ax, label=f"{i + 1}: {h.ecRad_bands[band]} nm",
+                                                           add_legend=False)
+        plt.ylabel("Irradiance (W$\,$m$^{-2}$)")
+        plt.xlabel("Time (UTC)")
+        plt.title(f"SMART {dir} Irradiances integrated over ecRad Bands {str(smart.time[0].values)[:10]}")
+        plt.grid()
+        # set legend according to number of bands
+        nr_bands = len(bands)
+        b_adjust = _set_adjust(nr_bands)
+        plt.legend(title="ecRad Band", bbox_to_anchor=[1.1, -0.3], ncol=3)
+        plt.subplots_adjust(bottom=b_adjust)
+        if save_fig:
+            figname = os.path.join(path, f"{str(smart.time[0].values)[:10]}_SMART_ecrad_banded_{dir}_irradiance.png")
+            plt.savefig(figname, dpi=100)
+            log.info(f"Saved {figname}")
+        else:
+            plt.show()
+        plt.close()
 
 
 if __name__ == '__main__':
