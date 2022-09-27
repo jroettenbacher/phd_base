@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # %% set some options
     campaign = "halo-ac3"
     flights = list(meta.flight_names.values())[3:19]  # run all flights
-    flights = ["HALO-AC3_20220412_HALO_RF18"]  # uncomment for single flight
+    flights = ["HALO-AC3_20220407_HALO_RF14"]  # uncomment for single flight
     for flight in tqdm(flights):
         flight_key = flight[-4:]
         flight_date = flight[9:17]
@@ -305,24 +305,22 @@ if __name__ == "__main__":
         ds_vnir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_VNIR_{flight_date}_{flight_key}_v1.0.nc")
         ds_swir = xr.open_dataset(f"{outpath}/HALO-AC3_HALO_SMART_{prop}_SWIR_{flight_date}_{flight_key}_v1.0.nc")
 
-        # from 900/950nm onward use the SWIR data
-        ds_vnir = ds_vnir.sel(wavelength=slice(320, 899))
-        ds_swir = ds_swir.sel(wavelength=slice(900, 2100))
+        # from 985nm onward use the SWIR data
+        ds_vnir = ds_vnir.sel(wavelength=slice(320, 984))
+        ds_swir = ds_swir.sel(wavelength=slice(985, 2100))
+
+        # remove faulty pixels/wavelengths before interpolation on regular wavelength grid
+        # not needed for halo-ac3
 
         # interpolate VNIR wavelength to 1nm resolution
-        ds_vnir = ds_vnir.interp(wavelength=range(320, 900), kwargs={"fill_value": "extrapolate"})
+        ds_vnir = ds_vnir.interp(wavelength=range(320, 985), kwargs={"fill_value": "extrapolate"})
         # interpolate SWIR wavelength to 5nm resolution
-        ds_swir = ds_swir.interp(wavelength=range(900, 2100, 5), kwargs={"fill_value": "extrapolate"})
-
-        # list faulty pixels
-        faulty_pixels = [316, 318, 321, 325, 328, 329, 330, 334, 337, 338, 345, 348, 350, 355, 370, 1410, 1415]
+        ds_swir = ds_swir.interp(wavelength=range(985, 2105, 5), kwargs={"fill_value": "extrapolate"})
 
         # merge vnir and swir, use overwrite for stabilization flag which is different for SWIR and VNIR
         # the difference comes from different time axes due to the dark current measurements in the SWIR files
         # the VNIR flag is used in the end
         ds = ds_vnir.merge(ds_swir, overwrite_vars=["stabilization_flag"])
-        # remove faulty pixels
-        ds = ds.where(~ds.wavelength.isin(faulty_pixels), drop=True)
         # drop introduced wavelength dimension from 1D variables, remove them
         ds[["sza", "saa"]] = ds[["sza", "saa"]].isel(wavelength=0, drop=True)
         # replace negative values with 0
