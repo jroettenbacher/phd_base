@@ -380,7 +380,7 @@ def plot_smart_data(campaign: str, flight: str, filename: str, wavelength: Union
     pixel_wl_path = h.get_path("pixel_wl", campaign)
     data_path = h.get_path("data", flight, campaign)
     calibrated_path = h.get_path("calibrated", flight, campaign)
-    plot_path = h.get_path("plot", campaign)
+    plot_path = h.get_path("plot", campaign=campaign)
     # read in keyword arguments
     raw_path = kwargs["path"] if "path" in kwargs else raw_path
     data_path = kwargs["path"] if "path" in kwargs else data_path
@@ -470,7 +470,7 @@ def plot_smart_spectra(path: str, campaign: str, filename: str, index: int, **kw
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot", campaign)
+    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot", campaign=campaign)
     pixel_path = h.get_path("pixel_wl", campaign)
     df = reader.read_smart_cor(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
@@ -519,7 +519,7 @@ def plot_complete_smart_spectra(path: str, campaign: str, filename: str, index: 
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot", campaign)
+    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot", campaign=campaign)
     pixel_path = h.get_path("pixel_wl", campaign)
     df1 = reader.read_smart_cor(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
