@@ -21,7 +21,8 @@ The reader functions were moved to :py:mod:`pylim.reader`.
 
 from pylim import helpers as h
 from pylim import reader
-from pylim.cirrus_hl import smart_lookup
+from pylim.cirrus_hl import smart_lookup as meta_chl
+from pylim.halo_ac3 import smart_lookup as meta_hac
 import os
 import re
 import logging
@@ -36,6 +37,8 @@ import xarray as xr
 hv.extension('bokeh')
 
 log = logging.getLogger(__name__)
+
+meta = {"cirrus-hl": meta_chl, "halo-ac3": meta_hac}  # setup up metadata dictionary for both campaigns
 
 
 def get_info_from_filename(filename: str) -> Tuple[str, str, str]:
@@ -163,7 +166,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     measurement = reader.read_smart_raw(path, filename)
     t_int = int(measurement["t_int"][0])  # get integration time
     date_str, channel, direction = get_info_from_filename(filename)
-    spectrometer = smart_lookup[f"{direction}_{channel}"]
+    spectrometer = meta[campaign][f"{direction}_{channel}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, spectrometer)
     # calculate dark current depending on channel:
     # SWIR: use measurements during shutter phases
@@ -275,14 +278,14 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     return dark_current
 
 
-def plot_mean_corrected_measurement(flight: str, filename: str, measurement: Union[pd.Series, list],
-                                    measurement_cor: Union[pd.Series, list],
-                                    option: int, **kwargs):
+def plot_mean_corrected_measurement(campaign: str, flight: str, filename: str, measurement: Union[pd.Series, list],
+                                    measurement_cor: Union[pd.Series, list], option: int, **kwargs):
     """
     Plot the mean dark current corrected SMART measurement over time together with the raw measurement and the dark
     current.
 
     Args:
+        campaign: campaign name (cirrus-hl or halo-ac3)
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: name of file
         measurement: raw SMART measurements for each pixel averaged over time
@@ -297,7 +300,7 @@ def plot_mean_corrected_measurement(flight: str, filename: str, measurement: Uni
     pixel_path = h.get_path("pixel_wl")
     date_str, channel, direction = get_info_from_filename(filename)
     path = h.get_path("raw", flight)
-    spectrometer = smart_lookup[f"{direction}_{channel}"]
+    spectrometer = meta[campaign][f"{direction}_{channel}"]
     dark_current = get_dark_current(path, filename, option, plot=False)
     wavelength = reader.read_pixel_to_wavelength(pixel_path, spectrometer)["wavelength"]
 
@@ -354,13 +357,14 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
     return measurement_cor
 
 
-def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **kwargs) -> plt.axes:
+def plot_smart_data(campaign: str, flight: str, filename: str, wavelength: Union[list, str], **kwargs) -> plt.axes:
     """
     Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
     or a time series of one wavelength. Return an axes object to continue plotting or show it.
     TODO: add option to plot multiple files
 
     Args:
+        campaign: campaign name (cirrus-hl or halo-ac3)
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: Standard SMART filename
         wavelength: list with either one or two wavelengths in nm or 'all'
@@ -372,11 +376,11 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
     Returns: Shows a figure or saves it to disc.
 
     """
-    raw_path = h.get_path("raw", flight)
-    pixel_wl_path = h.get_path("pixel_wl")
-    data_path = h.get_path("data", flight)
-    calibrated_path = h.get_path("calibrated", flight)
-    plot_path = h.get_path("plot")
+    raw_path = h.get_path("raw", flight, campaign)
+    pixel_wl_path = h.get_path("pixel_wl", campaign)
+    data_path = h.get_path("data", flight, campaign)
+    calibrated_path = h.get_path("calibrated", flight, campaign)
+    plot_path = h.get_path("plot", campaign)
     # read in keyword arguments
     raw_path = kwargs["path"] if "path" in kwargs else raw_path
     data_path = kwargs["path"] if "path" in kwargs else data_path
@@ -401,7 +405,7 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         smart = smart.iloc[:, 2:]  # remove columns t_int and shutter
         title = "Raw"
         ylabel = "Netto Counts"
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, smart_lookup[f"{direction}_{channel}"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, meta[campaign][f"{direction}_{channel}"])
     if len(wavelength) == 2:
         pixel_nr = []
         wl_str = ""
@@ -450,12 +454,13 @@ def plot_smart_data(flight: str, filename: str, wavelength: Union[list, str], **
         return ax
 
 
-def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
+def plot_smart_spectra(path: str, campaign: str, filename: str, index: int, **kwargs) -> None:
     """
     Plot a spectra from a SMART calibrated measurement file for a given index (time step)
 
     Args:
         path: where the file can be found
+        campaign: campaign name (cirrus-hl or halo-ac3)
         filename: name of the file (standard SMART filename convention)
         index: which row to plot
         **kwargs: save_fig (bool): Save figure to plot path given in config.toml (default: False),
@@ -465,11 +470,11 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot")
-    pixel_path = h.get_path("pixel_wl")
+    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot", campaign)
+    pixel_path = h.get_path("pixel_wl", campaign)
     df = reader.read_smart_cor(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
-    spectrometer = smart_lookup[f"{direction}_{channel}"]
+    spectrometer = meta[campaign][f"{direction}_{channel}"]
     pixel_wl = reader.read_pixel_to_wavelength(pixel_path, spectrometer)
     max_id = len(df) - 1
     try:
@@ -498,12 +503,13 @@ def plot_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
     plt.close()
 
 
-def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) -> None:
+def plot_complete_smart_spectra(path: str, campaign: str, filename: str, index: int, **kwargs) -> None:
     """
     Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)
 
     Args:
         path: where the file can be found
+        campaign: campaign name (cirrus-hl or halo-ac3)
         filename: name of the file (standard SMART filename convention)
         index: which row to plot
         **kwargs: save_fig (bool): Save figure to plot path given in config.toml (default: False)
@@ -513,8 +519,8 @@ def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) 
 
     """
     save_fig = kwargs["save_fig"] if "save_fig" in kwargs else False
-    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot")
-    pixel_path = h.get_path("pixel_wl")
+    plot_path = kwargs["plot_path"] if "plot_path" in kwargs else h.get_path("plot", campaign)
+    pixel_path = h.get_path("pixel_wl", campaign)
     df1 = reader.read_smart_cor(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
     if channel == "SWIR":
@@ -524,8 +530,8 @@ def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) 
 
     filename2 = filename.replace(channel, channel2)
     df2 = reader.read_smart_cor(path, filename2)
-    spectrometer1 = smart_lookup[f"{direction}_{channel}"]
-    spectrometer2 = smart_lookup[f"{direction}_{channel2}"]
+    spectrometer1 = meta[campaign][f"{direction}_{channel}"]
+    spectrometer2 = meta[campaign][f"{direction}_{channel2}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectrometer1)
     pixel_wl2 = reader.read_pixel_to_wavelength(pixel_path, spectrometer2)
     # merge pixel dfs and sort by wavelength
@@ -568,18 +574,19 @@ def plot_complete_smart_spectra(path: str, filename: str, index: int, **kwargs) 
     plt.close()
 
 
-def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int) -> hv.Overlay:
+def plot_complete_smart_spectra_interactive(path: str, campaign:str, filename: str, index: int) -> hv.Overlay:
     """
     Plot the complete spectra given by both channels from SMART calibrated measurement files for a given index (time step)
     Args:
         path: where the file can be found
+        campaign: campaign name (cirrus-hl or halo-ac3)
         filename: name of the file (standard SMART filename convention)
         index: which row to plot
 
     Returns: Shows and or saves a plot
 
     """
-    pixel_path = h.get_path("pixel_wl")
+    pixel_path = h.get_path("pixel_wl", campaign)
     df1 = reader.read_smart_cor(path, filename)
     date_str, channel, direction = get_info_from_filename(filename)
     if channel == "SWIR":
@@ -589,8 +596,8 @@ def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int
 
     filename2 = filename.replace(channel, channel2)
     df2 = reader.read_smart_cor(path, filename2)
-    spectrometer1 = smart_lookup[f"{direction}_{channel}"]
-    spectrometer2 = smart_lookup[f"{direction}_{channel2}"]
+    spectrometer1 = meta[campaign][f"{direction}_{channel}"]
+    spectrometer2 = meta[campaign][f"{direction}_{channel2}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectrometer1)
     pixel_wl2 = reader.read_pixel_to_wavelength(pixel_path, spectrometer2)
     # merge pixel dfs and sort by wavelength
@@ -622,12 +629,13 @@ def plot_complete_smart_spectra_interactive(path: str, filename: str, index: int
     return overlay
 
 
-def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[list, str]) -> hv.Curve:
+def plot_smart_data_interactive(campaign: str, flight: str, filename: str, wavelength: Union[list, str]) -> hv.Curve:
     """
     Plot SMART data in the given file. Either a time average over a range of wavelengths or all wavelengths,
     or a time series of one wavelength.
 
     Args:
+        campaign: campaign name (cirrus-hl or halo-ac3)
         flight: to which flight does the file belong to? (e.g. Flight_20210707a)
         filename: Standard SMART filename
         wavelength: list with either one or two wavelengths in nm or 'all'
@@ -636,10 +644,10 @@ def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[li
     Returns: Creates an interactive figure
 
     """
-    raw_path = h.get_path("raw", flight)
-    pixel_wl_path = h.get_path("pixel_wl")
-    data_path = h.get_path("data", flight)
-    calibrated_path = h.get_path("calibrated", flight)
+    raw_path = h.get_path("raw", flight, campaign)
+    pixel_wl_path = h.get_path("pixel_wl", campaign)
+    data_path = h.get_path("data", flight, campaign)
+    calibrated_path = h.get_path("calibrated", flight, campaign)
     date_str, channel, direction = get_info_from_filename(filename)
     # make sure wavelength is a list
     if type(wavelength) != list and wavelength != "all":
@@ -657,7 +665,7 @@ def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[li
         df = df.iloc[:, 2:]  # remove columns t_int and shutter
         title = "Raw"
         ylabel = "Netto Counts"
-    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, smart_lookup[f"{direction}_{channel}"])
+    pixel_wl = reader.read_pixel_to_wavelength(pixel_wl_path, meta[campaign][f"{direction}_{channel}"])
     if len(wavelength) == 2:
         pixel_nr = []
         for wl in wavelength:
@@ -701,11 +709,13 @@ def plot_smart_data_interactive(flight: str, filename: str, wavelength: Union[li
     return curve
 
 
-def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, str], flight: str) -> hv.Overlay:
+def plot_calibrated_irradiance_flux(campaign: str, filename: str, wavelength: Union[int, list, str], flight: str
+                                    ) -> hv.Overlay:
     """
     Plot upward and downward irradiance as a time averaged series over the wavelength or as a time series for one
     wavelength.
     Args:
+        campaign: campaign name (cirrus-hl or halo-ac3)
         filename: Standard SMART filename
         wavelength: single or range of wavelength or "all"
         flight: flight folder (flight_xx)
@@ -717,7 +727,7 @@ def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, 
     if type(wavelength) != list and wavelength != "all":
         wavelength = [wavelength]
     # get paths and define input path
-    calibrated_path, pixel_path = h.get_path("calibrated", flight=flight), h.get_path("pixel_wl", flight=flight)
+    calibrated_path, pixel_path = h.get_path("calibrated", flight, campaign), h.get_path("pixel_wl", flight, campaign)
     date_str, channel, direction = get_info_from_filename(filename)
     direction2 = "Fdw" if direction == "Fup" else "Fup"  # set opposite direction
     filename2 = filename.replace(direction, direction2)
@@ -725,7 +735,7 @@ def plot_calibrated_irradiance_flux(filename: str, wavelength: Union[int, list, 
     df1 = reader.read_smart_cor(calibrated_path, filename)
     df2 = reader.read_smart_cor(calibrated_path, filename2)
     # get spectrometers from smart_lookup dictionary
-    spectro1, spectro2 = smart_lookup[f"{direction}_{channel}"], smart_lookup[f"{direction2}_{channel}"]
+    spectro1, spectro2 = meta[campaign][f"{direction}_{channel}"], meta[campaign][f"{direction2}_{channel}"]
     pixel_wl1 = reader.read_pixel_to_wavelength(pixel_path, spectro1)
     pixel_wl2 = reader.read_pixel_to_wavelength(pixel_path, spectro2)
     title = "Corrected for Dark Current and Calibrated"
