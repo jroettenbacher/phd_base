@@ -48,7 +48,7 @@ extensions = [
     'sphinx_rtd_theme',
 ]
 autosectionlabel_prefix_document = True
-
+numfig = True  # autonumerate Figures and tables
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

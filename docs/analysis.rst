@@ -48,10 +48,10 @@ cirrus_hl_overview.py
 .. automodule:: analysis.cirrus_hl_overview
    :members:
 
-HALO-(AC)³
+|haloac3|
 -----------
 
-HALO-(AC)³ Laboratory Calibration comparison
+|haloac3| Laboratory Calibration comparison
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *Script:* :py:mod:`halo_ac3_smart_compare_lab_calibs.py`
@@ -64,6 +64,13 @@ HALO-(AC)³ Laboratory Calibration comparison
 *Script:* :py:mod:`halo_ac3_smart_check_transfer_calibrations.py`
 
 .. automodule:: analysis.halo_ac3_smart_check_transfer_calibrations
+
+|haloac3| SWIR Offset Investigation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Script:* :py:mod:`halo_ac3_smart_SWIR_offset_investigation.py`
+
+.. automodule:: analysis.halo_ac3_smart_SWIR_offset_investigation
 
 
 SMART
