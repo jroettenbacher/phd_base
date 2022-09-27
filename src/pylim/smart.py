@@ -102,17 +102,15 @@ def merge_vnir_swir_nc(vnir: xr.Dataset, swir: xr.Dataset) -> xr.Dataset:
     return all
 
 
-def _plot_dark_current(wavelengths: Union[pd.Series, list],
-                      dark_current: Union[pd.Series, list],
-                      spectrometer: str, channel: str, **kwargs):
+def _plot_dark_current(wavelengths: Union[pd.Series, list], dark_current: Union[pd.Series, list], filename: str,
+                       **kwargs):
     """
     Plot the dark current over the wavelengths from the specified spectrometer and channel.
 
     Args:
         wavelengths: series or list of wavelengths corresponding with the pixel numbers from read_pixel_to_wavelength
         dark_current: series or list with mean dark current for each pixel
-        spectrometer: name of the spectrometer inlet
-        channel: VNIR or SWIR
+        filename: name of file
         **kwargs: save_fig: whether to save the figure in the current directory (True) or just show it (False, default)
 
     Returns:
@@ -122,12 +120,12 @@ def _plot_dark_current(wavelengths: Union[pd.Series, list],
     plt.plot(wavelengths, dark_current, color='k')
     plt.axhline(dark_current.mean(), color="orange", label="Mean")
     plt.grid()
-    plt.title(f"Dark Current from Spectrometer {spectrometer}, channel: {channel}")
+    plt.title(f"Dark Current for {filename}")
     plt.xlabel("Wavelength (nm)")
     plt.ylabel("Netto Counts")
     plt.legend()
     if save_fig:
-        plt.savefig(f"dark_current_{spectrometer}_{channel}.png")
+        plt.savefig(f"{filename}_dark_current.png")
     else:
         plt.show()
     plt.close()
@@ -154,7 +152,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
     Returns: pandas Series with the mean dark current measurements over time for each pixel and optionally a plot of it
 
     """
-    plot = kwargs["plot"] if "plot" in kwargs else True
+    plot = kwargs["plot"] if "plot" in kwargs else False
     date = kwargs["date"] if "date" in kwargs else None
     dark_filepath = kwargs["dark_filepath"] if "dark_filepath" in kwargs else None
     campaign = kwargs["campaign"] if "campaign" in kwargs else "halo-ac3"
@@ -272,7 +270,7 @@ def get_dark_current(flight: str, filename: str, option: int, **kwargs) -> Union
         raise ValueError(f"'channel' should be either 'VNIR' or 'SWIR' but is {channel}!")
 
     if plot:
-        _plot_dark_current(wls, dark_current, spectrometer, channel)
+        _plot_dark_current(wls, dark_current, filename, **kwargs)
 
     return dark_current
 
@@ -344,7 +342,7 @@ def correct_smart_dark_current(flight: str, smart_file: str, option: int, **kwar
     path = kwargs.pop("path") if "path" in kwargs else path
     date_str, channel, direction = get_info_from_filename(smart_file)
     smart = reader.read_smart_raw(path, smart_file)
-    dark_current = get_dark_current(flight, smart_file, option, plot=False, path=path, **kwargs)
+    dark_current = get_dark_current(flight, smart_file, option, path=path, **kwargs)
 
     if channel == "VNIR" and option == 1:
         dark_current = dark_current.mean()  # If get_dark_current returns a column mean, this can to be removed
