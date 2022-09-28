@@ -11,7 +11,7 @@
 **Input:**
 
 * IFS model level (ml) file
-* IFS surface (sur) file
+* IFS surface (sfc) file
 * SMART horidata with flight track (TODO: add option for BAHAMAS)
 
 **Required User Input:**
@@ -78,12 +78,12 @@ if __name__ == "__main__":
              f"\ninit time: {init_time}\nozone: {ozone_flag}")
 
     # %% set paths
-    path_ifs_raw = h.get_path(campaign, "ifs_raw")
+    path_ifs_raw = h.get_path("ifs_raw", campaign=campaign)
     path_ifs_raw = f"{path_ifs_raw}/{date}"
-    path_ifs_output = os.path.join(h.get_path(campaign, "ifs"), date)
-    path_horidata = h.get_path(campaign, "horidata", flight)
-    path_ecrad = os.path.join(h.get_path(campaign, "ecrad"), date)
-    path_ozone = h.get_path(campaign, "ozone")
+    path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
+    path_horidata = h.get_path("horidata", flight, campaign)
+    path_ecrad = os.path.join(h.get_path("ecrad", campaign=campaign), date)
+    path_ozone = h.get_path("ozone", campaign=campaign)
     # create output path
     h.make_dir(path_ecrad)
     h.make_dir(path_ifs_output)
@@ -109,9 +109,12 @@ if __name__ == "__main__":
     log.info(f"Processed flight: {flight}")
 
     if aircraft == "halo":
-        horidata_files = [f for f in os.listdir(path_horidata) if "IMS" in f or "Pos" in f]
-        log.info(f"Einzulesende navigation data files: {horidata_files}")
-        nav_data = reader.read_nav_data(path_horidata)
+        ims_file = [f for f in os.listdir(path_horidata) if "IMS" in f][0]
+        gps_file = [f for f in os.listdir(path_horidata) if "Pos" in f][0]
+        log.info(f"Einzulesende navigation data files: {ims_file}, {gps_file}")
+        ims = reader.read_nav_data(f"{path_horidata}/{ims_file}")
+        gps = reader.read_ins_gps_pos(f"{path_horidata}/{gps_file}")
+        nav_data = ims.join(gps, how="inner", lsuffix="x")
         nav_data["time"] = nav_data.index
     else:
         horidata_file = glob.glob(os.path.join(path_horidata, "Polar5*.nav"))[0]
@@ -200,8 +203,7 @@ if __name__ == "__main__":
     # set sw_albedo to constant 0.2 when over land
     sw_albedo.where(data_srf.LSM < 0.5, 0.2)
 
-
-    data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI"]]  # select only relevant variables
+    data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]  # select only relevant variables
     data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])  # drop unnecessary variables
     # interpolate temperature on half levels
     data_ml["temperature_hl"] = data_ml.t.interp(level=np.insert((data_ml.level + 0.5).values, 0, 0.5),
@@ -216,7 +218,8 @@ if __name__ == "__main__":
     # rename surface variables and add new dimension "column"
     data_srf = data_srf.rename({"U10M": "u_wind_10m",
                                 "V10M": "v_wind_10m",
-                                "SKT": "skin_temperature"}
+                                "SKT": "skin_temperature",
+                                "MSL": "mean_sea_level_pressure"}
                                ).expand_dims("column")
 
     # %% add a few more necessary variables to the dataset
