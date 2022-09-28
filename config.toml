@@ -91,6 +91,8 @@ pixel_wl = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  # pi
 lamp = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
 cosine = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction_factors"  # cosine correction factors
 gopro = "E:/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
+ifs_raw = "E:/HALO-AC3_raw_only/09_IFS_ECMWF"  # raw IFS data as downloaded
+ifs = "E:/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
 
 [halo-ac3.jr_ubuntu]
 base_dir = "/mnt/e/HALO-AC3/02_Flights"
@@ -111,6 +113,8 @@ pixel_wl = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/pixel_wl"  
 lamp = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/lamp_F1587"  # lamp specification files
 cosine = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction_factors"  # cosine correction factors
 gopro = "/mnt/e/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
+ifs_raw = "/mnt/e/HALO-AC3_raw_only/09_IFS_ECMWF"  # raw IFS data as downloaded
+ifs = "/mnt/e/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
 
 # on LIM server
 [halo-ac3.lim_server]
@@ -132,3 +136,5 @@ pixel_wl = "/projekt_agmwend/kalibration/Spektros/pixel_wl"  # pixel to waveleng
 lamp = "/projekt_agmwend/kalibration/Lamps/FEL-1587"  # lamp specification files
 cosine = "/projekt_agmwend/kalibration/Cosinuskorrekturfaktoren/HALO_Einlässe"  # cosine correction factors
 gopro = "/projekt_agmwend/data/HALO-AC3/04_Gopro"  # directory of GoPro timestamps files
+ifs_raw = "/projekt_agmwend2/data_raw/HALO-AC3_raw_only/09_IFS_ECMWF"  # raw IFS data as downloaded
+ifs = "/projekt_agmwend/data/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
