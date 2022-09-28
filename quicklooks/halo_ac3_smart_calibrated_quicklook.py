@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Plot and save SMART quicklooks of dark current corrected and calibrated measurements for one flight
-author: Johannes Roettenbacher
+
+*author*: Johannes Röttenbacher
 """
 
 # %% import modules
@@ -19,7 +20,7 @@ import cartopy.crs as ccrs
 campaign = "halo-ac3"  # adjust bahamas filename when using for HALO-AC3
 flight_keys = list(meta.flight_names.values())
 ql_path = h.get_path("all", instrument="quicklooks", campaign=campaign)
-flights = flight_keys[3:-2]
+flights = flight_keys[3:-1]
 # flights = ["HALO-AC3_20220411_HALO_RF17"]  # single flight mode
 for flight in flights:
     prop = "Fdw"
