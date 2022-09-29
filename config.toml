@@ -93,6 +93,7 @@ cosine = "C:/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correction
 gopro = "E:/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
 ifs_raw = "E:/HALO-AC3_raw_only/09_IFS_ECMWF"  # raw IFS data as downloaded
 ifs = "E:/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
+ozone = "E:/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
 
 [halo-ac3.jr_ubuntu]
 base_dir = "/mnt/e/HALO-AC3/02_Flights"
@@ -115,6 +116,7 @@ cosine = "/mnt/c/Users/Johannes/Documents/Doktor/instruments/SMART/cosine_correc
 gopro = "/mnt/e/HALO-AC3/04_Gopro"  # directory of GoPro time lapse pictures
 ifs_raw = "/mnt/e/HALO-AC3_raw_only/09_IFS_ECMWF"  # raw IFS data as downloaded
 ifs = "/mnt/e/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
+ozone = "/mnt/e/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
 
 # on LIM server
 [halo-ac3.lim_server]
@@ -138,3 +140,4 @@ cosine = "/projekt_agmwend/kalibration/Cosinuskorrekturfaktoren/HALO_Einlässe" 
 gopro = "/projekt_agmwend/data/HALO-AC3/04_Gopro"  # directory of GoPro timestamps files
 ifs_raw = "/projekt_agmwend2/data_raw/HALO-AC3_raw_only/09_IFS_ECMWF"  # raw IFS data as downloaded
 ifs = "/projekt_agmwend/data/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
+ozone = "/projekt_agmwend2/data_raw/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
