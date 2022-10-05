@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-"""Complete calibration of the SMART files for the CIRRUS-HL campaign
+"""Complete calibration of the SMART files for the |haloac3| campaign
 
-The dark current corrected SMART measurement files are calibrated and filtered.
+The dark current corrected SMART measurement files are calibrated, corrected and filtered.
+
+**Steps:**
 
 - read in dark current corrected files
 - calibrate with matching transfer calibration
@@ -11,14 +13,17 @@ The dark current corrected SMART measurement files are calibrated and filtered.
 - add SMART IMS data
 - write to netcdf file (VNIR and SWIR seperate)
 - merge VNIR and SWIR data
+- correct attitude for RF18
+- add clearsky simulated Fdw
 
 *author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
-# %% module import
+    # %% module import
     from pylim import helpers as h
     from pylim import halo_ac3 as meta
     from pylim import smart, reader
+    from pylim.bacardi import fdw_attitude_correction
     import os
     import pandas as pd
     import numpy as np
@@ -31,12 +36,12 @@ if __name__ == "__main__":
     log.addHandler(logging.StreamHandler())
     log.setLevel(logging.INFO)
 
-# %% set some options
+    # %% set some options
     campaign = "halo-ac3"
-    flights = list(meta.flight_names.values())[3:19]  # run all flights
-    # flights = ["HALO-AC3_20220407_HALO_RF14"]  # uncomment for single flight
+    flights = list(meta.flight_names.values())[3:20]  # run all flights
+    # flights = ["HALO-AC3_20220412_HALO_RF18"]  # uncomment for single flight
     overwrite_intermediate_files = False
-# %% run calibration
+    # %% run calibration
     for flight in tqdm(flights):
         flight_key = flight[-4:]
         flight_date = flight[9:17]
@@ -45,7 +50,7 @@ if __name__ == "__main__":
         lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
         t_int_asp06 = 300  # give integration time of field measurement for ASP06
 
-# %% set paths
+        # %% set paths and filenames
         cor_data_dir = h.get_path("data", flight, campaign)
         inpath = cor_data_dir
         calib_data_dir = h.get_path("calibrated", flight, campaign)
@@ -57,19 +62,23 @@ if __name__ == "__main__":
         bahamas_dir = h.get_path("bahamas", flight, campaign)
         libradtran_dir = h.get_path("libradtran", flight, campaign)
         cosine_dir = h.get_path("cosine")
+        # files
+        bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{flight_date}_{flight_key}.nc"
+        bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{flight_date}_{flight_key}_v1.nc"
+        libradtran_file = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_spectral_{flight_date}_{flight_key}.nc"
+        vnir_file = f"{outpath}/HALO-AC3_HALO_SMART_{prop}_VNIR_{flight_date}_{flight_key}_v1.0.nc"
+        swir_file = f"{outpath}/HALO-AC3_HALO_SMART_{prop}_SWIR_{flight_date}_{flight_key}_v1.0.nc"
 
-# %% get metadata
+        # %% get metadata
         transfer_calib_date = meta.transfer_calibs[flight_key]
         date = f"{transfer_calib_date[:4]}_{transfer_calib_date[4:6]}_{transfer_calib_date[6:]}"  # reformat date to match file name
         norm = "_norm" if normalize else ""
         to, td = meta.take_offs_landings[flight_key]
         flight_number = flight_key
 
-# %% check if the intermediate output files already exist and optionally skip the calibration to save time
-        vnir_file = f"{outpath}/HALO-AC3_HALO_SMART_{prop}_VNIR_{flight_date}_{flight_key}_v1.0.nc"
-        swir_file = f"{outpath}/HALO-AC3_HALO_SMART_{prop}_SWIR_{flight_date}_{flight_key}_v1.0.nc"
+        # %% check if the intermediate output files already exist and optionally skip the calibration to save time
         intermediate_files_exist = os.path.isfile(vnir_file) & os.path.isfile(swir_file)
-# %% read in dark current corrected measurement files
+        # %% read in dark current corrected measurement files
         if not intermediate_files_exist or overwrite_intermediate_files:
             files = [f for f in os.listdir(inpath) if prop in f]
             for file in files:
@@ -84,7 +93,7 @@ if __name__ == "__main__":
                 # cut measurement to take off and landing times
                 measurement = measurement[to:td]
 
-# %% read in matching transfer calibration file from same day or from given day with matching t_int
+                # %% read in matching transfer calibration file from same day or from given day with matching t_int
                 cali_file = f"{calib_dir}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
                 log.info(f"Calibration file used:\n {cali_file}")
                 cali = pd.read_csv(cali_file)
@@ -96,7 +105,7 @@ if __name__ == "__main__":
                 # merge field calibration factor to long df on pixel column
                 df = m_long.join(cali.set_index(cali.pixel)["c_field"], on="pixel")
 
-# %% calibrate measurement with transfer calibration
+                # %% calibrate measurement with transfer calibration
                 df[direction] = df["counts"] * df["c_field"]  # calculate calibrated radiance/irradiance
                 df = df[~np.isnan(df[f"{prop}"])]  # remove rows with nan (dark current measurements)
                 df = df.reset_index().merge(pixel_wl, how="left", on="pixel").set_index(["time", "wavelength"])
@@ -111,9 +120,7 @@ if __name__ == "__main__":
                 ds = df.to_xarray()  # convert to xr.DataSet
                 ds["c_field"] = c_field
 
-# %% correct measurement for cosine dependence of inlet
-                bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{flight_date}_{flight_key}.nc"
-                libradtran_file = f"HALO-AC3_HALO_libRadtran_clearsky_simulation_smart_spectral_{flight_date}_{flight_key}.nc"
+                # %% correct measurement for cosine dependence of inlet
                 bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
                 libradtran = xr.open_dataset(f"{libradtran_dir}/{libradtran_file}")
                 # extract sza from BACARDI file
@@ -128,7 +135,7 @@ if __name__ == "__main__":
                 # replace values which seem to low (4 standard deviations below the mean) with the mean
                 f_dir = f_dir.where(f_dir > (f_dir.mean() - 4 * f_dir.std()), f_dir.mean())
 
-# %% read in cosine correction factors
+                # %% read in cosine correction factors
                 cosine_file = f"HALO_SMART_{inlet}_cosine_correction_factors.csv"
                 cosine_diffuse_file = f"HALO_SMART_{inlet}_diffuse_cosine_correction_factors.csv"
                 cosine_cor = pd.read_csv(f"{cosine_dir}/{cosine_file}")
@@ -144,7 +151,7 @@ if __name__ == "__main__":
                 cosine_cor = cosine_cor.loc[pos_sel]  # select only normal position
                 cosine_cor["k_cos"] = mean_k_cos  # overwrite correction factor with mean
 
-# %% create netCDF file to merge with smart measurements
+                # %% create netCDF file to merge with smart measurements
                 cosine_cor = cosine_cor.merge(pixel_wl, on="pixel")  # merge wavelength to dataframe
                 cosine_diffuse_cor = cosine_diffuse_cor.merge(pixel_wl, on="pixel")  # merge wavelength to dataframe
                 # drop useless columns
@@ -159,8 +166,8 @@ if __name__ == "__main__":
                 # select matching correction factors to the sza
                 k_cos = cosine_ds["k_cos"].sel(angle=sza, method="nearest", drop=True)
                 k_cos = k_cos.drop("angle")  # remove angle dimension
-                # filter to high correction factors which come from low sensitivity of the spectrometers at lower wavelengths and
-                # lower output of the calibration standard
+                # filter to high correction factors which come from low sensitivity of the spectrometers at lower
+                # wavelengths and lower output of the calibration standard
                 max_cor = 0.1  # maximum correction
                 # replace correction factors above or below maximum correction with maximum/minimum correction factor
                 k_cos = k_cos.where(k_cos < 1 + max_cor, 1 + max_cor).where(k_cos > 1 - max_cor, 1 - max_cor)
@@ -168,7 +175,7 @@ if __name__ == "__main__":
                 k_cos_diff = k_cos_diff.where(k_cos_diff < 1 + max_cor, 1 + max_cor).where(k_cos_diff > 1 - max_cor,
                                                                                            1 - max_cor)
 
-# %% add sza, saa and correction factor to dataset
+                # %% add sza, saa and correction factor to dataset
                 ds["sza"] = sza
                 ds["saa"] = bacardi_ds["saa"].interp_like(ds.time)
                 ds["k_cos_diff"] = k_cos_diff
@@ -184,7 +191,7 @@ if __name__ == "__main__":
                 ds[f"{prop}_cor_diff"] = ds["k_cos_diff"] * ds[
                     f"{prop}"]  # correct for cosine assuming only diffuse radiation
 
-# %% create stabilization flag for Fdw
+                # %% create stabilization flag for Fdw
                 stabbi_threshold = 0.1
                 try:
                     hori_files = [f for f in os.listdir(hori_dir) if ".dat" in f]
@@ -217,12 +224,12 @@ if __name__ == "__main__":
                     ds["stabilization_flag"] = xr.DataArray(np.ones(len(ds.time), dtype=int) + 1,
                                                             coords=dict(time=ds.time))
 
-# %% filter output, set values < 0 to nan
+                # %% filter output, set values < 0 to nan
                 ds[f"{prop}"] = ds[f"{prop}"].where(ds[f"{prop}"] > 0, np.nan)
                 ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, np.nan)
                 ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, np.nan)
 
-# %% prepare meta data
+                # %% prepare meta data
                 if flight in meta.stabilized_flights:
                     var_attributes = dict(
                         counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
@@ -234,18 +241,19 @@ if __name__ == "__main__":
                                  standard_name="solar_irradiance_per_unit_wavelength",
                                  comment="Actively stabilized"),
                         k_cos=dict(long_name="Direct cosine correction factor along track", units="1",
-                                   comment="Fdw_cor = direct_fraction * k_cos * Fdw + (1 - direct_fraction) * k_cos_diff * Fdw"),
+                                   comment="Fdw_cor = direct_fraction * k_cos * Fdw + (1 - direct_fraction) * "
+                                           "k_cos_diff * Fdw"),
                         k_cos_diff=dict(long_name="Diffuse cosine correction factor", units="1",
                                         comment="Fup_cor = Fup * k_cos_diff"),
                         Fdw_cor=dict(long_name="Spectral downward solar irradiance",
                                      units="W m-2 nm-1",
                                      standard_name="solar_irradiance_per_unit_wavelength",
-                                     comment="Actively stabilized and corrected for cosine response of the inlet"),
+                                     comment="Actively stabilized and corrected for cosine response of the inlet "
+                                             "(maximum correction +- 10%)"),
                         Fdw_cor_diff=dict(long_name="Spectral downward solar irradiance",
                                           units="W m-2 nm-1",
                                           standard_name="solar_irradiance_per_unit_wavelength",
-                                          comment="Actively stabilized and corrected for cosine response of the inlet assuming "
-                                                  "only diffuse radiation"),
+                                          comment="Actively stabilized and corrected for cosine response of the inlet assuming only diffuse radiation (maximum correction +- 10%)"),
                         stabilization_flag=dict(long_name="Stabilization flag", units="1",
                                                 comment=f"0: Roll Stabilization performed good "
                                                         f"(Offset between target and actual roll <= {stabbi_threshold} deg), "
@@ -257,25 +265,28 @@ if __name__ == "__main__":
                     var_attributes = dict(
                         counts=dict(long_name="Dark current corrected spectrometer counts", units="1"),
                         c_field=dict(long_name="Field calibration factor", units="1",
-                                     comment=f"Field calibration factor calculated from transfer calibration on {transfer_calib_date}"),
+                                     comment=f"Field calibration factor calculated from transfer calibration on"
+                                             f" {transfer_calib_date}"),
                         direct_fraction=dict(long_name="direct fraction of downward irradiance", units="1",
                                              comment="Calculated from a libRadtran clearsky simulation"),
                         Fdw=dict(long_name="Spectral downward solar irradiance", units="W m-2 nm-1",
                                  standard_name="solar_irradiance_per_unit_wavelength",
                                  comment="Not stabilized"),
                         k_cos=dict(long_name="Direct cosine correction factor along track", units="1",
-                                   comment="Fdw_cor = direct_fraction * k_cos * Fdw + (1 - direct_fraction) * k_cos_diff * Fdw"),
+                                   comment="Fdw_cor = direct_fraction * k_cos * Fdw + (1 - direct_fraction) * "
+                                           "k_cos_diff * Fdw"),
                         k_cos_diff=dict(long_name="Diffuse cosine correction factor", units="1",
                                         comment="Fup_cor = Fup * k_cos_diff"),
                         Fdw_cor=dict(long_name="Spectral downward solar irradiance",
                                      units="W m-2 nm-1",
                                      standard_name="solar_irradiance_per_unit_wavelength",
-                                     comment="Attitude corrected and corrected for cosine response of the inlet"),
+                                     comment="Attitude corrected (maximum correction +- 10%) and corrected for cosine"
+                                             " response of the inlet (maximum correction +- 10%)"),
                         Fdw_cor_diff=dict(long_name="Spectral downward solar irradiance",
                                           units="W m-2 nm-1",
                                           standard_name="solar_irradiance_per_unit_wavelength",
                                           comment="Corrected for cosine response of the inlet assuming only diffuse "
-                                                  "radiation"),
+                                                  "radiation (maximum correction +- 10%)"),
                         stabilization_flag=dict(long_name="Stabilization flag", units="1",
                                                 comment="2: Stabilization was turned off"),
                         wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
@@ -314,7 +325,7 @@ if __name__ == "__main__":
                 ds.to_netcdf(outfile, format="NETCDF4_CLASSIC", encoding=encoding)
                 log.info(f"Saved {outfile}")
 
-# %% merge SWIR and VNIR file
+        # %% merge SWIR and VNIR file
         ds_vnir = xr.open_dataset(vnir_file)
         ds_swir = xr.open_dataset(swir_file)
 
@@ -339,7 +350,7 @@ if __name__ == "__main__":
         ds[f"{prop}_cor"] = ds[f"{prop}_cor"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to nan
         ds[f"{prop}_cor_diff"] = ds[f"{prop}_cor_diff"].where(ds[f"{prop}_cor"] > 0, np.nan)  # set values < 0 to 0
 
-# %% add SMART IMS data
+        # %% add SMART IMS data
         if flight in meta.stabilized_flights:
             gps_attrs = dict(
                 lat=dict(
@@ -408,7 +419,7 @@ if __name__ == "__main__":
                 ds[var].attrs = ims_attrs[var]
         else:
             # read in bahamas data and add lat lon and altitude and add to SMART data
-            bahamas_filepath = os.path.join(bahamas_dir, f"HALO-AC3_HALO_BAHAMAS_{flight_date}_{flight_key}_v1.nc")
+            bahamas_filepath = os.path.join(bahamas_dir, bahamas_file)
             bahamas_ds = reader.read_bahamas(bahamas_filepath)
             # rename variables to fit SMART IMS naming convention
             bahamas_ds = bahamas_ds.rename_vars(
@@ -464,17 +475,40 @@ if __name__ == "__main__":
                 ds[var] = bahamas_ds[var].interp_like(ds, method="nearest")
                 ds[var].attrs = bahamas_attrs[var]
 
-# %% correct attitude with current roll and pitch offset for RF18
-        # TODO: find point when stabilization failed for RF18 and correct attitude
+        # %% correct attitude with roll and pitch offset for RF18
+        if flight_key == "RF18":
+            fdw_cor, factor = fdw_attitude_correction(ds["Fdw"].values, ds["roll"].values, ds.pitch.values,
+                                                      ds.yaw.values, ds.sza.values, ds.saa.values,
+                                                      ds.direct_fraction.values, r_off=0, p_off=0)
+            # allow for a maximum correction of 10 %
+            max_cor = 0.1
+            factor_filter = (np.abs(1 - factor) <= max_cor)[:, None]  # add an extra dimension to condition
+            # replace values with the attitude corrected values if the correction is less than max_cor
+            ds["Fdw_cor"].values = np.where(factor_filter, fdw_cor, ds["Fdw_cor"])
+            ds["attitude_correction_factor"] = xr.DataArray(factor, coords=dict(time=ds.time),
+                                                            attrs=dict(
+                                                                long_name="Attitude correction factor",
+                                                                units="1",
+                                                                comment="Fdw_cor = direct_fraction * Fdw * factor + (1 - direct_fraction) * Fdw"))
 
-# %% set encoding and save file
+        # %% add libRadtran simulation of Fdw
+        sim = xr.open_dataset(f"{libradtran_dir}/{libradtran_file}")
+        # interpolate wavelength onto output wavelength grid
+        sim_inp = sim.fdw.interp_like(ds)
+        sim_inp.attrs = dict(long_name="Clearsky spectral downward solar irradiance", units="W m-2 nm-1",
+                             standard_name="solar_irradiance_per_unit_wavelength",
+                             comment="Simulated with libRadtran and interpolated onto SMART time and wavelength."
+                                     " Input files generated with libradtran_write_input_file_smart.py")
+        ds["Fdw_simulated"] = sim_inp
+
+        # %% set encoding and save file
         encoding = dict(time=dict(units="seconds since 2017-01-01 00:00:00 UTC", _FillValue=None),
                         wavelength=dict(_FillValue=None))
         for var in ds:
             encoding[var] = dict(_FillValue=None)  # remove the default _FillValue attribute from each variable
 
         # set scale factor to reduce file size
-        for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts"]:
+        for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts", "Fdw_simulated"]:
             encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
 
         filename = f"{outpath}/HALO-AC3_HALO_SMART_spectral-irradiance-{prop}_{flight_date}_{flight_key}_v1.0.nc"

@@ -44,7 +44,7 @@ if __name__ == "__main__":
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     use_dropsonde = True if campaign == "halo-ac3" else False
 
-# %% setup logging
+    # %% setup logging
     try:
         file = __file__
     except NameError:
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         zout = alt / 1000  # page 127; aircraft altitude in km
 
         # need to create a time zone aware datetime object to calculate the solar azimuth angle
-        dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O')/1e9, tz=datetime.timezone.utc)
+        dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O') / 1e9, tz=datetime.timezone.utc)
         # define radiosonde station or dropsonde
         if use_dropsonde:
             dropsonde_files = [f for f in os.listdir(dropsonde_path)]
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
         else:
             # radiosonde_station = find_closest_radiosonde_station(lat, lon)
-            radiosonde_station = "Longyearbyen_01004" # standard for HALO-(AC)3
+            radiosonde_station = "Longyearbyen_01004"  # standard for HALO-(AC)3
             station_nr = radiosonde_station[-5:]
             if campaign == "halo-ac3":
                 radiosonde = f"{radiosonde_path}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"

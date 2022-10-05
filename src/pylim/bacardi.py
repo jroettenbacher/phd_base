@@ -63,7 +63,7 @@ def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float 
         p_off: pitch offset angle between INS and sensor [deg] - defined positive for nose down
         fdir: fraction of direct radiation [0..1] (0=pure diffuse, 1=pure direct)
 
-    Returns: corrected downward irradiance [W m-2] or [W m-2 nm-1]
+    Returns: corrected downward irradiance [W m-2] or [W m-2 nm-1] and correction factor
 
     """
     r = np.deg2rad(roll + r_off)
