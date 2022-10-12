@@ -36,7 +36,7 @@ However, here we only have a polygon pattern at hand with less than 90 degree tu
 
 .. figure:: figures/HALO-AC3_20220412_HALO_RF18_BAHAMAS_sun-angle_filtered.png
 
-    Angle of HALO towards sun during the polygon pattern and BAHAMAS heading (HDG) and solar azimuth angle (SAA)ö.
+    Angle of HALO towards sun during the polygon pattern and BAHAMAS heading (HDG) and solar azimuth angle (SAA).
 
 Using the Jupyter notebook ``halo_ac3_20220412_radiation_square_investiagtion.ipynb`` different offsets can be tried out using an interactive widget.
 Going through different offsets the fit to the simulation does not get better than using no offset.
