@@ -72,12 +72,20 @@ cirrus_hl_overview.py
 
 .. automodule:: analysis.halo_ac3_smart_SWIR_offset_investigation
 
-|haloac3| Radiation Square Investigation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+|haloac3| Radiation Square Investigation 2022-04-12
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *Script:* :py:mod:`halo_ac3_smart_case_study_20220412_radiation_square.py`
 
 .. automodule:: analysis.halo_ac3_smart_case_study_20220412_radiation_square
+
+|haloac3| BACARDI Measurement Investigation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Script:* :py:mod:`halo_ac3_bacardi_measurement_investigation.py`
+
+.. automodule:: analysis.halo_ac3_bacardi_measurement_investigation
+
 
 SMART
 -----
