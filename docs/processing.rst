@@ -462,8 +462,8 @@ Workflow with ecRad
 | SMART measurements during flight + ecRad output files for aircraft track
 | |rarr| compare upward and downward (spectral/banded) irradiance
 
-#. Download IFS data for campaign (TODO: Ask Hanno for instructions)
-#. Run :ref:`processing:IFS preprocessing` to convert grib to nc files
+#. Download IFS data for campaign |rarr| :ref:`processing:IFS Download`
+#. Run :ref:`processing:IFS Preprocessing` to convert grib to nc files
 #. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py`
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options ``step`` and as you want them to be (see scripts)
 #. Update namelist in the ``{yyyymmdd}/ecrad_input`` folder with the decorrelation length
@@ -471,7 +471,12 @@ Workflow with ecRad
 #. Run :ref:`processing:ecrad_execute_IFS.sh` which runs ecRad for each file in ``ecrad_input``
 #. Run :ref:`processing:ecrad_processing.py` to generate merged input and output files for and from the ecRad simulation
 
-IFS preprocessing
+IFS Download
+^^^^^^^^^^^^
+
+To download IFS data from the ECMWF servers we got a user account there. For details on how to download data there please see the internal Strahlungs Wiki.
+
+IFS Preprocessing
 ^^^^^^^^^^^^^^^^^
 
 IFS data comes in grib format.
