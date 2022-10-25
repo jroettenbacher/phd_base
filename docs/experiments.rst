@@ -27,3 +27,16 @@ Setup ala Hanno
 * manually enter decorrelation length in namelist depending on latitude (output from :ref:`processing:ecrad_read_ifs.py`)
 * solar constant: distance sun-earth from `heavens above website <https://www.heavens-above.com/sun.aspx?lat=0&lng=0&loc=Unspecified&alt=0&tz=UCT>`_, calculate solar constant in Excel ({campaign}_solar_constant.xlsx)
 * use ozone data from ozone sondes |rarr| http://www.ndaccdemo.org/
+
+libRadtran Setups
+=================
+
+|haloac3| BACARDI broadband simulation for BACARDI nc file
+----------------------------------------------------------
+
+- use Longyearbyen radiosonde for vertical profile of relative humidity
+- surface temperature |rarr| unclear, ask Anna
+   - set to 293.15K in script but might have been different for Anna's simulation
+- for details see: :py:mod:`processing.libradtran_write_input_file_bacardi.py`
+- filename: `HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_[solar/terrestrial]_[yyyymmdd]_RF[xx].nc`
+
