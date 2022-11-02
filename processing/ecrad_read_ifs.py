@@ -3,16 +3,16 @@
 
 **TODO:**
 
-- [ ] more precise read in of navigation data
+- [x] more precise read in of navigation data
 - [ ] test if it is necessary to generate one file per time step
 - [ ] Include an option to interpolate in space
-- [ ] check why file 1919-1925 + 6136-6180 + 7184-7194 cause a floating-point exception when processed with ecrad (discovered 2021-04-26) -> probably has to do the way ecrad is called (see execute_IFS.sh)
+- [x] check why file 1919-1925 + 6136-6180 + 7184-7194 cause a floating-point exception when processed with ecrad (discovered 2021-04-26) -> probably has to do the way ecrad is called (see execute_IFS.sh)
 
 **Input:**
 
 * IFS model level (ml) file
 * IFS surface (sfc) file
-* SMART horidata with flight track (TODO: add option for BAHAMAS)
+* SMART horidata with flight track or BAHAMAS file
 
 **Required User Input:**
 
@@ -20,11 +20,12 @@ Can be passed via the command line.
 
 * ozone_flag ('default' or 'sonde')
 * date (yyyymmdd)
-* init_time (00 or 12)
+* init_time (00, 12 or yesterday)
 * flight (e.g. 'Flight_20210629a' or 'HALO-AC3_20220412_HALO_RF18')
 * aircraft ('halo')
 * campaign ('cirrus-hl' or 'halo-ac3')
-* step, one can choose how many time steps should be used from the navigation data to interpolate the IFS data on
+* step, one can choose the time resolution in which to interpolate the IFS data on (e.g. '1Min')
+* use_bahamas, whether to use BAHAMAS or the SMART INS for navigation data (True/False)
 
 **Output:**
 
@@ -48,6 +49,7 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import time
     from scipy.interpolate import interp1d
+    from distutils.util import strtobool
 
     start = time.time()
 
@@ -59,13 +61,14 @@ if __name__ == "__main__":
     args = h.read_command_line_args()
     ozone_flag = args["ozone"] if "ozone" in args else "sonde"
     # set interpolate flag
-    date = args["date"] if "date" in args else '20210629'
-    init_time = args["init"] if "init" in args else "00"
-    flight = args["flight"] if "flight" in args else 'Flight_20210629a'
+    date = args["date"] if "date" in args else '20220411'
+    init_time = args["init"] if "init" in args else "yesterday"
+    flight = args["flight"] if "flight" in args else 'HALO-AC3_20220411_HALO_RF17'
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
-    campaign = args["campaign"] if "campaign" in args else "cirrus-hl"
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
     # setup logging
     try:
         file = __file__
@@ -75,7 +78,7 @@ if __name__ == "__main__":
 
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\nozone: {ozone_flag}")
+             f"\ninit time: {init_time}\nozone: {ozone_flag}\nuse_bahamas: {use_bahamas}")
 
     # %% set paths
     path_ifs_raw = h.get_path("ifs_raw", campaign=campaign)
@@ -84,6 +87,7 @@ if __name__ == "__main__":
     path_horidata = h.get_path("horidata", flight, campaign)
     path_ecrad = os.path.join(h.get_path("ecrad", campaign=campaign), date)
     path_ozone = h.get_path("ozone", campaign=campaign)
+    bahamas_path = h.get_path("bahamas", flight, campaign)
     # create output path
     h.make_dir(path_ecrad)
     h.make_dir(path_ifs_output)
@@ -98,24 +102,35 @@ if __name__ == "__main__":
     data_ml = xr.open_dataset(ml_file)
     srf_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_sfc.nc"
     data_srf = xr.open_dataset(srf_file)
+    # hack while only incomplete ml file is available
+    data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
+
     # test if longitude coordinates are equal
     try:
         np.testing.assert_array_equal(data_ml.lon, data_srf.lon)
     except AssertionError:
         log.debug("longitude coordinates are not equal, replace srf lon with ml lon")
         data_srf = data_srf.assign_coords(lon=data_ml.lon)
+    try:
+        np.testing.assert_array_equal(data_ml.lat, data_srf.lat)
+    except AssertionError:
+        log.debug("latitude coordinates are not equal, replace srf lat with ml lat")
+        data_srf = data_srf.assign_coords(lat=data_ml.lat)
 
     # %% read navigation file
     log.info(f"Processed flight: {flight}")
 
     if aircraft == "halo":
-        ims_file = [f for f in os.listdir(path_horidata) if "IMS" in f][0]
-        gps_file = [f for f in os.listdir(path_horidata) if "Pos" in f][0]
-        log.info(f"Einzulesende navigation data files: {ims_file}, {gps_file}")
-        ims = reader.read_nav_data(f"{path_horidata}/{ims_file}")
-        gps = reader.read_ins_gps_pos(f"{path_horidata}/{gps_file}")
-        nav_data = ims.join(gps, how="inner", lsuffix="x")
-        nav_data["time"] = nav_data.index
+        if use_bahamas:
+            bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{flight_key}_v1.nc"
+            nav_data = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
+            nav_data = nav_data.to_dataframe()
+            nav_data.rename(columns={"IRS_LAT": "lat", "IRS_LON": "lon"}, inplace=True)
+            nav_data = nav_data.loc[:, ["lon", "lat"]]
+        else:
+            gps_file = [f for f in os.listdir(path_horidata) if "Pos" in f][0]
+            log.info(f"Einzulesendes GPS navigation file: {gps_file}")
+            nav_data = reader.read_ins_gps_pos(f"{path_horidata}/{gps_file}")
     else:
         horidata_file = glob.glob(os.path.join(path_horidata, "Polar5*.nav"))[0]
         log.info(f"Einzulesendes navigation data file: {horidata_file}")
@@ -124,9 +139,10 @@ if __name__ == "__main__":
         nav_data["seconds"] = nav_data.time * 3600  # convert time to seconds of day
 
     # %% select every step row of nav_data to interpolate IFS data on
-    step = 2  # User input
-    nav_data_ip = nav_data[::step]
+    step = "1Min"  # User input
+    nav_data_ip = nav_data.resample(step).mean()
     idx = len(nav_data_ip)
+    nav_data_ip["seconds"] = nav_data_ip.index.hour * 60 * 60 + nav_data_ip.index.minute * 60
 
     # %% convert every nav_data time to datetime
     if aircraft == "halo":
@@ -151,8 +167,8 @@ if __name__ == "__main__":
         t_idx = np.abs(data_srf.time - np.datetime64(dt_nav_data[i])).argmin()
         lat_idx = np.abs(data_srf.lat - ypos).argmin()
         lon_idx = np.abs(data_srf.lon - xpos).argmin()
-        p_surf_nearest = data_srf.SP[t_idx, lat_idx, lon_idx].values / 100  # hPa
-        t_surf_nearest = data_srf.SKT[t_idx, lat_idx, lon_idx].values - 273.15  # degree Celsius
+        p_surf_nearest = data_srf.SP.isel(time=t_idx, lat=lat_idx, lon=lon_idx).values / 100  # hPa
+        t_surf_nearest = data_srf.SKT.isel(time=t_idx, lat=lat_idx, lon=lon_idx).values - 273.15  # degree Celsius
         sza[i] = get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest, t_surf_nearest)
         cos_sza[i] = np.cos(sza[i] / 180. * np.pi)
         closest_lats.append(lat_idx.values)
@@ -168,10 +184,12 @@ if __name__ == "__main__":
     # %% select only closest (+-10) lats and lons from datasets to reduce size in memory
     closest_lats = np.unique(closest_lats)
     closest_lons = np.unique(closest_lons)
-    # include 10 points in both direction to allow for a rectangle selection around the closest lat lon point and to avoid
-    # edge cases
+    # include 10 points in both direction to allow for a rectangle selection around the closest lat lon point
+    # to avoid edge cases
     lat_sel = np.arange(closest_lats.min() - 10, closest_lats.max() + 10)
     lon_sel = np.arange(closest_lons.min() - 10, closest_lons.max() + 10)
+    # hack while ml dataset does not cover whole area
+    lat_sel = lat_sel[np.where(lat_sel < data_ml.sizes["lat"])[0]]
     data_ml = data_ml.isel(lat=lat_sel, lon=lon_sel)
     data_srf = data_srf.isel(lat=lat_sel, lon=lon_sel)
 
@@ -191,7 +209,7 @@ if __name__ == "__main__":
     # correct lw_em_ratios > 0.98 (probably due to difference between skin and sea surface temperature)
     lw_em_ratio = lw_em_ratio.where(lw_em_ratio < 0.98, 0.98)
 
-    # calculate shortwave albedo according to sea ice concentration and shot wave band albedo climatology for sea ice
+    # calculate shortwave albedo according to sea ice concentration and short wave band albedo climatology for sea ice
     month_idx = dt_day.month - 1
     open_ocean_albedo = 0.06
     sw_albedo_bands = list()
@@ -226,7 +244,7 @@ if __name__ == "__main__":
     if ozone_flag == "sonde":
         log.info(f"ozone flag set to {ozone_flag}\ninterpolating sonde measurement onto IFS full pressure levels...")
         # read the corresponding ozone file for the flight
-        ozone_file = h.ozone_files[flight]
+        ozone_file = h.ozone_files[flight_key]
         # interpolate ozone sonde data on IFS full pressure levels
         ozone_sonde = reader.read_ozone_sonde(f"{path_ozone}/{ozone_file}")
         ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
@@ -285,4 +303,4 @@ if __name__ == "__main__":
     nav_data_ip.to_csv(csv_filename)
     log.info(f"Saved {csv_filename}")
 
-    log.info(f"Done with date {date}: {h.seconds_to_fstring(time.time() - start)} [hr:min:sec]")
+    log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
