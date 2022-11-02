@@ -9,7 +9,9 @@
 # %% import modules
 import pylim.helpers as h
 import pylim.halo_ac3 as meta
+import pylim.meteorological_formulas as met
 import ac3airborne
+from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
 import os
 import numpy as np
 import pandas as pd
@@ -31,6 +33,7 @@ plot_dir = f"{h.get_path('plot', campaign=campaign)}/../manuscripts/2022_HALO-AC
 trajectory_dir = f"{h.get_path('trajectories', campaign=campaign)}/{date}"
 era5_dir = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/ERA5/ERA5_ml_noOMEGAscale"
 radar_dir = h.get_path("hamp_mira", flight, campaign)
+dropsonde_dir = f"{h.get_path('dropsondes', flight, campaign)}/.."
 
 # set options and credentials for HALO-AC3 cloud and intake catalog
 kwds = {'simplecache': dict(cache_storage='E:/HALO-AC3/cloud', same_names=True)}
@@ -41,6 +44,7 @@ cat = ac3airborne.get_intake_catalog()
 era5_files = [os.path.join(era5_dir, f) for f in os.listdir(era5_dir) if f"P{date}" in f]
 era5_files.sort()
 radar_file = "radar_20220411_v0.6.nc"
+dropsonde_file = f"HALO-AC3_HALO_Dropsondes_quickgrid_{date}.nc"
 # meta data
 start_dt, end_dt = pd.to_datetime("2022-04-11 09:30"), pd.to_datetime("2022-04-11 14:30")
 
@@ -50,6 +54,8 @@ start_dt, end_dt = pd.to_datetime("2022-04-11 09:30"), pd.to_datetime("2022-04-1
 ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_{halo_key}"](storage_options=kwds, **credentials).to_dask()
 # radar_ds = xr.open_dataset(f"{radar_dir}/{radar_file}")
 era5_ds = xr.open_mfdataset(era5_files)
+dropsonde_ds = xr.open_dataset(f"{dropsonde_dir}/{dropsonde_file}")
+dropsonde_ds["alt"] = dropsonde_ds.alt / 1000  # convert altitude to km
 
 # %% preprocess radar data
 # radar_ds = radar_ds.sel(time=slice(start_dt, end_dt))
@@ -258,6 +264,76 @@ ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transfo
 ax.legend(handles=[plt.plot([], ls="-", color="orange")[0]], labels=[points.get_label()], loc=1)
 plt.tight_layout()
 figname = f"{plot_dir}/{flight}_ERA5_{variable}_over_{pressure_level/100:.0f}hPa_map.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot Dropsondes in one plot
+rh_ice = met.relative_humidity_water_to_relative_humidity_ice(dropsonde_ds.rh, dropsonde_ds.T - 273.15)
+labels = [f"{lt.replace('2022-04-11T', '')}Z" for lt in np.datetime_as_string(rh_ice.launch_time.values, unit="m")]
+h.set_cb_friendly_colors()
+plt.rc("font", family="serif", size=10)
+fig = plt.figure(figsize=(18*cm, 10.125*cm))
+ax = fig.add_subplot(121)
+rh_ice.plot.line(y="alt", alpha=0.5, label=labels, lw=1, ax=ax)
+rh_ice.mean(dim="launch_time").plot(y="alt", lw=3, label="Mean", c="k", ax=ax)
+
+# plot vertical line at 100%
+ax.axvline(x=100, color="#661100", lw=2)
+ax.set_xlabel("Relative Humidity over Ice (%)")
+ax.set_ylabel("Altitude (km)")
+ax.grid()
+ax.legend(bbox_to_anchor=(1, 1.01), loc="upper left")
+
+# plot map
+orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
+reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
+# select position and time data
+lon, lat, altitude, times = ins["lon"], ins["lat"], ins["alt"], ins["time"]
+data_crs = ccrs.PlateCarree()
+extent = [-15, 30, 68, 90]
+ax = fig.add_subplot(122, projection=ccrs.NorthPolarStereo())
+ax.coastlines()
+ax.add_feature(cartopy.feature.BORDERS)
+ax.set_extent(extent, crs=data_crs)
+gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=False, y_inline=False)
+gl.bottom_labels = False
+gl.left_labels = False
+
+# add sea ice extent
+seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=0)):%Y%m%d}")
+seaice = seaice.seaice
+ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=data_crs, cmap=reversed_map)
+
+# plot flight track
+points = ax.scatter(lon, lat, s=1, c="orange", transform=data_crs)
+
+# plot dropsonde launch locations
+for i in range(dropsonde_ds.lon.shape[0]):
+    launch_time = pd.to_datetime(dropsonde_ds.launch_time[i].values)
+    x, y = dropsonde_ds.lon[i].mean().values, dropsonde_ds.lat[i].mean().values
+    ax.plot(x, y, "x", color="red", markersize=8, label="Dropsonde", transform=data_crs)
+    # ax.text(x, y, f"{i+1:02d}", c="white", fontsize=8, transform=data_crs,
+    #         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])  # RF09, RF11, RF12, RF14, RF18
+    ax.text(x, y, f"{launch_time:%H:%M}", c="white", fontsize=10, transform=data_crs,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
+
+handles, labels = ax.get_legend_handles_labels()
+ax.legend([handles[0]], [labels[0]], loc=3)
+
+# Kiruna
+x_kiruna, y_kiruna = meta.coordinates["Kiruna"]
+ax.plot(x_kiruna, y_kiruna, '.', color="#117733", markersize=8, transform=data_crs)
+ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "Kiruna", fontsize=11, transform=data_crs)
+# Longyearbyen
+x_longyear, y_longyear = meta.coordinates["Longyearbyen"]
+ax.plot(x_longyear, y_longyear, '.', color="#117733", markersize=8, transform=data_crs)
+ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transform=data_crs,
+        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+
+plt.tight_layout()
+
+figname = f"{plot_dir}/{flight}_dropsonde_rh_map.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
