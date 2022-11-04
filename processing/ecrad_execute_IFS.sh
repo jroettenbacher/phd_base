@@ -3,7 +3,7 @@
 ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.4.1/bin/ecrad"
 
 # standard options
-date_var=20210629
+date_var=20220411
 reg_file="ecrad_input_*_sod.nc"
 version="v1"
 
@@ -28,9 +28,9 @@ while getopts ":d:tv:" opt; do
   esac
 done
 
-inpath="/projekt_agmwend/data/Cirrus_HL/07_ecrad/${date_var}/ecrad_input"
-outpath="/projekt_agmwend/data/Cirrus_HL/07_ecrad/${date_var}/ecrad_output"
-rad_prop_outpath="/projekt_agmwend/data/Cirrus_HL/07_ecrad/${date_var}/radiative_properties_${version}"
+inpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_input"
+outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_output"
+rad_prop_outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/radiative_properties_${version}"
 mkdir -p "${outpath}"
 mkdir -p "${rad_prop_outpath}"
 

@@ -103,7 +103,7 @@ if __name__ == "__main__":
     srf_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_sfc.nc"
     data_srf = xr.open_dataset(srf_file)
     # hack while only incomplete ml file is available
-    data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
+    # data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
 
     # test if longitude coordinates are equal
     try:
@@ -111,11 +111,11 @@ if __name__ == "__main__":
     except AssertionError:
         log.debug("longitude coordinates are not equal, replace srf lon with ml lon")
         data_srf = data_srf.assign_coords(lon=data_ml.lon)
-    try:
-        np.testing.assert_array_equal(data_ml.lat, data_srf.lat)
-    except AssertionError:
-        log.debug("latitude coordinates are not equal, replace srf lat with ml lat")
-        data_srf = data_srf.assign_coords(lat=data_ml.lat)
+    # try:
+    #     np.testing.assert_array_equal(data_ml.lat, data_srf.lat)
+    # except AssertionError:
+    #     log.debug("latitude coordinates are not equal, replace srf lat with ml lat")
+    #     data_srf = data_srf.assign_coords(lat=data_ml.lat)
 
     # %% read navigation file
     log.info(f"Processed flight: {flight}")
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     # to avoid edge cases
     lat_sel = np.arange(closest_lats.min() - 10, closest_lats.max() + 10)
     lon_sel = np.arange(closest_lons.min() - 10, closest_lons.max() + 10)
-    # hack while ml dataset does not cover whole area
+    # make sure that all latitude indices are available in the file
     lat_sel = lat_sel[np.where(lat_sel < data_ml.sizes["lat"])[0]]
     data_ml = data_ml.isel(lat=lat_sel, lon=lon_sel)
     data_srf = data_srf.isel(lat=lat_sel, lon=lon_sel)
