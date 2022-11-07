@@ -18,6 +18,7 @@ This is the documentation to my PhD work (2021-2024).
    experiments
    analysis
    api_documentation
+   references
 
 
 

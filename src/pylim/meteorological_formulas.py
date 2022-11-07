@@ -12,7 +12,7 @@ def relative_humidity_water_to_relative_humidity_ice(relative_humidity_water: Un
                                                      version: str = "huang"):
     """
     Convert the relative humidity over water to relative humidity over ice using either the formulas by
-    :cite:t`Huang2019` or by :cite:t:`Alduchov1996`.
+    :cite:t:`Huang2018` or by :cite:t:`Alduchov1996`.
 
     .. math::
 
@@ -22,17 +22,17 @@ def relative_humidity_water_to_relative_humidity_ice(relative_humidity_water: Un
 
     .. math::
 
-        e_{s,w} = \\frac{\\exp{34.494 - \\frac{4924.99}{t + 237.1}{(t + 105)^{1.157}} (t > 0°C)
+        e_{s,w} = \\frac{\\exp\\left(34.494 - \\frac{4924.99}{t + 237.1}\\right)}{(t + 105)^{1.157}} (t > 0°C)
 
-        e_{s,i} = \\frac{\\exp{43.494 - \\frac{6545.8}{t + 278}{(t + 868)^{2}} (t <= 0°C)
+        e_{s,i} = \\frac{\\exp\\left(43.494 - \\frac{6545.8}{t + 278}\\right)}{(t + 868)^{2}} (t \\le 0°C)
 
-    with :math:`t` being the temperature in °C. When version is 'alduchov' the following equations are used:
+    with :math:`t` being the temperature in °C. When version is ``alduchov`` the following equations are used:
 
     .. math::
 
-        e_{s,w} = 6.1094 * \\exp{\\frac{17.625 * t}{243.04 + t}}
+        e_{s,w} = 6.1094 * \\exp\\left(\\frac{17.625 * t}{243.04 + t}\\right)
 
-        e_{s,i} = 6.1121 * \\exp{\\frac{22.587 * t}{273.86 + t}}
+        e_{s,i} = 6.1121 * \\exp\\left(\\frac{22.587 * t}{273.86 + t}\\right)
 
     Args:
         relative_humidity_water: ambient relative humidity in percent
