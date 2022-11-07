@@ -46,7 +46,10 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
+    'sphinxcontrib.bibtex'
 ]
+bibtex_bibfiles = ['remsens.bib']
+bibtex_reference_style = ['author_year']
 autosectionlabel_prefix_document = True
 numfig = True  # autonumerate Figures and tables
 # Add any paths that contain templates here, relative to this directory.

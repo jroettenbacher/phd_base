@@ -47,7 +47,8 @@ ci_albedo[:, 5] = (0.025, 0.025, 0.025, 0.025,
                    0.025, 0.025, 0.025, 0.025)
 
 # ozone sonde stations
-ozone_files = dict(Flight_20210629a="sc210624.b11")
+ozone_files = dict(Flight_20210629a="sc210624.b11",
+                   RF17="ny220413.b16", RF18="ny220413.b16")
 
 
 def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:

@@ -17,7 +17,7 @@ set -x
 ###################
 
 sudo apt-get -y install python3-sphinx python3-sphinx-rtd-theme python3-pip python3-git
-python3 -m pip install myst_parser
+python3 -m pip install myst_parser sphinxcontrib-bibtex pybtex
 #python3 -m pip install -r requirements.txt
 
 #####################
