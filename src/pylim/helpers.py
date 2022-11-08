@@ -351,7 +351,7 @@ def setup_logging(dir: str, file: str = None, custom_string: str = None):
 
 # from pyLARDA.SpectraProcessing
 def seconds_to_fstring(time_diff):
-    return datetime.datetime.fromtimestamp(time_diff).strftime("%H:%M:%S")
+    return str(datetime.timedelta(seconds=time_diff))
 
 
 def read_command_line_args():

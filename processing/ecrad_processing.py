@@ -31,7 +31,7 @@ Usually one would first call it to merge all input files and then a second time 
 * date (yyyymmdd)
 * version (vx, default:v1)
 * t_interp (True or False, default: False)
-* base_dir (directory)
+* base_dir (directory, default: ecrad directory for halo-ac3 campaign)
 * merge_io (T, optional)
 
 **Output:**
@@ -50,6 +50,7 @@ Usually one would first call it to merge all input files and then a second time 
 def _merge_ecrad_files(files: list,  date: str, outpath: str, version: str = "v1", ending: str = ""):
     """
     Merge single ecRad files as returned by read_ifs.py and ecrad itself
+
     Args:
         files: list of files names to merge
         date: yyyymmdd
@@ -57,7 +58,7 @@ def _merge_ecrad_files(files: list,  date: str, outpath: str, version: str = "v1
         version: namelist version
         ending (optional): add a custom ending to the filename
 
-    Returns: writes a new netCDF file to disk with encoded time and dropped dimension "column"
+    Returns: writes a new netCDF file to disk with encoded time and dropped one sized dimensions (eg. column)
 
     """
     h.make_dir(outpath)
@@ -73,7 +74,7 @@ def _merge_ecrad_files(files: list,  date: str, outpath: str, version: str = "v1
 
         ecrad = xr.open_mfdataset(files, combine="nested", concat_dim="time")
         ecrad = ecrad.assign_coords(dict(time=sod_ecrad))
-        ecrad = ecrad.squeeze()  # remove dimension column
+        ecrad = ecrad.squeeze()  # remove one sized dimensions (eg. column)
         # assign attributes to time
         ecrad["time"] = ecrad["time"].assign_attrs(
             {'units': f'seconds since {date_dt:%Y-%m-%d}', 'long_name': 'seconds since midnight UTC'})
@@ -124,7 +125,7 @@ def merge_ecrad_files(base_dir: str, _type: str, date: str, t_interp: bool = Fal
     log.info(f"Number of files to merge: {nr_files}")
     stepsize = _set_stepsize(nr_files)
     log.info(f"Stepsize for premerging: {stepsize}")
-    ending = f"_inp_{version}" if t_interp else f"{version}"
+    ending = f"_inp_{version}" if t_interp else f"_{version}"
     outfile = f"{base_dir}/ecrad_merged_{_type}_{date}{ending}.nc"
 
     # merge single files if outfile doesn't exist yet
@@ -153,7 +154,7 @@ def merge_ecrad_files(base_dir: str, _type: str, date: str, t_interp: bool = Fal
             nr_merged_files = len(merged_files)
 
         # final merge of files
-        ds = xr.open_mfdataset(merged_files)
+        ds = xr.open_mfdataset(merged_files, combine="nested", concat_dim="time")
         ds.to_netcdf(outfile, format="NETCDF4_CLASSIC",
                      encoding=dict(time=dict(units=f"seconds since {date_dt:%Y-%m-%d}")))
         log.info(f"{outfile} saved")
@@ -183,7 +184,7 @@ if __name__ == "__main__":
         raise ValueError("'date' needs to be given!")
     version = args["version"] if "version" in args else "v1"
     t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
-    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("cirrus-hl", "ecrad")
+    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
     flag = strtobool(args["merge_io"]) if "merge_io" in args else False
     # setup logging
     try:
@@ -197,12 +198,12 @@ if __name__ == "__main__":
     inpath = os.path.join(base_dir, date)
     if io_flag is not None:
         # merge ecrad files (input or output files)
+        log.info(f"Merging ecRad {io_flag} files")
         merge_ecrad_files(inpath, io_flag, date, t_interp, version)
 
     # %% read in ecrad merged in and out file and merge them
-    log.info(f"Merging ecRad {io_flag} files")
-    ending = "_inp" if t_interp else ""
-    outfile = f"{inpath}/ecrad_merged_inout_{date}{ending}_{version}.nc"
+    ending = f"_inp_{version}" if t_interp else f"_{version}"
+    outfile = f"{inpath}/ecrad_merged_inout_{date}{ending}.nc"
     if flag and not os.path.isfile(outfile):
         ecrad_in = xr.open_dataset(f"{inpath}/ecrad_merged_input_{date}{ending}.nc")
         ecrad_out = xr.open_dataset(f"{inpath}/ecrad_merged_output_{date}{ending}.nc")
@@ -210,4 +211,4 @@ if __name__ == "__main__":
         ecrad.to_netcdf(outfile, format="NETCDF4_CLASSIC")
         log.info(f"Saved {outfile}")
 
-    log.info(f"Done with ecrad_processing in: {h.seconds_to_fstring(time.time() - start)} [m:s]")
+    log.info(f"Done with ecrad_processing in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")
