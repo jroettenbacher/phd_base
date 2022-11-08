@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.4.1/bin/ecrad"
+ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-dev/bin/ecrad"
 
 # standard options
 date_var=20220411
