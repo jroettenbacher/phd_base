@@ -30,20 +30,20 @@ if __name__ == "__main__":
     import xarray as xr
     from datetime import datetime
     from tqdm import tqdm
-    import logging
-
-    log = logging.getLogger("pylim")
-    log.addHandler(logging.StreamHandler())
-    log.setLevel(logging.INFO)
 
     # %% set some options
     campaign = "halo-ac3"
     flights = list(meta.flight_names.values())[3:20]  # run all flights
-    # flights = ["HALO-AC3_20220412_HALO_RF18"]  # uncomment for single flight
-    overwrite_intermediate_files = False
+    # flights = ["HALO-AC3_20220411_HALO_RF17"]  # uncomment for single flight
+    overwrite_intermediate_files = True
     # %% run calibration
     for flight in tqdm(flights):
         flight_key = flight[-4:]
+        try:
+            file = __file__
+        except NameError:
+            file = None
+        log = h.setup_logging("./logs", file, flight_key)
         flight_date = flight[9:17]
         prop = "Fdw"  # Fdw
         normalize = True  # use normalized calibration factor (counts are divided by the integration time)
@@ -51,17 +51,18 @@ if __name__ == "__main__":
         t_int_asp06 = 300  # give integration time of field measurement for ASP06
 
         # %% set paths and filenames
-        cor_data_dir = h.get_path("data", flight, campaign)
-        inpath = cor_data_dir
-        calib_data_dir = h.get_path("calibrated", flight, campaign)
-        outpath = calib_data_dir
-        calib_dir = f"{h.get_path('calib', campaign=campaign)}/transfer_calibs_{lab_calib}_campaign"  # path to transfer calibration files
-        pixel_dir = h.get_path("pixel_wl")
-        hori_dir = h.get_path("horidata", flight, campaign)
-        bacardi_dir = h.get_path("bacardi", flight, campaign)
-        bahamas_dir = h.get_path("bahamas", flight, campaign)
-        libradtran_dir = h.get_path("libradtran", flight, campaign)
-        cosine_dir = h.get_path("cosine")
+        cor_data_path = h.get_path("data", flight, campaign)
+        inpath = cor_data_path
+        calib_data_path = h.get_path("calibrated", flight, campaign)
+        outpath = calib_data_path
+        # path to transfer calibration files
+        calib_path = f"{h.get_path('calib', campaign=campaign)}/transfer_calibs_{lab_calib}_campaign"
+        pixel_path = h.get_path("pixel_wl")
+        hori_path = h.get_path("horidata", flight, campaign)
+        bacardi_path = h.get_path("bacardi", flight, campaign)
+        bahamas_path = h.get_path("bahamas", flight, campaign)
+        libradtran_path = h.get_path("libradtran", flight, campaign)
+        cosine_path = h.get_path("cosine")
         # files
         bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{flight_date}_{flight_key}.nc"
         bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{flight_date}_{flight_key}_v1.nc"
@@ -86,7 +87,7 @@ if __name__ == "__main__":
                 inlet = meta.smart_lookup[direction]
                 date_str = date if len(date) > 0 else date_str  # overwrite date_str if date is given
                 spectrometer = meta.smart_lookup[f"{direction}_{channel}"]
-                pixel_wl = reader.read_pixel_to_wavelength(pixel_dir,
+                pixel_wl = reader.read_pixel_to_wavelength(pixel_path,
                                                            spectrometer)  # read in pixel to wavelength mapping
                 t_int = t_int_asp06  # select relevant integration time
                 measurement = reader.read_smart_cor(inpath, file)
@@ -94,7 +95,7 @@ if __name__ == "__main__":
                 measurement = measurement[to:td]
 
                 # %% read in matching transfer calibration file from same day or from given day with matching t_int
-                cali_file = f"{calib_dir}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
+                cali_file = f"{calib_path}/{date_str}_{spectrometer}_{direction}_{channel}_{t_int}ms_transfer_calib{norm}.dat"
                 log.info(f"Calibration file used:\n {cali_file}")
                 cali = pd.read_csv(cali_file)
                 # convert to long format
@@ -121,8 +122,8 @@ if __name__ == "__main__":
                 ds["c_field"] = c_field
 
                 # %% correct measurement for cosine dependence of inlet
-                bacardi_ds = xr.open_dataset(f"{bacardi_dir}/{bacardi_file}")
-                libradtran = xr.open_dataset(f"{libradtran_dir}/{libradtran_file}")
+                bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
+                libradtran = xr.open_dataset(f"{libradtran_path}/{libradtran_file}")
                 # extract sza from BACARDI file
                 sza = bacardi_ds["sza"]
                 # extract direct fraction from libRadtran
@@ -138,8 +139,8 @@ if __name__ == "__main__":
                 # %% read in cosine correction factors
                 cosine_file = f"HALO_SMART_{inlet}_cosine_correction_factors.csv"
                 cosine_diffuse_file = f"HALO_SMART_{inlet}_diffuse_cosine_correction_factors.csv"
-                cosine_cor = pd.read_csv(f"{cosine_dir}/{cosine_file}")
-                cosine_diffuse_cor = pd.read_csv(f"{cosine_dir}/{cosine_diffuse_file}")
+                cosine_cor = pd.read_csv(f"{cosine_path}/{cosine_file}")
+                cosine_diffuse_cor = pd.read_csv(f"{cosine_path}/{cosine_diffuse_file}")
                 # preprocess cosine correction
                 cosine_cor = cosine_cor[cosine_cor["property"] == channel]  # select only the relevant property/channel
                 cosine_diffuse_cor = cosine_diffuse_cor[
@@ -194,8 +195,8 @@ if __name__ == "__main__":
                 # %% create stabilization flag for Fdw
                 stabbi_threshold = 0.1
                 try:
-                    hori_files = [f for f in os.listdir(hori_dir) if ".dat" in f]
-                    horidata = pd.concat([reader.read_stabbi_data(f"{hori_dir}/{f}") for f in hori_files])
+                    hori_files = [f for f in os.listdir(hori_path) if ".dat" in f]
+                    horidata = pd.concat([reader.read_stabbi_data(f"{hori_path}/{f}") for f in hori_files])
                     horidata.index.name = "time"
                     # interpolate to SMART data
                     horidata_ds = horidata.to_xarray()
@@ -319,7 +320,7 @@ if __name__ == "__main__":
 
                 # set scale factor to reduce file size
                 for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff"]:
-                    encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
+                    encoding[var] = dict(dtype="int16", scale_factor=0.0001, _FillValue=-999)
 
                 outfile = f"{outpath}/HALO-AC3_HALO_SMART_{direction}_{channel}_{flight_date}_{flight_key}_v1.0.nc"
                 ds.to_netcdf(outfile, format="NETCDF4_CLASSIC", encoding=encoding)
@@ -396,10 +397,10 @@ if __name__ == "__main__":
                     units="deg",
                     comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180")
             )
-            hori_files = os.listdir(hori_dir)
-            nav_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_IMS" in f]
-            gps_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_GPSPos" in f]
-            vel_filepaths = [f"{hori_dir}/{f}" for f in hori_files if "Nav_GPSVel" in f]
+            hori_files = os.listdir(hori_path)
+            nav_filepaths = [f"{hori_path}/{f}" for f in hori_files if "Nav_IMS" in f]
+            gps_filepaths = [f"{hori_path}/{f}" for f in hori_files if "Nav_GPSPos" in f]
+            vel_filepaths = [f"{hori_path}/{f}" for f in hori_files if "Nav_GPSVel" in f]
             ims = pd.concat([reader.read_nav_data(f) for f in nav_filepaths])
             gps = pd.concat([reader.read_ins_gps_pos(f) for f in gps_filepaths])
             vel = pd.concat([reader.read_ins_gps_vel(f) for f in vel_filepaths])
@@ -419,7 +420,7 @@ if __name__ == "__main__":
                 ds[var].attrs = ims_attrs[var]
         else:
             # read in bahamas data and add lat lon and altitude and add to SMART data
-            bahamas_filepath = os.path.join(bahamas_dir, bahamas_file)
+            bahamas_filepath = os.path.join(bahamas_path, bahamas_file)
             bahamas_ds = reader.read_bahamas(bahamas_filepath)
             # rename variables to fit SMART IMS naming convention
             bahamas_ds = bahamas_ds.rename_vars(
@@ -492,7 +493,7 @@ if __name__ == "__main__":
                                                                 comment="Fdw_cor = direct_fraction * Fdw * factor + (1 - direct_fraction) * Fdw"))
 
         # %% add libRadtran simulation of Fdw
-        sim = xr.open_dataset(f"{libradtran_dir}/{libradtran_file}")
+        sim = xr.open_dataset(f"{libradtran_path}/{libradtran_file}")
         # interpolate wavelength onto output wavelength grid
         sim_inp = sim.fdw.interp_like(ds)
         sim_inp.attrs = dict(long_name="Clearsky spectral downward solar irradiance", units="W m-2 nm-1",
@@ -509,7 +510,7 @@ if __name__ == "__main__":
 
         # set scale factor to reduce file size
         for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts", "Fdw_simulated"]:
-            encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
+            encoding[var] = dict(dtype="int16", scale_factor=0.0001, _FillValue=-999)
 
         filename = f"{outpath}/HALO-AC3_HALO_SMART_spectral-irradiance-{prop}_{flight_date}_{flight_key}_v1.0.nc"
         ds.to_netcdf(filename, format="NETCDF4_CLASSIC", encoding=encoding)
