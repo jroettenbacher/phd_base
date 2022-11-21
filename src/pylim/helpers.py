@@ -379,3 +379,10 @@ def set_cdo_path(path: str = "/home/jroettenbacher/.conda/envs/phd_base/bin/cdo"
     os.environ["CDO"] = path
 
 
+def generate_specific_rows(filePath, userows=[]):
+    """Function for trajectory plotting"""
+    with open(filePath) as f:
+        for i, line in enumerate(f):
+            if i in userows:
+                yield line
+
