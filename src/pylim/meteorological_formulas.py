@@ -103,6 +103,8 @@ def barometric_height(pressure_profile, temperature_profile):
         barometric_height[j] = barometric_height[j - 1] + delta_h
         p_low = pressure_profile[j]
 
+    # replace top of atmosphere value (inf) with nan
+    barometric_height = np.where(barometric_height == np.inf, np.nan, barometric_height)
     return barometric_height
 
 
