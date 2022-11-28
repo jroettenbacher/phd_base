@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """Figures for the synoptic overview paper by Walbröl et al.
 
-- first plot: 2 cols, 2 rows with trajectories on top and one axis with a radar plot
-
-*author*: Johannes Röttenbacher
+*author*: Johannes Röttenbacher, Benjamin Kirbus
 """
 
 # %% import modules
@@ -11,272 +9,172 @@ import pylim.helpers as h
 import pylim.halo_ac3 as meta
 import pylim.meteorological_formulas as met
 import ac3airborne
-from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
 import os
 import numpy as np
 import pandas as pd
 import xarray as xr
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch
 from matplotlib import patheffects
-import cmasher as cmr
-import cartopy
+from matplotlib.collections import LineCollection
 import cartopy.crs as ccrs
-from tqdm import tqdm
-cm = 1/2.54  # inch to centimeter conversion
+
+cm = 1 / 2.54  # inch to centimeter conversion
 
 # %% set paths and filenames
 campaign = "halo-ac3"
 halo_key = "RF17"
 flight = meta.flight_names[halo_key]
 date = flight[9:17]
-plot_dir = f"{h.get_path('plot', campaign=campaign)}/../manuscripts/2022_HALO-AC3_synoptic_overview"
-trajectory_dir = f"{h.get_path('trajectories', campaign=campaign)}/{date}"
-era5_dir = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/ERA5/ERA5_ml_noOMEGAscale"
-radar_dir = h.get_path("hamp_mira", flight, campaign)
-dropsonde_dir = f"{h.get_path('dropsondes', flight, campaign)}/.."
+plot_path = f"{h.get_path('plot', campaign=campaign)}/../manuscripts/2022_HALO-AC3_synoptic_overview"
+trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude"
+era5_path = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/ERA5/ERA5_ml_noOMEGAscale"
 
 # set options and credentials for HALO-AC3 cloud and intake catalog
 kwds = {'simplecache': dict(cache_storage='E:/HALO-AC3/cloud', same_names=True)}
 credentials = {"user": os.environ.get("AC3_CLOUD_USER"), "password": os.environ.get("AC3_CLOUD_PASSWORD")}
 cat = ac3airborne.get_intake_catalog()
 
-# filenames
-era5_files = [os.path.join(era5_dir, f) for f in os.listdir(era5_dir) if f"P{date}" in f]
+# %% plot two maps of trajectories with surface pressure, flight track, dropsonde locations and high cloud cover and humidity profiles from radiosonde
+plt_sett = {
+    'TIME': {
+        'label': 'Time Relative to Release (h)',
+        'norm': plt.Normalize(-120, 0),
+        'ylim': [-120, 0],
+        'cmap_sel': 'tab20b_r',
+    }
+}
+var_name = "TIME"
+data_crs = ccrs.PlateCarree()
+h.set_cb_friendly_colors()
+
+plt.rc("font", size=6)
+fig = plt.figure(figsize=(18 * cm, 15 * cm))
+gs = gridspec.GridSpec(2, 2, width_ratios=[3, 1])
+
+# plot trajectory map 11 April in first row and first column
+ax = fig.add_subplot(gs[0, 0], projection=ccrs.NorthPolarStereo())
+ax.coastlines(alpha=0.5)
+ax.set_xlim((-2000000, 2000000))
+ax.set_ylim((-3000000, 500000))
+gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+gl.xlocator = mticker.FixedLocator(np.arange(-180, 180, 20))
+gl.ylocator = mticker.FixedLocator(np.arange(60, 90, 5))
+gl.top_labels = False
+gl.right_labels = False
+
+# read in ERA5 data - 11 April
+era5_files = [os.path.join(era5_path, f) for f in os.listdir(era5_path) if f"P20220411" in f]
 era5_files.sort()
-radar_file = "radar_20220411_v0.6.nc"
-dropsonde_file = f"HALO-AC3_HALO_Dropsondes_quickgrid_{date}.nc"
-# meta data
-start_dt, end_dt = pd.to_datetime("2022-04-11 09:30"), pd.to_datetime("2022-04-11 14:30")
-
-# %% read in data
-# radar data from halo-ac3 cloud
-# radar_ds = cat["HALO-AC3"]["HALO"]["HAMP_MIRA"][f"HALO-AC3_HALO_{halo_key}"](storage_options=kwds, **credentials).to_dask()
-ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_{halo_key}"](storage_options=kwds, **credentials).to_dask()
-# radar_ds = xr.open_dataset(f"{radar_dir}/{radar_file}")
-era5_ds = xr.open_mfdataset(era5_files)
-dropsonde_ds = xr.open_dataset(f"{dropsonde_dir}/{dropsonde_file}")
-dropsonde_ds["alt"] = dropsonde_ds.alt / 1000  # convert altitude to km
-
-# %% preprocess radar data
-# radar_ds = radar_ds.sel(time=slice(start_dt, end_dt))
-# radar_ds["dBZg"] = radar_ds["dBZg"].where(radar_ds["dBZg"] > -90, np.nan)
-# radar_ds["dBZg"] = radar_ds["dBZg"].where(radar_ds["dBZg"] < 50, np.nan)
-
-# %% preprocess ERA5 data
-q_air = 1.292  # dry air density at 0°C in kg/m3
-g_geo = 9.80665  # gravitational acceleration [m s^-2]
-era5_ds = era5_ds.sel(time=slice(start_dt, end_dt), lon=slice(-60, 30), lat=slice(65, 90)).compute()
+era5_ds = xr.open_mfdataset(era5_files).sel(time=f"2022-04-11T12:00")
 # calculate pressure on all model levels
 pressure = era5_ds.hyam + era5_ds.hybm * era5_ds.PS * 100
 # select only relevant model levels and swap dimension names
 era5_ds["pressure"] = pressure.sel(nhym=slice(39, 137)).swap_dims({"nhym": "lev"})
-# calculate pressure height
-p_hl = era5_ds["pressure"]
-p_sur = era5_ds.PS * 100
-era5_ds["press_height"] = -p_sur * np.log(p_hl / p_sur) / (q_air * g_geo)
 
-# select grid cells closest to aircraft track
-ins_tmp = ins.sel(time=era5_ds.time, method="nearest")
-# convert lat and lon to precision of ERA5 data
-lats = (np.round(ins_tmp.lat/0.25, 0)*0.25)
-lons = (np.round(ins_tmp.lon/0.25, 0)*0.25)
-era5_sel = era5_ds.sel(lat=lats, lon=lons).reset_coords(["lat", "lon"])
+# Plot the surface pressure - 11 April
+pressure_levels = np.arange(900, 1125, 5)
+E5_press = era5_ds.MSL / 100  # conversion to hPa
+cp = ax.contour(E5_press.lon, E5_press.lat, E5_press, levels=pressure_levels, colors='k', linewidths=0.7,
+                linestyles='solid', alpha=1, transform=data_crs)
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
 
-# calculate model altitude to aircraft altitude
-aircraft_height_level = list()
-for i in range(len(era5_sel.time)):
-    ins_altitude = ins_tmp.alt.isel(time=i).values
-    p_height = era5_sel.press_height.isel(time=i, drop=True).values
-    aircraft_height_level.append(int(h.arg_nearest(p_height, ins_altitude)))
+# add seaice edge
+ci_levels = [0.8]
+E5_ci = era5_ds.CI
+cci = ax.contour(E5_ci.lon, E5_ci.lat, E5_ci, ci_levels, transform=data_crs, linestyles="--",
+                 colors="#332288")
 
-height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": era5_sel.time})+40
-aircraft_height_da = era5_sel.press_height.sel(lev=height_level_da)
+# add high cloud cover
+E5_cc = era5_ds.CC.where(era5_ds.pressure < 55000, drop=True).sum(dim="lev")
+ax.contourf(E5_cc.lon, E5_cc.lat, E5_cc, levels=20, transform=data_crs, cmap="Greys", alpha=1)
 
-# # %% plot radar cross-section
-# h.set_cb_friendly_colors()
-# plt.rc("font", family="serif", size=12)
-# fig, ax = plt.subplots(figsize=(18*cm, 10.125*cm))
-# ins.alt.plot(x="time", label="HALO altitude", color="#888888", lw=3)
-# radar_ds["dBZg"].plot(x="time", robust=True, cmap="viridis", cbar_kwargs=dict(label="Radar Reflectivity (dBZ)"))
-# yticks = ax.get_yticks()
-# ax.set_yticklabels(yticks/1000)
-# h.set_xticks_and_xlabels(ax, time_extend=end_dt-start_dt)
-# ax.set_xlabel("Time (UTC)")
-# ax.set_ylabel("Altitude (km)")
-# ax.legend(loc=1)
-# plt.tight_layout()
-# figname = f"{plot_dir}/{flight}_MIRA_radar-reflectivity.png"
-# plt.savefig(figname, dpi=100)
-# plt.show()
-# plt.close()
+# plot trajectories - 11 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220411_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to upper char
+for j in range(len(header)):
+    header[j] = header[j].upper()
 
-# %% plot ERA5 cloud cover/IWC/water vapour etc. (2D variables) along flight track
-variable = "Q"
-units = dict(CC="", CLWC="g$\,$kg$^{-1}$", CIWC="g$\,$kg$^{-1}$", CSWC="g$\,$kg$^{-1}$", CRWC="g$\,$kg$^{-1}$", T="K",
-             Q="g$\,$kg$^{-1}$")
-scale_factor = dict(CC=1, CLWC=1000, CIWC=1000, CSWC=1000, CRWC=1000, T=1, Q=1000)
-colorbarlabel = dict(CC="Cloud Cover", CLWC="Cloud Liquid Water Content", CIWC="Cloud Ice Water Content",
-                     CSWC="Cloud Snow Water Content", CRWC="Cloud Rain Water Content", T="Temperature",
-                     Q="Specific Humidity")
-robust = dict(CC=False)
-robust = robust[variable] if variable in robust else True
-cmap = dict(T="bwr")
-cmap = cmap[variable] if variable in cmap else "YlGnBu"
-cmap = plt.get_cmap(cmap).copy()
-cmap.set_bad(color="white")
-plot_ds = era5_sel[variable] * scale_factor[variable]
-plot_ds = plot_ds.where(plot_ds > 0, np.nan)  # set 0 values to nan to mask them in the plot
-clabel = f"{colorbarlabel[variable]} ({units[variable]})"
+print("\tTraj_select.1 could be opened, processing...")
 
-h.set_cb_friendly_colors()
-plt.rc("font", family="serif", size=10)
-fig, ax = plt.subplots(figsize=(18*cm, 10.125*cm))
-height_level_da.plot(x="time", label="HALO altitude", ax=ax, color="#888888", lw=3)
-cmap = cmr.get_sub_cmap("cmr.freeze", .25, 0.85) if variable == "CIWC" else cmap
-plot_ds.plot(x="time", robust=robust, cmap=cmap, cbar_kwargs=dict(pad=0.12, label=clabel))
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+var_index = header.index(var_name.upper())
 
-# set first y axis
-ax.set_ylim(60, 138)
-ax.yaxis.set_major_locator(plt.FixedLocator(range(60, 138, 20)))
-ax.invert_yaxis()
-# set labels
-h.set_xticks_and_xlabels(ax, time_extend=end_dt-start_dt)
-ax.set_xlabel("Time 11 April 2022 (UTC)")
-ax.set_ylabel("Model Level")
-ax.legend(loc=1)
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett[var_name]['cmap_sel'], norm=plt_sett[var_name]['norm'],
+                        alpha=1, transform=data_crs)
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
 
-# add axis with pressure height
-ax2 = ax.twinx()
-ax2.set_ylim(60, 138)
-ax2.yaxis.set_major_locator(plt.FixedLocator(range(60, 138, 20)))
-ax2.invert_yaxis()
-yticks = ax.get_yticks()
-ylabels = np.round(era5_sel["press_height"].isel(time=2).sel(lev=yticks).values / 1000, 1)
-ax2.set_yticklabels(ylabels)
-ax2.set_ylabel("Pressure Altitude (km)")
+plt.colorbar(line, ax=ax, pad=0.01,
+             ticks=np.arange(-120, 0.1, 12)).set_label(label=plt_sett[var_name]['label'], size=6)
 
-plt.tight_layout()
-figname = f"{plot_dir}/{flight}_ERA5_{variable}.png"
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
+# plot flight track - 11 April
+ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_RF17"](storage_options=kwds, **credentials).to_dask()
+track_lons, track_lats = ins["lon"], ins["lat"]
+ax.scatter(track_lons[::10], track_lats[::10], c="k", alpha=1, marker=".", s=1, zorder=400,
+           label='HALO flight track', transform=data_crs, linestyle="solid")
 
-# %% plot ERA5 CIWC and CLWC along flight track
-variable = "CIWC"
-units = dict(CC="", CLWC="g$\,$kg$^{-1}$", CIWC="g$\,$kg$^{-1}$", CSWC="g$\,$kg$^{-1}$", CRWC="g$\,$kg$^{-1}$", T="K")
-scale_factor = dict(CC=1, CLWC=1000, CIWC=1000, CSWC=1000, CRWC=1000, T=1)
-colorbarlabel = dict(CC="Cloud Cover", CLWC="Cloud Liquid Water Content", CIWC="Cloud Ice Water Content",
-                     CSWC="Cloud Snow Water Content", CRWC="Cloud Rain Water Content", T="Temperature")
-robust = dict(CC=False)
-robust = robust[variable] if variable in robust else True
-plot_ds = era5_sel[variable] * scale_factor[variable]
-plot_ds = plot_ds.where(plot_ds > 0, np.nan)  # set 0 values to nan to mask them in the plot
-clabel = f"{colorbarlabel[variable]} ({units[variable]})"
+# plot dropsonde locations - 11 April
+dropsondes_ds = cat["HALO-AC3"]["HALO"]["DROPSONDES_GRIDDED"][f"HALO-AC3_HALO_RF17"](storage_options=kwds,
+                                                                                     **credentials).to_dask()
+dropsondes_ds["alt"] = dropsondes_ds.alt / 1000  # convert altitude to km
+for i in range(dropsondes_ds.lon.shape[0]):
+    launch_time = pd.to_datetime(dropsondes_ds.launch_time[i].values)
+    x, y = dropsondes_ds.lon[i].mean().values, dropsondes_ds.lat[i].mean().values
+    cross = ax.plot(x, y, "x", color="orangered", markersize=3, label="Dropsonde", transform=data_crs,
+                    zorder=450)
+    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=4, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
-h.set_cb_friendly_colors()
-plt.rc("font", family="serif", size=10)
-fig, ax = plt.subplots(figsize=(18*cm, 10.125*cm))
-height_level_da.plot(x="time", label="HALO altitude", ax=ax, color="#888888", lw=3)
-cmap = cmr.get_sub_cmap("cmr.freeze", .25, 0.85)
-plot_ds.plot(x="time", robust=robust, cmap=cmap, cbar_kwargs=dict(pad=0.01, label=clabel))
+# make legend for flight track and dropsondes - 11 April
+handles = [plt.plot([], ls="-", color="k")[0],  # flight track
+           cross[0],  # dropsondes
+           plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
+           Patch(facecolor="grey")]  # cloud cover
+labels = ["HALO flight track", "Dropsonde", "Sea Ice Edge", "High Cloud Cover\nat 12:00 UTC"]
+ax.legend(handles=handles, labels=labels, framealpha=1, loc=2)
 
-# plot CLWC
-variable = "CLWC"
-plot_ds = era5_sel[variable] * scale_factor[variable]
-plot_ds = plot_ds.where(plot_ds > 0, np.nan)  # set 0 values to nan to mask them in the plot
-clabel = f"{colorbarlabel[variable]} ({units[variable]})"
-cmap = cmr.get_sub_cmap("cmr.flamingo", .25, 0.9)
-plot_ds.plot(x="time", robust=robust, cmap=cmap, cbar_kwargs=dict(pad=0.14, label=clabel))
+title = f"11 April 2022"
+ax.set_title(title, fontsize=7)
+ax.text(-72.5, 73, "(a)", size=7, transform=data_crs, ha="center", va="center",
+        bbox=dict(boxstyle="round", ec="grey", fc="white"))
 
-# set first y axis
-ax.set_ylim(60, 138)
-ax.yaxis.set_major_locator(plt.FixedLocator(range(60, 138, 20)))
-ax.invert_yaxis()
-# set labels
-h.set_xticks_and_xlabels(ax, time_extend=end_dt-start_dt)
-ax.set_xlabel("Time 11 April 2022 (UTC)")
-ax.set_ylabel("Model Level")
-ax.legend(loc=1)
-
-# add axis with pressure height
-ax2 = ax.twinx()
-ax2.set_ylim(60, 138)
-ax2.yaxis.set_major_locator(plt.FixedLocator(range(60, 138, 20)))
-ax2.invert_yaxis()
-yticks = ax.get_yticks()
-ylabels = np.round(era5_sel["press_height"].isel(time=2).sel(lev=yticks).values / 1000, 1)
-ax2.set_yticklabels(ylabels)
-ax2.set_ylabel("Pressure Altitude (km)")
-
-plt.tight_layout()
-figname = f"{plot_dir}/{flight}_ERA5_CIWC_CLWC.pdf"
-plt.savefig(figname, dpi=100)
-plt.show()
-plt.close()
-
-# %% prepare ERA5 data for map plots
-variable = "CIWC"
-units = dict(CC="", CLWC="g$\,$kg$^{-1}$", CIWC="g$\,$kg$^{-1}$", CSWC="g$\,$kg$^{-1}$", CRWC="g$\,$kg$^{-1}$", T="K")
-scale_factor = dict(CC=1, CLWC=1000, CIWC=1000, CSWC=1000, CRWC=1000, T=1)
-colorbarlabel = dict(CC="Cloud Cover", CLWC="Cloud Liquid Water Content", CIWC="Cloud Ice Water Content",
-                     CSWC="Cloud Snow Water Content", CRWC="Cloud Rain Water Content", T="Temperature")
-pressure_level = 30000  # Pa
-plot_ds = era5_ds.sel(lat=slice(68, 90), lon=slice(-45, 30))  # select area to plot
-plot_ds = plot_ds.where(plot_ds["pressure"] < pressure_level, drop=True)
-# select variable and time
-plot_da = plot_ds[variable].isel(time=3, drop=True)
-# sum over level
-plot_da = plot_da.sum(dim=["lev"], skipna=True)
-# set 0 to nan for clearer plotting
-plot_da = plot_da.where(plot_da > 0, np.nan)
-# scale by a 1000 to convert kg/kg to g/kg
-plot_da = plot_da * scale_factor[variable]
-# plotting options
-extent = [-15, 30, 68, 90]
-data_crs = ccrs.PlateCarree()
-cmap = cmr.get_sub_cmap("cmr.freeze", .25, 0.85)
-cmap.set_bad(color="white")
-
-# %% plot ERA5 maps of integrated IWC over certain pressure level
-cbar_label = f"Integrated {colorbarlabel[variable]} ({units[variable]})"
-plt.rc("font", size=10)
-fig, ax = plt.subplots(figsize=(6.1, 6), subplot_kw={"projection": ccrs.NorthPolarStereo()})
-ax.coastlines()
-ax.add_feature(cartopy.feature.BORDERS)
-ax.set_extent(extent, crs=data_crs)
-gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=False, y_inline=False)
-gl.bottom_labels = False
-gl.left_labels = False
-
-# plot ERA5 data
-plot_da.plot(transform=data_crs, robust=True, ax=ax, cmap=cmap, cbar_kwargs={"pad": 0.08, "label": cbar_label})
-# plot flight track
-points = ax.scatter(ins.lon, ins.lat, s=1, c="orange", transform=data_crs, label="Flight Track")
-# plot airports Kiruna
-x_kiruna, y_kiruna = meta.coordinates["Kiruna"]
-ax.plot(x_kiruna, y_kiruna, '.', color="#117733", markersize=8, transform=data_crs)
-ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "Kiruna", fontsize=11, transform=data_crs)
-# Longyearbyen
-x_longyear, y_longyear = meta.coordinates["Longyearbyen"]
-ax.plot(x_longyear, y_longyear, '.', color="#117733", markersize=8, transform=data_crs)
-ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transform=data_crs,
-        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
-ax.legend(handles=[plt.plot([], ls="-", color="orange")[0]], labels=[points.get_label()], loc=1)
-plt.tight_layout()
-figname = f"{plot_dir}/{flight}_ERA5_{variable}_over_{pressure_level/100:.0f}hPa_map.png"
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% plot Dropsondes in one plot
-rh_ice = met.relative_humidity_water_to_relative_humidity_ice(dropsonde_ds.rh, dropsonde_ds.T - 273.15)
-labels = [f"{lt.replace('2022-04-11T', '')}Z" for lt in np.datetime_as_string(rh_ice.launch_time.values, unit="m")]
-h.set_cb_friendly_colors()
-plt.rc("font", family="serif", size=10)
-fig = plt.figure(figsize=(18*cm, 10.125*cm))
-ax = fig.add_subplot(121)
+# plot dropsonde profiles in row 1 and column 2
+rh_ice = met.relative_humidity_water_to_relative_humidity_ice(dropsondes_ds.rh, dropsondes_ds.T - 273.15)
+labels = [f"{lt.replace('2022-04-11T', '')} UTC" for lt in np.datetime_as_string(rh_ice.launch_time.values, unit="m")]
+ax = fig.add_subplot(gs[0, 1])
 rh_ice.plot.line(y="alt", alpha=0.5, label=labels, lw=1, ax=ax)
-rh_ice.mean(dim="launch_time").plot(y="alt", lw=3, label="Mean", c="k", ax=ax)
+rh_ice.mean(dim="launch_time").plot(y="alt", lw=2, label="Mean", c="k", ax=ax)
 
 # plot vertical line at 100%
 ax.axvline(x=100, color="#661100", lw=2)
@@ -284,56 +182,145 @@ ax.set_xlabel("Relative Humidity over Ice (%)")
 ax.set_ylabel("Altitude (km)")
 ax.grid()
 ax.legend(bbox_to_anchor=(1, 1.01), loc="upper left")
+ax.text(0.1, 0.95, "(b)", size=7, transform=ax.transAxes, ha="center", va="center",
+        bbox=dict(boxstyle="round", ec="grey", fc="white"))
 
-# plot map
-orig_map = plt.cm.get_cmap('Blues')  # getting the original colormap using cm.get_cmap() function
-reversed_map = orig_map.reversed()  # reversing the original colormap using reversed() function
-# select position and time data
-lon, lat, altitude, times = ins["lon"], ins["lat"], ins["alt"], ins["time"]
-data_crs = ccrs.PlateCarree()
-extent = [-15, 30, 68, 90]
-ax = fig.add_subplot(122, projection=ccrs.NorthPolarStereo())
-ax.coastlines()
-ax.add_feature(cartopy.feature.BORDERS)
-ax.set_extent(extent, crs=data_crs)
-gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=False, y_inline=False)
-gl.bottom_labels = False
-gl.left_labels = False
+# plot trajectories 12 April in second row first column
+ax = fig.add_subplot(gs[1, 0], projection=ccrs.NorthPolarStereo())
+ax.coastlines(alpha=0.5)
+ax.set_xlim((-2000000, 2000000))
+ax.set_ylim((-3000000, 500000))
+gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+gl.top_labels = False
+gl.right_labels = False
+gl.xlocator = mticker.FixedLocator(np.arange(-180, 180, 20))
+gl.ylocator = mticker.FixedLocator(np.arange(60, 90, 5))
 
-# add sea ice extent
-seaice = get_amsr2_seaice(f"{(pd.to_datetime(date) - pd.Timedelta(days=0)):%Y%m%d}")
-seaice = seaice.seaice
-ax.pcolormesh(seaice.lon, seaice.lat, seaice, transform=data_crs, cmap=reversed_map)
+# read in ERA5 data - 12 April
+era5_files = [os.path.join(era5_path, f) for f in os.listdir(era5_path) if f"P20220412" in f]
+era5_files.sort()
+era5_ds = xr.open_mfdataset(era5_files).sel(time=f"2022-04-12T12:00")
+# calculate pressure on all model levels
+pressure = era5_ds.hyam + era5_ds.hybm * era5_ds.PS * 100
+# select only relevant model levels and swap dimension names
+era5_ds["pressure"] = pressure.sel(nhym=slice(39, 137)).swap_dims({"nhym": "lev"})
 
-# plot flight track
-points = ax.scatter(lon, lat, s=1, c="orange", transform=data_crs)
+# Plot the surface pressure - 12 April
+pressure_levels = np.arange(900, 1125, 5)
+E5_press = era5_ds.MSL / 100
+cp = ax.contour(E5_press.lon, E5_press.lat, E5_press, levels=pressure_levels, colors='k', linewidths=0.7,
+                linestyles='solid', alpha=1, transform=ccrs.PlateCarree())
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
 
-# plot dropsonde launch locations
-for i in range(dropsonde_ds.lon.shape[0]):
-    launch_time = pd.to_datetime(dropsonde_ds.launch_time[i].values)
-    x, y = dropsonde_ds.lon[i].mean().values, dropsonde_ds.lat[i].mean().values
-    ax.plot(x, y, "x", color="red", markersize=8, label="Dropsonde", transform=data_crs)
-    # ax.text(x, y, f"{i+1:02d}", c="white", fontsize=8, transform=data_crs,
-    #         path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])  # RF09, RF11, RF12, RF14, RF18
-    ax.text(x, y, f"{launch_time:%H:%M}", c="white", fontsize=10, transform=data_crs,
-            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="black")])
+# add seaice edge - 12 April
+ci_levels = [0.8]
+E5_ci = era5_ds.CI
+cci = ax.contour(E5_ci.lon, E5_ci.lat, E5_ci, ci_levels, transform=ccrs.PlateCarree(), linestyles="--",
+                 colors="#332288")
 
-handles, labels = ax.get_legend_handles_labels()
-ax.legend([handles[0]], [labels[0]], loc=3)
+# add high cloud cover - 12 April
+E5_cc = era5_ds.CC.where(era5_ds.pressure < 55000, drop=True).sum(dim="lev")
+ax.contourf(E5_cc.lon, E5_cc.lat, E5_cc, levels=20, transform=ccrs.PlateCarree(), cmap="Greys")
 
-# Kiruna
-x_kiruna, y_kiruna = meta.coordinates["Kiruna"]
-ax.plot(x_kiruna, y_kiruna, '.', color="#117733", markersize=8, transform=data_crs)
-ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "Kiruna", fontsize=11, transform=data_crs)
-# Longyearbyen
-x_longyear, y_longyear = meta.coordinates["Longyearbyen"]
-ax.plot(x_longyear, y_longyear, '.', color="#117733", markersize=8, transform=data_crs)
-ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transform=data_crs,
-        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+# plot trajectories - 12 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220412_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to lower char.
+for j in range(len(header)):
+    header[j] = header[j].upper()  # convert to lower
+print("\tTraj_select.1 could be opened, processing...")
 
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett[var_name]['cmap_sel'], norm=plt_sett[var_name]['norm'],
+                        alpha=1, transform=ccrs.PlateCarree())
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
+
+plt.colorbar(line, ax=ax, pad=0.01,
+             ticks=np.arange(-120, 0.1, 12)).set_label(label=plt_sett[var_name]['label'], size=6)
+
+# plot flight track - 12 April
+ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_RF18"](storage_options=kwds, **credentials).to_dask()
+track_lons, track_lats = ins["lon"], ins["lat"]
+ax.scatter(track_lons[::10], track_lats[::10], c="k", alpha=1, marker=".", s=1, zorder=400,
+           label='HALO flight track', transform=ccrs.PlateCarree(), linestyle="solid")
+
+# plot dropsonde locations - 12 April
+dropsondes_ds = cat["HALO-AC3"]["HALO"]["DROPSONDES_GRIDDED"][f"HALO-AC3_HALO_RF18"](storage_options=kwds,
+                                                                                     **credentials).to_dask()
+dropsondes_ds["alt"] = dropsondes_ds.alt / 1000  # convert altitude to km
+for i in range(dropsondes_ds.lon.shape[0]):
+    x, y = dropsondes_ds.lon[i].mean().values, dropsondes_ds.lat[i].mean().values
+    cross = ax.plot(x, y, "x", color="orangered", markersize=3, label="Dropsonde", transform=data_crs,
+                    zorder=450)
+# add time to only a selected range of dropsondes
+for i in [0, 3, 8, 10, 11, 12, 13]:
+    launch_time = pd.to_datetime(dropsondes_ds.launch_time[i].values)
+    x, y = dropsondes_ds.lon[i].mean().values, dropsondes_ds.lat[i].mean().values
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=4, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
+
+# make legend for flight track and dropsondes - 12 April
+handles = [plt.plot([], ls="-", color="k")[0],  # flight track
+           cross[0],  # dropsondes
+           plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
+           Patch(facecolor="grey")]  # cloud cover
+labels = ["HALO flight track", "Dropsonde", "Sea Ice Edge", "High Cloud Cover\nat 12:00 UTC"]
+ax.legend(handles=handles, labels=labels, framealpha=1, loc=2)
+
+title = f"12 April 2022"
+ax.set_title(title, fontsize=7)
+ax.text(-72.5, 73, "(c)", size=7, transform=data_crs, ha="center", va="center",
+        bbox=dict(boxstyle="round", ec="grey", fc="white"))
+
+# plot dropsonde profiles in row 2 and column 2 - 12 April
+rh_ice = met.relative_humidity_water_to_relative_humidity_ice(dropsondes_ds.rh, dropsondes_ds.T - 273.15)
+labels = [f"{lt.replace('2022-04-12T', '')} UTC" for lt in np.datetime_as_string(rh_ice.launch_time.values, unit="m")]
+ax = fig.add_subplot(gs[1, 1])
+ax.set_prop_cycle('color', [plt.cm.tab20(i) for i in np.linspace(0, 1, 14)])
+rh_ice.plot.line(y="alt", alpha=0.5, label=labels, lw=1, ax=ax)
+rh_ice.mean(dim="launch_time").plot(y="alt", lw=2, label="Mean", c="k", ax=ax)
+
+# plot vertical line at 100%
+ax.axvline(x=100, color="#661100", lw=2)
+ax.set_xlabel("Relative Humidity over Ice (%)")
+ax.set_ylabel("Altitude (km)")
+ax.grid()
+ax.legend(bbox_to_anchor=(1, 1.01), loc="upper left")
+ax.text(0.1, 0.95, "(d)", size=7, transform=ax.transAxes, ha="center", va="center",
+        bbox=dict(boxstyle="round", ec="grey", fc="white"))
+
+figname = f"{plot_path}/HALO-AC3_trajectories_dropsonde_plot_overview.png"
+print(figname)
 plt.tight_layout()
-
-figname = f"{plot_dir}/{flight}_dropsonde_rh_map.png"
-plt.savefig(figname, dpi=300)
-plt.show()
+plt.savefig(figname, format='png', dpi=300)  # , bbox_inches='tight')
+print("\t\t\t ...saved as: " + str(figname))
 plt.close()
