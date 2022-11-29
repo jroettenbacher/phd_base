@@ -318,9 +318,9 @@ ax.legend(bbox_to_anchor=(1, 1.01), loc="upper left")
 ax.text(0.1, 0.95, "(d)", size=7, transform=ax.transAxes, ha="center", va="center",
         bbox=dict(boxstyle="round", ec="grey", fc="white"))
 
-figname = f"{plot_path}/HALO-AC3_trajectories_dropsonde_plot_overview.png"
+figname = f"{plot_path}/HALO-AC3_trajectories_dropsonde_plot_overview.pdf"
 print(figname)
 plt.tight_layout()
-plt.savefig(figname, format='png', dpi=300)  # , bbox_inches='tight')
+plt.savefig(figname, dpi=300, bbox_inches='tight')
 print("\t\t\t ...saved as: " + str(figname))
 plt.close()
