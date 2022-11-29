@@ -97,6 +97,7 @@ ifs = "E:/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
 ecrad = "E:/HALO-AC3/08_ecrad"
 ozone = "E:/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
 trajectories = "E:/HALO-AC3/07_trajs"  # trajectories from LAGRANTO using ERA5 data
+era5 = "E:/HALO-AC3/10_ERA5"  # ERA5 data as downloaded by Benjamin
 
 [halo-ac3.jr_ubuntu]
 base_dir = "/mnt/e/HALO-AC3/02_Flights"
@@ -124,6 +125,7 @@ ifs = "/mnt/e/HALO-AC3/09_IFS_ECMWF"  # IFS data after first processing
 ecrad = "/mnt/e/HALO-AC3/08_ecrad"
 ozone = "/mnt/e/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
 trajectories = "mnt/e/HALO-AC3/07_trajs"  # trajectories from LAGRANTO using ERA5 data
+era5 = "mnt/e/HALO-AC3/10_ERA5"  # ERA5 data as downloaded by Benjamin
 
 # on LIM server
 [halo-ac3.lim_server]
@@ -152,3 +154,4 @@ ifs = "/projekt_agmwend/data/HALO-AC3/09_IFS_ECMWF"  # IFS data after first proc
 ecrad = "/projekt_agmwend/data/HALO-AC3/08_ecrad"
 ozone = "/projekt_agmwend2/data_raw/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
 trajectories = "/projekt_agmwend/data/HALO-AC3/07_trajs"  # trajectories from LAGRANTO using ERA5 data
+era5 = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/ERA5/ERA5_ml_noOMEGAscale"  # ERA5 data as downloaded by Benjamin
