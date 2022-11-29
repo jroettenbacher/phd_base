@@ -93,6 +93,12 @@ def barometric_height(pressure_profile, temperature_profile):
     else:
         pressure_profile = np.flip(pressure_profile)
 
+    # check if temperature profile is ascending (surface at index 0)
+    if temperature_profile[0] > temperature_profile[-1]:
+        pass
+    else:
+        temperature_profile = np.flip(temperature_profile)
+
     levels = len(pressure_profile)
     barometric_height = np.zeros(levels)
     p_low = pressure_profile[0]  # set p_low to surface pressure for first iteration
