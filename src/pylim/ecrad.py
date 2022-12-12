@@ -91,11 +91,14 @@ def calc_pressure(ds: xr.Dataset) -> xr.Dataset:
 
     """
     # calculate pressure at half and mid-level, this will add the single level for surface pressure to its dimension
-    # remove it by selecting only this level and then drop the coordinate, which is now not an index anymore
-    ph = ds["hyai"] + np.e ** ds["lnsp"] * ds["hybi"]
-    pf = ds["hyam"] + np.e ** ds["lnsp"] * ds["hybm"]
-    ds["pressure_hl"] = ph.sel(lev_2=1).reset_coords("lev_2", drop=True).astype("float32")  # assign as a new variable
-    ds["pressure_full"] = pf.sel(lev_2=1).reset_coords("lev_2", drop=True).rename(nhym="lev").astype("float32")
+    # remove it by selecting only this level and dropping the coordinate, which is now not an index anymore
+    ph = ds["hyai"] + np.exp(ds["lnsp"]) * ds["hybi"]
+    pf = list()
+    for hybrid in range(len(ph) - 1):
+        pf.append((ph.isel(nhyi=hybrid + 1) + ph.isel(nhyi=hybrid)) / 2.0)
+    pf = xr.concat(pf, 'lev')
+    ds["pressure_hl"] = ph.sel(lev_2=1, drop=True).astype("float32")  # assign as a new variable
+    ds["pressure_full"] = pf.sel(lev_2=1, drop=True).astype("float32")
 
     return ds
 
