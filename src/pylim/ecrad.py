@@ -83,7 +83,9 @@ def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAI
 
 def calc_pressure(ds: xr.Dataset) -> xr.Dataset:
     """
-    Calculate the pressure at half and full hybrid model level
+    Calculate the pressure at half and full hybrid model level.
+    See https://confluence.ecmwf.int/display/CKB/ERA5%3A+compute+pressure+and+geopotential+on+model+levels%2C+geopotential+height+and+geometric+height
+
     Args:
         ds: DataSet as provided from the IFS output
 
@@ -93,6 +95,9 @@ def calc_pressure(ds: xr.Dataset) -> xr.Dataset:
     # calculate pressure at half and mid-level, this will add the single level for surface pressure to its dimension
     # remove it by selecting only this level and dropping the coordinate, which is now not an index anymore
     ph = ds["hyai"] + np.exp(ds["lnsp"]) * ds["hybi"]
+    # pf = ds["hyam"] + np.e ** ds["lnsp"] * ds["hybm"]
+    # use code as suggested by confluence article
+    # difference in the lowest levels < 0.05 Pa (new - old)
     pf = list()
     for hybrid in range(len(ph) - 1):
         pf.append((ph.isel(nhyi=hybrid + 1) + ph.isel(nhyi=hybrid)) / 2.0)
