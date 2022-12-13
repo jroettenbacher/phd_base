@@ -24,7 +24,7 @@ Can be passed via the command line.
 * flight (e.g. 'Flight_20210629a' or 'HALO-AC3_20220412_HALO_RF18')
 * aircraft ('halo')
 * campaign ('cirrus-hl' or 'halo-ac3')
-* step, one can choose the time resolution in which to interpolate the IFS data on (e.g. '1Min')
+* step, one can choose the time resolution on which to interpolate the IFS data on (e.g. '1Min')
 * use_bahamas, whether to use BAHAMAS or the SMART INS for navigation data (True/False)
 
 **Output:**
@@ -40,6 +40,8 @@ if __name__ == "__main__":
     # %% module import
     from pylim import reader
     from pylim import helpers as h
+    from pylim.solar_position import get_sza
+    from pylim.ecrad import calc_pressure, cloud_overlap_decorr_len
     import numpy as np
     import xarray as xr
     import glob
@@ -53,16 +55,12 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    # %% add solar functions
-    from pylim.solar_position import get_sza
-    from pylim.ecrad import calc_pressure, cloud_overlap_decorr_len
-
     # %% read in command line arguments
     args = h.read_command_line_args()
     ozone_flag = args["ozone"] if "ozone" in args else "sonde"
     # set interpolate flag
     date = args["date"] if "date" in args else '20220411'
-    init_time = args["init"] if "init" in args else "yesterday"
+    init_time = args["init"] if "init" in args else "00"
     flight = args["flight"] if "flight" in args else 'HALO-AC3_20220411_HALO_RF17'
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
@@ -81,8 +79,7 @@ if __name__ == "__main__":
              f"\ninit time: {init_time}\nozone: {ozone_flag}\nuse_bahamas: {use_bahamas}")
 
     # %% set paths
-    path_ifs_raw = h.get_path("ifs_raw", campaign=campaign)
-    path_ifs_raw = f"{path_ifs_raw}/{date}"
+    path_ifs_raw = f"{h.get_path('ifs_raw', campaign=campaign)}/{date}"
     path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
     path_horidata = h.get_path("horidata", flight, campaign)
     path_ecrad = os.path.join(h.get_path("ecrad", campaign=campaign), date)
@@ -178,8 +175,10 @@ if __name__ == "__main__":
     nav_data_ip = nav_data_ip.assign(cos_sza=cos_sza)
 
     # %% calculate decorrelation length to put into namelist
-    decorr_len, b, c = cloud_overlap_decorr_len(np.median(nav_data_ip.lat), 1)  # operational scheme 1
-    log.info(f"Decorrelation length for namelist file: {decorr_len}")
+    decorr_len, b, c = cloud_overlap_decorr_len(nav_data_ip.lat, 1)  # operational scheme 1
+    decorr_file = f"{path_ifs_output}/{date}_decorrelation_length.csv"
+    decorr_len.to_csv(decorr_file)
+    log.info(f"Decorrelation length saved in {decorr_file}")
 
     # %% select only closest (+-10) lats and lons from datasets to reduce size in memory
     closest_lats = np.unique(closest_lats)
@@ -197,19 +196,23 @@ if __name__ == "__main__":
     data_ml = calc_pressure(data_ml)
     data_ml = data_ml.sel(lev_2=1).reset_coords("lev_2", drop=True)  # drop lev_2 dimension
     data_ml = data_ml.rename({"nhyi": "half_level", "lev": "level"})  # rename variables and thus dimensions
+    data_ml = data_ml.assign_coords(half_level=np.insert((data_ml.level + 0.5).values, 0, 0.5))
 
-    # calculate lw_em from ratio to blackbody temperature
-    sigma = 5.670374419e-8
+    # %% calculate lw_em from ratio to blackbody temperature
+    sigma = 5.670374419e-8  # Stefan-Boltzmann constant W⋅m−2⋅K−4
     bb_radiation = sigma * data_srf.SKT ** 4
     # unit of surface thermal radiation is W m^-2 s, thus it needs to be divided with the seconds after the hour
     seconds_after_hour = data_srf.time.dt.hour * 3600
-    seconds_after_hour[-1] = 25 * 3600  # replace the last value (0 UTC next day) with 25 hrs after start
+    seconds_after_hour[-1] = 24 * 3600  # replace the last value (0 UTC next day) with 24 hrs after start
     lw_up_radiation = (data_srf.STRD - data_srf.STR) / seconds_after_hour
     lw_em_ratio = lw_up_radiation / bb_radiation
-    # correct lw_em_ratios > 0.98 (probably due to difference between skin and sea surface temperature)
+    # correct lw_em_ratios > 0.98 (the longwave emissivity for sea ice is assumed to be constant at 0.98,
+    # IFS documentation Part IV, Table 2.6)
     lw_em_ratio = lw_em_ratio.where(lw_em_ratio < 0.98, 0.98)
+    data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon"],
+                                            attrs=dict(unit="1", long_name="Longwave surface emissivity"))
 
-    # calculate shortwave albedo according to sea ice concentration and short wave band albedo climatology for sea ice
+    # %% calculate shortwave albedo according to sea ice concentration and short wave band albedo climatology for sea ice
     month_idx = dt_day.month - 1
     open_ocean_albedo = 0.06
     sw_albedo_bands = list()
@@ -223,13 +226,27 @@ if __name__ == "__main__":
 
     data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]  # select only relevant variables
     data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])  # drop unnecessary variables
-    # interpolate temperature on half levels
-    data_ml["temperature_hl"] = data_ml.t.interp(level=np.insert((data_ml.level + 0.5).values, 0, 0.5),
-                                                 kwargs={"fill_value": "extrapolate"}).rename(level="half_level")
-    # replace last (and wrong) extrapolated value with surface temp
-    data_ml["temperature_hl"][:, -1, :, :] = data_srf.SKT.values
-    # first (0.5 half level) point is also extrapolated but not as important as surface temperature
+
+    # %% interpolate temperature on half levels according to IFS Documentation Part IV Section 2.8.1
     n_levels = len(data_ml.level)  # get number of levels
+    t_hl = list()
+    for i in tqdm(range(n_levels-1)):
+        t_k0 = data_ml.t.isel(level=i, drop=True)
+        t_k1 = data_ml.t.isel(level=i+1, drop=True)
+        p_k0 = data_ml.pressure_full.isel(level=i, drop=True)
+        p_k1 = data_ml.pressure_full.isel(level=i+1, drop=True)
+        p_k05 = data_ml.pressure_hl.isel(half_level=i+1)
+        t_k0_weight = p_k0 * (p_k1 - p_k05) / (p_k05 * (p_k1 - p_k0))
+        t_k1_weight = p_k1 * (p_k05 - p_k0) / (p_k05 * (p_k1 - p_k0))
+        t_k05 = (t_k0 * t_k0_weight) + (t_k1 * t_k1_weight)
+        t_hl.append(t_k05)
+
+    t_1375 = data_srf.SKT.expand_dims(half_level=[137.5]).isel(half_level=0)
+    t_hl.append(t_1375)  # set surface temperature to skin temperature
+    diff_t15_t1 = t_hl[0] - data_ml.t.sel(level=1, drop=True)
+    t_05 = (data_ml.t.sel(level=1, drop=True) - diff_t15_t1).assign_coords(half_level=0.5)
+    t_hl.insert(0, t_05)  # interpolate 0.5 half level
+    data_ml["temperature_hl"] = xr.concat(t_hl, dim="half_level")
 
     # %% prepare datasets for merge and write to ncfile
     data_ml = data_ml.expand_dims("column")  # add the new dimension "column"
@@ -240,7 +257,7 @@ if __name__ == "__main__":
                                 "MSL": "mean_sea_level_pressure"}
                                ).expand_dims("column")
 
-    # %% add a few more necessary variables to the dataset
+    # %% add trace gases
     if ozone_flag == "sonde":
         log.info(f"ozone flag set to {ozone_flag}\ninterpolating sonde measurement onto IFS full pressure levels...")
         # read the corresponding ozone file for the flight
@@ -267,24 +284,33 @@ if __name__ == "__main__":
         data_ml["o3_mmr"] = xr.DataArray(np.expand_dims(np.repeat([1.587701e-7], n_levels), axis=0),
                                          dims=["column", "level"],
                                          attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
+    # constants according to IFS Documentation Part IV Section 2.8.4
+    data_ml["n2o_vmr"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
+    data_ml["cfc11_vmr"] = xr.DataArray(280e-12, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
+    data_ml["cfc12_vmr"] = xr.DataArray(484e-12, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
+    # other constants
+    data_ml["o2_vmr"] = xr.DataArray(0.209488, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
+    # monthly surface mean value from https://gml.noaa.gov/ccgg/trends_ch4/
+    data_ml["ch4_vmr"] = xr.DataArray(1900e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
+    # monthly mean CO2 from the Keeling curve https://keelingcurve.ucsd.edu/
+    data_ml["co2_vmr"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
+    #TODO get profile from CAMS
 
-    data_ml["cfc11_vmr"] = xr.DataArray(2.51e-10, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
-    data_ml["cfc12_vmr"] = xr.DataArray(5.38e-10, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
-    data_ml["ch4_vmr"] = xr.DataArray(1.774e-6, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
-    data_ml["co2_vmr"] = xr.DataArray(0.000379, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
-    data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0), dims=["column", "level"])
+    # %% add cloud properties
     data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),
                                                        dims=["column", "level"])
-    data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon"],
-                                            attrs=dict(unit="1", long_name="Longwave surface emissivity"))
-    data_ml["n2o_vmr"] = xr.DataArray(3.19e-7, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
-    data_ml["o2_vmr"] = xr.DataArray(0.209488, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
+    # set to 1 according to ecRad documentation
+    data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0), dims=["column", "level"])
     data_ml["overlap_param"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels - 1), axis=0),
                                             dims=["column", "mid_level"], coords={"mid_level": np.arange(1.5, 137, 1)},
                                             attrs=dict(unit="1", long_name="Cloud overlap parameter"))
+    # sum up cloud ice and cloud snow water content according to IFS documentation Part IV Section 2.8.2 (ii)
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
+    # sum up cloud liquid and cloud rain water content
     data_ml["q_liquid"] = data_ml.clwc + data_ml.crwc
     data_ml["sw_albedo"] = sw_albedo
+
+    # %% merge surface and multilevel file
     data_ml = data_ml.merge(data_srf)
 
     # %% rename variables for ecrad
@@ -292,8 +318,8 @@ if __name__ == "__main__":
 
     # write to history attribute
     data_ml.attrs["history"] = data_ml.attrs["history"] + f" {datetime.today().strftime('%c')}: " \
-                                                          f"formatted file to serve as input to ecRad (read_ifs.py)"
-    data_ml.attrs["contact"] = f"hanno.mueller@uni-leipzig.de, johannes.roettenbacher@uni-leipzig.de"
+                                                          f"formatted file to serve as input to ecRad (ecrad_read_ifs.py)"
+    data_ml.attrs["contact"] = f"johannes.roettenbacher@uni-leipzig.de, hanno.mueller@uni-leipzig.de"
 
     # %% write intermediate output files
     filename = f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc"
