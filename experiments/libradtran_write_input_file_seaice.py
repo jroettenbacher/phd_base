@@ -118,7 +118,7 @@ if __name__ == "__main__":
                 radiosonde=radiosonde,  # page 114
                 time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
                 source=f"solar {solar_source_path}/NewGuey2003_BBR.dat" if solar_flag else "thermal",  # page 119
-                sur_temperature="293.15",  # page 121; set to 20 degC for now
+                sur_temperature="273.15",  # page 121; set to 0 degC for now
                 # sza=f"{sza_libradtran:.4f}",  # page 122
                 # verbose="",  # page 123
                 # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
