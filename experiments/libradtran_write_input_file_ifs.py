@@ -283,7 +283,7 @@ if __name__ == "__main__":
         re_liquid = ifs_sel["re_liquid"].metpy.quantify().metpy.convert_units("microm").values.flatten()
         # set boundary for fu parametrization in libRadtran
         re_ice_max = 65  # mum
-        re_ice_min = 9.315  # mum
+        re_ice_min = 9.5  # mum
         re_ice[re_ice > re_ice_max] = re_ice_max
         re_ice[re_ice < re_ice_min] = re_ice_min
 
