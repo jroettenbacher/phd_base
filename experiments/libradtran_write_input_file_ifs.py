@@ -38,6 +38,16 @@ Variables to add to the atmosphere files:
 8 CO2 density in cm−3 |rarr| constant (CAMS)
 9 NO2 density in cm−3 |rarr| constant (CAMS)
 
+Variables to add to the albedo files:
+
+- spectral albedo from IFS
+
+Variables to add to the cloud files:
+
+- cloud fraction (cloud fraction file)
+- liquid water content, liquid effective radius (water cloud file)
+- ice water content, ice effective radius (ice cloud file)
+
 *author*: Johannes Röttenbacher
 """
 
@@ -45,7 +55,7 @@ if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     import pylim.halo_ac3 as meta
-    from pylim import reader, solar_position
+    from pylim import reader
     from pylim import meteorological_formulas as met
     from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
     import os
@@ -86,6 +96,7 @@ if __name__ == "__main__":
     cloud_path = f"{input_path}/cloud_files"
     for path in [input_path, atmosphere_path, albedo_path, cloud_path]:
         h.make_dir(path)  # create directory
+
     # %% read in INS data
     if use_smart_ins:
         horidata_dir = h.get_path("horidata", flight, campaign)
@@ -116,6 +127,8 @@ if __name__ == "__main__":
         ifs_sel = apply_ice_effective_radius(ifs_sel)
         # interpolate data to half levels
         ifs_sel = ifs_sel.interp(level=ifs_sel.half_level, kwargs={"fill_value": "extrapolate"})
+        # drop TOA level
+        ifs_sel = ifs_sel.isel(half_level=range(1, len(ifs_sel.half_level)))
 
         is_on_land = globe.is_land(lat, lon)  # check if location is over land
         zout = alt / 1000  # page 127; aircraft altitude in km
@@ -174,9 +187,9 @@ if __name__ == "__main__":
             time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
             source=f"solar {solar_source_path}/kurudz_1.0nm.dat",  # page 119
             # sza=f"{sza_libradtran:.4f}",  # page 122
-            verbose="",  # page 123
+            # verbose="",  # page 123
             # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-            wavelength="185 2225",  # start with 185 due to albedo bands
+            wavelength="250 2225",  # start with 250 due to fu parameterization
             zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
         )
 
@@ -193,7 +206,7 @@ if __name__ == "__main__":
             )
         else:
             postprocess_settings = dict(
-                output_user="lambda sza zout albedo spher_alb edir edn eup p T heat CLWC CIWC",  # page 109
+                output_user="lambda sza zout albedo spher_alb edir edn eup p T CLWC CIWC",  # page 109
             )
 
         # %% write input file
@@ -219,7 +232,6 @@ if __name__ == "__main__":
         k_b = 1.380649e-23  # Boltzmann constant
         air_density = (p_atmos * units.hPa) / (k_b * (units.J / units.K) * t_atmos * units.K)
         air_density = air_density.to('cm^-3')
-        # interpolate ozone to half levels
         o3_density = (ifs_sel["o3_vmr"].values * air_density).magnitude
         o2_density = (ifs_sel["o2_vmr"].values * air_density).magnitude
         molar_mass_air = 28.949 * units.g / units.mol  # mean Molar mass of air
@@ -232,6 +244,7 @@ if __name__ == "__main__":
 
         log.debug(f"Writing atmosphere file: {atmosphere_filepath}")
         with open(atmosphere_filepath, 'w') as f:
+            f.write("# z (km)\tpressure (hPa)\ttemperature (K)\tair density (cm^-3)\to3 density (cm^-3)\to2 density (cm^-3)\th2o density (cm^-3)\tco2 density (cm^-3)\n")
             for i in range(n_levels):
                 f.write(f"{alt_atmos[i]:6.3f}\t{p_atmos[i]:10.5f}\t{t_atmos[i]:9.3f}\t{air_density[i]:14E}\t{o3_density[i]:14E}\t{o2_density[i]:14E}\t{h2o_density[i]:14E}\t{co2_density[i]:14E}\n")
 
@@ -268,6 +281,11 @@ if __name__ == "__main__":
         lwc = lwc.to("g/m^3").magnitude
         re_ice = ifs_sel["re_ice"].metpy.quantify().metpy.convert_units("microm").values.flatten()
         re_liquid = ifs_sel["re_liquid"].metpy.quantify().metpy.convert_units("microm").values.flatten()
+        # set boundary for fu parametrization in libRadtran
+        re_ice_max = 65  # mum
+        re_ice_min = 9.315  # mum
+        re_ice[re_ice > re_ice_max] = re_ice_max
+        re_ice[re_ice < re_ice_min] = re_ice_min
 
         # %% write cloud files
         cloud_fraction = ifs_sel["cloud_fraction"].values.flatten()
