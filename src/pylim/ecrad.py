@@ -180,7 +180,7 @@ def apply_liquid_effective_radius(ds: xr.Dataset) -> xr.Dataset:
         output_dtypes=[ds.t.dtype]
     )
     ds["re_liquid"] = leffr.compute()
-    ds["re_liquid"].attrs = dict(unit="m")
+    ds["re_liquid"].attrs = dict(units="m")
 
     return ds
 

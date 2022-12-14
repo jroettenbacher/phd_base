@@ -294,7 +294,8 @@ if __name__ == "__main__":
     data_ml["ch4_vmr"] = xr.DataArray(1900e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
     # monthly mean CO2 from the Keeling curve https://keelingcurve.ucsd.edu/
     data_ml["co2_vmr"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
-    #TODO get profile from CAMS
+    #TODO: get profile from CAMS
+    #TODO: Add NO2 profile from CAMS
 
     # %% add cloud properties
     data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),

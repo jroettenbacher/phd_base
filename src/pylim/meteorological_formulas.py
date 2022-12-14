@@ -78,7 +78,7 @@ def barometric_height(pressure_profile, temperature_profile):
         pressure_profile: pressure profile (Pa)
         temperature_profile: temperature profile (K)
 
-    Returns: barometric height
+    Returns: barometric height (m)
 
     @author: Hanno Müller, Johannes Röttenbacher
     """

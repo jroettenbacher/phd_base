@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # set interpolate flag
     t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
     date = args["date"] if "date" in args else "20220411"
-    init_time = args["init"] if "init" in args else "yesterday"
+    init_time = args["init"] if "init" in args else "00"
     flight = args["flight"] if "flight" in args else "HALO-AC3_20220411_HALO_RF17"
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
@@ -121,7 +121,7 @@ if __name__ == "__main__":
             ["lat", "lon", "time"])
         # overwrite the MultiIndex object with simple integers as column numbers
         # otherwise it can not be saved to a netCDF file
-        n_column = dsi_ml_out.dims["column"]  # get num,ber of columns
+        n_column = dsi_ml_out.dims["column"]  # get number of columns
         dsi_ml_out["column"] = np.arange(n_column)
         # some variables now need to have the dimension column as well
         variables = ["overlap_param", "fractional_std", "inv_cloud_effective_size"]
