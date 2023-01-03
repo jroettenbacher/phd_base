@@ -255,12 +255,13 @@ if __name__ == "__main__":
                                           units="W m-2 nm-1",
                                           standard_name="solar_irradiance_per_unit_wavelength",
                                           comment="Actively stabilized and corrected for cosine response of the inlet assuming only diffuse radiation (maximum correction +- 10%)"),
-                        stabilization_flag=dict(long_name="Stabilization flag", units="1",
-                                                comment=f"0: Roll Stabilization performed good "
-                                                        f"(Offset between target and actual roll <= {stabbi_threshold} deg), "
-                                                        f"1: Roll Stabilization was not performing good "
-                                                        f"(Offset between target and actual roll > {stabbi_threshold} deg), "
-                                                        f"2: Stabilization was turned off"),
+                        stabilization_flag=dict(long_name="Stabilization flag", units="1", standard_name="status_flag",
+                                                flag_values=f"0, 1, 2",
+                                                flag_meanings=f"roll_stabilization_performance_good "
+                                                              f"roll_stabilization_performance_bad "
+                                                              f"stabilization_turned_off",
+                                                comment=f"Good Performance: Offset between target and actual roll <= {stabbi_threshold} deg,"
+                                                        f"Bad Performance: Offset between target and actual roll > {stabbi_threshold} deg"),
                         wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
                 else:
                     var_attributes = dict(
@@ -288,8 +289,8 @@ if __name__ == "__main__":
                                           standard_name="solar_irradiance_per_unit_wavelength",
                                           comment="Corrected for cosine response of the inlet assuming only diffuse "
                                                   "radiation (maximum correction +- 10%)"),
-                        stabilization_flag=dict(long_name="Stabilization flag", units="1",
-                                                comment="2: Stabilization was turned off"),
+                        stabilization_flag=dict(long_name="Stabilization flag", units="1", standard_name="status_flag",
+                                                flag_values="2", flag_meanings="stabilization_turned_off"),
                         wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
 
                 global_attrs = dict(
@@ -386,15 +387,15 @@ if __name__ == "__main__":
             ims_attrs = dict(
                 roll=dict(
                     long_name="Roll angle",
-                    units="deg",
+                    units="degrees",
                     comment="Roll angle: positive = left wing up"),
                 pitch=dict(
                     long_name="Pitch angle",
-                    units="deg",
+                    units="degrees",
                     comment="Pitch angle: positive = nose up"),
                 yaw=dict(
                     long_name="Yaw angle",
-                    units="deg",
+                    units="degrees",
                     comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180")
             )
             hori_files = os.listdir(hori_path)
@@ -441,31 +442,31 @@ if __name__ == "__main__":
                     comment="GPS altitude measured by BAHAMAS"),
                 v_east=dict(
                     long_name="Eastward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Eastward velocity component from BAHAMAS."),
                 v_north=dict(
                     long_name="Northward velocity",
-                    unit="m s^-1",
-                    comment="Northward velocity component  from BAHAMAS."),
+                    units="m s^-1",
+                    comment="Northward velocity component from BAHAMAS."),
                 v_up=dict(
                     long_name="Upward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Vertical velocity  from BAHAMAS."),
                 vel=dict(
                     long_name="Ground speed",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="IRS Groundspeed from corrected IGI data (BAHAMAS)"),
                 roll=dict(
                     long_name="Roll angle",
-                    units="deg",
+                    units="degrees",
                     comment="Roll angle: positive = left wing up (BAHAMAS)"),
                 pitch=dict(
                     long_name="Pitch angle",
-                    units="deg",
+                    units="degrees",
                     comment="Pitch angle: positive = nose up (BAHAMAS)"),
                 yaw=dict(
                     long_name="Yaw angle",
-                    units="deg",
+                    units="degrees",
                     comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180 (converted from 0-360 with 0 = North, BAHAMAS)")
             )
             yaw = bahamas_ds["yaw"] - 90  # convert East from 90 to 0°
