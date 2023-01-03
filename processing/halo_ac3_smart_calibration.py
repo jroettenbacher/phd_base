@@ -256,7 +256,7 @@ if __name__ == "__main__":
                                           standard_name="solar_irradiance_per_unit_wavelength",
                                           comment="Actively stabilized and corrected for cosine response of the inlet assuming only diffuse radiation (maximum correction +- 10%)"),
                         stabilization_flag=dict(long_name="Stabilization flag", units="1", standard_name="status_flag",
-                                                flag_values=f"0, 1, 2",
+                                                flag_values=[0, 1, 2],
                                                 flag_meanings=f"roll_stabilization_performance_good "
                                                               f"roll_stabilization_performance_bad "
                                                               f"stabilization_turned_off",
@@ -290,7 +290,7 @@ if __name__ == "__main__":
                                           comment="Corrected for cosine response of the inlet assuming only diffuse "
                                                   "radiation (maximum correction +- 10%)"),
                         stabilization_flag=dict(long_name="Stabilization flag", units="1", standard_name="status_flag",
-                                                flag_values="2", flag_meanings="stabilization_turned_off"),
+                                                flag_values=2, flag_meanings="stabilization_turned_off"),
                         wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
 
                 global_attrs = dict(
@@ -369,19 +369,19 @@ if __name__ == "__main__":
                     comment="GPS altitude measured by the SMART IMS"),
                 v_east=dict(
                     long_name="Eastward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Eastward velocity component as derived from the GPS sensor."),
                 v_north=dict(
                     long_name="Northward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Northward velocity component as derived from the GPS sensor."),
                 v_up=dict(
                     long_name="Upward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Vertical velocity as derived from the GPS sensor."),
                 vel=dict(
                     long_name="Ground speed",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Ground speed calculated from northward and eastward velocity component: vel = sqrt(v_north^2 + v_east^2)")
             )
             ims_attrs = dict(
