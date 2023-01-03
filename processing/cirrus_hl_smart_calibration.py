@@ -34,9 +34,14 @@ if __name__ == "__main__":
     # %% set some options
     stabilized_flights = list(campaign_meta.flight_numbers.keys())[:12]
     unstabilized_flights = list(campaign_meta.flight_numbers.keys())[12:]
-    flights = list(campaign_meta.flight_numbers.keys())[12:]  # run all flights
+    flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
     # flights = ["Flight_20210713a"]  # uncomment for single flight
     for flight in tqdm(flights):
+        try:
+            file = __file__
+        except NameError:
+            file = None
+        log = h.setup_logging("./logs", file, flight)
         prop = "Fdw"  # Fup or Fdw
         normalize = True  # use normalized calibration factor (counts are divided by the integration time)
         lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration
@@ -223,12 +228,13 @@ if __name__ == "__main__":
                                       standard_name="solar_irradiance_per_unit_wavelength",
                                       comment="Actively stabilized and corrected for cosine response of the inlet assuming "
                                               "only diffuse radiation"),
-                    stabilization_flag=dict(long_name="Stabilization flag", units="1",
-                                            comment=f"0: Roll Stabilization performed good "
-                                                    f"(Offset between target and actual roll <= {stabbi_threshold} deg), "
-                                                    f"1: Roll Stabilization was not performing good "
-                                                    f"(Offset between target and actual roll > {stabbi_threshold} deg), "
-                                                    f"2: Stabilization was turned off"),
+                    stabilization_flag=dict(long_name="Stabilization flag", units="1", standard_name="status_flag",
+                                            flag_values=[0, 1, 2],
+                                            flag_meanings=f"roll_stabilization_performance_good "
+                                                          f"roll_stabilization_performance_bad "
+                                                          f"stabilization_turned_off",
+                                            comment=f"Good Performance: Offset between target and actual roll <= {stabbi_threshold} deg,"
+                                                    f"Bad Performance: Offset between target and actual roll > {stabbi_threshold} deg"),
                     wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
             elif prop == "Fdw" and flight in unstabilized_flights:
                 var_attributes = dict(
@@ -253,8 +259,8 @@ if __name__ == "__main__":
                                       standard_name="solar_irradiance_per_unit_wavelength",
                                       comment="Corrected for cosine response of the inlet (max 10%) assuming only diffuse "
                                               "radiation"),
-                    stabilization_flag=dict(long_name="Stabilization flag", units="1",
-                                            comment="2: Stabilization was turned off"),
+                    stabilization_flag=dict(long_name="Stabilization flag", units="1", standard_name="status_flag",
+                                            flag_values=2, flag_meanings="stabilization_turned_off"),
                     wavelength=dict(long_name="Center wavelength of spectrometer pixel", units="nm"))
             else:
                 var_attributes = dict(
@@ -299,10 +305,10 @@ if __name__ == "__main__":
             # set scale factor to reduce file size
             if prop == "Fdw":
                 for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff"]:
-                    encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
+                    encoding[var] = dict(dtype="int16", scale_factor=0.0001, _FillValue=-999)
             else:
                 for var in ["Fup", "Fup_cor"]:
-                    encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
+                    encoding[var] = dict(dtype="int16", scale_factor=0.0001, _FillValue=-999)
 
             outfile = f"{outpath}/CIRRUS-HL_HALO_SMART_{direction}_{channel}_{flight[7:-1]}_{flight}_v1.0.nc"
             ds.to_netcdf(outfile, format="NETCDF4_CLASSIC", encoding=encoding)
@@ -368,33 +374,33 @@ if __name__ == "__main__":
                     comment="GPS altitude measured by the SMART IMS"),
                 v_east=dict(
                     long_name="Eastward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Eastward velocity component as derived from the GPS sensor."),
                 v_north=dict(
                     long_name="Northward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Northward velocity component as derived from the GPS sensor."),
                 v_up=dict(
                     long_name="Upward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Vertical velocity as derived from the GPS sensor."),
                 vel=dict(
                     long_name="Ground speed",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Ground speed calculated from northward and eastward velocity component: vel = sqrt(v_north^2 + v_east^2)")
             )
             ims_attrs = dict(
                 roll=dict(
                     long_name="Roll angle",
-                    units="deg",
+                    units="degrees",
                     comment="Roll angle: positive = left wing up"),
                 pitch=dict(
                     long_name="Pitch angle",
-                    units="deg",
+                    units="degrees",
                     comment="Pitch angle: positive = nose up"),
                 yaw=dict(
                     long_name="Yaw angle",
-                    units="deg",
+                    units="degrees",
                     comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180")
             )
             hori_files = os.listdir(hori_dir)
@@ -441,31 +447,31 @@ if __name__ == "__main__":
                     comment="GPS altitude measured by BAHAMAS"),
                 v_east=dict(
                     long_name="Eastward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Eastward velocity component from BAHAMAS."),
                 v_north=dict(
                     long_name="Northward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Northward velocity component  from BAHAMAS."),
                 v_up=dict(
                     long_name="Upward velocity",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="Vertical velocity  from BAHAMAS."),
                 vel=dict(
                     long_name="Ground speed",
-                    unit="m s^-1",
+                    units="m s^-1",
                     comment="IRS Groundspeed from corrected IGI data (BAHAMAS)"),
                 roll=dict(
                     long_name="Roll angle",
-                    units="deg",
+                    units="degrees",
                     comment="Roll angle: positive = left wing up (BAHAMAS)"),
                 pitch=dict(
                     long_name="Pitch angle",
-                    units="deg",
+                    units="degrees",
                     comment="Pitch angle: positive = nose up (BAHAMAS)"),
                 yaw=dict(
                     long_name="Yaw angle",
-                    units="deg",
+                    units="degrees",
                     comment="0 = East, 90 = North, 180 = West, -90 = South, range: -180 to 180 (converted from 0-360 with 0 = North, BAHAMAS)")
             )
             yaw = bahamas_ds["yaw"] - 90  # convert East from 90 to 0°
@@ -500,10 +506,10 @@ if __name__ == "__main__":
         # set scale factor to reduce file size
         if prop == "Fdw":
             for var in ["Fdw", "Fdw_cor", "Fdw_cor_diff", "counts"]:
-                encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
+                encoding[var] = dict(dtype="int16", scale_factor=0.0001, _FillValue=-999)
         else:
             for var in ["Fup", "Fup_cor", "counts"]:
-                encoding[var] = dict(dtype="int16", scale_factor=0.01, _FillValue=-999)
+                encoding[var] = dict(dtype="int16", scale_factor=0.0001, _FillValue=-999)
 
         filename = f"{outpath}/CIRRUS-HL_{flight_number}_{flight[7:]}_HALO_SMART_spectral-irradiance-{prop}_v1.0.nc"
         ds.to_netcdf(filename, format="NETCDF4_CLASSIC", encoding=encoding)
