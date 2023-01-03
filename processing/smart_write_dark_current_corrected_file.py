@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # User input
     campaign = "halo-ac3"
     # uncomment for single flight use
-    flights = ["HALO-AC3_20220312_HALO_RF02"]  # which flight do the files in raw belong to?
+    flights = ["HALO-AC3_20220321_HALO_RF08"]  # which flight do the files in raw belong to?
     # uncomment for all flights
     # flights = list(transfer_calibs.keys())  # get all flight keys for loop
     for flight in flights:

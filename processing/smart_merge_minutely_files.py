@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # User input
     campaign = "halo-ac3"
     # uncomment for single flight use
-    flights = ["HALO-AC3_20220312_HALO_RF02"]  # set flight folder
+    flights = ["HALO-AC3_20220321_HALO_RF08"]  # set flight folder
     # uncomment for all flight loop
     # flights = list(transfer_calibs.keys())[11:]  # list all flight keys
     for flight in flights:
@@ -47,6 +47,7 @@ if __name__ == "__main__":
                 for channel in channels:
                     try:
                         filename = [file for file in files if file.endswith(f"{prop}_{channel}{cor}.dat")]
+                        filename.sort()
                         if corrected:
                             df = pd.concat(
                                 [pd.read_csv(f"{dirpath}/{file}", sep="\t", index_col="time") for file in
