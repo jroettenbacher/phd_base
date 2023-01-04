@@ -7,7 +7,6 @@
 if __name__ == "__main__":
     # %% import modules
     import pylim.helpers as h
-    from pylim import halo_ac3 as meta
     import os
     import xarray as xr
     import pandas as pd
@@ -19,23 +18,30 @@ if __name__ == "__main__":
     cm = 1 / 2.54  # conversion factor for centimeter to inch
 
     # %% set paths
-    campaign = "halo-ac3"  # adjust bahamas filename when using for HALO-AC3
-    flight_keys = list(meta.flight_names.values())
+    campaign = "cirrus-hl"
+    prop = "Fdw"  # Fdw or Fup
+    if campaign == "halo-ac3":
+        from pylim import halo_ac3 as meta
+    else:
+        from pylim import cirrus_hl as meta
+    flight_keys = list(meta.flight_names.values()) if campaign == "halo-ac3" else list(meta.flight_numbers.keys())
     ql_path = h.get_path("all", instrument="quicklooks", campaign=campaign)
-    flights = flight_keys[3:-1]
+    flights = flight_keys[3:-1] if campaign == "halo-ac3" else flight_keys[1:]
     # flights = ["HALO-AC3_20220411_HALO_RF17"]  # single flight mode
     for flight in flights:
-        prop = "Fdw"
         wavelengths = [422, 532, 648, 858, 1240, 1640]  # five wavelengths to plot individually
         calibrated_path = h.get_path("calibrated", flight, campaign)  # path to calibrated nc files
         plot_path = calibrated_path  # output path of plot
 
         # %% get metadata
-        flight_no = flight[-4:]
-        date = flight[9:17]
+        flight_no = flight[-4:] if campaign == "halo-ac3" else meta.flight_numbers[flight]
+        date = flight[9:17] if campaign == "halo-ac3" else flight[7:16]
 
         # %% read in calibrated files
-        file = f"{campaign.swapcase()}_HALO_SMART_spectral-irradiance-{prop}_{date}_{flight_no}_v1.0.nc"
+        if campaign == "halo-ac3":
+            file = f"{campaign.swapcase()}_HALO_SMART_spectral-irradiance-{prop}_{date}_{flight_no}_v1.0.nc"
+        else:
+            file = f"{campaign.swapcase()}_{flight_no}_{date}_HALO_SMART_spectral-irradiance-{prop}_v1.0.nc"
         filepath = os.path.join(calibrated_path, file)
         ds = xr.open_dataset(filepath)
         F_cor = ds[f"{prop}_cor"]  # extract corrected F
@@ -108,13 +114,18 @@ if __name__ == "__main__":
         stabbi_not_working = stabbi.where(stabbi == 1, drop=True) - 1.05 + 2
         stabbi_off = stabbi.where(stabbi == 2, drop=True) - 0.1
         ds["roll"].plot(ax=ax, x="time", color="#999933")
-        if flight in meta.stabilized_flights and flight not in meta.stabbi_offs:
-            stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
-            stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
-        elif flight in meta.stabilized_flights and flight in meta.stabbi_offs:
-            stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
-            stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
-            stabbi_off.plot(ls="", marker="s", markersize=2, label="off", color="#888888")
+        if campaign == "halo-ac3":
+            if flight in meta.stabilized_flights and flight not in meta.stabbi_offs:
+                stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+                stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+            elif flight in meta.stabilized_flights and flight in meta.stabbi_offs:
+                stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+                stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+                stabbi_off.plot(ls="", marker="s", markersize=2, label="off", color="#888888")
+        else:
+            if flight in meta.stabilized_flights:
+                stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+                stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
 
         handles_roll, labels_roll = ax.get_legend_handles_labels()
         h.set_xticks_and_xlabels(ax, time_range)
@@ -152,8 +163,15 @@ if __name__ == "__main__":
 
         # map of flight track - second row, both columns
         data_crs = ccrs.PlateCarree()
-        x_kiruna, y_kiruna = meta.coordinates["Kiruna"]
-        x_ensb, y_ensb = meta.coordinates["Longyearbyen"]
+        if campaign == "halo-ac3":
+            name_1, name_2 = "Kiruna", "Longyearbyen"
+            x_1, y_1 = meta.coordinates[name_1]
+            x_2, y_2 = meta.coordinates[name_2]
+        else:
+            name_1 = "EDMO"
+            name_2 = meta.stop_over_locations[flight] if flight in meta.stop_over_locations else None
+            x_1, y_1 = meta.coordinates[name_1]
+            x_2, y_2 = meta.coordinates[name_2] if name_2 is not None else (x_1, y_1)
         # get extent of map plot
         pad = 2
         llcrnlat = ds.lat.min(skipna=True) - pad
@@ -161,25 +179,34 @@ if __name__ == "__main__":
         urcrnlat = ds.lat.max(skipna=True) + pad
         urcrnlon = ds.lon.max(skipna=True) + pad
         extent = [llcrnlon, urcrnlon, llcrnlat, urcrnlat]
-        ax = fig.add_subplot(gs0[1, :], projection=ccrs.NorthPolarStereo())
+        if campaign == "halo-ac3":
+            ax = fig.add_subplot(gs0[1, :], projection=ccrs.NorthPolarStereo())
+        else:
+            ax = fig.add_subplot(gs0[1, :], projection=ccrs.PlateCarree())
         ax.coastlines()
         ax.add_feature(cartopy.feature.BORDERS)
         ax.set_extent(extent, crs=data_crs)
-        gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=True, y_inline=True)
-        # gl.top_labels = False
-        # gl.left_labels = False
+        if campaign == "halo-ac":
+            gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=True, y_inline=True)
+        else:
+            gl = ax.gridlines(crs=data_crs, draw_labels=True, x_inline=False, y_inline=False)
+            gl.top_labels = False
         # plot flight track
         points = ax.scatter(ds["lon"], ds["lat"], s=2, c="#6699CC", transform=data_crs)
-        # add point for Kiruna and Longyearbyen
-        ax.plot(x_kiruna, y_kiruna, 'ok', transform=data_crs)
-        ax.text(x_kiruna + 0.1, y_kiruna + 0.1, "Kiruna", fontsize=8, transform=data_crs,
+        # add point for Kiruna and Longyearbyen or EDMO and second airport
+        ax.plot(x_1, y_1, 'ok', transform=data_crs)
+        ax.text(x_1 + 0.1, y_1 + 0.1, name_1, fontsize=8, transform=data_crs,
                 path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
-        ax.plot(x_ensb, y_ensb, 'ok', transform=data_crs)
-        ax.text(x_ensb + 0.1, y_ensb + 0.1, "Longyearbyen", fontsize=8, transform=data_crs,
+        ax.plot(x_2, y_2, 'ok', transform=data_crs)
+        ax.text(x_2 + 0.1, y_2 + 0.1, name_2, fontsize=8, transform=data_crs,
                 path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
-        fig.suptitle(f"SMART downward Irradiance for {flight}")
-        figname = f"{campaign.swapcase()}_SMART_calibrated-Fdw_quicklook_{date}_{flight_no}.png"
+        direction = "downward" if prop == "Fdw" else "upward"
+        fig.suptitle(f"SMART {direction} Irradiance for {flight}")
+        if campaign == "halo-ac3":
+            figname = f"{campaign.swapcase()}_SMART_calibrated-{prop}_quicklook_{date}_{flight_no}.png"
+        else:
+            figname = f"{campaign.swapcase()}_{flight_no}_{date}_HALO_SMART_calibrated-{prop}_quicklook.png"
         plt.savefig(f"{plot_path}/{figname}", dpi=300)
         plt.savefig(f"{ql_path}/{figname}", dpi=300)
         print(f"Saved {figname}")

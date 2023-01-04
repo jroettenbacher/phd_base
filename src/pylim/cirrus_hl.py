@@ -132,3 +132,5 @@ flight_hours = [Td("05:47:00"), Td("07:27:00"), Td("07:33:00"), Td("07:53:00"), 
                 Td("06:18:00"), Td("05:14:00"), Td("04:07:00"), Td("06:15:00"), Td("06:22:00"), Td("04:27:00"),
                 Td("05:00:00"), Td("05:08:00"), Td("08:02:00"), Td("06:49:00"), Td("04:16:00")]
 
+stabilized_flights = list(flight_numbers.keys())[:12]
+unstabilized_flights = list(flight_numbers.keys())[12:]

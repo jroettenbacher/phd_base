@@ -32,8 +32,8 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     # %% set some options
-    stabilized_flights = list(campaign_meta.flight_numbers.keys())[:12]
-    unstabilized_flights = list(campaign_meta.flight_numbers.keys())[12:]
+    stabilized_flights = campaign_meta.stabilized_flights
+    unstabilized_flights = campaign_meta.unstabilized_flights
     flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
     # flights = ["Flight_20210713a"]  # uncomment for single flight
     for flight in tqdm(flights):
