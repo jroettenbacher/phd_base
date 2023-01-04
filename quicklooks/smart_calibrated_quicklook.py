@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "cirrus-hl"
-    prop = "Fdw"  # Fdw or Fup
+    prop = "Fup"  # Fdw or Fup
     if campaign == "halo-ac3":
         from pylim import halo_ac3 as meta
     else:
@@ -109,23 +109,24 @@ if __name__ == "__main__":
 
         # roll angle with stabbi flag - fourth subrow, first column
         ax = fig.add_subplot(gs01[3])
-        stabbi = ds.stabilization_flag
-        stabbi_working = stabbi.where(stabbi == 0, drop=True) + 2
-        stabbi_not_working = stabbi.where(stabbi == 1, drop=True) - 1.05 + 2
-        stabbi_off = stabbi.where(stabbi == 2, drop=True) - 0.1
         ds["roll"].plot(ax=ax, x="time", color="#999933")
-        if campaign == "halo-ac3":
-            if flight in meta.stabilized_flights and flight not in meta.stabbi_offs:
-                stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
-                stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
-            elif flight in meta.stabilized_flights and flight in meta.stabbi_offs:
-                stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
-                stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
-                stabbi_off.plot(ls="", marker="s", markersize=2, label="off", color="#888888")
-        else:
-            if flight in meta.stabilized_flights:
-                stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
-                stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+        if prop == "Fdw":
+            stabbi = ds.stabilization_flag
+            stabbi_working = stabbi.where(stabbi == 0, drop=True) + 2
+            stabbi_not_working = stabbi.where(stabbi == 1, drop=True) - 1.05 + 2
+            stabbi_off = stabbi.where(stabbi == 2, drop=True) - 0.1
+            if campaign == "halo-ac3":
+                if flight in meta.stabilized_flights and flight not in meta.stabbi_offs:
+                    stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+                    stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+                elif flight in meta.stabilized_flights and flight in meta.stabbi_offs:
+                    stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+                    stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
+                    stabbi_off.plot(ls="", marker="s", markersize=2, label="off", color="#888888")
+            else:
+                if flight in meta.stabilized_flights:
+                    stabbi_working.plot(ls="", marker="s", markersize=2, label="working", color="#44AA99")
+                    stabbi_not_working.plot(ls="", marker="s", markersize=2, label="not working", color="#882255")
 
         handles_roll, labels_roll = ax.get_legend_handles_labels()
         h.set_xticks_and_xlabels(ax, time_range)
@@ -154,11 +155,14 @@ if __name__ == "__main__":
         # legend for roll angle and Stabbi
         ax = fig.add_subplot(gs02[3])
         ax.axis("off")
-        if flight in meta.stabilized_flights:
+        if flight in meta.stabilized_flights and prop == "Fdw":
             ax.legend(handles=handles_roll, labels=labels_roll, markerscale=6, title="Stabilization",
                       loc='upper center', bbox_to_anchor=[0.2, 1.1])
-        else:
+        elif flight in meta.unstabilized_flights and prop == "Fdw":
             ax.text(0.5, 1, "Stabilization\nwas turned off!", horizontalalignment='center', verticalalignment='top',
+                    transform=ax.transAxes)
+        else:
+            ax.text(0.5, 1, "No Stabilization\navailable!", horizontalalignment='center', verticalalignment='top',
                     transform=ax.transAxes)
 
         # map of flight track - second row, both columns
