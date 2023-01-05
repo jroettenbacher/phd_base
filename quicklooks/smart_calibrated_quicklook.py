@@ -18,8 +18,8 @@ if __name__ == "__main__":
     cm = 1 / 2.54  # conversion factor for centimeter to inch
 
     # %% set paths
-    campaign = "cirrus-hl"
-    prop = "Fup"  # Fdw or Fup
+    campaign = "halo-ac3"
+    prop = "Fdw"  # Fdw or Fup
     if campaign == "halo-ac3":
         from pylim import halo_ac3 as meta
     else:
@@ -197,11 +197,21 @@ if __name__ == "__main__":
             gl.top_labels = False
         # plot flight track
         points = ax.scatter(ds["lon"], ds["lat"], s=2, c="#6699CC", transform=data_crs)
+        # plot a way point every 15 minutes = 9000 seconds with a time stamp next to it
+        transform = data_crs._as_mpl_transform(ax)
+        # annotate does not automatically work with cartopy projections, thus we need to create the correct transform
+        # in advance. (https://stackoverflow.com/questions/25416600/why-the-annotate-worked-unexpected-here-in-cartopy)
+        for lon, lat, time_stamp in zip(ds.lon[900::1800], ds.lat[900::1800], ds.time[900::1800]):
+            ax.plot(lon, lat, '.k', markersize=8, transform=data_crs)
+            ax.annotate(time_stamp.dt.strftime("%H:%M").values, (lon, lat), xycoords=transform,
+                        xytext=(3, 0), textcoords="offset points",
+                        fontsize=8, path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
+
         # add point for Kiruna and Longyearbyen or EDMO and second airport
-        ax.plot(x_1, y_1, 'ok', transform=data_crs)
+        ax.plot(x_1, y_1, 'or', transform=data_crs)
         ax.text(x_1 + 0.1, y_1 + 0.1, name_1, fontsize=8, transform=data_crs,
                 path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
-        ax.plot(x_2, y_2, 'ok', transform=data_crs)
+        ax.plot(x_2, y_2, 'or', transform=data_crs)
         ax.text(x_2 + 0.1, y_2 + 0.1, name_2, fontsize=8, transform=data_crs,
                 path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
 
