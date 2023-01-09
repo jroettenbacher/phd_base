@@ -72,7 +72,10 @@ def barometric_height(pressure_profile, temperature_profile):
 
     .. math::
 
-        \\delta h = \\frac{\\log{\frac{p(h_1)}{p(h_0)}} * R * T(h_1)}{M * g}
+        \\Delta h = \\frac{\\log\\left(\\frac{p(h_1)}{p(h_0)}\\right) * R * T(h_1)}{M * g}
+
+    with :math:`h` the height in meter, :math:`R` the universal gas constant, :math:`T` the temperature in Kelvin,
+    :math:`M` the molar mass of air and :math:`g` earth's acceleration.
 
     Args:
         pressure_profile: pressure profile (Pa)
