@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-dev/bin/ecrad"
+ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.5.0/bin/ecrad"
 
 # standard options
 date_var=20220411
@@ -36,7 +36,7 @@ mkdir -p "${rad_prop_outpath}"
 
 # change to where infiles are located
 cd "${inpath}" || exit 1
-namelist="${inpath}/IFS_namelist_jr_${date_var}_${version}.nam"
+namelist="../IFS_namelist_jr_${date_var}_${version}.nam"
 echo "${inpath}"
 n_files=$(find "${inpath}" -maxdepth 1 -type f -name "${reg_file}" | wc -l)
 echo Number of files to calculate:
@@ -64,8 +64,9 @@ do
 
   # check if only one radiative property file was written (only one column in input file)
   if test -f "radiative_properties.nc"; then
-    mv "radiative_properties.nc" "${outpath}/radiative_properties_${sod}.nc"
-  else
+    mv "radiative_properties.nc" "${rad_prop_outpath}/radiative_properties_${sod}.nc"
+    echo "Moved radiative_properties.nc to ${rad_prop_outpath}"
+  elif test -f "radiative_properties_*.nc"; then
     # move the radiation properties intermediate output files to the output folder and add the current second of day to the filename
     ls radiative_properties_* | sed "s/\(radiative_properties\)_\([0-9]\{4\}-[0-9]\{4\}\)\.nc/mv & ${rad_prop_outpath//\//\\/}\/\1_${sod}_\2.nc/" | sh
     # list all radiative_properties files and pipe them to sed
@@ -74,8 +75,10 @@ do
     # then the first group is called, the sod is called and the second group (the column numbers) are called to make the new filename
     # this command is then piped to a shell to be executed
     # reg ex: \ -> escape character, \(\) -> define group which can be accessed with \1, \2, etc. in the replacement
+    echo "Moved all radiative_properties files to ${rad_prop_outpath}"
+  else
+    echo "No radiative_properties files to move found!"
   fi
-  echo "Moved all radiative_properties files"
  	counter=$((counter+1))
 
 done
