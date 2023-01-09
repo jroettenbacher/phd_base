@@ -179,6 +179,7 @@ if __name__ == "__main__":
     decorr_file = f"{path_ifs_output}/{date}_decorrelation_length.csv"
     decorr_len.to_csv(decorr_file)
     log.info(f"Decorrelation length saved in {decorr_file}")
+    1.62 * (15 ** 0.47)
 
     # %% select only closest (+-10) lats and lons from datasets to reduce size in memory
     closest_lats = np.unique(closest_lats)
@@ -199,20 +200,30 @@ if __name__ == "__main__":
     data_ml = data_ml.assign_coords(half_level=np.insert((data_ml.level + 0.5).values, 0, 0.5))
 
     # %% calculate lw_em from ratio to blackbody temperature
-    sigma = 5.670374419e-8  # Stefan-Boltzmann constant W⋅m−2⋅K−4
-    bb_radiation = sigma * data_srf.SKT ** 4
+    # sigma = 5.670374419e-8  # Stefan-Boltzmann constant W⋅m−2⋅K−4
+    # bb_radiation = sigma * data_srf.SKT ** 4
     # unit of surface thermal radiation is W m^-2 s, thus it needs to be divided with the seconds after the hour
-    seconds_after_hour = data_srf.time.dt.hour * 3600
-    seconds_after_hour[-1] = 24 * 3600  # replace the last value (0 UTC next day) with 24 hrs after start
-    lw_up_radiation = (data_srf.STRD - data_srf.STR) / seconds_after_hour
-    lw_em_ratio = lw_up_radiation / bb_radiation
+    # seconds_after_hour = data_srf.time.dt.hour * 3600
+    # seconds_after_hour[-1] = 24 * 3600  # replace the last value (0 UTC next day) with 24 hrs after start
+    # lw_up_radiation = (data_srf.STRD - data_srf.STR) / seconds_after_hour
+    # lw_em_ratio = lw_up_radiation / bb_radiation
     # correct lw_em_ratios > 0.98 (the longwave emissivity for sea ice is assumed to be constant at 0.98,
     # IFS documentation Part IV, Table 2.6)
-    lw_em_ratio = lw_em_ratio.where(lw_em_ratio < 0.98, 0.98)
-    data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon"],
-                                            attrs=dict(unit="1", long_name="Longwave surface emissivity"))
+    # lw_em_ratio = lw_em_ratio.where(lw_em_ratio < 0.98, 0.98)
+    # data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon"],
+    #                                         attrs=dict(unit="1", long_name="Longwave surface emissivity"))
 
-    # %% calculate shortwave albedo according to sea ice concentration and short wave band albedo climatology for sea ice
+    # %% set longwave emissivity as described in IFS documentation Part IV Chapter 2.8.5
+    lw_em_shape = data_srf.SKT.shape + (2,)
+    lw_em_ratio = np.ones(lw_em_shape)
+    # The thermal emissivity of the surface outside the 800–1250 cm−1 spectral region is assumed to be 0.99 everywhere
+    lw_em_ratio[:, :, :, 0] = 0.99
+    # In the window region, the spectral emissivity is constant for open water, sea ice, the interception layer and
+    # exposed snow tiles.
+    lw_em_ratio[:, :, :, 1] = 0.98  # see Table 2.6
+    data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon", "lw_emiss_band"],
+                                            attrs=dict(unit="1", long_name="Longwave surface emissivity"))
+    # %% calculate shortwave albedo according to sea ice concentration and shortwave band albedo climatology for sea ice
     month_idx = dt_day.month - 1
     open_ocean_albedo = 0.06
     sw_albedo_bands = list()
@@ -230,7 +241,7 @@ if __name__ == "__main__":
     # %% interpolate temperature on half levels according to IFS Documentation Part IV Section 2.8.1
     n_levels = len(data_ml.level)  # get number of levels
     t_hl = list()
-    for i in tqdm(range(n_levels-1)):
+    for i in tqdm(range(n_levels-1), desc="Temperature Interpolation on Half Levels"):
         t_k0 = data_ml.t.isel(level=i, drop=True)
         t_k1 = data_ml.t.isel(level=i+1, drop=True)
         p_k0 = data_ml.pressure_full.isel(level=i, drop=True)
