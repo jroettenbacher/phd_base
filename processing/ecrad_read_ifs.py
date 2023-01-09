@@ -4,7 +4,7 @@
 **TODO:**
 
 - [x] more precise read in of navigation data
-- [ ] test if it is necessary to generate one file per time step
+- [x] test if it is necessary to generate one file per time step |rarr| it is
 - [ ] Include an option to interpolate in space
 - [x] check why file 1919-1925 + 6136-6180 + 7184-7194 cause a floating-point exception when processed with ecrad (discovered 2021-04-26) -> probably has to do the way ecrad is called (see execute_IFS.sh)
 
@@ -16,7 +16,7 @@
 
 **Required User Input:**
 
-Can be passed via the command line.
+Can be passed via the command line (except step).
 
 * ozone_flag ('default' or 'sonde')
 * date (yyyymmdd)
@@ -179,7 +179,6 @@ if __name__ == "__main__":
     decorr_file = f"{path_ifs_output}/{date}_decorrelation_length.csv"
     decorr_len.to_csv(decorr_file)
     log.info(f"Decorrelation length saved in {decorr_file}")
-    1.62 * (15 ** 0.47)
 
     # %% select only closest (+-10) lats and lons from datasets to reduce size in memory
     closest_lats = np.unique(closest_lats)
