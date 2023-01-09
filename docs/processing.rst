@@ -436,8 +436,9 @@ Here the general processing of ecRad is described.
 General Notes on setting up ecRad
 ---------------------------------
 
-- To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once. Somehow the data link is needed to avoid this error.
-- changing the verbosity in the namelist files causes an floating point error
+- To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once. Somehow the data link is needed to avoid this error. (for version 1.4.1)
+- changing the verbosity in the namelist files causes an floating point error (for version 1.4.1)
+- decided to use ecRad version 1.5.0 for PhD
 
 **Folder Structure**
 
@@ -449,6 +450,7 @@ General Notes on setting up ecRad
    │   │   ├── ecrad_output
    │   │   ├── ecrad_merged
    │   │   ├── radiative_properties_vX
+   │   │   ├── IFS_namelists.nam
    │   │   └── ncfiles.nc
 
 
@@ -464,11 +466,11 @@ Workflow with ecRad
 
 #. Download IFS data for campaign |rarr| :ref:`processing:IFS Download`
 #. Run :ref:`processing:IFS Preprocessing` to convert grib to nc files
-#. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py`
-#. Run :ref:`processing:ecrad_read_ifs.py` with the options ``step`` and as you want them to be (see scripts)
-#. Update namelist in the ``{yyyymmdd}/ecrad_input`` folder with the decorrelation length
+#. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py` or give it via commandline
+#. Run :ref:`processing:ecrad_read_ifs.py` with the options and ``step`` as you want them to be (see scripts)
+#. ~~Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length~~ |rarr| not needed as it is calculated by ecRad internally
 #. Run :ref:`processing:ecrad_write_input_files.py`
-#. Run :ref:`processing:ecrad_execute_IFS.sh` which runs ecRad for each file in ``ecrad_input``
+#. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input``
 #. Run :ref:`processing:ecrad_processing.py` to generate merged input and output files for and from the ecRad simulation
 
 IFS Download
@@ -501,13 +503,15 @@ ecrad_execute_IFS.sh
 
 This script loops through all input files and runs ecrad with the setup given in ``IFS_namelist_x.nam``.
 
-**Attention:** ecRad has to be run without full paths for the input and output nc file.
+**Attention (version 1.4.1):** ecRad has to be run without full paths for the input and output nc file.
 Only the namelist has to be given with its full path.
 The namelist has to be in the same folder as the input files and the output files have to be written in the same folder.
 
+
+
 The date defines the input path which is generally ``/projekt_agmwend/data/{campaign}/{ecrad/ifs_folder}/ecrad_input/yyyymmdd/``.
-It then writes the output to the same path, one output file per input file.
-The ``radiative_properties.nc`` file which is generated in each run is renamed and moved to a separate folder to avoid overwriting the file.
+It then writes the output to the given output path, one output file per input file.
+The ``radiative_properties.nc`` file which is optionally generated in each run depending on the namelist is renamed and moved to a separate folder to avoid overwriting the file.
 
 **Input:**
 
@@ -522,8 +526,8 @@ The ``radiative_properties.nc`` file which is generated in each run is renamed a
 
 **Output:**
 
-* ecrad output files in same folder as input files
-* ``radiative_properties.nc`` moved to a separate folder and renamed according to input file
+* ecrad output files
+* ``radiative_properties.nc`` moved to a separate folder and renamed according to input file (optional)
 
 **Run like this:**
 
@@ -531,13 +535,13 @@ This will write all output to the console and to the specified file.
 
 .. code-block:: shell
 
-   ./execute_IFS.sh [-t] [-d yyyymmdd] [-v v1] 2>&1 | tee ./log/today_ecrad_yyyymmdd.log
+   . ./ecrad_execute_IFS.sh [-t] [-d yyyymmdd] [-v v1] 2>&1 | tee ./log/today_ecrad_yyyymmdd.log
 
 
 ecrad_execute_IFS_single.sh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As above but runs only one file which has to be given in the script.
+As above but runs only one file which has to be defined in the script.
 
 ecrad_processing.py
 ^^^^^^^^^^^^^^^^^^^
