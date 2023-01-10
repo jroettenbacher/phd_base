@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     import pylim.solar_position as sp
-    from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
+    from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius, cloud_overlap_decorr_len
     import numpy as np
     import xarray as xr
     import os
@@ -39,6 +39,7 @@ if __name__ == "__main__":
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
     flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    version = args["version"] if "version" in args else "v1"
     # setup logging
     try:
         file = __file__
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     # %% loop through time steps and write one file per time step
     idx = len(nav_data_ip)
     dt_nav_data = nav_data_ip.index.to_pydatetime()
-
+    scheme = 1  # overlap_decorr_length scheme
     for i in tqdm(range(0, idx), desc="Time loop"):
         # select a 3 x 11 lat/lon grid around closest grid point
         lat_id = h.arg_nearest(data_ml.lat, nav_data_ip.lat.iat[i])
@@ -91,11 +92,16 @@ if __name__ == "__main__":
             ending = ""
 
         # add cos_sza for each grid point using only model data
-        cos_sza = np.empty((len(lat_circle), len(lon_circle)))
-        sza = np.empty((len(lat_circle), len(lon_circle)))
+        shape = (len(lat_circle), len(lon_circle))
+        cos_sza = np.empty(shape)
+        sza = np.empty(shape)
+        overlap_decorr_length = np.empty(shape)
         sod = nav_data_ip.seconds.iloc[i]
-        for lat_idx in range(cos_sza.shape[0]):
-            for lon_idx in range(cos_sza.shape[1]):
+        for lat_idx in range(shape[0]):
+            # calculate overlap decorrelation length
+            a, b, c = cloud_overlap_decorr_len(dsi_ml_out.lat[lat_idx], scheme)
+            overlap_decorr_length[lat_idx, :] = a * 1000  # convert km to m
+            for lon_idx in range(shape[1]):
                 p_surf_nearest = dsi_ml_out.pressure_hl.isel(lat=lat_idx, lon=lon_idx,
                                                              half_level=137).values / 100  # hPa
                 t_surf_nearest = dsi_ml_out.temperature_hl.isel(lat=lat_idx, lon=lon_idx,
@@ -106,10 +112,13 @@ if __name__ == "__main__":
                                                    p_surf_nearest, t_surf_nearest)
                 cos_sza[lat_idx, lon_idx] = np.cos(sza[lat_idx, lon_idx] / 180. * np.pi)
 
-        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
-                                                            dims=["lat", "lon"],
+        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza, dims=["lat", "lon"],
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))
+        odl_attrs = dict(units="m", long_name="Cloud overlap decorrelation length",
+                         comment=f"from Shonk et al. 2010 (https://doi.org/10.1002/qj.647) using scheme {scheme}")
+        dsi_ml_out["overlap_decorr_length"] = xr.DataArray(overlap_decorr_length, dims=["lat", "lon"],
+                                                           attrs=odl_attrs)
 
         # calculate effective radius for all levels
         dsi_ml_out = apply_ice_effective_radius(dsi_ml_out)
@@ -124,7 +133,8 @@ if __name__ == "__main__":
         n_column = dsi_ml_out.dims["column"]  # get number of columns
         dsi_ml_out["column"] = np.arange(n_column)
         # some variables now need to have the dimension column as well
-        variables = ["overlap_param", "fractional_std", "inv_cloud_effective_size"]
+        variables = ["fractional_std", "inv_cloud_effective_size"]
+        variables = [var for var in variables if var in dsi_ml_out]  # check if variables exist in dataset
         for var in variables:
             arr = dsi_ml_out[var].values
             dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": n_column})
@@ -133,7 +143,7 @@ if __name__ == "__main__":
 
         # ds_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc4",
         #                     format='NETCDF4')
-        dsi_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}.nc",
+        dsi_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}_{version}.nc",
                              format='NETCDF4_CLASSIC')
         # dsi_ml_out.to_netcdf(path=f"{path_ecrad}/{date}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc",
         #                      format='NETCDF3_CLASSIC')

@@ -174,12 +174,6 @@ if __name__ == "__main__":
     # %% add cos_sza to navdata
     nav_data_ip = nav_data_ip.assign(cos_sza=cos_sza)
 
-    # %% calculate decorrelation length to put into namelist
-    decorr_len, b, c = cloud_overlap_decorr_len(nav_data_ip.lat, 1)  # operational scheme 1
-    decorr_file = f"{path_ifs_output}/{date}_decorrelation_length.csv"
-    decorr_len.to_csv(decorr_file)
-    log.info(f"Decorrelation length saved in {decorr_file}")
-
     # %% select only closest (+-10) lats and lons from datasets to reduce size in memory
     closest_lats = np.unique(closest_lats)
     closest_lons = np.unique(closest_lons)
@@ -308,13 +302,15 @@ if __name__ == "__main__":
     #TODO: Add NO2 profile from CAMS
 
     # %% add cloud properties
-    data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),
-                                                       dims=["column", "level"])
-    # set to 1 according to ecRad documentation
     data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0), dims=["column", "level"])
-    data_ml["overlap_param"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels - 1), axis=0),
-                                            dims=["column", "mid_level"], coords={"mid_level": np.arange(1.5, 137, 1)},
-                                            attrs=dict(unit="1", long_name="Cloud overlap parameter"))
+    # set to 1 according to ecRad documentation
+    # needed for 3D simulations with SPARTACUS but is parameterized
+    # data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),
+    #                                                    dims=["column", "level"])
+    # not needed, use overlap decorrelation length instead
+    # data_ml["overlap_param"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels - 1), axis=0),
+    #                                         dims=["column", "mid_level"], coords={"mid_level": np.arange(1.5, 137, 1)},
+    #                                         attrs=dict(unit="1", long_name="Cloud overlap parameter"))
     # sum up cloud ice and cloud snow water content according to IFS documentation Part IV Section 2.8.2 (ii)
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
     # sum up cloud liquid and cloud rain water content
