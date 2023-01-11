@@ -28,6 +28,7 @@ while getopts ":d:tv:" opt; do
   esac
 done
 
+reg_file=${reg_file/.nc/_${version}.nc}
 inpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_input"
 outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_output"
 rad_prop_outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/radiative_properties_${version}"
@@ -54,7 +55,6 @@ do
 	sod=$(echo $filename | grep -oP '(\d{5}\.\d{1})')
 	# generate the outfilename by replacing input with output
  	outfilename="${outpath}/${filename/input/output}"
- 	outfilename="${outfilename/.nc/_${version}.nc}"
 	echo "outfile: ${outfilename}"
  	echo Processing filenumber: "${counter}" of "${n_files}"
  	echo "${counter}"
