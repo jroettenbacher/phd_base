@@ -264,6 +264,16 @@ def set_cb_friendly_colors():
     plt.rcParams['axes.prop_cycle'] = plt.cycler(color=cb_color_cycle)
 
 
+def get_cb_friendly_colors():
+    """Get colorblind friendly color cycle.
+
+    Returns: List with colorblind friendly colors
+
+    """
+    return ["#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", "#44AA99", "#999933", "#882255",
+            "#661100", "#6699CC", "#888888"]
+
+
 def nested_dict_values_iterator(dict_obj: dict):
     """ Loop over all values in a nested dictionary
     See: https://thispointer.com/python-iterate-loop-over-all-nested-dictionary-values/
