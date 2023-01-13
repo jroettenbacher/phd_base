@@ -177,10 +177,10 @@ bacardi_std = xr.open_dataset(f"{bacardi_path}/HALO-AC3_HALO_BACARDI_BroadbandFl
 time_extend = pd.to_timedelta((ins.time[-1] - ins.time[0]).values)  # get time extend for x-axis labeling
 time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 time_extend_bc = below_cloud["end"] - below_cloud["start"]
-
-# %% plot BACARDI measurements of below and above cloud section
 h.set_cb_friendly_colors()
 plt.rc("font", size=12, family="serif")
+
+# %% plot BACARDI measurements of below and above cloud section
 bacardi_ds_slice = bacardi_ds.sel(time=slice(above_cloud["start"], below_cloud["end"]))
 labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestrial=r"$F_{\downarrow, terrestrial}$",
               F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
@@ -1135,4 +1135,66 @@ plt.savefig(f"{plot_path}/{halo_flight}_Fup_terrestrial_bacardi_vs_ecrad.png", d
 plt.show()
 plt.close()
 
-# %%
+# %% plot scatterplot of below cloud measurements
+bacardi_plot = bacardi_ds_res.sel(time=below_slice)
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=below_slice)
+titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
+          "Terrestrial Upward Irradiance"]
+names = ["Fdw_solar", "Fdw_terrestrial", "Fup_solar", "Fup_terrestrial"]
+lims = [(120, 240), (80, 130), (95, 170), (210, 220)]
+for (i, x), y in zip(enumerate(["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]),
+                   ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]):
+    _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
+    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+    ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
+    ax.set_ylim(lims[i])
+    ax.set_xlim(lims[i])
+    ticks = ax.get_yticks() if i == 0 else ax.get_xticks()
+    ax.set_yticks(ticks)
+    ax.set_xticks(ticks)
+    ax.set_aspect('equal')
+    ax.set_xlabel("BACARDI Irradiance  (W$\,$m$^{-2}$)")
+    ax.set_ylabel("ecRad Irradiance  (W$\,$m$^{-2}$)")
+    ax.set_title(f"{titles[i]}\nbelow cloud")
+    ax.text(0.01, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[x])):.0f}",
+            horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+    plt.tight_layout()
+    plt.savefig(f"{plot_path}/{halo_flight}_{names[i]}_bacardi_vs_ecrad_scatter_below_cloud.png", dpi=300)
+    plt.show()
+    plt.close()
+
+# %% plot scatterplot of above cloud measurements
+bacardi_plot = bacardi_ds_res.sel(time=above_slice)
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=above_slice)
+bacardi_vars = ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]
+ecrad_vars = ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]
+titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
+          "Terrestrial Upward Irradiance"]
+names = ["Fdw_solar", "Fdw_terrestrial", "Fup_solar", "Fup_terrestrial"]
+lims = [(200, 270), (25, 35), (150, 200), (175, 195)]
+for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
+    _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
+    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+    ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
+    ax.set_ylim(lims[i])
+    ax.set_xlim(lims[i])
+    ticks = ax.get_yticks() if i == 0 else ax.get_xticks()
+    ax.set_yticks(ticks)
+    ax.set_xticks(ticks)
+    ax.set_aspect('equal')
+    ax.set_xlabel("BACARDI Irradiance  (W$\,$m$^{-2}$)")
+    ax.set_ylabel("ecRad Irradiance  (W$\,$m$^{-2}$)")
+    ax.set_title(f"{titles[i]}\nabove cloud")
+    ax.text(0.01, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[x])):.0f}",
+            horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+    plt.tight_layout()
+    plt.savefig(f"{plot_path}/{halo_flight}_{names[i]}_bacardi_vs_ecrad_scatter_above_cloud.png", dpi=300)
+    plt.show()
+    plt.close()
+
+# %% calculate difference between BACARDI and ecRad
+bacardi_plot = bacardi_ds_res.sel(time=below_slice)
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=below_slice)
+for x, y in zip(bacardi_vars, ecrad_vars):
+    bacardi_ecrad = bacardi_plot[x] - ecrad_plot[y]
+    print(f"BACARDI {x} - ecRad {y} = {bacardi_ecrad.mean():.2f} Wm^-2")
