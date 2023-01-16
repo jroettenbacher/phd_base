@@ -80,7 +80,7 @@ pressure_levels = np.arange(900, 1125, 5)
 E5_press = era5_ds.MSL / 100  # conversion to hPa
 cp = ax.contour(E5_press.lon, E5_press.lat, E5_press, levels=pressure_levels, colors='k', linewidths=0.7,
                 linestyles='solid', alpha=1, transform=data_crs)
-cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add seaice edge
 ci_levels = [0.8]
@@ -160,13 +160,15 @@ for i in range(dropsondes_ds.lon.shape[0]):
 handles = [plt.plot([], ls="-", color="k")[0],  # flight track
            cross[0],  # dropsondes
            plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
+           plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
            Patch(facecolor="grey")]  # cloud cover
-labels = ["HALO flight track", "Dropsonde", "Sea Ice Edge", "High Cloud Cover\nat 12:00 UTC"]
+labels = ["HALO flight track", "Dropsonde", "Sea ice edge", "Mean sea level\npressure (hPa)",
+          "High cloud cover\nat 12:00 UTC"]
 ax.legend(handles=handles, labels=labels, framealpha=1, loc=2)
 
 title = f"11 April 2022"
 ax.set_title(title, fontsize=7)
-ax.text(-72.5, 73, "(a)", size=7, transform=data_crs, ha="center", va="center",
+ax.text(0.05, 0.6, "(a)", size=7, transform=ax.transAxes, ha="center", va="center",
         bbox=dict(boxstyle="round", ec="grey", fc="white"))
 
 # plot dropsonde profiles in row 1 and column 2
@@ -211,7 +213,7 @@ pressure_levels = np.arange(900, 1125, 5)
 E5_press = era5_ds.MSL / 100
 cp = ax.contour(E5_press.lon, E5_press.lat, E5_press, levels=pressure_levels, colors='k', linewidths=0.7,
                 linestyles='solid', alpha=1, transform=ccrs.PlateCarree())
-cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add seaice edge - 12 April
 ci_levels = [0.8]
@@ -292,13 +294,15 @@ for i in [0, 3, 8, 10, 11, 12, 13]:
 handles = [plt.plot([], ls="-", color="k")[0],  # flight track
            cross[0],  # dropsondes
            plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
+           plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
            Patch(facecolor="grey")]  # cloud cover
-labels = ["HALO flight track", "Dropsonde", "Sea Ice Edge", "High Cloud Cover\nat 12:00 UTC"]
+labels = ["HALO flight track", "Dropsonde", "Sea ice edge", "Mean sea level\npressure (hPa)",
+          "High cloud cover\nat 12:00 UTC"]
 ax.legend(handles=handles, labels=labels, framealpha=1, loc=2)
 
 title = f"12 April 2022"
 ax.set_title(title, fontsize=7)
-ax.text(-72.5, 73, "(c)", size=7, transform=data_crs, ha="center", va="center",
+ax.text(0.05, 0.6, "(c)", size=7, transform=ax.transAxes, ha="center", va="center",
         bbox=dict(boxstyle="round", ec="grey", fc="white"))
 
 # plot dropsonde profiles in row 2 and column 2 - 12 April
@@ -318,9 +322,8 @@ ax.legend(bbox_to_anchor=(1, 1.01), loc="upper left")
 ax.text(0.1, 0.95, "(d)", size=7, transform=ax.transAxes, ha="center", va="center",
         bbox=dict(boxstyle="round", ec="grey", fc="white"))
 
-figname = f"{plot_path}/HALO-AC3_trajectories_dropsonde_plot_overview.pdf"
-print(figname)
 plt.tight_layout()
+figname = f"{plot_path}/HALO-AC3_trajectories_dropsonde_plot_overview.pdf"
 plt.savefig(figname, dpi=300, bbox_inches='tight')
-print("\t\t\t ...saved as: " + str(figname))
+print(f"saved as: {figname}")
 plt.close()
