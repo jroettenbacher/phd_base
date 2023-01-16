@@ -312,9 +312,6 @@ if __name__ == "__main__":
                                                        dims=["column", "level"])
     # set to 1 according to ecRad documentation
     data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0), dims=["column", "level"])
-    data_ml["overlap_param"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels - 1), axis=0),
-                                            dims=["column", "mid_level"], coords={"mid_level": np.arange(1.5, 137, 1)},
-                                            attrs=dict(unit="1", long_name="Cloud overlap parameter"))
     # sum up cloud ice and cloud snow water content according to IFS documentation Part IV Section 2.8.2 (ii)
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
     # sum up cloud liquid and cloud rain water content
