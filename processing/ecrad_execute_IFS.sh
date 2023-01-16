@@ -4,7 +4,7 @@ ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.5.0/bin/ecrad"
 
 # standard options
 date_var=20220411
-reg_file="ecrad_input_*_sod.nc"
+reg_file="ecrad_input_*_sod_v1.nc"
 version="v1"
 
 # read in command line args to overwrite standard options
@@ -15,7 +15,7 @@ while getopts ":d:tv:" opt; do
     echo Date given: "${date_var}"
   ;;
   t )
-    reg_file="ecrad_input_*_sod_inp.nc"
+    reg_file="ecrad_input_*_sod_inp_v1.nc"
     echo Option -t set
   ;;
   v )
@@ -28,7 +28,7 @@ while getopts ":d:tv:" opt; do
   esac
 done
 
-reg_file=${reg_file/.nc/_${version}.nc}
+#reg_file=${reg_file/.nc/_${version}.nc}
 inpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_input"
 outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_output"
 rad_prop_outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/radiative_properties_${version}"
@@ -55,6 +55,7 @@ do
 	sod=$(echo $filename | grep -oP '(\d{5}\.\d{1})')
 	# generate the outfilename by replacing input with output
  	outfilename="${outpath}/${filename/input/output}"
+ 	outfilename="${outfilename/v1/${version}}"
 	echo "outfile: ${outfilename}"
  	echo Processing filenumber: "${counter}" of "${n_files}"
  	echo "${counter}"
