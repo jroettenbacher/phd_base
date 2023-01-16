@@ -42,12 +42,12 @@ with :math:`i` being the model level, :math:`C` being the true combined cloud co
 :math:`C_{\\text{rand}}` and :math:`C_{\\text{max}}` the combined cloud covers assuming random and maximum overlap respectively.
 See Eq. 2.5 and Eq. 2.5 of the ecRad Documentation for details.
 This would make the parameterization of the cloud overlap via the cloud overlap decorrelation length obsolete and cloud overlap could be provided for each timestep with the input netCDF file.
-However, :math:`C` is cannot be known from model data alone and thus the overlap parameter cannot be calculated.
+However, :math:`C` cannot be known from model data alone and thus the overlap parameter cannot be calculated.
 
 The other option is to use the mean cloud overlap decorrelation length calculated for the case study period.
 
 | Case study period: 2022-04-11 10:48:47 - 2022-04-11 12:00:32
-| Mean cloud overlap decorrelation length for case study period: 482.87 m
+| Mean cloud overlap decorrelation length for case study period: **482.87 m**
 
 *author*: Johannes Röttenbacher
 """
