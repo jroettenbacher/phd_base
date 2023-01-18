@@ -70,5 +70,15 @@ This can be used to compare the above and below cloud simulation at the same tim
 Using this the actual influence of the cirrus can be derived.
 
 - use dropsonde profiles as input
--
+- use the IFS sea ice albedo parameterization (TODO)
+
+|haloac3| BACARDI clear sky simulation with sea ice
+---------------------------------------------------
+
+*Scripts:*
+
+- :py:mod:`experiments.libradtran_write_input_file_seaice.py`
+- :py:mod:`experiments.libradtran_run_uvspec_seaice.py`
+
+.. automodule:: experiments.libradtran_write_input_file_seaice
 

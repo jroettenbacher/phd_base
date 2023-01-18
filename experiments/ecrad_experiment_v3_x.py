@@ -40,7 +40,7 @@ One option is to calculate the cloud overlap parameter :math:`\\alpha` according
 
 with :math:`i` being the model level, :math:`C` being the true combined cloud cover of :math:`i` and :math:`i+1` and
 :math:`C_{\\text{rand}}` and :math:`C_{\\text{max}}` the combined cloud covers assuming random and maximum overlap respectively.
-See Eq. 2.5 and Eq. 2.5 of the ecRad Documentation for details.
+See Eq. 2.4 and Eq. 2.5 of the ecRad Documentation for details.
 This would make the parameterization of the cloud overlap via the cloud overlap decorrelation length obsolete and cloud overlap could be provided for each timestep with the input netCDF file.
 However, :math:`C` cannot be known from model data alone and thus the overlap parameter cannot be calculated.
 
