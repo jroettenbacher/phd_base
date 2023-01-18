@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-"""Run uvspec
-author: Johannes Röttenbacher
+"""Run uvspec for sea ice experiment
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     # %% module import
@@ -23,7 +24,7 @@ if __name__ == "__main__":
     all_flights = all_flights[18:19]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-    solar_flag = False
+    solar_flag = True
     solar_str = "solar" if solar_flag else "thermal"
 
     # %% set up logging to console and file when calling script from console
@@ -35,7 +36,7 @@ if __name__ == "__main__":
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # get files
-        libradtran_base_dir = h.get_path("libradtran", flight, campaign)
+        libradtran_base_dir = h.get_path("libradtran_exp", flight, campaign)
         libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "seaice")
         input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
         input_files.sort()  # sort input files -> output files will be sorted as well
