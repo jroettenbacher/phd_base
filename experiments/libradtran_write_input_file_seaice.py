@@ -1,153 +1,219 @@
 #!/usr/bin/env python
-"""Create an input file for libRadtran simulation to be used in BACARDI processing
+"""Set up libRadtran for clearsky simulation along flight path for BACARDI with sea ice albedo included
 
-* behind some options you find the page number of the manual, where the option is explained in more detail
-* set options to "None" if you don't want to use them
-* Variables which start with "_" are for internal use
-* for HALO-AC3 a fixed radiosonde location (Longyearbyen) is used. Uncomment the find_closest_station line for CIRRUS-HL
+Input:
 
-author: Johannes Röttenbacher
+- Dropsonde profiles from the flight
+- sea ice albedo parameterization from the IFS
+- sea ice concentration from IFS
+
+**Required User Input:**
+
+* campaign
+* flight_key (e.g. 'RF17')
+* time_step (e.g. 'minutes=1')
+* use_smart_ins flag
+* integrate flag
+* input_path, this is where the files will be saved to be executed by uvspec
+
+**Output:**
+
+* log file
+* input files for libRadtran simulation along flight track
+
+The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to "None" if you don't want to use them.
+
+Furthermore, an albedo file is generated using the sea ice albedo parameterization from :cite:t:`Ebert1992` and the open ocean albedo parameterization from :cite:t:`Taylor1996`.
+
+The atmosphere is provided by a dropsonde measurement which was converted to the right input format by an IDL script.
+
+*author*: Johannes Röttenbacher
 """
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
-    from pylim import reader, solar_position
     import pylim.halo_ac3 as meta
-    from pylim.libradtran import find_closest_radiosonde_station
+    from pylim import reader, solar_position
     import os
     import datetime
     import numpy as np
     import pandas as pd
+    import xarray as xr
     from global_land_mask import globe
-    import logging
-
-    log = logging.getLogger("pylim")
-    log.addHandler(logging.StreamHandler())
-    log.setLevel(logging.DEBUG)
 
     # %% user input
     campaign = "halo-ac3"
-    all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(meta.flight_names.values())
-    all_flights = all_flights[18:19]  # select single flight if needed
-    time_step = pd.Timedelta(minutes=1)
-    solar_flag = True  # True for solar wavelength range, False for terrestrial wavelength range
-    use_dropsonde = True if campaign == "halo-ac3" else False
+    flight_key = "RF17"
+    flight = meta.flight_names[flight_key]
+    date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
+    month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
+    time_step = "1S"  # define time steps of simulations
+    use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
+    integrate = True
 
-    # %% run for all flights
-    for flight in all_flights:
-        date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
-        # set paths
-        _base_dir = h.get_path("base", campaign=campaign)
-        _libradtran_dir = h.get_path("libradtran", flight, campaign)
-        _bahamas_dir = h.get_path("bahamas", flight, campaign)
-        _bahamas_file = [f for f in os.listdir(_bahamas_dir) if f.endswith(".nc")][0]
-        input_path = f"{_libradtran_dir}/wkdir/seaice"
-        h.make_dir(input_path)  # create directory
-        radiosonde_dir = f"{_base_dir}/../0{1 if campaign == 'halo-ac3' else 2}_soundings/RS_for_libradtran"
-        # only needed for HALO-AC3
-        dropsonde_path = f"{_base_dir}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
-        solar_source_path = f"{_base_dir}/../00_tools/0{5 if campaign == 'cirrus-hl' else 8}_libradtran"
+    # %% setup logging
+    try:
+        file = __file__
+    except NameError:
+        file = None
+    log = h.setup_logging("./logs", file, flight)
+    log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}\nintegrate: {integrate}"
+             f"\nuse_smart_ins: {use_smart_ins}"
+             f"\nScript started: {datetime.datetime.utcnow():%c UTC}")
 
-        bahamas_ds = reader.read_bahamas(f"{_bahamas_dir}/{_bahamas_file}")
-        timestamp = bahamas_ds.time[0]
-        while timestamp < bahamas_ds.time[-1]:
-            bahamas_ds_sel = bahamas_ds.sel(time=timestamp)
-            lat, lon, alt, pres, temp = bahamas_ds_sel.IRS_LAT.values, bahamas_ds_sel.IRS_LON.values, bahamas_ds_sel.IRS_ALT.values, bahamas_ds_sel.PS.values, bahamas_ds_sel.TS.values
-            is_on_land = globe.is_land(lat, lon)  # check if location is over land
-            zout = alt / 1000  # page 127; aircraft altitude in km
-            # need to create a time zone aware datetime object to calculate the solar azimuth angle
-            dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O') / 1e9, tz=datetime.timezone.utc)
+    # %% set paths
+    base_path = h.get_path("base", flight, campaign)
+    ifs_path = f"{h.get_path('ifs', campaign=campaign)}/{date}"
+    libradtran_path = h.get_path("libradtran_exp", campaign=campaign)
+    solar_source_path = f"/opt/libradtran/2.0.4/share/libRadtran/data/solar_flux"
+    input_path = f"{libradtran_path}/wkdir/seaice"  # where to save the created files
+    albedo_path = f"{input_path}/albedo_files"
+    dropsonde_path = f"{base_path}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
+    for path in [input_path, albedo_path]:
+        h.make_dir(path)  # create directory
 
-            # define radiosonde station or dropsonde
-            if use_dropsonde:
-                dropsonde_files = [f for f in os.listdir(dropsonde_path)]
-                dropsonde_files.sort()  # sort dropsonde files
-                # read out timestamps from file
-                dropsonde_times = [int(f[9:14].replace(" ", "")) for f in dropsonde_files]
-                # convert to date time to match with BAHAMAS/INS timestamp
-                dropsonde_times = pd.to_datetime(dropsonde_times, unit="s", origin=pd.to_datetime(date))
-                # find index of the closest dropsonde to BAHAMAS/INS timestamp
-                time_diffs = dropsonde_times - timestamp.values
-                idx = np.asarray(np.nonzero(time_diffs == time_diffs.min()))[0][0]
-                dropsonde_file = dropsonde_files[idx]
-                radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
-            else:
-                # radiosonde_station = find_closest_radiosonde_station(lat, lon)
-                radiosonde_station = "Longyearbyen_01004"  # standard for HALO-(AC)3
-                station_nr = radiosonde_station[-5:]
-                if campaign == "halo-ac3":
-                    radiosonde = f"{radiosonde_dir}/Radiosonde_for_libradtran_{station_nr}_{dt_timestamp:%Y%m%d}_12.dat H2O RH"
-                else:
-                    radiosonde = f"{radiosonde_dir}/{radiosonde_station}/{dt_timestamp:%m%d}_12.dat H2O RH"
+    # %% read in INS data
+    if use_smart_ins:
+        horidata_dir = h.get_path("horidata", flight, campaign)
+        horidata_file = [f for f in os.listdir(horidata_dir) if f.endswith(".nc")][0]
+        ins_ds = xr.open_dataset(f"{horidata_dir}/{horidata_file}")
+    else:
+        bahamas_dir = h.get_path("bahamas", flight, campaign)
+        bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{flight_key}_v1.nc"
+        ins_ds = reader.read_bahamas(f"{bahamas_dir}/{bahamas_file}")
 
-            # get time in decimal hours
-            decimal_hour = dt_timestamp.hour + dt_timestamp.minute / 60 + dt_timestamp.second / 60 / 60
-            year, month, day = dt_timestamp.year, dt_timestamp.month, dt_timestamp.day
-            if is_on_land:
-                calc_albedo = 0.2  # set albedo to a fixed value (will be updated)
-            else:
-                # calculate cosine of solar zenith angle
-                cos_sza = np.cos(np.deg2rad(
-                    solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
-                # calculate albedo after Taylor et al 1996 for sea surface
-                calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
+    # %% read in ifs data
+    ifs_ds = xr.open_dataset(f"{ifs_path}/ifs_{date}_00_ml_processed.nc")
 
-            # optionally provide libRadtran with sza (libRadtran calculates it itself as well)
-            sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
-            if sza_libradtran > 90:
-                log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran:.2f}!\n"
-                          f"Skipping this timestamp and moving on to the next one.")
-                # increase timestamp by time_step
-                timestamp = timestamp + time_step
-                continue
+    # %% write input files for each timestep
+    timestamp = ins_ds.time[0]
+    time_step = pd.to_timedelta(time_step)
+    while timestamp < ins_ds.time[-1]:
+        ins_ds_sel = ins_ds.sel(time=timestamp)
+        if use_smart_ins:
+            # no temperature and pressure available use norm atmosphere
+            lat, lon, alt, pres, temp = ins_ds_sel.lat.values, ins_ds_sel.lon.values, ins_ds_sel.alt.values, 1013.25, 288.15
+        else:
+            lat, lon, alt, pres, temp = ins_ds_sel.IRS_LAT.values, ins_ds_sel.IRS_LON.values, ins_ds_sel.IRS_ALT.values, ins_ds_sel.PS.values, ins_ds_sel.TS.values
 
-            # %% create input file
-            _input_filename = f"{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
-            _input_filepath = f"{input_path}/{_input_filename}"
+        # select closest column of ifs data
+        ifs_sel = ifs_ds.sel(time=timestamp, lat=lat, lon=lon, method="nearest")
+        is_on_land = globe.is_land(lat, lon)  # check if location is over land
+        zout = alt / 1000  # page 127; aircraft altitude in km
 
-            # %% set options for libRadtran run - atmospheric shell
-            atmos_settings = dict(
-                albedo=0.8,
-                altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
-                # atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
-                data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
-                latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
-                longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
-                mol_file=None,  # page 104
-                mol_modify="O3 300 DU",  # page 105
-                radiosonde=radiosonde,  # page 114
-                time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
-                source=f"solar {solar_source_path}/NewGuey2003_BBR.dat" if solar_flag else "thermal",  # page 119
-                sur_temperature="273.15",  # page 121; set to 0 degC for now
-                # sza=f"{sza_libradtran:.4f}",  # page 122
-                # verbose="",  # page 123
-                # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-                wavelength="290 3600" if solar_flag else "4000 100000",
-                zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
-            )
+        # need to create a time zone aware datetime object to calculate the solar zenith angle
+        dt_timestamp = datetime.datetime.fromtimestamp(timestamp.values.astype('O') / 1e9, tz=datetime.timezone.utc)
+        # get time in decimal hours
+        decimal_hour = dt_timestamp.hour + dt_timestamp.minute / 60 + dt_timestamp.second / 60 / 60
+        year, month, day = dt_timestamp.year, dt_timestamp.month, dt_timestamp.day
 
-            # set options for libRadtran run - radiative transfer equation solver
-            rte_settings = dict(
-                rte_solver="fdisort2",
-            )
+        # use dropsondes for radiosonde file
+        dropsonde_files = [f for f in os.listdir(dropsonde_path)]
+        dropsonde_files.sort()  # sort dropsonde files
+        # read out timestamps from file
+        dropsonde_times = [int(f[9:14].replace(" ", "")) for f in dropsonde_files]
+        # convert to date time to match with BAHAMAS/INS timestamp
+        dropsonde_times = pd.to_datetime(dropsonde_times, unit="s", origin=pd.to_datetime(date))
+        # find index of the closest dropsonde to BAHAMAS/INS timestamp
+        time_diffs = dropsonde_times - timestamp.values
+        idx = np.asarray(np.nonzero(time_diffs == time_diffs.min()))[0][0]
+        dropsonde_file = dropsonde_files[idx]
+        radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
 
-            # set options for libRadtran run - post-processing
+        # %% filepaths
+        input_filepath = f"{input_path}/{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
+        albedo_filepath = f"{albedo_path}/{dt_timestamp:%Y%m%d_%H%M%S}_albedo.inp"
+
+        # %% set options for libRadtran run - atmospheric shell
+        atmos_settings = dict(
+            atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
+            albedo_file=albedo_filepath,  # page 79
+            altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
+            data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
+            latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
+            longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
+            mol_file=None,  # page 104
+            number_of_streams="16",  # page 107
+            radiosonde=radiosonde,  # page 114
+            time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
+            source=f"solar {solar_source_path}/kurudz_1.0nm.dat",  # page 119
+            # sza=f"{sza_libradtran:.4f}",  # page 122
+            # verbose="",  # page 123
+            # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
+            wavelength="250 2225",  # start with 250 due to fu parameterization
+            zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
+        )
+
+        # set options for libRadtran run - radiative transfer equation solver
+        rte_settings = dict(
+            rte_solver="disort",  # page 116
+        )
+
+        # set options for libRadtran run - post-processing
+        if integrate:
             postprocess_settings = dict(
                 output_user="sza albedo zout edir edn eup",  # page 109
                 output_process="integrate",  # page 108
             )
+        else:
+            postprocess_settings = dict(
+                output_user="lambda sza zout albedo edir edn eup p T",  # page 109
+            )
 
-            # %% write input file
-            with open(_input_filepath, "w") as ifile:
-                ifile.write(f"# libRadtran input file generated with {__file__} "
-                            f"({datetime.datetime.utcnow():%c UTC})\n")
-                for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
-                                          ["Atmospheric", "RTE", "Post Process"]):
-                    ifile.write(f"\n# {line} Settings\n")
-                    for key, value in settings.items():
-                        if value is not None:
-                            ifile.write(f"{key} {value}\n")
+        # %% write input file
+        log.debug(f"Writing input file: {input_filepath}")
+        with open(input_filepath, "w") as ifile:
+            ifile.write(f"# libRadtran input file generated with libradtran_write_input_file_seaice.py "
+                        f"({datetime.datetime.utcnow():%c UTC})\n")
+            for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
+                                      ["Atmospheric", "RTE", "Post Process"]):
+                ifile.write(f"\n# {line} Settings\n")
+                for key, value in settings.items():
+                    if value is not None:
+                        ifile.write(f"{key} {value}\n")
 
-            # increase timestamp by time_step
-            timestamp = timestamp + time_step
-            # end of while
+        # %% write albedo file
+        # read in IFS albedo parameterization for sea ice (6 spectral bands for each month) and select right month
+        ci_albedo_bands = h.ci_albedo[month_id, :]
+        # albedo wavelength range (start_1, end_1, start_2, end_2, ...) in nanometer
+        alb_wavelengths = np.array([185, 250, 251, 440, 441, 690, 691, 1190, 1191, 2380, 2381, 2500])
+        # set spectral ocean albedo to constant
+        sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
+        if sza_libradtran > 90:
+            log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran}!\n"
+                      f"Setting Ocean Albedo to 0.")
+            openocean_albedo_bands = np.repeat(0.0, 6)
+        else:
+            if is_on_land:
+                openocean_albedo_bands = np.repeat(0.2, 6)  # set albedo to a fixed value
+            else:
+                # calculate cosine of solar zenith angle
+                cos_sza = np.cos(np.deg2rad(
+                    solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
+                # calculate albedo after Taylor et al. 1996 for sea surface
+                openocean_albedo_bands = np.repeat(0.037 / (1.1 * cos_sza ** 1.4 + 0.15), 6)
+
+        # calculate spectral albedo bands
+        sw_alb_bands = ifs_sel.CI.values * ci_albedo_bands + (1. - ifs_sel.CI.values) * openocean_albedo_bands
+
+        sw_alb_for_file_list = []
+        for i in range(len(sw_alb_bands)):
+            sw_alb_for_file_list.append(sw_alb_bands[i])
+            sw_alb_for_file_list.append(sw_alb_bands[i])
+
+        sw_alb_for_file = np.asarray(sw_alb_for_file_list)
+
+        # write albedo file
+        log.debug(f'writing albedo file: {albedo_filepath}')
+        with open(albedo_filepath, 'w') as f:
+            f.write('# wavelength (nm)\talbedo (0-1)\n')
+            for i in range(len(alb_wavelengths)):
+                f.write(f"{alb_wavelengths[i]:6d}\t{sw_alb_for_file[i]:6.2f}\n")
+
+        # %% increase timestamp by time_step
+        timestamp = timestamp + time_step
+        # end of while
+
