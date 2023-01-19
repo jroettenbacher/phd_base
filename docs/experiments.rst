@@ -72,13 +72,18 @@ Using this the actual influence of the cirrus can be derived.
 - use dropsonde profiles as input
 - use the IFS sea ice albedo parameterization (TODO)
 
-|haloac3| BACARDI clear sky simulation with sea ice
+|haloac3| BACARDI/SMART clear sky simulation with sea ice
 ---------------------------------------------------
 
 *Scripts:*
 
 - :py:mod:`experiments.libradtran_write_input_file_seaice.py`
 - :py:mod:`experiments.libradtran_run_uvspec_seaice.py`
+
+*Folders:*
+
+- ``seaice_smart``: The first run of this experiment was done for the wavelength range 250 - 2225 nm on accident
+- ``seaice``
 
 .. automodule:: experiments.libradtran_write_input_file_seaice
 

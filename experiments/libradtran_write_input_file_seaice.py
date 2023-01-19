@@ -13,6 +13,7 @@ Input:
 * flight_key (e.g. 'RF17')
 * time_step (e.g. 'minutes=1')
 * use_smart_ins flag
+* solar_flag
 * integrate flag
 * input_path, this is where the files will be saved to be executed by uvspec
 
@@ -52,6 +53,7 @@ if __name__ == "__main__":
     month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
     time_step = "1S"  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
+    solar_flag = True
     integrate = True
 
     # %% setup logging
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         file = None
     log = h.setup_logging("./logs", file, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}\nintegrate: {integrate}"
-             f"\nuse_smart_ins: {use_smart_ins}"
+             f"\nuse_smart_ins: {use_smart_ins}\nsolar flag: {solar_flag}"
              f"\nScript started: {datetime.datetime.utcnow():%c UTC}")
 
     # %% set paths
@@ -69,7 +71,8 @@ if __name__ == "__main__":
     ifs_path = f"{h.get_path('ifs', campaign=campaign)}/{date}"
     libradtran_path = h.get_path("libradtran_exp", campaign=campaign)
     solar_source_path = f"/opt/libradtran/2.0.4/share/libRadtran/data/solar_flux"
-    input_path = f"{libradtran_path}/wkdir/seaice"  # where to save the created files
+    # where to save the created files
+    input_path = f"{libradtran_path}/wkdir/seaice_{'solar' if solar_flag else 'thermal'}"
     albedo_path = f"{input_path}/albedo_files"
     dropsonde_path = f"{base_path}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
     for path in [input_path, albedo_path]:
@@ -143,7 +146,7 @@ if __name__ == "__main__":
             # sza=f"{sza_libradtran:.4f}",  # page 122
             # verbose="",  # page 123
             # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-            wavelength="250 2225",  # start with 250 due to fu parameterization
+            wavelength="200 3600" if solar_flag else "4000 100000",
             zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
         )
 
