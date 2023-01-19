@@ -31,7 +31,7 @@ from tqdm import tqdm
 import cmasher as cmr
 
 cm = 1 / 2.54
-cb_colors = h.get_cb_friendly_colors()
+cbc = h.get_cb_friendly_colors()
 
 # %% set paths
 campaign = "halo-ac3"
@@ -83,6 +83,7 @@ if "RF17" in halo_flight:
     below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
     above_slice = slice(above_cloud["start"], above_cloud["end"])
     below_slice = slice(below_cloud["start"], below_cloud["end"])
+    case_slice = slice(above_cloud["start"], below_cloud["end"])
 else:
     above_cloud["start"] = segments.select("name", "polygon pattern 1")[0]["start"]
     above_cloud["end"] = segments.select("name", "polygon pattern 1")[0]["parts"][-1]["start"]
@@ -90,7 +91,9 @@ else:
     below_cloud["end"] = segments.select("name", "polygon pattern 2")[0]["end"]
     above_slice = slice(above_cloud["start"], above_cloud["end"])
     below_slice = slice(below_cloud["start"], below_cloud["end"])
+    case_slice = slice(above_cloud["start"], below_cloud["end"])
 
+cloudy_times = meta.cloudy_times["RF17"]["high"]
 # %% read in HALO smart data
 smart_ds = xr.open_dataset(f"{smart_path}/{calibrated_file}")
 # smart_std = smart_ds.resample(time="1Min").std()
@@ -101,8 +104,8 @@ smart_std = xr.open_dataset(f"{smart_path}/{calibrated_file.replace('.nc', '_std
 spectral_sim = xr.open_dataset(f"{libradtran_path}/{libradtran_spectral}")
 bb_sim_solar = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_solar}")
 bb_sim_thermal = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_thermal}")
-bb_sim_solar_si = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_solar_si}")
-bb_sim_thermal_si = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_thermal_si}")
+bb_sim_solar_si = xr.open_dataset(f"{libradtran_exp_path}/{libradtran_bb_solar_si}")
+bb_sim_thermal_si = xr.open_dataset(f"{libradtran_exp_path}/{libradtran_bb_thermal_si}")
 ifs_sim = xr.open_dataset(f"{libradtran_exp_path}/{libradtran_ifs}")
 
 # %% read in BACARDI and BAHAMAS data and resample to 1 sec
@@ -168,10 +171,21 @@ bb_sim_solar = bb_sim_solar.resample(time="1Min").asfreq()
 bb_sim_thermal = bb_sim_thermal.resample(time="1Min").asfreq()
 bb_sim_solar_si = bb_sim_solar_si.resample(time="1Min").asfreq()
 bb_sim_thermal_si = bb_sim_thermal_si.resample(time="1Min").asfreq()
-bacardi_ds_res = bacardi_ds.resample(time="1Min").asfreq()
+bacardi_ds_res = bacardi_ds.resample(time="1Min").mean()
+ifs_sim = ifs_sim.resample(time="1Min").asfreq()
 # bacardi_std = bacardi_ds.resample(time="1Min").std()
 # bacardi_std.to_netcdf(f"{bacardi_path}/{bacardi_file.replace('.nc', '_std.nc')}")
 bacardi_std = xr.open_dataset(f"{bacardi_path}/HALO-AC3_HALO_BACARDI_BroadbandFluxes_20220411_RF17_R1_std.nc")
+
+# %% band SMART data to ecRad bands
+nr_bands = len(h.ecRad_bands)
+smart_banded = np.empty((nr_bands, smart_ds.dims["time"]))
+for i, band in enumerate(h.ecRad_bands):
+    wl1 = h.ecRad_bands[band][0]
+    wl2 = h.ecRad_bands[band][1]
+    smart_banded[i, :] = smart_ds.Fdw_cor.sel(wavelength=slice(wl1, wl2)).integrate(coord="wavelength")
+
+smart_banded = xr.DataArray(smart_banded, coords={"ecrad_band": range(1, 15), "time": smart_ds.time}, name="Fdw_cor")
 
 # %% create a boolean mask for above cloud time steps in 1 min data for whole flight
 end_ascend = pd.to_datetime(segments.select("name", "high level 1")[0]["start"])
@@ -186,6 +200,8 @@ time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for ca
 time_extend_bc = below_cloud["end"] - below_cloud["start"]
 h.set_cb_friendly_colors()
 plt.rc("font", size=12, family="serif")
+figsize_wide = (24 * cm, 12 * cm)
+figsize_equal = (12 * cm, 12 * cm)
 
 # %% plot BACARDI measurements of below and above cloud section
 bacardi_ds_slice = bacardi_ds.sel(time=slice(above_cloud["start"], below_cloud["end"]))
@@ -323,7 +339,7 @@ plt.rc("font", size=14, family="serif")
 _, ax = plt.subplots(figsize=(10, 6))
 df_tmp = df[~((below_cloud["start"] < df.index) & (df.index < below_cloud["end"]))]
 mean_rel = df_tmp.relation.mean()
-ax.axhline(y=mean_rel, c=cb_colors[2], lw=2, label=f"Mean {mean_rel:.3f}")
+ax.axhline(y=mean_rel, c=cbc[2], lw=2, label=f"Mean {mean_rel:.3f}")
 ax.scatter(df_tmp["sza"], df_tmp["relation"])
 ax.grid()
 ax.set_xlabel("Solar Zenith Angle (deg)")
@@ -1032,7 +1048,7 @@ ecrad_ds_slice = ecrad_ds_slice.sel(time=slice(above_cloud["start"], below_cloud
 labels = dict(flux_dn_sw=r"$F_{\downarrow, solar}$", flux_dn_lw=r"$F_{\downarrow, terrestrial}$",
               flux_up_sw=r"$F_{\uparrow, solar}$", flux_up_lw=r"$F_{\uparrow, terrestrial}$")
 plt.rc("font", size=12)
-_, ax = plt.subplots(figsize=(22 * cm, 11 * cm))
+fig, ax = plt.subplots(figsize=(22 * cm, 11 * cm))
 for var in ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]:
     ax.plot(ecrad_ds_slice[var].time, ecrad_ds_slice[var], label=labels[var])
 
@@ -1152,7 +1168,7 @@ lims = [(120, 240), (80, 130), (95, 170), (210, 220)]
 for (i, x), y in zip(enumerate(["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]),
                      ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]):
     _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
     ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
     ax.set_ylim(lims[i])
     ax.set_xlim(lims[i])
@@ -1181,7 +1197,7 @@ names = ["Fdw_solar", "Fdw_terrestrial", "Fup_solar", "Fup_terrestrial"]
 lims = [(200, 270), (25, 35), (150, 200), (175, 195)]
 for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
     _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
     ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
     ax.set_ylim(lims[i])
     ax.set_xlim(lims[i])
@@ -1216,7 +1232,7 @@ x, y = bacardi_vars[0], ecrad_vars[0]
 rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
 bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
 _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
 ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
 ax.set_ylim(lims[i])
 ax.set_xlim(lims[i])
@@ -1239,7 +1255,7 @@ plt.close()
 # %% plot timeseries of difference between ecRad and BACARDI
 ecrad_bacardi = ecrad_plot[y] - bacardi_plot[x]
 _, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
-ax.plot(ecrad_bacardi.time, ecrad_bacardi, c=cb_colors[3], marker="o")
+ax.plot(ecrad_bacardi.time, ecrad_bacardi, c=cbc[3], marker="o")
 ax2 = ax.twinx()
 ax2.plot(bacardi_plot.time, bacardi_plot["sza"], label="SZA")
 ax2.plot(ecrad_plot.time, np.rad2deg(np.arccos(ecrad_plot["cos_solar_zenith_angle"])), label="SZA ecRad")
@@ -1264,7 +1280,7 @@ x, y = bacardi_vars[1], ecrad_vars[1]
 rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
 bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
 _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
 ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
 ax.set_ylim(lims[i])
 ax.set_xlim(lims[i])
@@ -1287,7 +1303,7 @@ plt.close()
 # %% plot timeseries of difference between ecRad and BACARDI Fdw_terrestrial
 ecrad_bacardi = ecrad_plot[y] - bacardi_plot[x]
 _, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
-ax.plot(ecrad_bacardi.time, ecrad_bacardi, c=cb_colors[3], marker="o")
+ax.plot(ecrad_bacardi.time, ecrad_bacardi, c=cbc[3], marker="o")
 ax2 = ax.twinx()
 ax2.plot(bacardi_plot.time, bacardi_plot["sza"], label="SZA")
 ax2.plot(ecrad_plot.time, np.rad2deg(np.arccos(ecrad_plot["cos_solar_zenith_angle"])), label="SZA ecRad")
@@ -1369,8 +1385,8 @@ sw_bands = ecrad_ds.band_sw
 lw_bands = ecrad_ds.band_lw
 ecrad_ds["flux_dn_sw_2"] = ecrad_ds["spectral_flux_dn_sw"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
 ecrad_ds["flux_up_sw_2"] = ecrad_ds["spectral_flux_up_sw"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
-# ecrad_ds["flux_dn_lw_2"] = ecrad_ds["spectral_flux_dn_lw"].isel(band_sw=lw_bands[:13]).sum(dim="band_lw")
-# ecrad_ds["flux_up_lw_2"] = ecrad_ds["spectral_flux_up_lw"].isel(band_sw=lw_bands[:13]).sum(dim="band_lw")
+ecrad_ds["flux_dn_sw_clear_2"] = ecrad_ds["spectral_flux_dn_sw_clear"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
+ecrad_ds["flux_up_sw_clear_2"] = ecrad_ds["spectral_flux_up_sw_clear"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
 
 # %% compare Fdw solar along the flight track between ecRad band 1-13 and BACARDI
 bacardi_plot = bacardi_ds_res.where(above_sel)
@@ -1381,7 +1397,7 @@ x, y = bacardi_vars[0], "flux_dn_sw_2"
 rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
 bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
 _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
 ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
 ax.set_ylim(lims[i])
 ax.set_xlim(lims[i])
@@ -1409,7 +1425,7 @@ _, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
 ax.plot(ecrad_plot.time, ecrad_plot["flux_dn_sw"], label="F$_{\downarrow}$ solar")
 ax.plot(ecrad_plot.time, ecrad_plot["flux_dn_sw_clear"], label="F$_{\downarrow}$ solar clearsky")
 ax2 = ax.twinx()
-ax2.plot(clearsky_diff.time, clearsky_diff, label="ecRad - clearsky ecRad", color=cb_colors[3])
+ax2.plot(clearsky_diff.time, clearsky_diff, label="ecRad - clearsky ecRad", color=cbc[3])
 ax.legend()
 ax2.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
@@ -1428,7 +1444,7 @@ plt.close()
 ecrad_plot = ecrad_ds.isel(half_level=height_level_da).where(above_sel)
 mean_diff = np.mean(ecrad_plot["flux_dn_sw"] - ecrad_plot["flux_dn_sw_clear"])
 _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-ax.scatter(ecrad_plot["flux_dn_sw"], ecrad_plot["flux_dn_sw_clear"], color=cb_colors[3])
+ax.scatter(ecrad_plot["flux_dn_sw"], ecrad_plot["flux_dn_sw_clear"], color=cbc[3])
 ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
 ax.set_ylim(200, 550)
 ax.set_xlim(200, 550)
@@ -1459,7 +1475,7 @@ for (i, x), y in zip(enumerate(["F_down_solar", "F_down_terrestrial", "F_up_sola
     rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
     bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
     _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
     ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
     ax.set_ylim(lims[i])
     ax.set_xlim(lims[i])
@@ -1492,7 +1508,7 @@ for (i, x), y in zip(enumerate(["F_down_solar", "F_down_terrestrial", "F_up_sola
     rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
     bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
     _, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
-    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cb_colors[3])
+    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
     ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
     ax.set_ylim(lims[i])
     ax.set_xlim(lims[i])
@@ -1514,3 +1530,260 @@ for (i, x), y in zip(enumerate(["F_down_solar", "F_down_terrestrial", "F_up_sola
     plt.close()
 
 # %% compare ecRad with libRadtran simulations
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da)
+ifs_sim["fdw_bb"] = ifs_sim["fdw"].sum(dim="lambda")
+
+# %% integrate libRadtran to ecRad bands
+print("TODO")
+
+# %% plot time series of Fdw ecRad and libRadtran
+_, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(ecrad_plot.time, ecrad_plot["flux_dn_sw_2"], label="F$_{\downarrow , sw}$ ecRad")
+ax.plot(ifs_sim.time, ifs_sim["fdw_bb"], label="F$_{\downarrow , sw}$ libradtran")
+ax.legend()
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_title("Downward solar irradiance from ecRad and libRadtran simulations using IFS input")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Simulated Broadband Irradiance (W$\,$m$^{-2}$)")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_ecRad_libRadtran_Fdw_solar_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot difference between ecRad and libRadtran as scatter plot - only above cloud
+ifs_sim_plot = ifs_sim.where(above_sel)
+ecrad_plot = ecrad_plot.where(above_sel)
+lims = [(150, 550), (25, 35), (150, 200), (175, 195)]
+i = 0
+x, y = "fdw_bb", "flux_dn_sw_2"
+rmse = np.sqrt(np.mean((ecrad_plot[y] - ifs_sim_plot[x]) ** 2))
+bias = np.mean((ecrad_plot[y] - ifs_sim_plot[x]))
+_, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
+ax.scatter(ifs_sim_plot[x], ecrad_plot[y], c=cbc[3])
+ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
+ax.set_ylim(lims[i])
+ax.set_xlim(lims[i])
+ticks = ax.get_yticks() if i == 0 else ax.get_xticks()
+ax.set_yticks(ticks)
+ax.set_xticks(ticks)
+ax.set_aspect('equal')
+ax.set_xlabel("libRadtran Irradiance (W$\,$m$^{-2}$)")
+ax.set_ylabel("ecRad Irradiance (W$\,$m$^{-2}$)")
+ax.set_title(f"Downward Solar Irradiance\nabove cloud whole flight RF17")
+ax.grid()
+ax.text(0.01, 0.95, f"# points: {sum(~np.isnan(ifs_sim_plot[x])):.0f}\n"
+                    f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                    f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+        horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
+plt.tight_layout()
+# plt.savefig(f"{plot_path}/{halo_flight}_ecrad_vs_libRadtran_Fdw_solar_scatter_above_cloud_all.png", dpi=300)
+plt.show()
+plt.close()
+
+# %% calculate cloud radiative effect from BACARDI
+bacardi_ds_res["cre_solar"] = (bacardi_ds_res.F_down_solar - bacardi_ds_res.F_up_solar) - (
+            bb_sim_solar_si.fdw - bb_sim_solar_si.eup)
+bacardi_ds_res["cre_terrestrial"] = (bacardi_ds_res.F_down_terrestrial - bacardi_ds_res.F_up_terrestrial) - (
+        bb_sim_thermal_si.edn - bb_sim_thermal_si.eup)
+bacardi_ds_res["cre_net"] = bacardi_ds_res["cre_solar"] + bacardi_ds_res["cre_terrestrial"]
+
+# %% calculate broadband cloud radiative effect from ecRad
+ecrad_ds["cre_sw"] = (ecrad_ds.flux_dn_sw_2 - ecrad_ds.flux_up_sw_2) - (ecrad_ds.flux_dn_sw_clear_2
+                                                                        - ecrad_ds.flux_up_sw_clear_2)
+ecrad_ds["cre_lw"] = (ecrad_ds.flux_dn_lw - ecrad_ds.flux_up_lw) - (ecrad_ds.flux_dn_lw_clear
+                                                                    - ecrad_ds.flux_up_lw_clear)
+ecrad_ds["cre_net"] = ecrad_ds["cre_sw"] + ecrad_ds["cre_lw"]
+
+# %% plot CRE ecRad
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=case_slice)
+_, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(ecrad_plot.time, ecrad_plot.cre_sw, label="CRE$_{sw}$", color=cbc[2], marker=".")
+ax.plot(ecrad_plot.time, ecrad_plot.cre_lw, label="CRE$_{lw}$", color=cbc[3], marker=".")
+ax.plot(ecrad_plot.time, ecrad_plot.cre_net, label="CRE$_{net}$", color=cbc[5], marker=".")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend()
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Cloud radiative effect from ecRad simulation")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Cloud Radiative Effect (W$\,$m$^{-2}$)")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_ecRad_cre_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot sw CRE components ecRad
+fig, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw_2, label="F$_{\downarrow, sw}$", c=cbc[1])
+ax.plot(ecrad_plot.time, ecrad_plot.flux_up_sw_2, label="F$_{\\uparrow, sw}$", c=cbc[0])
+ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw_clear_2, label="F$_{\downarrow, sw, cls}$", c=cbc[1], ls="--")
+ax.plot(ecrad_plot.time, ecrad_plot.flux_up_sw_clear_2, label="F$_{\\uparrow, sw, cls}$", c=cbc[0], ls="--")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Broadband short wave irradiance fluxes from ecRad simulation")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.28)
+figname = f"{plot_path}/{halo_flight}_ecRad_sw_flux_case_study_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot lw CRE components ecRad
+fig, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_lw, label="F$_{\downarrow, lw}$", c=cbc[1])
+ax.plot(ecrad_plot.time, ecrad_plot.flux_up_lw, label="F$_{\\uparrow, lw}$", c=cbc[0])
+ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_lw_clear, label="F$_{\downarrow, lw, cls}$", c=cbc[1], ls="--")
+ax.plot(ecrad_plot.time, ecrad_plot.flux_up_lw_clear, label="F$_{\\uparrow, lw, cls}$", c=cbc[0], ls="--")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Broadband long wave irradiance fluxes from ecRad simulation")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.28)
+figname = f"{plot_path}/{halo_flight}_ecRad_lw_flux_case_study_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot CRE BACARDI
+bacardi_plot = bacardi_ds_res.sel(time=case_slice)
+_, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(bacardi_plot.time, bacardi_plot.cre_solar, label="CRE$_{solar}$", color=cbc[2], marker=".")
+ax.plot(bacardi_plot.time, bacardi_plot.cre_terrestrial, label="CRE$_{terrestrial}$", color=cbc[3], marker=".")
+ax.plot(bacardi_plot.time, bacardi_plot.cre_net, label="CRE$_{net}$", color=cbc[5], marker=".")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend()
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Cloud radiative effect from BACARDI and libRadtran simulation")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Cloud Radiative Effect (W$\,$m$^{-2}$)")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_BACARDI_libRadtran_cre_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot sw CRE components BACARDI, libRadtran
+sim_plot = bb_sim_solar_si.sel(time=case_slice)
+fig, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(bacardi_plot.time, bacardi_plot.F_down_solar, label="F$_{\downarrow, solar}$", c=cbc[1], marker=".")
+ax.plot(bacardi_plot.time, bacardi_plot.F_up_solar, label="F$_{\\uparrow, solar}$", c=cbc[0], marker=".")
+ax.plot(sim_plot.time, sim_plot.fdw, label="F$_{\downarrow, solar, cls}$", c=cbc[1], ls="--", marker=".")
+ax.plot(sim_plot.time, sim_plot.eup, label="F$_{\\uparrow, solar, cls}$", c=cbc[0], ls="--", marker=".")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Broadband short wave irradiance fluxes from BACARDI measurement and libRadtran simulation")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.28)
+figname = f"{plot_path}/{halo_flight}_BACARDI_libRadtran_solar_flux_case_study_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot lw CRE components BACARDI, libRadtran
+sim_plot = bb_sim_thermal_si.sel(time=case_slice)
+fig, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+ax.plot(bacardi_plot.time, bacardi_plot.F_down_terrestrial, label="F$_{\downarrow, terrestrial}$", c=cbc[1], marker=".")
+ax.plot(bacardi_plot.time, bacardi_plot.F_up_terrestrial, label="F$_{\\uparrow, terrestrial}$", c=cbc[0], marker=".")
+ax.plot(sim_plot.time, sim_plot.edn , label="F$_{\downarrow, terrestrial, cls}$", c=cbc[1], ls="--", marker=".")
+ax.plot(sim_plot.time, sim_plot.eup, label="F$_{\\uparrow, terrestrial, cls}$", c=cbc[0], ls="--", marker=".")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Broadband long wave irradiance fluxes from BACARDI measurement and libRadtran simulation")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+plt.tight_layout()
+plt.subplots_adjust(bottom=0.28)
+figname = f"{plot_path}/{halo_flight}_BACARDI_libRadtran_terrestrial_flux_case_study_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% compare CRE ecRad vs BACARDI
+bacardi_plot = bacardi_ds_res.sel(time=below_slice)
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=below_slice)
+lims = (-30, 40)
+var = "cre_net"
+rmse = np.sqrt(np.mean((ecrad_plot[var] - bacardi_plot[var]) ** 2))
+bias = np.mean((ecrad_plot[var] - bacardi_plot[var]))
+_, ax = plt.subplots(figsize=(12 * cm, 12 * cm))
+ax.scatter(bacardi_plot[var], ecrad_plot[var], c=cbc[3])
+ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
+ax.set_ylim(lims)
+ax.set_xlim(lims)
+ticks = ax.get_yticks()
+ax.set_yticks(ticks)
+ax.set_xticks(ticks)
+ax.set_aspect('equal')
+ax.set_xlabel("BACARDI/libRadtran CRE (W$\,$m$^{-2}$)")
+ax.set_ylabel("ecRad CRE (W$\,$m$^{-2}$)")
+ax.set_title(f"Cloud radiative effect \nbelow cloud RF17")
+ax.grid()
+ax.text(0.01, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[var])):.0f}\n"
+                    f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                                                 f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+        ha='left', va='top', transform=ax.transAxes)
+plt.tight_layout()
+plt.savefig(f"{plot_path}/{halo_flight}_bacardi_vs_ecrad_cre_scatter_below_cloud.png", dpi=300)
+plt.show()
+plt.close()
+
+# %% plot BACARDI and ecRad CRE in one plot
+bacardi_plot = bacardi_ds_res.sel(time=case_slice)
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=case_slice)
+_, ax = plt.subplots(figsize=(24 * cm, 12 * cm))
+# ax.plot(bacardi_plot.time, bacardi_plot.cre_solar, label="CRE$_{solar}$", color=cbc[2])
+# ax.plot(bacardi_plot.time, bacardi_plot.cre_terrestrial, label="CRE$_{terrestrial}$", color=cbc[3])
+ax.plot(bacardi_plot.time, bacardi_plot.cre_net, label="BACARDI CRE$_{net}$", color=cbc[5], marker=".")
+ax.plot(ecrad_plot.time, ecrad_plot.cre_net, label="ecRad CRE$_{net}$", color=cbc[6], marker=".")
+ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
+ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
+ax.legend()
+ax.grid()
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+ax.set_title("Net cloud radiative effect from BACARDI and ecRad")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Cloud Radiative Effect (W$\,$m$^{-2}$)")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_BACARDI_vs_ecrad_cre_net_time_series.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+# %% create boolean array for cirrus times
+bt = bacardi_ds_res.time
+hc_st = cloudy_times["starts"]
+hc_end = cloudy_times["ends"]
+cirrus_only = ((hc_st[1] < bt) & (hc_end[1] > bt)) | ((hc_st[2] < bt) & (hc_end[2] > bt))
+
+# %% create PDF of BACARDI and ecRad measurements above cloud
+bacardi_plot = bacardi_ds_res.where(cirrus_only)
+ecrad_plot = ecrad_ds.where(cirrus_only)
+_, ax = plt.subplots(figsize=figsize_wide)
+ax.hist(ecrad_plot["flux_up_sw_2"], label="ecRad F$_{up}$")
+ax.legend()
+plt.show()
+plt.close()
+
