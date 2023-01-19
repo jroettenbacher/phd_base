@@ -522,7 +522,7 @@ The ``radiative_properties.nc`` file which is optionally generated in each run d
 
 * -t: use the time interpolated data
 * -d yyyymmdd: give the date to be processed
-* -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments:ecRad namelists` for details on version)
+* -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments:ecRad namelists and experiments` for details on version)
 
 **Output:**
 
