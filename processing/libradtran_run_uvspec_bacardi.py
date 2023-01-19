@@ -189,7 +189,7 @@ if __name__ == "__main__":
             altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
             direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance", comment=wavelenght_str),
             edir=dict(units="W m-2", long_name=f"{integrate_str}direct beam irradiance",
-                      standard_name="direct_downwelling_shortwave_flux_in_air",
+                      standard_name="direct_downwelling_longwave_flux_in_air",
                       comment=wavelenght_str),
             edn=dict(units="W m-2", long_name=f"{integrate_str}downward irradiance",
                      standard_name="downwelling_longwave_flux_in_air_assuming_clear_sky",

@@ -24,7 +24,7 @@ if __name__ == "__main__":
     all_flights = all_flights[18:19]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-    solar_flag = True
+    solar_flag = False
     solar_str = "solar" if solar_flag else "thermal"
 
     # %% set up logging to console and file when calling script from console
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # get files
         libradtran_base_dir = h.get_path("libradtran_exp", flight, campaign)
-        libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", "seaice")
+        libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", f"seaice_{solar_str}")
         input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
         input_files.sort()  # sort input files -> output files will be sorted as well
         output_files = [f.replace(".inp", ".out") for f in input_files]
@@ -163,7 +163,7 @@ if __name__ == "__main__":
             altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
             direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance", comment=wavelenght_str),
             edir=dict(units="W m-2", long_name=f"{integrate_str}direct beam irradiance",
-                      standard_name="direct_downwelling_shortwave_flux_in_air",
+                      standard_name="direct_downwelling_longwave_flux_in_air",
                       comment=wavelenght_str),
             edn=dict(units="W m-2", long_name=f"{integrate_str}downward irradiance",
                      standard_name="downwelling_longwave_flux_in_air_assuming_clear_sky",

@@ -27,7 +27,11 @@ New options can be manually added to the dictionary.
 The options are linked to the page in the manual where they are described in more detail.
 Set options to "None" if you don't want to use them.
 
-Furthermore, an albedo file is generated using the sea ice albedo parameterization from :cite:t:`Ebert1992` and the open ocean albedo parameterization from :cite:t:`Taylor1996`.
+Furthermore, an albedo file is generated for the solar simulation using the sea ice albedo parameterization from :cite:t:`Ebert1992` and the open ocean albedo parameterization from :cite:t:`Taylor1996`.
+To allow simulations in the thermal infrared region an additional albedo band between 2501 and 4500 nm is added.
+The sea ice albedo is set to 0 in this band.
+
+For the terrestrial simulation the albedo is set to a constant value depending on surface type over all wavelengths.
 
 The atmosphere is provided by a dropsonde measurement which was converted to the right input format by an IDL script.
 
@@ -51,9 +55,9 @@ if __name__ == "__main__":
     flight = meta.flight_names[flight_key]
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
-    time_step = "1S"  # define time steps of simulations
+    time_step = "1Min"  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
-    solar_flag = True
+    solar_flag = False
     integrate = True
 
     # %% setup logging
@@ -126,14 +130,31 @@ if __name__ == "__main__":
         dropsonde_file = dropsonde_files[idx]
         radiosonde = f"{dropsonde_path}/{dropsonde_file} H2O RH"
 
+        # set albedo for terrestrial simulation
+        sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
+        if sza_libradtran > 90:
+            log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran}!\n"
+                      f"Setting Ocean Albedo to 0.")
+            openocean_albedo = 0.0
+        else:
+            if is_on_land:
+                openocean_albedo = 0.2  # set albedo to a fixed value
+            else:
+                # calculate cosine of solar zenith angle
+                cos_sza = np.cos(np.deg2rad(
+                    solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
+                # calculate albedo after Taylor et al. 1996 for sea surface
+                openocean_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
+
         # %% filepaths
         input_filepath = f"{input_path}/{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
         albedo_filepath = f"{albedo_path}/{dt_timestamp:%Y%m%d_%H%M%S}_albedo.inp"
 
         # %% set options for libRadtran run - atmospheric shell
         atmos_settings = dict(
-            atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
-            albedo_file=albedo_filepath,  # page 79
+            atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglsw.dat",  # page 81
+            albedo=openocean_albedo if not solar_flag else None,  # page 78
+            albedo_file=albedo_filepath if solar_flag else None,  # page 79
             altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
             data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
             latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
@@ -142,11 +163,11 @@ if __name__ == "__main__":
             number_of_streams="16",  # page 107
             radiosonde=radiosonde,  # page 114
             time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
-            source=f"solar {solar_source_path}/kurudz_1.0nm.dat",  # page 119
+            source=f"solar {solar_source_path}/kurudz_1.0nm.dat" if solar_flag else "thermal",  # page 119
             # sza=f"{sza_libradtran:.4f}",  # page 122
             # verbose="",  # page 123
             # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-            wavelength="200 3600" if solar_flag else "4000 100000",
+            wavelength="290 3600" if solar_flag else "4000 100000",
             zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
         )
 
@@ -179,42 +200,45 @@ if __name__ == "__main__":
                         ifile.write(f"{key} {value}\n")
 
         # %% write albedo file
-        # read in IFS albedo parameterization for sea ice (6 spectral bands for each month) and select right month
-        ci_albedo_bands = h.ci_albedo[month_id, :]
-        # albedo wavelength range (start_1, end_1, start_2, end_2, ...) in nanometer
-        alb_wavelengths = np.array([185, 250, 251, 440, 441, 690, 691, 1190, 1191, 2380, 2381, 2500])
-        # set spectral ocean albedo to constant
-        sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
-        if sza_libradtran > 90:
-            log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran}!\n"
-                      f"Setting Ocean Albedo to 0.")
-            openocean_albedo_bands = np.repeat(0.0, 6)
-        else:
-            if is_on_land:
-                openocean_albedo_bands = np.repeat(0.2, 6)  # set albedo to a fixed value
+        if solar_flag:
+            # read in IFS albedo parameterization for sea ice (6 spectral bands for each month) and select right month
+            ci_albedo_bands = h.ci_albedo[month_id, :]
+            # albedo wavelength range (start_1, end_1, start_2, end_2, ...) in nanometer
+            alb_wavelengths = np.array([185, 250, 251, 440, 441, 690, 691, 1190, 1191, 2380, 2381, 2500, 2501, 4500])
+            # set spectral ocean albedo to constant
+            sza_libradtran = solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)
+            if sza_libradtran > 90:
+                log.debug(f"Solar zenith angle for {dt_timestamp} is {sza_libradtran}!\n"
+                          f"Setting Ocean Albedo to 0.")
+                openocean_albedo_bands = np.repeat(0.0, 7)
             else:
-                # calculate cosine of solar zenith angle
-                cos_sza = np.cos(np.deg2rad(
-                    solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
-                # calculate albedo after Taylor et al. 1996 for sea surface
-                openocean_albedo_bands = np.repeat(0.037 / (1.1 * cos_sza ** 1.4 + 0.15), 6)
+                if is_on_land:
+                    openocean_albedo_bands = np.repeat(0.2, 7)  # set albedo to a fixed value
+                else:
+                    # calculate cosine of solar zenith angle
+                    cos_sza = np.cos(np.deg2rad(
+                        solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
+                    # calculate albedo after Taylor et al. 1996 for sea surface
+                    openocean_albedo_bands = np.repeat(0.037 / (1.1 * cos_sza ** 1.4 + 0.15), 7)
 
-        # calculate spectral albedo bands
-        sw_alb_bands = ifs_sel.CI.values * ci_albedo_bands + (1. - ifs_sel.CI.values) * openocean_albedo_bands
+            # add an albedo band for the thermal infrared
+            ci_albedo_bands = np.append(ci_albedo_bands, [0])
+            # calculate spectral albedo bands
+            sw_alb_bands = ifs_sel.CI.values * ci_albedo_bands + (1. - ifs_sel.CI.values) * openocean_albedo_bands
 
-        sw_alb_for_file_list = []
-        for i in range(len(sw_alb_bands)):
-            sw_alb_for_file_list.append(sw_alb_bands[i])
-            sw_alb_for_file_list.append(sw_alb_bands[i])
+            sw_alb_for_file_list = []
+            for i in range(len(sw_alb_bands)):
+                sw_alb_for_file_list.append(sw_alb_bands[i])
+                sw_alb_for_file_list.append(sw_alb_bands[i])
 
-        sw_alb_for_file = np.asarray(sw_alb_for_file_list)
+            sw_alb_for_file = np.asarray(sw_alb_for_file_list)
 
-        # write albedo file
-        log.debug(f'writing albedo file: {albedo_filepath}')
-        with open(albedo_filepath, 'w') as f:
-            f.write('# wavelength (nm)\talbedo (0-1)\n')
-            for i in range(len(alb_wavelengths)):
-                f.write(f"{alb_wavelengths[i]:6d}\t{sw_alb_for_file[i]:6.2f}\n")
+            # write albedo file
+            log.debug(f'writing albedo file: {albedo_filepath}')
+            with open(albedo_filepath, 'w') as f:
+                f.write('# wavelength (nm)\talbedo (0-1)\n')
+                for i in range(len(alb_wavelengths)):
+                    f.write(f"{alb_wavelengths[i]:6d}\t{sw_alb_for_file[i]:6.2f}\n")
 
         # %% increase timestamp by time_step
         timestamp = timestamp + time_step
