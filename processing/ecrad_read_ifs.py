@@ -308,10 +308,11 @@ if __name__ == "__main__":
     #TODO: Add NO2 profile from CAMS
 
     # %% add cloud properties
-    data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),
-                                                       dims=["column", "level"])
-    # set to 1 according to ecRad documentation
-    data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0), dims=["column", "level"])
+    data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0),
+                                             dims=["column", "level"])  # set to 1 according to ecRad documentation
+    # only needed for 3D effects in SPARTACUS of a known cloud scene. For general IFS input use parameterization
+    # data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),
+    #                                                    dims=["column", "level"])
     # sum up cloud ice and cloud snow water content according to IFS documentation Part IV Section 2.8.2 (ii)
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
     # sum up cloud liquid and cloud rain water content
