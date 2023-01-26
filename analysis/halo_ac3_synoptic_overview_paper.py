@@ -13,6 +13,7 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.gridspec as gridspec
@@ -30,20 +31,25 @@ flight = meta.flight_names[halo_key]
 date = flight[9:17]
 plot_path = f"{h.get_path('plot', campaign=campaign)}/../manuscripts/2022_HALO-AC3_synoptic_overview"
 trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude"
-era5_path = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/ERA5/ERA5_ml_noOMEGAscale"
+era5_path = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/models/ERA5/ERA5_ml_noOMEGAscale"
 
 # set options and credentials for HALO-AC3 cloud and intake catalog
-kwds = {'simplecache': dict(cache_storage='E:/HALO-AC3/cloud', same_names=True)}
+kwds = {'simplecache': dict(same_names=True)}
 credentials = {"user": os.environ.get("AC3_CLOUD_USER"), "password": os.environ.get("AC3_CLOUD_PASSWORD")}
 cat = ac3airborne.get_intake_catalog()
 
 # %% plot two maps of trajectories with surface pressure, flight track, dropsonde locations and high cloud cover and humidity profiles from radiosonde
+cmap = mpl.colormaps["tab20b_r"]([20,20, 0, 3, 4, 7, 8, 11, 12, 15, 16, 19])
+cmap[:2] = mpl.colormaps["tab20c"]([7, 4])
+cmap = mpl.colors.ListedColormap(cmap)
+# cmap = cmr.get_sub_cmap("tab20b_r", 0.4, 1)
 plt_sett = {
     'TIME': {
         'label': 'Time Relative to Release (h)',
-        'norm': plt.Normalize(-120, 0),
-        'ylim': [-120, 0],
-        'cmap_sel': 'tab20b_r',
+        'norm': plt.Normalize(-72, 0),
+        'ylim': [-72, 0],
+        'cmap_sel': cmap,
+        'cmap_ticks': np.arange(-72, 0.1, 12)
     }
 }
 var_name = "TIME"
@@ -136,7 +142,7 @@ for k in range(traj_single_len + 1):
     line = ax.add_collection(lc)
 
 plt.colorbar(line, ax=ax, pad=0.01,
-             ticks=np.arange(-120, 0.1, 12)).set_label(label=plt_sett[var_name]['label'], size=6)
+             ticks=plt_sett[var_name]['cmap_ticks']).set_label(label=plt_sett[var_name]['label'], size=6)
 
 # plot flight track - 11 April
 ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_RF17"](storage_options=kwds, **credentials).to_dask()
@@ -267,7 +273,7 @@ for k in range(traj_single_len + 1):
     line = ax.add_collection(lc)
 
 plt.colorbar(line, ax=ax, pad=0.01,
-             ticks=np.arange(-120, 0.1, 12)).set_label(label=plt_sett[var_name]['label'], size=6)
+             ticks=plt_sett[var_name]["cmap_ticks"]).set_label(label=plt_sett[var_name]['label'], size=6)
 
 # plot flight track - 12 April
 ins = cat["HALO-AC3"]["HALO"]["GPS_INS"][f"HALO-AC3_HALO_RF18"](storage_options=kwds, **credentials).to_dask()
