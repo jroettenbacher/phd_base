@@ -73,7 +73,7 @@ Using this the actual influence of the cirrus can be derived.
 - use the IFS sea ice albedo parameterization (TODO)
 
 |haloac3| BACARDI/SMART clear sky simulation with sea ice
----------------------------------------------------
+---------------------------------------------------------
 
 *Scripts:*
 
@@ -83,7 +83,24 @@ Using this the actual influence of the cirrus can be derived.
 *Folders:*
 
 - ``seaice_smart``: The first run of this experiment was done for the wavelength range 250 - 2225 nm on accident
-- ``seaice``
-
+- ``seaice_solar``, ``seaice_thermal``
 .. automodule:: experiments.libradtran_write_input_file_seaice
 
+|haloac3| BACARDI/SMART clear sky simulation with sea ice up to 5000nm
+----------------------------------------------------------------------
+
+*Scripts:*
+
+- :py:mod:`experiments.libradtran_write_input_file_seaice_2.py`
+- :py:mod:`experiments.libradtran_run_uvspec_seaice.py`
+
+*Folders:*
+
+- ``seaice_2_solar``
+
+*Notes:*
+
+The same execution script is used as for the previous sea ice experiment.
+Only ``libradtran_dir`` in line 40 and ``nc_filepath`` in line 208 are adjusted.
+
+.. automodule:: experiments.libradtran_write_input_file_seaice_2
