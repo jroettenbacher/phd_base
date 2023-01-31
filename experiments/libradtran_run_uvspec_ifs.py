@@ -135,7 +135,6 @@ if __name__ == "__main__":
             continue
 
         # %% merge output files and write a netCDF file
-
         latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
 
         log.info("Reading input files and extracting information from it...")
@@ -194,13 +193,13 @@ if __name__ == "__main__":
                      standard_name="solar_irradiance", comment=wavelenght_str),
             latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
             longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
-            saa=dict(units="degree", long_name="solar azimuth angle", standard_name="soalr_azimuth_angle",
+            saa=dict(units="degree", long_name="solar azimuth angle", standard_name="solar_azimuth_angle",
                      comment="clockwise from north"),
             sza=dict(units="degree", long_name="solar zenith angle", standard_name="solar_zenith_angle",
                      comment="0 deg = zenith"),
-            CLWC=dict(units="g m^-3", long_name="cloud liquid water content",
+            CLWD=dict(units="g m^-3", long_name="cloud liquid water density",
                       standard_name="mass_concentration_of_cloud_liquid_water_in_air"),
-            CIWC=dict(units="g m^-3", long_name="cloud ice water content",
+            CIWD=dict(units="g m^-3", long_name="cloud ice water density",
                       standard_name="mass_concentration_of_cloud_ice_water_in_air"),
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
             T=dict(units="K", long_name="air temperature", standard_name="air_temperature")

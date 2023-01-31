@@ -26,18 +26,14 @@ if __name__ == "__main__":
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
     solar_flag = False
     solar_str = "solar" if solar_flag else "thermal"
-
-    # %% set up logging to console and file when calling script from console
-    log = logging.getLogger("pylim")
+    libradtran_base_dir = h.get_path("libradtran_exp", campaign=campaign)
+    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", f"seaice_{solar_str}")
 
     # %% run for all flights
     for flight in all_flights:
-        log.info(f"Working on {flight}")
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # get files
-        libradtran_base_dir = h.get_path("libradtran_exp", flight, campaign)
-        libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", f"seaice_{solar_str}")
         input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]
         input_files.sort()  # sort input files -> output files will be sorted as well
         output_files = [f.replace(".inp", ".out") for f in input_files]
@@ -50,7 +46,8 @@ if __name__ == "__main__":
             file = None
         log = h.setup_logging("./logs", file, flight_key)
         log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {solar_str}\n"
-                 f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
+                 f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}\n"
+                 f"wkdir: {libradtran_dir}")
         # %% call uvspec for all files
         processes = set()
         max_processes = cpu_count() - 4
@@ -133,7 +130,7 @@ if __name__ == "__main__":
         integrate_str = "integrated " if integrate_flag else ""
         wavelenght_str = f"wavelength range {wavelengths[0]} - {wavelengths[1]} nm"
 
-        # set up meta data dictionaries for solar (shortwave) flux
+        # set up metadata dictionaries for solar (shortwave) flux
         var_attrs_solar = dict(
             albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
             altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
@@ -151,13 +148,13 @@ if __name__ == "__main__":
                      standard_name="solar_irradiance", comment=wavelenght_str),
             latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
             longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
-            saa=dict(units="degree", long_name="solar azimuth angle", standard_name="soalr_azimuth_angle",
+            saa=dict(units="degree", long_name="solar azimuth angle", standard_name="solar_azimuth_angle",
                      comment="clockwise from north"),
             sza=dict(units="degree", long_name="solar zenith angle", standard_name="solar_zenith_angle",
                      comment="0 deg = zenith"),
         )
 
-        # set up meta data dictionaries for terrestrial (longwave) flux
+        # set up metadata dictionaries for terrestrial (longwave) flux
         var_attrs_terrestrial = dict(
             albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
             altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
@@ -195,7 +192,7 @@ if __name__ == "__main__":
             references="Emde et al. 2016, 10.5194/gmd-9-1647-2016",
         )
 
-        encoding = dict(time=dict(units='seconds since 2021-01-01'))
+        encoding = dict(time=dict(units='seconds since 2017-01-01'))
 
         ds = output.to_xarray()  # convert dataframe to dataset
         ds.attrs = attributes  # assign global attributes
