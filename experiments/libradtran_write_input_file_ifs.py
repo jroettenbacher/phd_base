@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     # %% user input
     campaign = "halo-ac3"
-    flight_key = "RF17"
+    flight_key = "RF18"
     flight = meta.flight_names[flight_key]
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
@@ -152,10 +152,10 @@ if __name__ == "__main__":
         #         # calculate cosine of solar zenith angle
         #         cos_sza = np.cos(np.deg2rad(
         #             solar_position.get_sza(decimal_hour, lat, lon, year, month, day, pres, temp - 273.15)))
-        #         # calculate albedo after Taylor et al 1996 for sea surface
+        #         # calculate albedo after Taylor et al. 1996 for sea surface
         #         calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
 
-        # %% internal variables
+        # %% filepaths
         input_filepath = f"{input_path}/{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
         atmosphere_filepath = f"{atmosphere_path}/{dt_timestamp:%Y%m%d_%H%M%S}_atmosphere.inp"
         albedo_filepath = f"{albedo_path}/{dt_timestamp:%Y%m%d_%H%M%S}_albedo.inp"
@@ -206,7 +206,7 @@ if __name__ == "__main__":
             )
         else:
             postprocess_settings = dict(
-                output_user="lambda sza zout albedo spher_alb edir edn eup p T CLWC CIWC",  # page 109
+                output_user="lambda sza zout albedo edir edn eup p T CLWD CIWD",  # page 109
             )
 
         # %% write input file
