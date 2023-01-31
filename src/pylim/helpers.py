@@ -396,3 +396,18 @@ def generate_specific_rows(filePath, userows=[]):
             if i in userows:
                 yield line
 
+
+def make_flag(boolean_array, name: str):
+    """
+    Make a list of flag values for plotting using a boolean array as input
+
+    Args:
+        boolean_array: array like input with True and False
+        name: replace True with this string
+
+    Returns: list with as many strings as there are True values in the input array
+
+    """
+    array = np.array(boolean_array)  # convert to numpy.ndarray
+    return [str(a).replace("True", name) for a in array if a]
+
