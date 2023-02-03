@@ -585,8 +585,11 @@ plt.close()
 # %% plot transmissivity calculated from BACARDI and libRadtran
 h.set_cb_friendly_colors()
 bacardi_plot = bacardi_ds["transmissivity_solar"].sel(time=below_slice)
+bacardi_error = bacardi_plot * 0.03
 _, ax = plt.subplots(figsize=figsize_wide)
 ax.plot(bacardi_plot.time, bacardi_plot, label="Transmissivity", marker=".", c=cbc[3])
+ax.fill_between(bacardi_error.time, bacardi_plot + bacardi_error, bacardi_plot - bacardi_error,
+                color=cbc[3], alpha=0.5)
 ax.axhline(y=1, color="#888888")
 ax.grid()
 h.set_xticks_and_xlabels(ax, time_extend_ac)
@@ -1547,8 +1550,9 @@ for i in range(4):
     x, y = bacardi_vars[i], ecrad_vars[i]
     rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
     bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
-    _, ax = plt.subplots(figsize=figsize_equal)
-    ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
+    _, ax = plt.subplots(figsize=(12*cm, 10*cm))
+    scatter = ax.scatter(bacardi_plot[x], ecrad_plot[y], c=bacardi_plot.sza)
+    plt.colorbar(scatter, shrink=1, label="Solar Zenith Angle (°)")
     ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
     ax.set_ylim(lims[i])
     ax.set_xlim(lims[i])
@@ -1594,7 +1598,35 @@ ecrad_bacardi_raw = ecrad_bacardi.where(drop_nans, drop=True)
 sza = bacardi_plot["sza"].where(drop_nans, drop=True)
 pearsonr(sza, ecrad_bacardi_raw["F_down_solar"])
 
-# %% compare Fdw terrestrial along the flight track
+# %% plot Fdw solar along the flight track ecRad and BACARDI
+bacardi_plot = bacardi_ds_res
+ecrad_plot = ecrad_ds.isel(half_level=height_level_da)
+i = 0
+_, ax = plt.subplots(figsize=figsize_wide)
+for i in range(0, 4, 2):
+    x, y = bacardi_vars[i], ecrad_vars[i]
+    ax.plot(ecrad_plot.time, ecrad_plot[y], c=cbc[i+4], label=f"ecRad {labels[x]}", ls="", marker=".")
+    ax.plot(bacardi_plot.time, bacardi_plot[x], c=cbc[i], label=f"BACARDI {labels[x]}")
+ax.axvline(below_cloud["start"], 0, 1, color=cbc[11])
+ax.axvline(below_cloud["end"], 0, 1, color=cbc[11])
+ax.annotate("Below Cloud",
+            xy=(0.52, 0.6), xycoords='axes fraction',
+            xytext=(25, 2), textcoords='offset points',
+            arrowprops=dict(arrowstyle="->",
+                            connectionstyle="arc3"),
+            )
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+ax.set_title(f"Solar Broadband Irradiance - BACARDI and ecRad RF17")
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.grid()
+ax.legend(ncol=2)
+plt.tight_layout()
+plt.savefig(f"{plot_path}/{halo_flight}_bacardi_ecrad_fluxes_time_series.png", dpi=300)
+plt.show()
+plt.close()
+
+# %% plot Fdw terrestrial along the flight track
 bacardi_plot = bacardi_ds_res.where(above_sel)
 ecrad_plot = ecrad_ds.isel(half_level=height_level_da)
 ecrad_plot = ecrad_plot.where(above_sel)
@@ -1642,7 +1674,7 @@ plt.savefig(f"{plot_path}/{halo_flight}_{names[i]}_ecrad-bacardi_timeseries_abov
 plt.show()
 plt.close()
 
-# %% compare transmissivity ecRad vs BACARDI along track below cloud
+# %% plot transmissivity ecRad vs BACARDI along track below cloud
 var = ["transmissivity_solar", "transmissivity_sw"]
 bacardi_plot = bacardi_ds_res.sel(time=below_slice)
 bacardi_plot2 = bacardi_ds.sel(time=below_slice)
@@ -1655,7 +1687,7 @@ ax.plot(bacardi_plot2.time, bacardi_plot2[var[0]], c=cbc[3], label="BACARDI full
 ax.fill_between(bacardi_error.time, bacardi_plot2[var[0]] + bacardi_error, bacardi_plot2[var[0]] - bacardi_error,
                 color=cbc[3], alpha=0.5)
 ax.plot(bacardi_plot.time, bacardi_plot[var[0]], c=cbc[5], label="BACARDI resampled", marker="o")
-ax.plot(ecrad_plot.time, ecrad_plot[var[1]], c=cbc[2], label="ecRad", marker="o", ls="")
+ax.plot(ecrad_plot.time, ecrad_plot[var[1]], c=cbc[4], label="ecRad", marker="o", ls="")
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Transmissivity")
 ax.grid()
@@ -1671,7 +1703,7 @@ plt.savefig(f"{plot_path}/{halo_flight}_bacardi_vs_ecrad_{var[0]}_time_series_be
 plt.show()
 plt.close()
 
-# %% compare transmissivity ecRad vs BACARDI scatter below cloud
+# %% plot transmissivity ecRad vs BACARDI scatter below cloud
 bacardi_plot = bacardi_ds_res.sel(time=below_slice)
 ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=below_slice)
 _, ax = plt.subplots(figsize=figsize_equal)
