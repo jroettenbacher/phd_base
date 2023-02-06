@@ -63,6 +63,8 @@ trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC
 ifs_path = f"{h.get_path('ifs', campaign=campaign)}"
 ecrad_path = f"{h.get_path('ecrad', campaign=campaign)}/{date}"
 ecrad_file = "ecrad_merged_inout_20220411_v1_mean.nc"
+radar_path = h.get_path("hamp_mira", halo_flight, campaign)
+radar_file = "radar_20220411_v1.6.nc"
 
 # set up metadata for access to HALO-AC3 cloud
 kwds = {'simplecache': dict(same_names=True)}
@@ -136,6 +138,11 @@ ecrad_ds["re_liquid"] = ecrad_ds.re_liquid.where(ecrad_ds.re_liquid != 4.000001e
 # mean or std over columns
 # ecrad_ds = ecrad_ds.mean std(dim="column")
 # ecrad_ds.to_netcdf(f"{ecrad_path}/{ecrad_file.replace('.nc', '_mean std.nc')}")
+
+# %% read in radar data
+radar_ds = xr.open_dataset(f"{radar_path}/{radar_file}")
+# filter -888 values
+radar_ds["dBZg"] = radar_ds.dBZg.where(np.isnan(radar_ds.radar_flag) & ~radar_ds.dBZg.isin(-888))
 
 # %% cut data to smart time
 time_slice = slice(smart_ds.time[0].values, smart_ds.time[-1].values)
@@ -247,6 +254,10 @@ mciz_mask = (ecrad_ds.CI > 0.15) & (ecrad_ds.CI < 0.8)
 cirrus_only = ((hc_st[1] < bt) & (hc_end[1] > bt)) | ((hc_st[2] < bt) & (hc_end[2] > bt))
 cirrus_over_ci = cirrus_only & ci_mask
 cirrus_over_sea = ((cirrus_only & ~ci_mask) & ~mciz_mask) & lsm
+
+# %% create in cloud flag from radar data
+radar_flag = radar_ds.dBZg.count(dim="height")
+in_cloud = radar_flag.sel(time=below_slice) > 2  # use two because there are two small points below the cloud
 
 # %% plotting variables
 time_extend = pd.to_timedelta((ins.time[-1] - ins.time[0]).values)  # get time extend for x-axis labeling
@@ -2494,3 +2505,29 @@ figname = f"{plot_path}/{halo_flight}_BACARDI_ecRad_Fup_terrestrial_time_series_
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
+
+# %% plot radar data below cloud
+radar_plot = radar_ds.sel(time=below_slice)
+radar_plot.dBZg.plot(x="time", y="height", cmap="viridis", robust=True, figsize=figsize_wide)
+radar_ds.alt.sel(time=below_slice).plot(label="HALO altitude", c=cbc[-1])
+plt.ylim(0, 5000)
+plt.show()
+plt.close()
+
+# %% plot radar flag below cloud
+radar_flag_plot = radar_flag.sel(time=below_slice)
+_, ax = plt.subplots(figsize=figsize_wide)
+ax.plot(radar_flag_plot.time, radar_flag_plot, marker="o", markersize=2, ls="", color=cbc[6])
+ax.set_ylim(0, 10)
+ax.grid()
+plt.show()
+plt.close()
+
+# %% plot radar data according to in cloud flag
+radar_plot = radar_ds.dBZg.where(in_cloud)
+radar_plot.plot(x="time", y="height", cmap="viridis", robust=True, figsize=figsize_wide)
+radar_ds.alt.sel(time=below_slice).plot(label="HALO altitude", c=cbc[-1])
+plt.ylim(0, 5000)
+plt.show()
+plt.close()
+

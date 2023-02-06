@@ -367,10 +367,6 @@ def seconds_to_fstring(time_diff):
 def read_command_line_args():
     """
     Read out command line arguments and save them to a dictionary. Expects arguments in the form key=value.
-    Working key value pairs:
-
-    - t_interp=t/f
-    - date=yyyymmdd
 
     Returns: dictionary with command line arguments as dict[key] = value
 
