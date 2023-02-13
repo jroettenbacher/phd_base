@@ -15,11 +15,15 @@ from pylim import smart, reader
 import ac3airborne
 from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
 from ac3airborne.tools import flightphase
+import sys
+sys.path.append('./larda')
+from larda.pyLARDA.spec2mom_limrad94 import despeckle
 import os
 import xarray as xr
 import pandas as pd
 import numpy as np
 from scipy.stats import pearsonr
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.gridspec as gridspec
@@ -33,6 +37,7 @@ import cmasher as cmr
 
 cm = 1 / 2.54
 cbc = h.get_cb_friendly_colors()
+matplotlib.use('module://backend_interagg')
 
 # %% set paths
 campaign = "halo-ac3"
@@ -65,6 +70,8 @@ ecrad_path = f"{h.get_path('ecrad', campaign=campaign)}/{date}"
 ecrad_file = "ecrad_merged_inout_20220411_v1_mean.nc"
 radar_path = h.get_path("hamp_mira", halo_flight, campaign)
 radar_file = "radar_20220411_v1.6.nc"
+lidar_path = h.get_path("wales", halo_flight, campaign)
+bsrgl_file = "HALO-AC3_HALO_WALES_bsrgl_20220411_RF17_V1.nc"
 
 # set up metadata for access to HALO-AC3 cloud
 kwds = {'simplecache': dict(same_names=True)}
@@ -113,6 +120,7 @@ sza = bacardi_ds.sza
 # bahamas_ds = bahamas_ds.resample(time="1S").mean()
 # bacardi_ds.to_netcdf(f"{bacardi_path}/{bacardi_file.replace('.nc', '_1s.nc')}")
 # bahamas_ds.to_netcdf(f"{bahamas_path}/{bahamas_file.replace('.nc', '_1s.nc')}")
+print("")
 
 # %% read in libRadtran simulation
 spectral_sim = xr.open_dataset(f"{libradtran_path}/{libradtran_spectral}")
@@ -129,6 +137,7 @@ fdw_inp = bb_sim_solar_si.fdw.interp(time=bacardi_ds.time)  # interpolate simula
 # era5_files = [os.path.join(era5_path, f) for f in os.listdir(era5_path) if f"P20220411" in f]
 # era5_files.sort()
 # era5_ds = xr.open_mfdataset(era5_files)
+print("")
 
 # %% read in ecrad data
 ecrad_ds = xr.open_dataset(f"{ecrad_path}/{ecrad_file}")
@@ -138,11 +147,37 @@ ecrad_ds["re_liquid"] = ecrad_ds.re_liquid.where(ecrad_ds.re_liquid != 4.000001e
 # mean or std over columns
 # ecrad_ds = ecrad_ds.mean std(dim="column")
 # ecrad_ds.to_netcdf(f"{ecrad_path}/{ecrad_file.replace('.nc', '_mean std.nc')}")
+print("")
 
 # %% read in radar data
 radar_ds = xr.open_dataset(f"{radar_path}/{radar_file}")
 # filter -888 values
 radar_ds["dBZg"] = radar_ds.dBZg.where(np.isnan(radar_ds.radar_flag) & ~radar_ds.dBZg.isin(-888))
+
+# %% read in lidar data
+lidar_ds = xr.open_dataset(f"{lidar_path}/{bsrgl_file}")  # sensitive to clouds
+lidar_ds_res = xr.open_dataset(f"{lidar_path}/{bsrgl_file.replace('.nc', '_1s.nc')}").reset_coords("altitude")
+# lidar_ds_res = lidar_ds.resample(time="1S").asfreq()
+# lidar_ds_res.to_netcdf(f"{lidar_path}/{bsrgl_file.replace('.nc', '_1s_.nc')}")
+print("")
+
+# %% despeckle lidar data and add a speckle mask to the data set
+lidar_ds_res["mask"] = ~(lidar_ds_res.backscatter_ratio > 1.1)
+lidar_mask = lidar_ds_res["mask"].values.T
+n = 0
+while n < 17:
+    # despeckle 17 times
+    lidar_mask = despeckle(lidar_mask, 50)  # despeckle again
+    n += 1
+    # plt.pcolormesh(lidar_mask)
+    # plt.title(n)
+    # plt.savefig(f"{plot_path}/tmp/despeckle_{n}.png")
+    # plt.close()
+lidar_ds_res["spklmask"] = (["range", "time"], lidar_mask)
+
+# %% interpolate lidar data onto radar range resolution
+new_range = radar_ds.height.values
+lidar_ds_res_r = lidar_ds_res.interp(range=new_range)
 
 # %% cut data to smart time
 time_slice = slice(smart_ds.time[0].values, smart_ds.time[-1].values)
@@ -2531,3 +2566,119 @@ plt.ylim(0, 5000)
 plt.show()
 plt.close()
 
+# %% plot 1s lidar data whole flight
+lidar_plot = lidar_ds_res.backscatter_ratio
+_, ax = plt.subplots(figsize=figsize_wide)
+lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
+ax.invert_yaxis()
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Range from aircraft (m)")
+ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot original lidar data whole flight -> will fill gaps forward (bad)
+lidar_plot = lidar_ds.backscatter_ratio
+_, ax = plt.subplots(figsize=figsize_wide)
+lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
+ax.invert_yaxis()
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\noriginal")
+plt.show()
+plt.close()
+
+# %% plot radar data whole flight
+radar_plot = radar_ds
+_, ax = plt.subplots(figsize=figsize_wide)
+radar_plot.dBZg.plot(x="time", y="height", cmap="viridis", robust=True, ax=ax)
+radar_ds.alt.plot(label="HALO altitude", c=cbc[-1], ax=ax)
+ax.legend()
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (m)")
+ax.set_title(f"{halo_key} MIRA reflectivity factor")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_MIRA_reflectivity_factor.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot filtered 1s lidar data whole flight as used for cloud mask
+for mask_value in [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
+    lidar_plot = lidar_ds_res.backscatter_ratio.where(lidar_ds_res.backscatter_ratio > mask_value)
+    _, ax = plt.subplots(figsize=figsize_wide)
+    lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
+    ax.invert_yaxis()
+    h.set_xticks_and_xlabels(ax, time_extend)
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Range from aircraft (m)")
+    ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with {mask_value}")
+    plt.tight_layout()
+    figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_cloud_mask_{mask_value}.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% plot despeckled lidar data
+lidar_plot = lidar_ds_res.backscatter_ratio.where(~lidar_ds_res["mask"]).where(~lidar_ds_res["spklmask"])
+_, ax = plt.subplots(figsize=figsize_wide)
+lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
+ax.invert_yaxis()
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Range from aircraft (m)")
+ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_despeckled.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot interpolated lidar data
+lidar_mask = (lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"])
+lidar_plot = lidar_ds_res_r.backscatter_ratio.where(~lidar_mask)
+_, ax = plt.subplots(figsize=figsize_wide)
+lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
+ax.invert_yaxis()
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Range from aircraft (m)")
+ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled, interpolated")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_30m.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% create radar mask
+radar_ds["mask"] = ~np.isnan(radar_ds["dBZg"])
+
+# %% combine radar and lidar mask
+lidar_mask = ~(lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"]).rename(dict(range="height"))
+lidar_mask["height"] = np.flip(radar_ds.height.values)
+lidar_mask = lidar_mask.where(lidar_mask == 0, 2)
+radar_lidar_mask = radar_ds["mask"] + lidar_mask
+
+# %% plot combined radar and lidar mask
+plot_ds = radar_lidar_mask
+clabel = [x[0] for x in h._CLABEL["detection_status"]]
+cbar = [x[1] for x in h._CLABEL["detection_status"]]
+clabel = list([clabel[-1], clabel[5], clabel[1], clabel[3]])
+cbar = list([cbar[-1], cbar[5], cbar[1], cbar[3]])
+cmap = colors.ListedColormap(cbar)
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+pcm.colorbar.set_ticks(np.arange(len(clabel)), labels=clabel)
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Range from aircraft (m)")
+ax.set_title(f"{halo_key} combined radar lidar mask")
+plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_radar_lidar_mask.png"
+# plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()

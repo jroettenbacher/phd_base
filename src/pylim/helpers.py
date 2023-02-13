@@ -407,3 +407,61 @@ def make_flag(boolean_array, name: str):
     array = np.array(boolean_array)  # convert to numpy.ndarray
     return [str(a).replace("True", name) for a in array if a]
 
+
+_COLORS = {
+    "green": "#3cb371",
+    "darkgreen": "#253A24",
+    "lightgreen": "#70EB5D",
+    "yellowgreen": "#C7FA3A",
+    "yellow": "#FFE744",
+    "orange": "#ffa500",
+    "pink": "#B43757",
+    "red": "#F57150",
+    "shockred": "#E64A23",
+    "seaweed": "#646F5E",
+    "seaweed_roll": "#748269",
+    "white": "#ffffff",
+    "lightblue": "#6CFFEC",
+    "blue": "#209FF3",
+    "skyblue": "#CDF5F6",
+    "darksky": "#76A9AB",
+    "darkpurple": "#464AB9",
+    "lightpurple": "#6A5ACD",
+    "purple": "#BF9AFF",
+    "darkgray": "#2f4f4f",
+    "lightgray": "#ECECEC",
+    "gray": "#d3d3d3",
+    "lightbrown": "#CEBC89",
+    "lightsteel": "#a0b0bb",
+    "steelblue": "#4682b4",
+    "mask": "#C8C8C8",
+}
+
+_CLABEL = {
+    "target_classification": (
+        ("_Clear sky", _COLORS["white"]),
+        ("Droplets", _COLORS["lightblue"]),
+        ("Drizzle or rain", _COLORS["blue"]),
+        ("Drizzle & droplets", _COLORS["purple"]),
+        ("Ice", _COLORS["lightsteel"]),
+        ("Ice & droplets", _COLORS["darkpurple"]),
+        ("Melting ice", _COLORS["orange"]),
+        ("Melting & droplets", _COLORS["yellowgreen"]),
+        ("Aerosols", _COLORS["lightbrown"]),
+        ("Insects", _COLORS["shockred"]),
+        ("Aerosols & insects", _COLORS["pink"]),
+        ("No data", _COLORS["mask"]),
+    ),
+    "detection_status": (
+        ("_Clear sky", _COLORS["white"]),
+        ("Lidar only", _COLORS["yellow"]),
+        ("Uncorrected atten.", _COLORS["seaweed_roll"]),
+        ("Radar & lidar", _COLORS["green"]),
+        ("_No radar but unknown atten.", _COLORS["purple"]),
+        ("Radar only", _COLORS["lightgreen"]),
+        ("_No radar but known atten.", _COLORS["orange"]),
+        ("Corrected atten.", _COLORS["skyblue"]),
+        ("Clutter", _COLORS["shockred"]),
+        ("_Lidar molecular scattering", _COLORS["pink"]),
+        ("No data", _COLORS["mask"]),)
+}
