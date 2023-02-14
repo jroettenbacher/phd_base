@@ -8,3 +8,6 @@
 [submodule "how_to_ac3airborne"]
 	path = how_to_ac3airborne
 	url = https://github.com/jroettenbacher/how_to_ac3airborne.git
+[submodule "larda"]
+	path = larda
+	url = https://github.com/jroettenbacher/larda.git
