@@ -357,6 +357,7 @@ time_extend = pd.to_timedelta((ins.time[-1] - ins.time[0]).values)  # get time e
 time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 time_extend_ac = (above_cloud["end"] - above_cloud["start"])
 time_extend_bc = below_cloud["end"] - below_cloud["start"]
+plt.rcdefaults()
 h.set_cb_friendly_colors()
 plt.rc("font", size=12)
 figsize_wide = (24 * cm, 12 * cm)
@@ -1210,7 +1211,7 @@ ax.text(x_longyear + 0.1, y_longyear + 0.1, "Longyearbyen", fontsize=11, transfo
 plt.tight_layout()
 
 figname = f"{plot_path}/{halo_flight}_dropsonde_rh_map.png"
-# plt.savefig(figname, dpi=300)
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
@@ -2752,6 +2753,31 @@ plt.show()
 plt.close()
 
 # %% find cloud bases and tops from lidar mask
+mask = ~lidar_ds_res["fill_mask"]
+cloud_props_lidar, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
+bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
+
+# %% plot bases tops
+plot_ds = bases_tops
+clabel = list(["bases", "no data", "tops"])
+cbar = list([cbc[1], "#ffffff", cbc[-2]])
+cmap = colors.ListedColormap(cbar)
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
+pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (m)")
+ax.set_title(f"{halo_key} cloud bases and tops")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bases_tops_lidar.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% find cloud bases and tops from lidar mask resampled to 30m
 mask = ~lidar_ds_res_r["fill_mask"]
 cloud_props, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
 bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
@@ -2829,6 +2855,159 @@ ax.set_ylabel("Relative Humidity (%)")
 h.set_xticks_and_xlabels(ax, time_extend_cs)
 plt.tight_layout()
 figname = f"{plot_path}/{halo_flight}_BAHAMAS_RH_case_study.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot combined radar and lidar mask with dropsonde locations
+plot_ds = radar_lidar_mask
+clabel = [x[0] for x in h._CLABEL["detection_status"]]
+cbar = [x[1] for x in h._CLABEL["detection_status"]]
+clabel = list([clabel[-1], clabel[5], clabel[1], clabel[3]])
+cbar = list([cbar[-1], cbar[5], cbar[1], cbar[3]])
+cmap = colors.ListedColormap(cbar)
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+pcm.colorbar.set_ticks(np.arange(len(clabel)), labels=clabel)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.vlines(dropsonde_ds.launch_time.values, 0, 1, transform=ax.get_xaxis_transform(), color=cbc[1], label="Dropsonde")
+ax.legend(loc=2)
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (m)")
+ax.set_title(f"{halo_key} combined radar lidar mask")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_radar_lidar_mask_dropsondes.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% group lidar cloud bases and tops in three altitude layers (low, mid, high)
+altitude_layers = (0, 1000, 4000, 12000)
+layer_labels = ["low(-1km)", "mid(-4km)", "high(-12km)"]
+bases = bases_tops == -1
+bases_per_layer_lidar = bases.groupby_bins("height", bins=altitude_layers, labels=layer_labels).sum()
+
+# %% plot bases per layer
+plot_ds = bases_per_layer_lidar
+cbar = cbc[:7]
+cmap = colors.ListedColormap(cbar)
+time_axis = np.append(plot_ds.time[0] - pd.Timedelta("1S"), plot_ds.time)
+X, Y = np.meshgrid(time_axis, np.array([0, 1, 4, 12]))
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = ax.pcolormesh(X, Y, plot_ds.values.T, cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+plt.colorbar(pcm)
+ax.set_yticks((1, 4, 12))
+ax.set_title("Number of cloud bases in different altitude layers (Lidar)")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (km)")
+h.set_xticks_and_xlabels(ax, time_extend)
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bases_tops_layered.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% resample height grouped cloud bases into minutely bins
+bases_binned_lidar = bases_per_layer_lidar.resample(time="1Min").median()
+
+# %% plot minutely median of altitude binned bases
+plot_ds = bases_binned_lidar
+cbar = cbc[:7]
+cmap = colors.ListedColormap(cbar)
+time_axis = np.append(plot_ds.time[0] - pd.Timedelta("1S"), plot_ds.time)
+X, Y = np.meshgrid(time_axis, np.array([0, 1, 4, 12]))
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = ax.pcolormesh(X, Y, plot_ds.values.T, cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+plt.colorbar(pcm)
+ax.set_yticks((1, 4, 12))
+ax.set_title("Number of cloud bases in different altitude layers (Lidar) \nminutely median")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (km)")
+h.set_xticks_and_xlabels(ax, time_extend)
+plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_bases_tops_layered_1min.png"
+# plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% group radar cloud bases and tops in three altitude layers (low, mid, high)
+altitude_layers = (0, 1000, 4000, 12000)
+layer_labels = ["low(-1km)", "mid(-4km)", "high(-12km)"]
+bases = bases_tops_radar == -1
+bases_per_layer = bases.groupby_bins("height", bins=altitude_layers, labels=layer_labels).sum()
+
+# %% plot bases per layer
+cbar = cbc[:7]
+cmap = colors.ListedColormap(cbar)
+time_axis = np.append(bases_per_layer.time[0] - pd.Timedelta("1S"), bases_per_layer.time)
+X, Y = np.meshgrid(time_axis, np.array([0, 1, 4, 12]))
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = ax.pcolormesh(X, Y, bases_per_layer.values.T, cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+plt.colorbar(pcm)
+ax.set_yticks((1, 4, 12))
+ax.set_title("Number of cloud bases in different altitude layers (Radar)")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (km)")
+h.set_xticks_and_xlabels(ax, time_extend)
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bases_tops_layered_radar.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% resample height grouped cloud bases into minutely bins
+bases_binned = bases_per_layer.resample(time="1Min").median()
+
+# %% plot minutely median of altitude binned bases
+cbar = cbc[:7]
+cmap = colors.ListedColormap(cbar)
+time_axis = np.append(bases_binned.time[0] - pd.Timedelta("1S"), bases_binned.time)
+X, Y = np.meshgrid(time_axis, np.array([0, 1, 4, 12]))
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = ax.pcolormesh(X, Y, bases_binned.values.T, cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+plt.colorbar(pcm)
+ax.set_yticks((1, 4, 12))
+ax.set_title("Number of cloud bases in different altitude layers\nminutely median (Radar)")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (km)")
+h.set_xticks_and_xlabels(ax, time_extend)
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bases_tops_layered_1min_radar.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% turn cloud props into a dataframe and filter clouds which only span over two pixels
+cloud_props_df = pd.DataFrame([w["width"] for w in cloud_props_lidar], index=lidar_ds_res.time)
+cloud_props_df_filtered = cloud_props_df.where(cloud_props_df > 60)
+base_height_df = pd.DataFrame([w["val_cb"] for w in cloud_props_lidar], index=lidar_ds_res.time)
+base_height_df = base_height_df.where(~np.isnan(cloud_props_df_filtered))
+df1 = base_height_df.apply(lambda x: x < 1000).agg("sum", axis=1)
+df2 = base_height_df.apply(lambda x: ((x > 1000) & (x < 4000))).agg("sum", axis=1)
+df3 = base_height_df.apply(lambda x: x > 4000).agg("sum", axis=1)
+df = pd.concat([df1, df2, df3], axis=1)
+df.columns = layer_labels
+df = df.stack()
+df.index.names = ["time", "layer"]
+ds = df.to_xarray()
+
+# %% plot filtered altitude binned cloud bases
+plot_ds = ds
+cbar = cbc[:7]
+cmap = colors.ListedColormap(cbar)
+time_axis = np.append(plot_ds.time[0] - pd.Timedelta("1S"), plot_ds.time)
+X, Y = np.meshgrid(time_axis, np.array([0, 1, 4, 12]))
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = ax.pcolormesh(X, Y, plot_ds.values.T, cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
+plt.colorbar(pcm)
+ax.set_yticks((1, 4, 12))
+ax.set_title("Number of cloud bases in different altitude layers\nfiltered by cloud depth (Lidar)")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (km)")
+h.set_xticks_and_xlabels(ax, time_extend)
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bases_tops_layered_lidar_filtered.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
