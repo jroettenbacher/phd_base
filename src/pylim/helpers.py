@@ -5,6 +5,7 @@
 """
 import os
 import sys
+from itertools import groupby
 import toml
 import numpy as np
 import matplotlib
@@ -406,6 +407,40 @@ def make_flag(boolean_array, name: str):
     """
     array = np.array(boolean_array)  # convert to numpy.ndarray
     return [str(a).replace("True", name) for a in array if a]
+
+
+def find_bases_tops(mask, rg_list):
+    """
+    This function finds cloud bases and tops for a provided binary cloud mask.
+    Args:
+        mask (np.array, dtype=bool) : bool array containing False = signal, True=no-signal
+        rg_list (np.ndarray) : array of range values
+
+    Returns:
+        cloud_prop (list) : list containing a dict for every time step consisting of cloud bases/top indices, range and width
+        cloud_mask (np.array) : integer array, containing +1 for cloud tops, -1 for cloud bases and 0 for fill_value
+    """
+    cloud_prop = []
+    cloud_mask = np.full(mask.shape, 0, dtype=np.int)
+    # bug fix: add an emtpy first range gate to detect cloud bases of clouds which start at the first range gate
+    mask = np.hstack((np.full_like(mask, fill_value=True)[:, 0:1], mask))
+    for iT in range(mask.shape[0]):
+        cloud = [(k, sum(1 for j in g)) for k, g in groupby(mask[iT, :])]
+        idx_cloud_edges = np.cumsum([prop[1] for prop in cloud])
+        bases, tops = idx_cloud_edges[0:][::2][:-1], idx_cloud_edges[1:][::2]
+        if tops.size > 0:
+            tops = [t - 1 for t in tops]  # reduce top indices by 1 to account for the introduced row
+            if tops[-1] == cloud_mask.shape[1]:
+                tops[-1] = cloud_mask.shape[1] - 1  # account for python starting counting at 0
+        if bases.size > 0:
+            bases = [b - 1 for b in bases]  # reduce base indices by 1 to account for the introduced row
+        cloud_mask[iT, bases] = -1
+        cloud_mask[iT, tops] = +1
+        cloud_prop.append({'idx_cb': bases, 'val_cb': rg_list[bases],  # cloud bases
+                           'idx_ct': tops, 'val_ct': rg_list[tops],  # cloud tops
+                           'width': [ct - cb for ct, cb in zip(rg_list[tops], rg_list[bases])]
+                           })
+    return cloud_prop, cloud_mask
 
 
 _COLORS = {

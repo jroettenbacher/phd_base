@@ -154,30 +154,84 @@ radar_ds = xr.open_dataset(f"{radar_path}/{radar_file}")
 # filter -888 values
 radar_ds["dBZg"] = radar_ds.dBZg.where(np.isnan(radar_ds.radar_flag) & ~radar_ds.dBZg.isin(-888))
 
+# %% create radar mask and despeckle radar data
+radar_ds["mask"] = ~np.isnan(radar_ds["dBZg"])
+radar_mask = ~radar_ds["mask"].values
+for n in tqdm(range(2)):
+    # despeckle 2 times
+    radar_mask = despeckle(radar_mask, 50)  # despeckle again
+    # plt.pcolormesh(radar_mask.T)
+    # plt.title(n + 1)
+    # plt.savefig(f"{plot_path}/tmp/radar_despeckle_{n + 1}.png")
+    # plt.close()
+
+radar_ds["spklmask"] = (["time", "height"], radar_mask)
+
+# %% use despeckle the reverse way to fill signal gaps in radar data and add it as a mask
+radar_mask = ~radar_ds["spklmask"].values
+n = 0
+for n in tqdm(range(17)):
+    # fill gaps 17 times
+    radar_mask = despeckle(radar_mask, 50)  # fill gaps again
+    plt.pcolormesh(radar_mask.T)
+    plt.title(n + 1)
+    plt.savefig(f"{plot_path}/tmp/radar_fill_gaps_{n + 1}.png")
+    plt.close()
+
+radar_ds["fill_mask"] = (["time", "height"], radar_mask)
+
 # %% read in lidar data
 lidar_ds = xr.open_dataset(f"{lidar_path}/{bsrgl_file}")  # sensitive to clouds
 lidar_ds_res = xr.open_dataset(f"{lidar_path}/{bsrgl_file.replace('.nc', '_1s.nc')}").reset_coords("altitude")
 # lidar_ds_res = lidar_ds.resample(time="1S").asfreq()
 # lidar_ds_res.to_netcdf(f"{lidar_path}/{bsrgl_file.replace('.nc', '_1s_.nc')}")
-print("")
+# convert lidar data to radar convention: [time, height], ground = 0m
+lidar_ds_res = lidar_ds_res.rename(range="height").transpose("time", "height")
+lidar_height = lidar_ds_res.height
+# flip height coordinate
+lidar_ds_res = lidar_ds_res.assign_coords(height=np.flip(lidar_height)).isel(height=slice(None, None, -1))
 
 # %% despeckle lidar data and add a speckle mask to the data set
 lidar_ds_res["mask"] = ~(lidar_ds_res.backscatter_ratio > 1.1)
-lidar_mask = lidar_ds_res["mask"].values.T
+lidar_mask = lidar_ds_res["mask"].values
 n = 0
-while n < 17:
+for n in tqdm(range(17)):
     # despeckle 17 times
     lidar_mask = despeckle(lidar_mask, 50)  # despeckle again
-    n += 1
-    # plt.pcolormesh(lidar_mask)
-    # plt.title(n)
-    # plt.savefig(f"{plot_path}/tmp/despeckle_{n}.png")
+    # plt.pcolormesh(lidar_mask.T)
+    # plt.title(n + 1)
+    # plt.savefig(f"{plot_path}/tmp/despeckle_{n + 1}.png")
     # plt.close()
-lidar_ds_res["spklmask"] = (["range", "time"], lidar_mask)
+
+lidar_ds_res["spklmask"] = (["time", "height"], lidar_mask)
+
+# %% use despeckle the reverse way to fill signal gaps in lidar data and add it as a mask
+lidar_mask = ~lidar_ds_res["spklmask"].values
+n = 0
+for n in tqdm(range(17)):
+    # fill gaps 17 times
+    lidar_mask = despeckle(lidar_mask, 50)  # fill gaps again
+    # plt.pcolormesh(lidar_mask.T)
+    # plt.title(n + 1)
+    # plt.savefig(f"{plot_path}/tmp/fill_gaps_{n + 1}.png")
+    # plt.close()
+
+lidar_ds_res["fill_mask"] = (["time", "height"], lidar_mask)
+
+# %% despeckle fill mask
+lidar_mask = ~lidar_ds_res["fill_mask"].values
+for n in tqdm(range(8)):
+    # plt.pcolormesh(lidar_mask.T)
+    # plt.title(n + 1)
+    # plt.savefig(f"{plot_path}/tmp/fill_gaps_despeckled_{n + 1}.png")
+    # plt.close()
+    lidar_mask = despeckle(lidar_mask, 50)  # despeckle again
+
+lidar_ds_res["fill_mask"] = (["time", "height"], ~lidar_mask)
 
 # %% interpolate lidar data onto radar range resolution
 new_range = radar_ds.height.values
-lidar_ds_res_r = lidar_ds_res.interp(range=new_range)
+lidar_ds_res_r = lidar_ds_res.interp(height=new_range)
 
 # %% cut data to smart time
 time_slice = slice(smart_ds.time[0].values, smart_ds.time[-1].values)
@@ -415,10 +469,12 @@ sza_plot = sza.sel(time=above_slice)
 plt.rc("font", size=10)
 _, ax = plt.subplots(figsize=(18 * cm, 8 * cm))
 ax.plot(bacardi_ds_slice.time, bacardi_ds_slice[var1], label=labels[var1], c=cbc[0])
-ax.fill_between(bacardi_error.time, bacardi_plot2[var1] + bacardi_error[var1], bacardi_plot2[var1] - bacardi_error[var1],
+ax.fill_between(bacardi_error.time, bacardi_plot2[var1] + bacardi_error[var1],
+                bacardi_plot2[var1] - bacardi_error[var1],
                 color=cbc[0], alpha=0.5)
 ax.plot(bacardi_ds_slice.time, bacardi_ds_slice[var2], label=labels[var2], c=cbc[2])
-ax.fill_between(bacardi_error.time, bacardi_plot2[var2] + bacardi_error[var2], bacardi_plot2[var2] - bacardi_error[var2],
+ax.fill_between(bacardi_error.time, bacardi_plot2[var2] + bacardi_error[var2],
+                bacardi_plot2[var2] - bacardi_error[var2],
                 color=cbc[2], alpha=0.5)
 ax.set_ylim(100, 260)
 ax.grid()
@@ -592,10 +648,10 @@ ax.set_xlabel("BACARDI Broadband Irradiance (W$\,$m$^{-2}$)")
 ax.set_ylabel("libRadtran Broadband Irradiance (W$\,$m$^{-2}$)")
 ax.set_title("Solar downward irradiance\nabove cloud whole flight - RF17")
 ax.text(0.025, 0.95, f"# points: {sum(~np.isnan(bacardi_plot['F_down_solar'])):.0f}\n"
-                        f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
-                                                     f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
-            ha='left', va='top', transform=ax.transAxes,
-            bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
+                     f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                                                  f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+        ha='left', va='top', transform=ax.transAxes,
+        bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
 plt.tight_layout()
 figname = f"{plot_path}/{halo_flight}_BACARDI_libRadtran_Fdw_above_all_scatter_2.png"
 plt.savefig(figname, dpi=300)
@@ -617,10 +673,10 @@ ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("libRadtran - BACARDI\n Broadband Irradiance Difference (W$\,$m$^{-2}$)")
 ax.set_title("Solar downward irradiance difference (290 - 5000nm)\nabove cloud whole flight - RF17")
 ax.text(0.025, 0.95, f"# points: {sum(~np.isnan(bacardi_plot['F_down_solar'])):.0f}\n"
-                        f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
-                                                     f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
-            ha='left', va='top', transform=ax.transAxes,
-            bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
+                     f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                                                  f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+        ha='left', va='top', transform=ax.transAxes,
+        bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
 h.set_xticks_and_xlabels(ax, time_extend)
 plt.tight_layout()
 figname = f"{plot_path}/{halo_flight}_BACARDI_libRadtran_Fdw_difference_above_all_2.png"
@@ -1367,7 +1423,7 @@ ecrad_plot = ecrad_plot.where(ecrad_plot > 0.001)
 plt.rcdefaults()
 h.set_cb_friendly_colors()
 plt.rc('font', size=12)
-_, ax = plt.subplots(figsize=(22*cm, 7*cm))
+_, ax = plt.subplots(figsize=(22 * cm, 7 * cm))
 # ecrad 2D field
 ecrad_plot.plot(x="time", y="height", cmap=cmap, ax=ax, robust=robust, vmax=vmax, alpha=alpha, norm=norm,
                 cbar_kwargs={"pad": 0.04, "label": f"{colorbarlabel[variable]}\n ({units[variable]})",
@@ -1549,8 +1605,8 @@ for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
     ax.set_title(f"{titles[i]}\nbelow cloud")
     ax.grid()
     ax.text(0.025, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[x])):.0f}\n"
-                        f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
-                                                     f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+                         f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                                                      f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
             ha='left', va='top', transform=ax.transAxes,
             bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
     plt.tight_layout()
@@ -1579,8 +1635,8 @@ for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
     ax.set_title(f"{titles[i]}\nabove cloud")
     ax.grid()
     ax.text(0.025, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[x])):.0f}\n"
-                        f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
-                                                     f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+                         f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                                                      f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
             ha='left', va='top', transform=ax.transAxes,
             bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
     plt.tight_layout()
@@ -1596,7 +1652,7 @@ for i in range(4):
     x, y = bacardi_vars[i], ecrad_vars[i]
     rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
     bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
-    _, ax = plt.subplots(figsize=(12*cm, 10*cm))
+    _, ax = plt.subplots(figsize=(12 * cm, 10 * cm))
     scatter = ax.scatter(bacardi_plot[x], ecrad_plot[y], c=bacardi_plot.sza)
     plt.colorbar(scatter, shrink=1, label="Solar Zenith Angle (°)")
     ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
@@ -1611,8 +1667,8 @@ for i in range(4):
     ax.set_title(f"{titles[i]}\nabove cloud whole flight RF17")
     ax.grid()
     ax.text(0.025, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[x])):.0f}\n"
-                        f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
-                                                     f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
+                         f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
+                                                      f"Bias: {bias.values:.2f}" + " W$\,$m$^{-2}$",
             ha='left', va='top', transform=ax.transAxes,
             bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
     plt.tight_layout()
@@ -1651,7 +1707,7 @@ i = 0
 _, ax = plt.subplots(figsize=figsize_wide)
 for i in range(0, 4, 2):
     x, y = bacardi_vars[i], ecrad_vars[i]
-    ax.plot(ecrad_plot.time, ecrad_plot[y], c=cbc[i+4], label=f"ecRad {labels[x]}", ls="", marker=".")
+    ax.plot(ecrad_plot.time, ecrad_plot[y], c=cbc[i + 4], label=f"ecRad {labels[x]}", ls="", marker=".")
     ax.plot(bacardi_plot.time, bacardi_plot[x], c=cbc[i], label=f"BACARDI {labels[x]}")
 ax.axvline(below_cloud["start"], 0, 1, color=cbc[11])
 ax.axvline(below_cloud["end"], 0, 1, color=cbc[11])
@@ -2318,7 +2374,7 @@ hist_array = np.array([ecrad_ci.values, ecrad_ocean.values]).T
 _, ax = plt.subplots(figsize=(18 * cm, 12 * cm))
 ax.hist(hist_array, bins=bins, lw=2, density=True, histtype="step", label=["Sea ice", "Ocean"], color=[cbc[2], cbc[3]])
 ax.text(0.02, 0.65, f"# points ocean: {ecrad_ocean.count().values}\n# points sea ice: {ecrad_ci.count().values}\n"
-                   f"bin width: {bin_width}" + "W$\,$m$^{-2}$",
+                    f"bin width: {bin_width}" + "W$\,$m$^{-2}$",
         transform=ax.transAxes, bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle="round"))
 ax.legend(loc=2)
 ax.grid()
@@ -2338,7 +2394,7 @@ hist_array = np.array([ecrad_ocean.values, bacardi_ocean.values]).T
 _, ax = plt.subplots(figsize=figsize_wide)
 ax.hist(hist_array, bins=bins, lw=2, density=True, histtype="step", label=["ecRad", "BACARDI"])
 ax.text(0.02, 0.65, f"# points BACARDI: {bacardi_ocean.count().values}\n# points ecRad: {ecrad_ocean.count().values}\n"
-                   f"bin width: {bin_width}" + "W$\,$m$^{-2}$",
+                    f"bin width: {bin_width}" + "W$\,$m$^{-2}$",
         transform=ax.transAxes, bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle="round"))
 ax.legend(loc=2)
 ax.grid()
@@ -2414,7 +2470,8 @@ plt.close()
 bacardi_plot = bacardi_ds_res.where(above_sel)
 ecrad_plot = ecrad_ds.isel(half_level=height_level_da).where(above_sel)
 _, ax = plt.subplots(figsize=figsize_wide)
-ax.plot(bacardi_plot.time, bacardi_plot.albedo_terrestrial, label="BACARDI terrestrial albedo", color=cbc[3], marker=".")
+ax.plot(bacardi_plot.time, bacardi_plot.albedo_terrestrial, label="BACARDI terrestrial albedo", color=cbc[3],
+        marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.albedo_lw, label="ecRad terrestrial albedo", color=cbc[5], marker=".")
 ax.legend()
 ax.grid()
@@ -2454,11 +2511,12 @@ ci_flag = h.make_flag(cirrus_over_ci, "Sea Ice")
 mciz_flag = h.make_flag(mciz_mask, "MIZ")
 ocean_flag = h.make_flag(cirrus_over_sea, "Ocean")
 cirrus_flag = h.make_flag(cirrus_only, "Only Cirrus")
-_, ax = plt.subplots(figsize=(24*cm, 6*cm))
+_, ax = plt.subplots(figsize=(24 * cm, 6 * cm))
 ax.plot(cirrus_over_ci.where(cirrus_over_ci, drop=True).time, ci_flag, marker="o", markersize=9, ls="", color=cbc[6])
-ax.plot(mciz_mask.where(mciz_mask, drop=True).time, mciz_flag, marker="o", markersize=9,  ls="", color=cbc[1])
-ax.plot(cirrus_over_sea.where(cirrus_over_sea, drop=True).time, ocean_flag, marker="o", markersize=9, ls="", color=cbc[3])
-ax.plot(cirrus_only.where(cirrus_only, drop=True).time, cirrus_flag, marker="o", markersize=9,  ls="", color=cbc[4])
+ax.plot(mciz_mask.where(mciz_mask, drop=True).time, mciz_flag, marker="o", markersize=9, ls="", color=cbc[1])
+ax.plot(cirrus_over_sea.where(cirrus_over_sea, drop=True).time, ocean_flag, marker="o", markersize=9, ls="",
+        color=cbc[3])
+ax.plot(cirrus_only.where(cirrus_only, drop=True).time, cirrus_flag, marker="o", markersize=9, ls="", color=cbc[4])
 ax.set_title("Above cirrus whole flight RF17")
 ax.set_xlabel("Time (UTC)")
 h.set_xticks_and_xlabels(ax, time_extend)
@@ -2569,11 +2627,10 @@ plt.close()
 # %% plot 1s lidar data whole flight
 lidar_plot = lidar_ds_res.backscatter_ratio
 _, ax = plt.subplots(figsize=figsize_wide)
-lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
-ax.invert_yaxis()
+lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Range from aircraft (m)")
+ax.set_ylabel("Altitude (m)")
 ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s")
 plt.tight_layout()
 figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s.png"
@@ -2608,15 +2665,15 @@ plt.show()
 plt.close()
 
 # %% plot filtered 1s lidar data whole flight as used for cloud mask
-for mask_value in [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
+for mask_value in [1.1]:  # , 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
     lidar_plot = lidar_ds_res.backscatter_ratio.where(lidar_ds_res.backscatter_ratio > mask_value)
     _, ax = plt.subplots(figsize=figsize_wide)
-    lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
-    ax.invert_yaxis()
+    lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
     h.set_xticks_and_xlabels(ax, time_extend)
     ax.set_xlabel("Time (UTC)")
-    ax.set_ylabel("Range from aircraft (m)")
-    ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with {mask_value}")
+    ax.set_ylabel("Altitude (m)")
+    ax.set_title(
+        f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with {mask_value}")
     plt.tight_layout()
     figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_cloud_mask_{mask_value}.png"
     plt.savefig(figname, dpi=300)
@@ -2626,11 +2683,10 @@ for mask_value in [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
 # %% plot despeckled lidar data
 lidar_plot = lidar_ds_res.backscatter_ratio.where(~lidar_ds_res["mask"]).where(~lidar_ds_res["spklmask"])
 _, ax = plt.subplots(figsize=figsize_wide)
-lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
-ax.invert_yaxis()
+lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Range from aircraft (m)")
+ax.set_ylabel("Altitude (m)")
 ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled")
 plt.tight_layout()
 figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_despeckled.png"
@@ -2642,24 +2698,20 @@ plt.close()
 lidar_mask = (lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"])
 lidar_plot = lidar_ds_res_r.backscatter_ratio.where(~lidar_mask)
 _, ax = plt.subplots(figsize=figsize_wide)
-lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
-ax.invert_yaxis()
+lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Range from aircraft (m)")
-ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled, interpolated")
+ax.set_ylabel("Altitude (m)")
+ax.set_title(
+    f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled, interpolated")
 plt.tight_layout()
 figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_30m.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
-# %% create radar mask
-radar_ds["mask"] = ~np.isnan(radar_ds["dBZg"])
-
 # %% combine radar and lidar mask
-lidar_mask = ~(lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"]).rename(dict(range="height"))
-lidar_mask["height"] = np.flip(radar_ds.height.values)
+lidar_mask = lidar_ds_res_r["fill_mask"]
 lidar_mask = lidar_mask.where(lidar_mask == 0, 2)
 radar_lidar_mask = radar_ds["mask"] + lidar_mask
 
@@ -2675,10 +2727,68 @@ pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-0.5, vmax=len(cbar) - 
 pcm.colorbar.set_ticks(np.arange(len(clabel)), labels=clabel)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Range from aircraft (m)")
+ax.set_ylabel("Altitude (m)")
 ax.set_title(f"{halo_key} combined radar lidar mask")
 plt.tight_layout()
-# figname = f"{plot_path}/{halo_flight}_radar_lidar_mask.png"
+figname = f"{plot_path}/{halo_flight}_radar_lidar_mask.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% find cloud bases and tops from lidar mask
+mask = ~lidar_ds_res_r["fill_mask"]
+cloud_props, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
+bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
+
+# %% plot bases tops
+plot_ds = bases_tops
+clabel = list(["bases", "no data", "tops"])
+cbar = list([cbc[1], "#ffffff", cbc[-2]])
+cmap = colors.ListedColormap(cbar)
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
+pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (m)")
+ax.set_title(f"{halo_key} cloud bases and tops")
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_bases_tops.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% investigate bases tops
+bases_tops.sum()  # if it adds up to 0 every base has a corresponding top
+(bases_tops == 1).sum(dim="height").plot(x="time")
+plt.show()
+plt.close()
+
+# %% find cloud bases and tops from radar mask
+mask = ~radar_ds["fill_mask"]
+cloud_props_radar, bases_tops_radar = h.find_bases_tops(mask.values, mask.height.values)
+bases_tops_radar = xr.DataArray(bases_tops_radar, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
+
+# %% plot bases tops from radar
+plot_ds = bases_tops_radar.sel(height=slice(0, 2000))
+clabel = list(["bases", "no data", "tops"])
+cbar = list([cbc[1], "#ffffff", cbc[-2]])
+cmap = colors.ListedColormap(cbar)
+_, ax = plt.subplots(figsize=figsize_wide)
+pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
+pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+h.set_xticks_and_xlabels(ax, time_extend)
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Altitude (m)")
+ax.set_title(f"{halo_key} cloud bases and tops")
+plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_bases_tops_radar.png"
 # plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% investigate bases tops
+bases_tops_radar.sum()  # if it adds up to 0 every base has a corresponding top
+(bases_tops_radar == 1).sum(dim="height").plot(x="time")
 plt.show()
 plt.close()
