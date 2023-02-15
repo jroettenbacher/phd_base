@@ -16,6 +16,7 @@ import ac3airborne
 from ac3airborne.tools.get_amsr2_seaice import get_amsr2_seaice
 from ac3airborne.tools import flightphase
 import sys
+
 sys.path.append('./larda')
 from larda.pyLARDA.spec2mom_limrad94 import despeckle
 import os
@@ -115,6 +116,9 @@ smart_std = xr.open_dataset(f"{smart_path}/{calibrated_file.replace('.nc', '_std
 bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
 bahamas_ds = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
 sza = bacardi_ds.sza
+bahamas_unfiltered = bahamas_ds[["IRS_ALT", "RELHUM", "TS", "MIXRATIO", "MIXRATIOV", "PS", "QC", ]]
+bahamas_unfiltered["RHice"] = met.relative_humidity_water_to_relative_humidity_ice(bahamas_unfiltered["RELHUM"],
+                                                                                   bahamas_unfiltered["TS"] - 273.16)
 # bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
 # bacardi_ds = bacardi_ds.resample(time="1S").mean()
 # bahamas_ds = bahamas_ds.resample(time="1S").mean()
@@ -2628,6 +2632,8 @@ plt.close()
 lidar_plot = lidar_ds_res.backscatter_ratio
 _, ax = plt.subplots(figsize=figsize_wide)
 lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
@@ -2642,6 +2648,8 @@ plt.close()
 lidar_plot = lidar_ds.backscatter_ratio
 _, ax = plt.subplots(figsize=figsize_wide)
 lidar_plot.plot(x="time", y="range", robust=True, cmap="plasma", ax=ax)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 ax.invert_yaxis()
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\noriginal")
@@ -2669,6 +2677,8 @@ for mask_value in [1.1]:  # , 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
     lidar_plot = lidar_ds_res.backscatter_ratio.where(lidar_ds_res.backscatter_ratio > mask_value)
     _, ax = plt.subplots(figsize=figsize_wide)
     lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+    ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+    ax.legend(loc=2)
     h.set_xticks_and_xlabels(ax, time_extend)
     ax.set_xlabel("Time (UTC)")
     ax.set_ylabel("Altitude (m)")
@@ -2684,6 +2694,8 @@ for mask_value in [1.1]:  # , 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
 lidar_plot = lidar_ds_res.backscatter_ratio.where(~lidar_ds_res["mask"]).where(~lidar_ds_res["spklmask"])
 _, ax = plt.subplots(figsize=figsize_wide)
 lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
@@ -2699,6 +2711,8 @@ lidar_mask = (lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"])
 lidar_plot = lidar_ds_res_r.backscatter_ratio.where(~lidar_mask)
 _, ax = plt.subplots(figsize=figsize_wide)
 lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
@@ -2725,6 +2739,8 @@ cmap = colors.ListedColormap(cbar)
 _, ax = plt.subplots(figsize=figsize_wide)
 pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-0.5, vmax=len(cbar) - 0.5)
 pcm.colorbar.set_ticks(np.arange(len(clabel)), labels=clabel)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
@@ -2748,6 +2764,8 @@ cmap = colors.ListedColormap(cbar)
 _, ax = plt.subplots(figsize=figsize_wide)
 pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
 pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
@@ -2767,28 +2785,50 @@ plt.close()
 # %% find cloud bases and tops from radar mask
 mask = ~radar_ds["fill_mask"]
 cloud_props_radar, bases_tops_radar = h.find_bases_tops(mask.values, mask.height.values)
-bases_tops_radar = xr.DataArray(bases_tops_radar, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
+bases_tops_radar = xr.DataArray(bases_tops_radar, dims=["time", "height"],
+                                coords=dict(time=mask.time, height=mask.height))
 
 # %% plot bases tops from radar
-plot_ds = bases_tops_radar.sel(height=slice(0, 2000))
+plot_ds = bases_tops_radar
 clabel = list(["bases", "no data", "tops"])
 cbar = list([cbc[1], "#ffffff", cbc[-2]])
 cmap = colors.ListedColormap(cbar)
 _, ax = plt.subplots(figsize=figsize_wide)
 pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
 pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
 ax.set_title(f"{halo_key} cloud bases and tops")
 plt.tight_layout()
-# figname = f"{plot_path}/{halo_flight}_bases_tops_radar.png"
-# plt.savefig(figname, dpi=300)
+figname = f"{plot_path}/{halo_flight}_bases_tops_radar.png"
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
 # %% investigate bases tops
 bases_tops_radar.sum()  # if it adds up to 0 every base has a corresponding top
 (bases_tops_radar == 1).sum(dim="height").plot(x="time")
+plt.show()
+plt.close()
+
+# %% plot BAHAMAS along track data
+bahamas_plot = bahamas_unfiltered.sel(time=case_slice)
+_, ax = plt.subplots(figsize=figsize_wide)
+ax.plot(bahamas_plot.time, bahamas_plot.RHice, label="RH$_{ice}$")
+ax.plot(bahamas_plot.time, bahamas_plot.RELHUM, label="RH$_{water}$")
+ax.axvline(x=above_cloud["end"], label="End Above Cloud", color=cbc[2])
+ax.axvline(x=below_cloud["start"], label="Start Below Cloud", color=cbc[3])
+ax.grid()
+ax.legend(loc=2)
+ax.set_title("BAHAMAS Relative Humidity for case study")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Relative Humidity (%)")
+h.set_xticks_and_xlabels(ax, time_extend_cs)
+plt.tight_layout()
+figname = f"{plot_path}/{halo_flight}_BAHAMAS_RH_case_study.png"
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
