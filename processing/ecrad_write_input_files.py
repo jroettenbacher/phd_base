@@ -77,8 +77,8 @@ if __name__ == "__main__":
         # select a 3 x 11 lat/lon grid around closest grid point
         lat_id = h.arg_nearest(data_ml.lat, nav_data_ip.lat.iat[i])
         lon_id = h.arg_nearest(data_ml.lon, nav_data_ip.lon.iat[i])
-        lat_circle = np.arange(lat_id-1, lat_id+2)
-        lon_circle = np.arange(lon_id-5, lon_id+6)
+        lat_circle = np.arange(lat_id - 1, lat_id + 2)
+        lon_circle = np.arange(lon_id - 5, lon_id + 6)
         # make sure latitude indices are available in data
         lat_circle = lat_circle[np.where(lat_circle < data_ml.sizes["lat"])[0]]
         ds_sel = data_ml.isel(lat=lat_circle, lon=lon_circle)
@@ -117,8 +117,7 @@ if __name__ == "__main__":
         # stack lat, lon to a multi index named column, reset the index,
         # turn lat, lon, time into variables for cleaner output and to avoid later problems when merging data
         # this turns the two dimensions lat lon into one new dimension column with which ecrad can work
-        dsi_ml_out = dsi_ml_out.stack(column=("lat", "lon")).reset_index("column").reset_coords(
-            ["lat", "lon", "time"])
+        dsi_ml_out = dsi_ml_out.stack(column=("lat", "lon")).reset_index("column").reset_coords(["lat", "lon", "time"])
         # overwrite the MultiIndex object with simple integers as column numbers
         # otherwise it can not be saved to a netCDF file
         n_column = dsi_ml_out.dims["column"]  # get number of columns
@@ -133,8 +132,9 @@ if __name__ == "__main__":
 
         # ds_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc4",
         #                     format='NETCDF4')
-        dsi_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}.nc",
-                             format='NETCDF4_CLASSIC')
+        dsi_ml_out.to_netcdf(
+            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}.nc",
+            format='NETCDF4_CLASSIC')
         # dsi_ml_out.to_netcdf(path=f"{path_ecrad}/{date}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc",
         #                      format='NETCDF3_CLASSIC')
 
