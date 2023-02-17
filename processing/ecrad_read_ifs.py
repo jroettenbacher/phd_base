@@ -197,6 +197,10 @@ if __name__ == "__main__":
     data_ml = data_ml.sel(lev_2=1).reset_coords("lev_2", drop=True)  # drop lev_2 dimension
     data_ml = data_ml.rename({"nhyi": "half_level", "lev": "level"})  # rename variables and thus dimensions
     data_ml = data_ml.assign_coords(half_level=np.insert((data_ml.level + 0.5).values, 0, 0.5))
+    # transpose pressure data so time is the first dimension
+    for var in ["pressure_hl", "pressure_full"]:
+        data_ml[var] = data_ml[var].transpose("time", ...)
+
 
     # %% calculate lw_em from ratio to blackbody temperature
     # sigma = 5.670374419e-8  # Stefan-Boltzmann constant W⋅m−2⋅K−4
@@ -231,8 +235,9 @@ if __name__ == "__main__":
 
     sw_albedo = xr.concat(sw_albedo_bands, dim="sw_albedo_band")
     sw_albedo.attrs = dict(unit=1, long_name="Banded short wave albedo")
+    sw_albedo = sw_albedo.transpose("time", ...)  # transpose so time is first dimension
     # set sw_albedo to constant 0.2 when over land
-    sw_albedo.where(data_srf.LSM < 0.5, 0.2)
+    sw_albedo = sw_albedo.where(data_srf.LSM < 0.5, 0.2)
 
     data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]  # select only relevant variables
     data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])  # drop unnecessary variables
@@ -256,16 +261,14 @@ if __name__ == "__main__":
     diff_t15_t1 = t_hl[0] - data_ml.t.sel(level=1, drop=True)
     t_05 = (data_ml.t.sel(level=1, drop=True) - diff_t15_t1).assign_coords(half_level=0.5)
     t_hl.insert(0, t_05)  # interpolate 0.5 half level
-    data_ml["temperature_hl"] = xr.concat(t_hl, dim="half_level")
+    data_ml["temperature_hl"] = xr.concat(t_hl, dim="half_level").transpose("time", ...)
 
-    # %% prepare datasets for merge and write to ncfile
-    data_ml = data_ml.expand_dims("column")  # add the new dimension "column"
-    # rename surface variables and add new dimension "column"
+    # %% rename surface variables
     data_srf = data_srf.rename({"U10M": "u_wind_10m",
                                 "V10M": "v_wind_10m",
                                 "SKT": "skin_temperature",
                                 "MSL": "mean_sea_level_pressure"}
-                               ).expand_dims("column")
+                               )
 
     # %% add trace gases
     if ozone_flag == "sonde":
@@ -277,13 +280,14 @@ if __name__ == "__main__":
         ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
         # create interpolation function
         f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate", bounds_error=False)
-        ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0, column=0))
+        ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
         # copy interpolated ozone concentration over time, lat and longitude dimension
         o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
         o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
         o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
         # create DataArray
         o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
+        o3_vmr = o3_vmr.transpose("time", ...)
         o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
         o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
         o3_vmr.attrs = dict(unit="1", long_name="Ozone volume mass mixing ratio")
@@ -291,8 +295,8 @@ if __name__ == "__main__":
 
     else:
         assert ozone_flag == "default", f"ozone flag set to unrecognized value {ozone_flag}! Check input!"
-        data_ml["o3_mmr"] = xr.DataArray(np.expand_dims(np.repeat([1.587701e-7], n_levels), axis=0),
-                                         dims=["column", "level"],
+        data_ml["o3_mmr"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
+                                         dims=["level"],
                                          attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
     # constants according to IFS Documentation Part IV Section 2.8.4
     data_ml["n2o_vmr"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
@@ -308,8 +312,8 @@ if __name__ == "__main__":
     #TODO: Add NO2 profile from CAMS
 
     # %% add cloud properties
-    data_ml["fractional_std"] = xr.DataArray(np.expand_dims(np.repeat([1.], n_levels), axis=0),
-                                             dims=["column", "level"])  # set to 1 according to ecRad documentation
+    data_ml["fractional_std"] = xr.DataArray(np.repeat([1.], n_levels),
+                                             dims=["level"])  # set to 1 according to ecRad documentation
     # only needed for 3D effects in SPARTACUS of a known cloud scene. For general IFS input use parameterization
     # data_ml["inv_cloud_effective_size"] = xr.DataArray(np.expand_dims(np.repeat([0.0013], n_levels), axis=0),
     #                                                    dims=["column", "level"])
