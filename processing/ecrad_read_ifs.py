@@ -189,6 +189,8 @@ if __name__ == "__main__":
     lon_sel = np.arange(closest_lons.min() - 10, closest_lons.max() + 10)
     # make sure that all latitude indices are available in the file
     lat_sel = lat_sel[np.where(lat_sel < data_ml.sizes["lat"])[0]]
+    # drop indices < 0
+    lat_sel = lat_sel[np.where(lat_sel >= 0)[0]]
     data_ml = data_ml.isel(lat=lat_sel, lon=lon_sel)
     data_srf = data_srf.isel(lat=lat_sel, lon=lon_sel)
 
