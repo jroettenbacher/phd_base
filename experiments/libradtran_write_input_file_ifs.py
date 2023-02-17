@@ -89,16 +89,16 @@ if __name__ == "__main__":
         h.make_dir(path)  # create directory
 
     # %% setup logging
-        try:
-            file = __file__
-        except NameError:
-            file = None
-        log = h.setup_logging("./logs", file, flight)
-        log.info(f"Options Given:\ncampaign: {campaign}\n"
-                 f"flight: {flight}\ntimestep: {time_step}\n"
-                 f"wkdir: {input_path}\n"
-                 f"timestep: {time_step}\n"
-                 f"Script started: {datetime.datetime.utcnow():%c UTC}\n")
+    try:
+        file = __file__
+    except NameError:
+        file = None
+    log = h.setup_logging("./logs", file, flight)
+    log.info(f"Options Given:\ncampaign: {campaign}\n"
+             f"flight: {flight}\ntimestep: {time_step}\n"
+             f"wkdir: {input_path}\n"
+             f"timestep: {time_step}\n"
+             f"Script started: {datetime.datetime.utcnow():%c UTC}\n")
 
     # %% read in INS data
     if use_smart_ins:
