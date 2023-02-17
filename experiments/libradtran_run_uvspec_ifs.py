@@ -43,15 +43,15 @@ if __name__ == "__main__":
     campaign = "halo-ac3"
     # uncomment to run for all flights
     # flight_keys = [key for key in meta.flight_names]
-    flight_keys = ["RF17"]
+    flight_keys = ["RF18"]
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-    wavelength = "ifs"  # will be used as directory name and in outfile name (e.g. smart, bacardi, 500-600nm, ...)
+    experiment = "ifs"  # will be used as directory name and in outfile name (e.g. smart, bacardi, 500-600nm, ...)
     flights = [meta.flight_names[k] for k in flight_keys]
     for flight in flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         libradtran_base_path = h.get_path("libradtran_exp", campaign=campaign)
-        libradtran_path = os.path.join(libradtran_base_path, "wkdir", wavelength)  # file where to find input files
+        libradtran_path = os.path.join(libradtran_base_path, "wkdir", flight_key, experiment)  # file where to find input files
         input_files = [os.path.join(libradtran_path, f) for f in os.listdir(libradtran_path)
                        if f.endswith(".inp")]
         input_files.sort()  # sort input files -> output files will be sorted as well
@@ -64,7 +64,10 @@ if __name__ == "__main__":
         except NameError:
             file = None
         log = h.setup_logging("./logs", file, flight_key)
-        log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {wavelength}\n"
+        log.info(f"Options Given:\n"
+                 f"campaign: {campaign}\n"
+                 f"flight: {flight}\n"
+                 f"experiment: {experiment}\n"
                  f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
 
         # %% call uvspec for one file
@@ -256,6 +259,6 @@ if __name__ == "__main__":
             ds[var].attrs = var_attrs[var]
             encoding[var] = dict(_FillValue=None)  # remove the default _FillValue attribute from each variable
         # save file
-        nc_filepath = f"{libradtran_base_path}/{campaign.swapcase()}_HALO_libRadtran_simulation_{wavelength}_{date}_{flight_key}.nc"
+        nc_filepath = f"{libradtran_base_path}/{campaign.swapcase()}_HALO_libRadtran_simulation_{experiment}_{date}_{flight_key}.nc"
         ds.to_netcdf(nc_filepath, encoding=encoding)
         log.info(f"Saved {nc_filepath}")
