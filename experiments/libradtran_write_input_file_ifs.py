@@ -95,7 +95,7 @@ if __name__ == "__main__":
         file = None
     log = h.setup_logging("./logs", file, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\n"
-             f"flight: {flight}\ntimestep: {time_step}\n"
+             f"flight: {flight}\n"
              f"wkdir: {input_path}\n"
              f"timestep: {time_step}\n"
              f"Script started: {datetime.datetime.utcnow():%c UTC}\n")
