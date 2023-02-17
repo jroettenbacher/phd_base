@@ -76,26 +76,29 @@ if __name__ == "__main__":
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     integrate = False
 
-    # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, flight)
-    log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}"
-             f"\nScript started: {datetime.datetime.utcnow():%c UTC}")
-
     # %% set paths
     base_path = h.get_path("base", flight, campaign)
     ifs_path = f"{h.get_path('ifs', campaign=campaign)}/{date}"
     libradtran_path = h.get_path("libradtran_exp", campaign=campaign)
     solar_source_path = f"/opt/libradtran/2.0.4/share/libRadtran/data/solar_flux"
-    input_path = f"{libradtran_path}/wkdir/ifs"  # where to save the created files
+    input_path = f"{libradtran_path}/wkdir/{flight_key}/ifs"  # where to save the created files
     atmosphere_path = f"{input_path}/atmosphere_files"
     albedo_path = f"{input_path}/albedo_files"
     cloud_path = f"{input_path}/cloud_files"
     for path in [input_path, atmosphere_path, albedo_path, cloud_path]:
         h.make_dir(path)  # create directory
+
+    # %% setup logging
+        try:
+            file = __file__
+        except NameError:
+            file = None
+        log = h.setup_logging("./logs", file, flight)
+        log.info(f"Options Given:\ncampaign: {campaign}\n"
+                 f"flight: {flight}\ntimestep: {time_step}\n"
+                 f"wkdir: {input_path}\n"
+                 f"timestep: {time_step}\n"
+                 f"Script started: {datetime.datetime.utcnow():%c UTC}\n")
 
     # %% read in INS data
     if use_smart_ins:
@@ -212,7 +215,7 @@ if __name__ == "__main__":
         # %% write input file
         log.debug(f"Writing input file: {input_filepath}")
         with open(input_filepath, "w") as ifile:
-            ifile.write(f"# libRadtran input file generated with libradtran_write_input_file.py "
+            ifile.write(f"# libRadtran input file generated with libradtran_write_input_file_ifs.py "
                         f"({datetime.datetime.utcnow():%c UTC})\n")
             for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                       ["Atmospheric", "RTE", "Post Process"]):
