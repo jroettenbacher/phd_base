@@ -114,10 +114,10 @@ if __name__ == "__main__":
         # calculate effective radius for all levels
         dsi_ml_out = apply_ice_effective_radius(dsi_ml_out)
         dsi_ml_out = apply_liquid_effective_radius(dsi_ml_out)
-        # drop dimension column by selecting it, then stack lat, lon to a multi index named column, reset the index,
+        # stack lat, lon to a multi index named column, reset the index,
         # turn lat, lon, time into variables for cleaner output and to avoid later problems when merging data
         # this turns the two dimensions lat lon into one new dimension column with which ecrad can work
-        dsi_ml_out = dsi_ml_out.sel(column=0).stack(column=("lat", "lon")).reset_index("column").reset_coords(
+        dsi_ml_out = dsi_ml_out.stack(column=("lat", "lon")).reset_index("column").reset_coords(
             ["lat", "lon", "time"])
         # overwrite the MultiIndex object with simple integers as column numbers
         # otherwise it can not be saved to a netCDF file
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         for var in variables:
             arr = dsi_ml_out[var].values
             dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": n_column})
-        dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first spot
+        dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first dimension
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         # ds_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc4",
