@@ -57,16 +57,19 @@ if __name__ == "__main__":
 
     # %% read in command line arguments
     args = h.read_command_line_args()
-    ozone_flag = args["ozone"] if "ozone" in args else "sonde"
-    # set interpolate flag
-    date = args["date"] if "date" in args else '20220411'
-    init_time = args["init"] if "init" in args else "00"
-    flight = args["flight"] if "flight" in args else 'HALO-AC3_20220411_HALO_RF17'
-    aircraft = args["aircraft"] if "aircraft" in args else "halo"
+    flight_key = args["flight_key"] if "flight_key" in args else "RF17"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
-    dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
-    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+    init_time = args["init"] if "init" in args else "00"
+    aircraft = args["aircraft"] if "aircraft" in args else "halo"
     use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
+    ozone_flag = args["ozone"] if "ozone" in args else "sonde"
+    if campaign == "halo-ac3":
+        import pylim.halo_ac3 as meta
+    else:
+        import pylim.cirrus_hl as meta
+    flight = meta.flight_names[flight_key]
+    date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
+    dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
     # setup logging
     try:
         file = __file__
@@ -150,9 +153,7 @@ if __name__ == "__main__":
             dt_nav_data.append(dt_day + timedelta(seconds=nav_data_ip.time.iloc[i]))
 
     # %% calculate cosine of solar zenith angle along flight track
-
-    # initialize some arrays
-    sza = np.empty(idx)
+    sza = np.empty(idx)  # initialize some arrays
     cos_sza = np.empty(idx)
     closest_lats, closest_lons = list(), list()
 
@@ -241,8 +242,9 @@ if __name__ == "__main__":
     # set sw_albedo to constant 0.2 when over land
     sw_albedo = sw_albedo.where(data_srf.LSM < 0.5, 0.2)
 
-    data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]  # select only relevant variables
-    data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])  # drop unnecessary variables
+    # %% select only relevant variables
+    data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]
+    data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])
 
     # %% interpolate temperature on half levels according to IFS Documentation Part IV Section 2.8.1
     n_levels = len(data_ml.level)  # get number of levels
@@ -329,14 +331,14 @@ if __name__ == "__main__":
     data_ml = data_ml.merge(data_srf)
 
     # %% rename variables for ecrad
-    data_ml = data_ml.rename(dict(cc="cloud_fraction"))
+    data_ml = data_ml.rename({"cc": "cloud_fraction"})
 
     # write to history attribute
     data_ml.attrs["history"] = data_ml.attrs["history"] + f" {datetime.today().strftime('%c')}: " \
                                                           f"formatted file to serve as input to ecRad (ecrad_read_ifs.py)"
     data_ml.attrs["contact"] = f"johannes.roettenbacher@uni-leipzig.de, hanno.mueller@uni-leipzig.de"
 
-    # %% write intermediate output files
+    # %% write output files
     filename = f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc"
     data_ml.to_netcdf(filename, format='NETCDF4_CLASSIC')
     log.info(f"Saved {filename}")
