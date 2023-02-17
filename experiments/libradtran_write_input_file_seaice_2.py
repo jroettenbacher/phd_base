@@ -66,7 +66,7 @@ if __name__ == "__main__":
     libradtran_path = h.get_path("libradtran_exp", campaign=campaign)
     solar_source_path = f"/opt/libradtran/2.0.4/share/libRadtran/data/solar_flux"
     # where to save the created files
-    input_path = f"{libradtran_path}/wkdir/seaice_2_{'solar' if solar_flag else 'thermal'}"
+    input_path = f"{libradtran_path}/wkdir/{flight_key}/seaice_2_{'solar' if solar_flag else 'thermal'}"
     albedo_path = f"{input_path}/albedo_files"
     dropsonde_path = f"{base_path}/../01_soundings/RS_for_libradtran/Dropsondes_HALO/Flight_{date}"
     for path in [input_path, albedo_path]:

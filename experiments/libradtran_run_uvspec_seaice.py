@@ -27,11 +27,11 @@ if __name__ == "__main__":
     solar_flag = False
     solar_str = "solar" if solar_flag else "thermal"
     libradtran_base_dir = h.get_path("libradtran_exp", campaign=campaign)
-    libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", f"seaice_{solar_str}")
 
     # %% run for all flights
     for flight in all_flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+        libradtran_dir = os.path.join(libradtran_base_dir, "wkdir", flight_key, f"seaice_{solar_str}")
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # get files
         input_files = [os.path.join(libradtran_dir, f) for f in os.listdir(libradtran_dir) if f.endswith(".inp")]

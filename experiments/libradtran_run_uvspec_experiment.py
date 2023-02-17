@@ -36,7 +36,6 @@ if __name__ == "__main__":
     from joblib import cpu_count
     import datetime as dt
     from pysolar.solar import get_azimuth
-    import logging
 
     # %% set options
     experiment = "seaice_2"  # string defining experiment name, will be used for input path and netCDF filename
@@ -50,11 +49,11 @@ if __name__ == "__main__":
     solar_str = "solar" if solar_flag else "thermal"
     # set base paths
     libradtran_base_path = h.get_path("libradtran_exp", campaign=campaign)
-    libradtran_path = os.path.join(libradtran_base_path, "wkdir", f"{experiment}_{solar_str}")
 
     # %% run for all flights
     for flight in all_flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
+        libradtran_path = os.path.join(libradtran_base_path, "wkdir", flight_key, f"{experiment}_{solar_str}")
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # check if outfile exists already and give a warning
         nc_filepath = f"{libradtran_base_path}/{campaign.swapcase()}_HALO_libRadtran_simulation_{experiment}_{solar_str}_{date}_{flight_key}.nc"
