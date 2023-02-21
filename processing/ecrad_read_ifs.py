@@ -41,7 +41,7 @@ if __name__ == "__main__":
     from pylim import reader
     from pylim import helpers as h
     from pylim.solar_position import get_sza
-    from pylim.ecrad import calc_pressure, cloud_overlap_decorr_len
+    from pylim.ecrad import calc_pressure, cloud_overlap_decorr_len, calculate_pressure_height
     import numpy as np
     import xarray as xr
     import glob
@@ -266,6 +266,9 @@ if __name__ == "__main__":
     t_05 = (data_ml.t.sel(level=1, drop=True) - diff_t15_t1).assign_coords(half_level=0.5)
     t_hl.insert(0, t_05)  # interpolate 0.5 half level
     data_ml["temperature_hl"] = xr.concat(t_hl, dim="half_level").transpose("time", ...)
+
+    # %% calculate pressure height for model half and full levels
+    data_ml = calculate_pressure_height(data_ml)
 
     # %% rename surface variables
     data_srf = data_srf.rename({"U10M": "u_wind_10m",

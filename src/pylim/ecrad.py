@@ -4,8 +4,10 @@
 *author*: Johannes Röttenbacher
 """
 
+import pylim.meteorological_formulas as met
 import numpy as np
 import xarray as xr
+from tqdm import tqdm
 import logging
 
 log = logging.getLogger(__name__)
@@ -104,6 +106,54 @@ def calc_pressure(ds: xr.Dataset) -> xr.Dataset:
     pf = xr.concat(pf, 'lev')
     ds["pressure_hl"] = ph.sel(lev_2=1, drop=True).astype("float32")  # assign as a new variable
     ds["pressure_full"] = pf.sel(lev_2=1, drop=True).astype("float32")
+
+    return ds
+
+
+def calculate_pressure_height(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Calculate the pressure height for the half and full model levels
+
+    Args:
+        ds: Dataset with temperature and pressure on model half and full levels (``pressure_hl``, ``temperature_hl``,
+            ``pressure_full``, ``t``)
+
+    Returns: Dataset with two new variables ``pressure_height_hl`` and ``pressure_height_full`` in meters
+
+    """
+    # calculate pressure height of model half levels
+    vertical_profiles = ds[["pressure_hl", "temperature_hl"]]
+    p_array_list = list()
+    # ignore division by zero error
+    with np.errstate(divide='ignore'):
+        for time in tqdm(vertical_profiles.time, desc="Half Levels"):
+            tmp = vertical_profiles.sel(time=time, drop=True)
+            press_height = met.barometric_height(tmp["pressure_hl"], tmp["temperature_hl"])
+            p_array = xr.DataArray(data=press_height[None, :], dims=["time", "half_level"],
+                                   coords={"half_level": (["half_level"], np.flip(tmp.half_level.values)),
+                                           "time": np.array([time.values])},
+                                   name="pressure_height")
+            p_array_list.append(p_array)
+
+    ds["press_height_hl"] = xr.merge(p_array_list).pressure_height
+    # replace nan (TOA) with 80km
+    ds["press_height_hl"] = ds["press_height_hl"].where(~np.isnan(ds["press_height_hl"]), 80000)
+
+    # calculate pressure height of model full levels
+    vertical_profiles = ds[["pressure_full", "t"]]
+    p_array_list = list()
+    for time in tqdm(vertical_profiles.time, desc="Full Levels"):
+        tmp = vertical_profiles.sel(time=time, drop=True)
+        press_height = met.barometric_height(tmp["pressure_full"], tmp["t"])
+        p_array = xr.DataArray(data=press_height[None, :], dims=["time", "level"],
+                               coords={"level": (["level"], np.flip(tmp.level.values)),
+                                       "time": np.array([time.values])},
+                               name="pressure_height")
+        p_array_list.append(p_array)
+
+    ds["press_height_full"] = xr.merge(p_array_list).pressure_height
+    # replace nan (TOA) with 80km
+    ds["press_height_full"] = ds["press_height_full"].where(~np.isnan(ds["press_height_full"]), 80000)
 
     return ds
 
