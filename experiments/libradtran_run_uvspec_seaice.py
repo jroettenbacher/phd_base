@@ -15,7 +15,6 @@ if __name__ == "__main__":
     from joblib import cpu_count
     import datetime as dt
     from pysolar.solar import get_azimuth
-    import logging
 
     # %% set options
     campaign = "halo-ac3"
