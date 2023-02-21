@@ -90,6 +90,7 @@ cirrus_hl_overview.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *Script:* :py:mod:`halo_ac3_bahamas_pitch_filter.py`
+
 *Date created:* 2022-02-20
 
 .. automodule:: analysis.halo_ac3_bahamas_pitch_filter

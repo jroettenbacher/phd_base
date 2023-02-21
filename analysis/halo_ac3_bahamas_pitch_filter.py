@@ -5,10 +5,11 @@ HALO's pitch angle changes during the flight as it loses weight by burning fuel 
 Using a static median pitch value to calculate a pitch threshold for motion filtering measurements is thus not sufficient.
 This can be seen in :numref:`pitch-all`, where the ten-minute median pitch angle decreases from 2.8° to 1.8° during RF18.
 Using the static pitch thresholds would thus filter the wrong values.
-Especially, the above cloud section during the pentagram pattern in the far north suffers from this static threshold.
+Especially, the above cloud section during the pentagram pattern in the far north, denoted as case study, suffers from this static threshold.
 However, :numref:`pitch-all` already shows a problem with a rolling median: During large ascents and descents the median follows the extreme values.
 One could either use an absolute threshold for such extreme values or look at the change of pitch over time to filter such events.
 The flight segmentation could also help to remove these events.
+Using a longer time window also shows good results.
 
 .. _pitch-all:
 
@@ -26,7 +27,7 @@ The flight segmentation could also help to remove these events.
     Rolling median of pitch using different time windows.
 
 Judging from RF18 30 minutes seem to be a good time window for the rolling median.
-Since it is mostly longer than large ascents and descents they can still be filtered out.
+Since it is mostly longer than large ascents and descents they are still averaged over.
 For case study like periods, however, it still follows the general trend of the data.
 
 **What threshold is best for the pitch?**
@@ -40,8 +41,8 @@ To answer this we can have a look at the rolling standard deviation of the pitch
     Pitch and 30-minute rolling median pitch with standard deviation.
 
 We see that the rolling standard deviation is actually quite small during time when HALO is flying steady.
-The median value of the 30-minute standard deviation is $0.173$°.
-Thus, $0.17$ looks like a good threshold then.
+The median value of the 30-minute standard deviation is :math:`0.173^{\circ}`.
+Thus, :math:`0.17^{\circ}` looks like a good threshold then.
 First result of calculating a dynamic pitch threshold can be seen in :numref:`dynamic-pitch`.
 
 .. _dynamic-pitch:
@@ -50,8 +51,8 @@ First result of calculating a dynamic pitch threshold can be seen in :numref:`dy
 
     Different dynamic pitch thresholds for a 30-minute rolling median.
 
-From this we can see that the $0.5$° threshold from the roll angle is too high for the pitch angle.
-The $0.1$° threshold would cut off to many values during the steady flight sections.
+From this we can see that the :math:`0.5^{\circ}` threshold from the roll angle is too high for the pitch angle.
+The :math:`0.1^{\circ}` threshold would cut off to many values during the steady flight sections.
 
 **Evaluation using BACARDI broadband measurements**
 
@@ -62,7 +63,6 @@ The $0.1$° threshold would cut off to many values during the steady flight sect
 if __name__ == "__main__":
 # %% import modules
     import pylim.helpers as h
-    import pylim.meteorological_formulas as met
     import pylim.halo_ac3 as meta
     import ac3airborne
     from ac3airborne.tools import flightphase
