@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-"""Investigate pitch angle of HALO measured by BAHAMAS during |haloac3|
+"""
+| *author*: Johannes Röttenbacher
+| *created*: 20-02-2023
+
+Investigate pitch angle of HALO measured by BAHAMAS during |haloac3|
 
 HALO's pitch angle changes during the flight as it loses weight by burning fuel or when it changes altitude and speed.
 Using a static median pitch value to calculate a pitch threshold for motion filtering measurements is thus not sufficient.
@@ -58,9 +62,6 @@ The :math:`0.1^{\circ}` threshold would cut off to many values during the steady
 
 ##TODO
 
-*author*: Johannes Röttenbacher
-
-*created*: 20-02-2023
 """
 if __name__ == "__main__":
 # %% import modules
