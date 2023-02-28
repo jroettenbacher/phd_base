@@ -38,7 +38,7 @@ if __name__ == "__main__":
     from pysolar.solar import get_azimuth
 
     # %% set options
-    experiment = "seaice_2"  # string defining experiment name, will be used for input path and netCDF filename
+    experiment = "icecloud"  # string defining experiment name, will be used for input path and netCDF filename
     campaign = "halo-ac3"
     # get all flights from dictionary
     all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(meta.flight_names.values())
@@ -46,17 +46,16 @@ if __name__ == "__main__":
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
     solar_flag = True
-    solar_str = "solar" if solar_flag else "thermal"
     # set base paths
     libradtran_base_path = h.get_path("libradtran_exp", campaign=campaign)
 
     # %% run for all flights
     for flight in all_flights:
         flight_key = flight[-4:] if campaign == "halo-ac3" else flight
-        libradtran_path = os.path.join(libradtran_base_path, "wkdir", flight_key, f"{experiment}_{solar_str}")
+        libradtran_path = os.path.join(libradtran_base_path, "wkdir", flight_key, f"{experiment}")
         date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
         # check if outfile exists already and give a warning
-        nc_filepath = f"{libradtran_base_path}/{campaign.swapcase()}_HALO_libRadtran_simulation_{experiment}_{solar_str}_{date}_{flight_key}.nc"
+        nc_filepath = f"{libradtran_base_path}/{campaign.swapcase()}_HALO_libRadtran_simulation_{experiment}_{date}_{flight_key}.nc"
         if os.path.isfile(nc_filepath):
             answer = input(f"{nc_filepath}\nalready exists!\n Do you want to overwrite it? (y/n)")
             if answer == "y":
@@ -75,9 +74,10 @@ if __name__ == "__main__":
         except NameError:
             file = None
         log = h.setup_logging("./logs", file, flight_key)
-        log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {solar_str}\n"
+        log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nsolar_flag: {solar_flag}\n"
                  f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}\n"
                  f"wkdir: {libradtran_path}")
+
         # %% call uvspec for all files
         processes = set()
         max_processes = cpu_count() - 4
@@ -145,17 +145,29 @@ if __name__ == "__main__":
         log.info("Merging all output files and adding information from input files...")
         output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+")
                             for file in tqdm(output_files, desc="Output files")])
-        if "lambda" in header:
-            # here a spectral simulation has been performed resulting in more than one line per file
-            nr_wavelenghts = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
-            time_stamps = np.repeat(time_stamps, nr_wavelenghts)
+        # convert output altitude to m
+        output["zout"] = output["zout"] * 1000
+        len_zout = len(zout)
+
+        if "lambda" in header and len_zout > 1:
+            # here a spectral simulation with outputs on multiple levels has been performed
+            nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
+            time_stamps = np.repeat(time_stamps, nr_wavelengths * len_zout)
+
+        if "lambda" in header and len_zout == 1:
+            # here a spectral simulation for one altitude has been performed resulting in more than one line per file
+            nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
+            time_stamps = np.repeat(time_stamps, nr_wavelengths)
             # retrieve wavelength independent variables from files
             # since the data frames are all concatenated with their original index we can use only the rows with index 0
             zout = output.loc[0, "zout"]
             sza = output.loc[0, "sza"]
 
         output = output.assign(time=time_stamps)
-        output = output.set_index(["time"]) if integrate_flag else output.set_index(["time", "lambda"])
+        if len_zout == 1:
+            output = output.set_index(["time"]) if integrate_flag else output.set_index(["time", "lambda"])
+        else:
+            output = output.set_index(["time", "zout"]) if integrate_flag else output.set_index(["time", "lambda", "zout"])
         # calculate direct fraction
         output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
         if solar_flag:
@@ -164,30 +176,31 @@ if __name__ == "__main__":
             output["eup"] = output["eup"] / 1000
             output["edn"] = output["edn"] / 1000
             # calculate solar clear sky downward irradiance
-            output["fdw"] = output["edir"] + output["edn"]
+            if not "eglo" in output:
+                output["eglo"] = output["edir"] + output["edn"]
 
-        # convert output altitude to m
-        output["zout"] = output["zout"] * 1000
         # set up some metadata
         integrate_str = "integrated " if integrate_flag else ""
-        wavelenght_str = f"wavelength range {wavelengths[0]} - {wavelengths[1]} nm"
+        wavelength_str = f"wavelength range {wavelengths[0]} - {wavelengths[1]} nm"
 
         # set up metadata dictionaries for solar (shortwave) flux
         var_attrs_solar = dict(
             albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
             altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
-            direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance", comment=wavelenght_str),
+            direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance", comment=wavelength_str),
             edir=dict(units="W m-2", long_name=f"{integrate_str}direct beam irradiance",
                       standard_name="direct_downwelling_shortwave_flux_in_air",
-                      comment=wavelenght_str),
+                      comment=wavelength_str),
             edn=dict(units="W m-2", long_name=f"{integrate_str}diffuse downward irradiance",
                      standard_name="diffuse_downwelling_shortwave_flux_in_air_assuming_clear_sky",
-                     comment=wavelenght_str),
+                     comment=wavelength_str),
             eup=dict(units="W m-2", long_name=f"{integrate_str}diffuse upward irradiance",
                      standard_name="surface_upwelling_shortwave_flux_in_air_assuming_clear_sky",
-                     comment=wavelenght_str),
-            fdw=dict(units="W m-2", longname=f"{integrate_str}total solar downward irradiance",
-                     standard_name="solar_irradiance", comment=wavelenght_str),
+                     comment=wavelength_str),
+            eglo=dict(units="W m-2", long_name=f"{integrate_str}global solar downward irradiance",
+                      standard_name="solar_irradiance",  comment=wavelength_str),
+            enet=dict(units="W m-2", long_name=f"{integrate_str}net irradiance", comment=wavelength_str),
+            heat=dict(units="K day-1", long_name="heating rate"),
             latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
             longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
             saa=dict(units="degree", long_name="solar azimuth angle", standard_name="solar_azimuth_angle",
@@ -199,23 +212,24 @@ if __name__ == "__main__":
             CIWD=dict(units="g m^-3", long_name="cloud ice water density",
                       standard_name="mass_concentration_of_cloud_ice_water_in_air"),
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
-            T=dict(units="K", long_name="air temperature", standard_name="air_temperature")
+            T=dict(units="K", long_name="air temperature", standard_name="air_temperature"),
+            wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength")
         )
 
         # set up metadata dictionaries for terrestrial (longwave) flux
         var_attrs_terrestrial = dict(
             albedo=dict(units="1", long_name="surface albedo", standard_name="surface_albedo"),
             altitude=dict(units="m", long_name="height above mean sea level", standard_name="altitude"),
-            direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance", comment=wavelenght_str),
+            direct_fraction=dict(units="1", long_name="direct fraction of downward irradiance", comment=wavelength_str),
             edir=dict(units="W m-2", long_name=f"{integrate_str}direct beam irradiance",
                       standard_name="direct_downwelling_longwave_flux_in_air",
-                      comment=wavelenght_str),
+                      comment=wavelength_str),
             edn=dict(units="W m-2", long_name=f"{integrate_str}downward irradiance",
                      standard_name="downwelling_longwave_flux_in_air_assuming_clear_sky",
-                     comment=wavelenght_str),
+                     comment=wavelength_str),
             eup=dict(units="W m-2", long_name=f"{integrate_str}upward irradiance",
                      standard_name="surface_upwelling_longwave_flux_in_air_assuming_clear_sky",
-                     comment=wavelenght_str),
+                     comment=wavelength_str),
             latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
             longitude=dict(units="degrees_east", long_name="longitude", standard_name="longitude"),
             saa=dict(units="degree", long_name="solar azimuth angle", standard_name="soalr_azimuth_angle",
@@ -227,7 +241,8 @@ if __name__ == "__main__":
             CIWD=dict(units="g m^-3", long_name="cloud ice water density",
                       standard_name="mass_concentration_of_cloud_ice_water_in_air"),
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
-            T=dict(units="K", long_name="air temperature", standard_name="air_temperature")
+            T=dict(units="K", long_name="air temperature", standard_name="air_temperature"),
+            wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength")
         )
 
         # set up global attributes
@@ -263,9 +278,18 @@ if __name__ == "__main__":
         encoding = dict(time=dict(units="seconds since 2017-01-01"))
 
         ds = output.to_xarray()
-        # overwrite zout and sza in the spectral case
-        ds = ds.assign(zout=xr.DataArray(zout, coords={"time": ds.time})) if not integrate_flag else ds
-        ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time})) if not integrate_flag else ds
+
+        wavelength_independent_variables = ["p", "T", "CLWD", "CIWD"]
+        # drop wavelength dimension from wavelength independent variables by either overwriting them or dropping the dim
+        if not integrate_flag and len_zout == 1:
+            ds = ds.assign(zout=xr.DataArray(zout, coords={"time": ds.time}))
+            ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
+        elif not integrate_flag and len_zout > 1:
+            sza = np.unique(ds.sza)  # get constant solar zenith angle over wavelength
+            ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
+            for var in wavelength_independent_variables:
+                if var in ds:
+                    ds[var] = ds[var].isel({"lambda":0}, drop=True)
 
         # add the time dependent variables from the input files
         ds = ds.assign(saa=xr.DataArray(saa, coords={"time": ds.time}))
@@ -281,6 +305,11 @@ if __name__ == "__main__":
         for var in ds:
             ds[var].attrs = var_attrs[var]
             encoding[var] = dict(_FillValue=None)  # remove the default _FillValue attribute from each variable
+        for var in ds.coords:
+            if var != "time":
+                ds[var].attrs = var_attrs[var]
+                encoding[var] = dict(_FillValue=None)  # remove the default _FillValue attribute from each variable
+
         # save file
         ds.to_netcdf(nc_filepath, encoding=encoding)
         log.info(f"Saved {nc_filepath}")
