@@ -128,7 +128,8 @@ if __name__ == "__main__":
 
         # read input files and extract information from it
         for infile in input_files:
-            lat, lon, ts, header, wavelengths, integrate_flag, zout = get_info_from_libradtran_input(infile)
+            input_info = get_info_from_libradtran_input(infile)
+            lat, lon, ts = input_info["latitude"], input_info["longitude"], input_info["time_stamp"]
             latitudes.append(lat)
             longitudes.append(lon)
             time_stamps.append(ts)
@@ -137,7 +138,7 @@ if __name__ == "__main__":
             saa.append(get_azimuth(lat, lon, dt_ts))  # calculate solar azimuth angle
 
         # merge all output files and add information from input files
-        output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+") for file in output_files])
+        output = pd.concat([pd.read_csv(file, header=None, names=input_info["header"], sep="\s+") for file in output_files])
         output = output.assign(latitude=latitudes)
         output = output.assign(longitude=longitudes)
         output = output.assign(time=time_stamps)
@@ -156,8 +157,8 @@ if __name__ == "__main__":
         # convert output altitude to m
         output["zout"] = output["zout"] * 1000
         # set up some metadata
-        integrate_str = "integrated " if integrate_flag else ""
-        wavelenght_str = f"wavelength range {wavelengths[0]} - {wavelengths[1]} nm"
+        integrate_str = "integrated " if input_info["integrate_flag"] else ""
+        wavelenght_str = f"wavelength range {input_info['wavelengths'][0]} - {input_info['wavelengths'][1]} nm"
 
         # set up meta data dictionaries for solar (shortwave) flux
         var_attrs_solar = dict(

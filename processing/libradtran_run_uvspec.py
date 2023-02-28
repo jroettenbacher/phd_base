@@ -33,6 +33,7 @@ if __name__ == "__main__":
     import pandas as pd
     import xarray as xr
     import os
+    from operator import itemgetter
     from subprocess import Popen
     from tqdm import tqdm
     from joblib import cpu_count
@@ -138,7 +139,10 @@ if __name__ == "__main__":
 
         log.info("Reading input files and extracting information from it...")
         for infile in tqdm(input_files, desc="Input files"):
-            lat, lon, ts, header, wavelengths, integrate_flag, zout = get_info_from_libradtran_input(infile)
+            input_info = get_info_from_libradtran_input(infile)
+            lat, lon, ts, header, wavelengths, integrate_flag = itemgetter("latitude", "longitude", "time_stamp",
+                                                                           "header", "wavelengths",
+                                                                           "integrate_flag")(input_info)
             latitudes.append(lat)
             longitudes.append(lon)
             time_stamps.append(ts)

@@ -10,6 +10,7 @@ if __name__ == "__main__":
     from pylim.libradtran import get_info_from_libradtran_input
     import pylim.halo_ac3 as meta
     import os
+    from operator import itemgetter
     from subprocess import Popen
     from tqdm import tqdm
     from joblib import cpu_count
@@ -98,7 +99,10 @@ if __name__ == "__main__":
 
         # read input files and extract information from it
         for infile in input_files:
-            lat, lon, ts, header, wavelengths, integrate_flag, zout = get_info_from_libradtran_input(infile)
+            input_info = get_info_from_libradtran_input(infile)
+            lat, lon, ts, header, wavelengths, integrate_flag = itemgetter("latitude", "longitude", "time_stamp",
+                                                                           "header", "wavelengths",
+                                                                           "integrate_flag")(input_info)
             latitudes.append(lat)
             longitudes.append(lon)
             time_stamps.append(ts)

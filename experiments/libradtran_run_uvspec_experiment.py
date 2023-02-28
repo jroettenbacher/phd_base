@@ -31,6 +31,7 @@ if __name__ == "__main__":
     import pandas as pd
     import xarray as xr
     import os
+    from operator import itemgetter
     from subprocess import Popen
     from tqdm import tqdm
     from joblib import cpu_count
@@ -41,7 +42,8 @@ if __name__ == "__main__":
     experiment = "icecloud"  # string defining experiment name, will be used for input path and netCDF filename
     campaign = "halo-ac3"
     # get all flights from dictionary
-    all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(meta.flight_names.values())
+    all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(
+        meta.flight_names.values())
     all_flights = all_flights[18:19]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
@@ -63,7 +65,8 @@ if __name__ == "__main__":
             else:
                 continue
         # get files
-        input_files = [os.path.join(libradtran_path, f) for f in os.listdir(libradtran_path) if f.endswith(".inp") and f.startswith(date)]
+        input_files = [os.path.join(libradtran_path, f) for f in os.listdir(libradtran_path) if
+                       f.endswith(".inp") and f.startswith(date)]
         input_files.sort()  # sort input files -> output files will be sorted as well
         output_files = [f.replace(".inp", ".out") for f in input_files]
         error_logs = [f.replace(".out", ".log") for f in output_files]
@@ -130,31 +133,55 @@ if __name__ == "__main__":
             continue
 
         # %% merge output files and write a netCDF file
-        latitudes, longitudes, time_stamps, saa = list(), list(), list(), list()
+        latitudes, longitudes, time_stamps, saa, exp_settings = list(), list(), list(), list(), list()
 
         log.info("Reading input files and extracting information from it...")
         for infile in tqdm(input_files, desc="Input files"):
-            lat, lon, ts, header, wavelengths, integrate_flag, zout = get_info_from_libradtran_input(infile)
+            input_info = get_info_from_libradtran_input(infile)
+            lat, lon, ts, header, wavelengths, integrate_flag, zout = itemgetter("latitude", "longitude", "time_stamp",
+                                                                           "header", "wavelengths",
+                                                                           "integrate_flag", "zout")(input_info)
             latitudes.append(lat)
             longitudes.append(lon)
             time_stamps.append(ts)
             # convert timestamp to datetime object with timezone information
             dt_ts = ts.to_pydatetime().astimezone(dt.timezone.utc)
             saa.append(get_azimuth(lat, lon, dt_ts))  # calculate solar azimuth angle
+            exp_settings.append(input_info["experiment_settings"])
 
         log.info("Merging all output files and adding information from input files...")
         output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+")
                             for file in tqdm(output_files, desc="Output files")])
         # convert output altitude to m
         output["zout"] = output["zout"] * 1000
-        len_zout = len(zout)
+        len_zout = len(input_info["zout"])
 
-        if "lambda" in header and len_zout > 1:
+        if "lambda" in header and len_zout > 1 and exp_settings[0] is not None:
+            # here a spectral simulation with outputs on multiple levels and different experimental setups has been
+            # performed
+            nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
+            len_experiment = nr_wavelengths * len_zout
+            time_stamps = np.repeat(np.unique(time_stamps), len_experiment * len(exp_settings))
+            experiment_settings = {k: list() for k in exp_settings[0].keys()}
+            for d in exp_settings:
+                for key, value in d.items():
+                    experiment_settings[key].append(np.repeat(value, len_experiment))
+
+            # add numeric experiment settings to dataframe
+            for key in experiment_settings:
+                try:
+                    output[key] = pd.to_numeric(np.array(experiment_settings[key]).flatten())
+                except ValueError as e:
+                    log.debug(f"{e}\n"
+                              f"Variable '{key}' with value: '{np.unique(experiment_settings[key])}' not added to"
+                              f" dataframe.")
+
+        elif "lambda" in header and len_zout > 1:
             # here a spectral simulation with outputs on multiple levels has been performed
             nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
             time_stamps = np.repeat(time_stamps, nr_wavelengths * len_zout)
 
-        if "lambda" in header and len_zout == 1:
+        elif "lambda" in header and len_zout == 1:
             # here a spectral simulation for one altitude has been performed resulting in more than one line per file
             nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
             time_stamps = np.repeat(time_stamps, nr_wavelengths)
@@ -166,8 +193,13 @@ if __name__ == "__main__":
         output = output.assign(time=time_stamps)
         if len_zout == 1:
             output = output.set_index(["time"]) if integrate_flag else output.set_index(["time", "lambda"])
+        elif exp_settings[0] is None:
+            output = output.set_index(["time", "zout"]) if integrate_flag else output.set_index(
+                ["time", "lambda", "zout"])
         else:
-            output = output.set_index(["time", "zout"]) if integrate_flag else output.set_index(["time", "lambda", "zout"])
+            output = output.set_index(["time", "zout", "re_eff_ice", "iwc"]) if integrate_flag else output.set_index(
+                ["time", "lambda", "zout", "re_eff_ice", "iwc"])
+
         # calculate direct fraction
         output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
         if solar_flag:
@@ -198,7 +230,7 @@ if __name__ == "__main__":
                      standard_name="surface_upwelling_shortwave_flux_in_air_assuming_clear_sky",
                      comment=wavelength_str),
             eglo=dict(units="W m-2", long_name=f"{integrate_str}global solar downward irradiance",
-                      standard_name="solar_irradiance",  comment=wavelength_str),
+                      standard_name="solar_irradiance", comment=wavelength_str),
             enet=dict(units="W m-2", long_name=f"{integrate_str}net irradiance", comment=wavelength_str),
             heat=dict(units="K day-1", long_name="heating rate"),
             latitude=dict(units="degrees_north", long_name="latitude", standard_name="latitude"),
@@ -213,7 +245,9 @@ if __name__ == "__main__":
                       standard_name="mass_concentration_of_cloud_ice_water_in_air"),
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
             T=dict(units="K", long_name="air temperature", standard_name="air_temperature"),
-            wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength")
+            wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength"),
+            re_eff_ice=dict(units="mum", long_name="input ice effective radius"),
+            iwc=dict(units="g m^-3", long_name="input ice water content")
         )
 
         # set up metadata dictionaries for terrestrial (longwave) flux
@@ -242,7 +276,9 @@ if __name__ == "__main__":
                       standard_name="mass_concentration_of_cloud_ice_water_in_air"),
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
             T=dict(units="K", long_name="air temperature", standard_name="air_temperature"),
-            wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength")
+            wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength"),
+            re_eff_ice=dict(units="mum", long_name="input ice effective radius"),
+            iwc=dict(units="g m^-3", long_name="input ice water content")
         )
 
         # set up global attributes
@@ -289,12 +325,13 @@ if __name__ == "__main__":
             ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
             for var in wavelength_independent_variables:
                 if var in ds:
-                    ds[var] = ds[var].isel({"lambda":0}, drop=True)
+                    ds[var] = ds[var].isel({"lambda": 0}, drop=True)
 
         # add the time dependent variables from the input files
-        ds = ds.assign(saa=xr.DataArray(saa, coords={"time": ds.time}))
-        ds = ds.assign(latitude=xr.DataArray(latitudes, coords={"time": ds.time}))
-        ds = ds.assign(longitude=xr.DataArray(longitudes, coords={"time": ds.time}))
+        ds = ds.assign(saa=xr.DataArray(np.unique(saa), coords={"time": ds.time}))
+        ds = ds.assign(latitude=xr.DataArray(np.unique(latitudes), coords={"time": ds.time}))
+        ds = ds.assign(longitude=xr.DataArray(np.unique(longitudes), coords={"time": ds.time}))
+
 
         ds.attrs = global_attrs if campaign == "halo-ac3" else attributes  # assign global attributes
         ds = ds.rename({"zout": "altitude"})

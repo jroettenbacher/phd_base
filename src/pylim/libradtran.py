@@ -45,7 +45,7 @@ def find_closest_radiosonde_station(latitude: float, longitude: float):
     return closest_station
 
 
-def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp, List[str], List[str], bool):
+def get_info_from_libradtran_input(filepath: str) -> dict:
     """
     Open a libRadtran input file and read out some information.
 
@@ -55,8 +55,10 @@ def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp
     Returns: Some variables (latitude, longitude, time, header of output file, wavelength range, integrate flag)
 
     """
-    # define all possible output values as None in case the right line is not found
-    latitude, longitude, time_stamp, header, wavelengths, integrate_flag, zout = None, None, None, None, None, None, None
+    # define all possible output values
+    output_values = ["latitude", "longitude", "time_stamp", "header", "wavelengths", "integrate_flag", "zout",
+                     "experiment_settings"]
+    output_dict = dict()
     with open(filepath, "r") as ifile:
         lines = ifile.readlines()
 
@@ -64,35 +66,49 @@ def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp
         if line.startswith("latitude"):
             match = re.search(r"(?P<direction>[NS]) (?P<value>[0-9]+\.?[0-9]*)", line)
             if match.group("direction") == "N":
-                latitude = float(match.group("value"))
+                output_dict["latitude"] = float(match.group("value"))
             else:
                 assert match.group("direction") == "S", "Direction is not 'N' or 'S'! Check input"
-                latitude = -float(match.group("value"))
+                output_dict["latitude"] = -float(match.group("value"))
 
         if line.startswith("longitude"):
             match = re.search(r"(?P<direction>[EW]) (?P<value>[0-9]+\.?[0-9]*)", line)
             if match.group("direction") == "E":
-                longitude = float(match.group("value"))
+                output_dict["longitude"] = float(match.group("value"))
             else:
                 assert match.group("direction") == "W", "Direction is not 'W' or 'E'! Check input"
-                longitude = -float(match.group("value"))
+                output_dict["longitude"] = -float(match.group("value"))
 
         if line.startswith("time"):
-            time_stamp = pd.to_datetime(line[5:-1], format="%Y %m %d %H %M %S")
+            output_dict["time_stamp"] = pd.to_datetime(line[5:-1], format="%Y %m %d %H %M %S")
 
         if line.startswith("output_user"):
-            header = line[12:-1].split()
+            output_dict["header"] = line[12:-1].split()
 
         if line.startswith("wavelength"):
-            wavelengths = line[11:].split()
+            output_dict["wavelengths"] = line[11:].split()
 
         if line.startswith("output_process"):
-            integrate_flag = True if line[15:].strip() == "integrate" else False
-        # there is no output process in a spectral run thus integrate_flag is never updated
-        if integrate_flag is None:
-            integrate_flag = False
+            output_dict["integrate_flag"] = True if line[15:].strip() == "integrate" else False
 
         if line.startswith("zout"):
-            zout = line[4:].split()
+            output_dict["zout"] = line[4:].split()
 
-    return latitude, longitude, time_stamp, header, wavelengths, integrate_flag, zout
+        if line.startswith("# Experiment"):
+            # read out experimental values from input file, split line at : or , and strip of whitespace
+            tmp = [x.strip() for x in re.split(r"[:,]", line[1:])]
+            label, value = tmp[::2], tmp[1::2]
+            experiment_settings = dict()
+            for l, v in zip(label, value):
+                experiment_settings[l] = v
+            output_dict["experiment_settings"] = experiment_settings
+
+        # set output to None if not available in input file
+        for label in output_values:
+            if label not in output_dict:
+                output_dict[label] = None
+        # integrate flag can be unset in input file and is set to False
+        if output_dict["integrate_flag"] is None:
+            output_dict["integrate_flag"] = False
+
+    return output_dict
