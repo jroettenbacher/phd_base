@@ -60,7 +60,15 @@ The :math:`0.1^{\circ}` threshold would cut off to many values during the steady
 
 **Evaluation using BACARDI broadband measurements**
 
-##TODO
+BACARDI data is already filtered during the attitude correction.
+However, some errors remain as can be seen in :numref:`bacardi-raw`.
+
+.. _bacardi-raw:
+
+.. figure:: figures/bahamas_pitch/HALO-AC3_20220412_HALO_RF18_BACARDI_fluxes_raw_case_study.png
+
+    Original filtered BACARDI values as returned from the calibration processing for the case study period.
+    Note the peaks just before filters are applied.
 
 """
 if __name__ == "__main__":
@@ -86,6 +94,8 @@ if __name__ == "__main__":
     plot_path = "./docs/figures/bahamas_pitch"
     bahamas_path = h.get_path("bahamas", halo_flight, campaign)
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{halo_key}_v1_1s.nc"
+    bacardi_path = h.get_path("bacardi", halo_flight, campaign)
+    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{halo_key}_R1_1s.nc"
 
 # %% get flight segmentation and select below and above cloud section
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{halo_key}"]
@@ -102,6 +112,7 @@ if __name__ == "__main__":
 # %% read in BACARDI and BAHAMAS data and resample to 1 sec
     bahamas_ds = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
     bahamas_unfiltered = bahamas_ds[["IRS_ALT", "RELHUM", "TS", "MIXRATIO", "MIXRATIOV", "PS", "QC", "IRS_PHI", "IRS_THE"]]
+    bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
 
 # %% filter values which exceeded certain motion threshold
     roll_center = np.abs(bahamas_ds["IRS_PHI"].median())  # -> 0.06...
@@ -139,6 +150,9 @@ if __name__ == "__main__":
     plt.rc("font", size=12)
     figsize_wide = (24 * cm, 12 * cm)
     figsize_equal = (12 * cm, 12 * cm)
+    # plotting dictionaries for BACARDI
+    labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestrial=r"$F_{\downarrow, terrestrial}$",
+                  F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
 
 # %% plot BAHAMAS pitch angle for whole flight
     plot_ds = bahamas_unfiltered
@@ -316,5 +330,26 @@ if __name__ == "__main__":
     plt.subplots_adjust(bottom=0.4)
     # figname = f"{plot_path}/{halo_flight}_BAHAMAS_pitch_angle_above_cloud_zoom.png"
     # plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% plot BACARDI measurements of below and above cloud section
+    bacardi_ds_slice = bacardi_ds.sel(time=slice(above_cloud["start"], below_cloud["end"]))
+    fig, ax = plt.subplots(figsize=figsize_wide)
+    for var in ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]:
+        ax.plot(bacardi_ds_slice[var].time, bacardi_ds_slice[var], label=labels[var])
+
+    ax.axvline(x=above_cloud["end"], label="End above cloud section", color="#6699CC")
+    ax.axvline(x=below_cloud["start"], label="Start below cloud section", color="#888888")
+    ax.grid()
+    ax.legend(bbox_to_anchor=(0.5, 0), loc="lower center", bbox_transform=fig.transFigure, ncol=3)
+    h.set_xticks_and_xlabels(ax, (below_cloud["end"] - above_cloud["start"]))
+    ax.set_xlabel("Time (UTC)")
+    ax.set_ylabel("Broadband Irradiance (W$\,$m$^{-2}$)")
+    ax.set_title("BACARDI broadband irradiance")
+    plt.tight_layout()
+    plt.subplots_adjust(bottom=0.3)
+    figname = f"{plot_path}/{halo_flight}_BACARDI_fluxes_raw_case_study.png"
+    plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
