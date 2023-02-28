@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
         log.info("Reading input files and extracting information from it...")
         for infile in tqdm(input_files, desc="Input files"):
-            lat, lon, ts, header, wavelengths, integrate_flag = get_info_from_libradtran_input(infile)
+            lat, lon, ts, header, wavelengths, integrate_flag, zout = get_info_from_libradtran_input(infile)
             latitudes.append(lat)
             longitudes.append(lon)
             time_stamps.append(ts)

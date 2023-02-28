@@ -56,7 +56,7 @@ def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp
 
     """
     # define all possible output values as None in case the right line is not found
-    latitude, longitude, time_stamp, header, wavelengths, integrate_flag = None, None, None, None, None, None
+    latitude, longitude, time_stamp, header, wavelengths, integrate_flag, zout = None, None, None, None, None, None, None
     with open(filepath, "r") as ifile:
         lines = ifile.readlines()
 
@@ -92,4 +92,7 @@ def get_info_from_libradtran_input(filepath: str) -> (float, float, pd.Timestamp
         if integrate_flag is None:
             integrate_flag = False
 
-    return latitude, longitude, time_stamp, header, wavelengths, integrate_flag
+        if line.startswith("zout"):
+            zout = line[4:].split()
+
+    return latitude, longitude, time_stamp, header, wavelengths, integrate_flag, zout
