@@ -51,7 +51,6 @@ The other option is to use the mean cloud overlap decorrelation length calculate
 
 *author*: Johannes Röttenbacher
 """
-import pandas as pd
 
 if __name__ == "__main__":
     # %% import modules
@@ -61,6 +60,7 @@ if __name__ == "__main__":
     import xarray as xr
     import numpy as np
     import matplotlib.pyplot as plt
+    import pandas as pd
 
     cm = 1 / 2.54
     cb_colors = h.get_cb_friendly_colors()
