@@ -118,6 +118,10 @@ if __name__ == "__main__":
     # %% read in ifs data
     ifs_ds = xr.open_dataset(f"{ifs_path}/ifs_{date}_00_ml_processed.nc")
 
+    # %% set ice cloud properties
+    iwc_user = [0.0001, 0.001, 0.005, 0.01, 0.1]  # g/m³
+    re_ice_user = [20, 30, 50, 100, 150]  # mum
+
     # %% write input files for each timestep
     timestamps = [pd.to_datetime("2022-04-11 11:15")]
     for timestamp in tqdm(timestamps, desc="Write input files"):
@@ -168,149 +172,149 @@ if __name__ == "__main__":
         #         # calculate albedo after Taylor et al. 1996 for sea surface
         #         calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
 
-        # %% filepaths
-        input_filepath = f"{input_path}/{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran.inp"
-        atmosphere_filepath = f"{atmosphere_path}/{dt_timestamp:%Y%m%d_%H%M%S}_atmosphere.inp"
-        albedo_filepath = f"{albedo_path}/{dt_timestamp:%Y%m%d_%H%M%S}_albedo.inp"
-        cloud_fraction_filepath = f"{cloud_path}/{dt_timestamp:%Y%m%d_%H%M%S}_cloud_fraction.inp"
-        ice_cloud_filepath = f"{cloud_path}/{dt_timestamp:%Y%m%d_%H%M%S}_ice_cloud.inp"
+        # %% loop through all possible combinations of re_eff_ice and iwc
+        for iwc_u in iwc_user:
+            for re_ice_u in re_ice_user:
+                # %% filepaths
+                input_filepath = f"{input_path}/{dt_timestamp:%Y%m%d_%H%M%S}_libRadtran_{iwc_u}_{re_ice_u}.inp"
+                atmosphere_filepath = f"{atmosphere_path}/{dt_timestamp:%Y%m%d_%H%M%S}_atmosphere.inp"
+                albedo_filepath = f"{albedo_path}/{dt_timestamp:%Y%m%d_%H%M%S}_albedo.inp"
+                cloud_fraction_filepath = f"{cloud_path}/{dt_timestamp:%Y%m%d_%H%M%S}_cloud_fraction.inp"
+                ice_cloud_filepath = f"{cloud_path}/{dt_timestamp:%Y%m%d_%H%M%S}_ice_cloud_{iwc_u}_{re_ice_u}.inp"
 
-        # %% set options for libRadtran run - atmospheric shell
-        atmos_settings = dict(
-            # albedo=f"{calc_albedo:.4f}" if calc_albedo else None,
-            # atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
-            atmosphere_file=atmosphere_filepath,
-            albedo_file=albedo_filepath,  # page 79
-            cloud_fraction_file=cloud_fraction_filepath,  # page 86
-            cloud_overlap="off",  # page 86, anything else causes libradtran to quit without throwing an error
-            ic_file=f"1D {ice_cloud_filepath}",  # page 90
-            ic_properties="fu interpolate",  # page 92
-            ic_fu="reff_def on",  # page 90
-            # wc_file=f"1D {water_cloud_filepath}",  # page 124
-            # wc_properties="mie interpolate",  # page 126
-            altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
-            data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
-            latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
-            longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
-            mol_file=None,  # page 104
-            number_of_streams="16",  # page 107
-            # mol_modify="O3 300 DU",  # page 105
-            # radiosonde=radiosonde,  # page 114
-            time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
-            source=f"solar {solar_source_path}/kurudz_1.0nm.dat",  # page 119
-            # sza=f"{sza_libradtran:.4f}",  # page 122
-            # verbose="",  # page 123
-            # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-            wavelength="250 2225",  # start with 250 due to fu parameterization
-            zout=zout_str,  # page 127; altitude in km above surface altitude
-        )
+                # %% set options for libRadtran run - atmospheric shell
+                atmos_settings = dict(
+                    # albedo=f"{calc_albedo:.4f}" if calc_albedo else None,
+                    # atmosphere_file="/opt/libradtran/2.0.4/share/libRadtran/data/atmmod/afglms.dat",  # page 81
+                    atmosphere_file=atmosphere_filepath,
+                    albedo_file=albedo_filepath,  # page 79
+                    cloud_fraction_file=cloud_fraction_filepath,  # page 86
+                    cloud_overlap="off",  # page 86, anything else causes libradtran to quit without throwing an error
+                    ic_file=f"1D {ice_cloud_filepath}",  # page 90
+                    ic_properties="fu interpolate",  # page 92
+                    ic_fu="reff_def on",  # page 90
+                    # wc_file=f"1D {water_cloud_filepath}",  # page 124
+                    # wc_properties="mie interpolate",  # page 126
+                    altitude=0,  # page 80; ground height above sea level in km (0 for over ocean)
+                    data_files_path="/opt/libradtran/2.0.4/share/libRadtran/data",  # location of internal libRadtran data
+                    latitude=f"N {lat:.6f}" if lat > 0 else f"S {-lat:.6f}",  # page 96
+                    longitude=f"E {lon:.6f}" if lon > 0 else f"W {-lon:.6f}",  # BAHAMAS: E = positive, W = negative
+                    mol_file=None,  # page 104
+                    number_of_streams="16",  # page 107
+                    # mol_modify="O3 300 DU",  # page 105
+                    # radiosonde=radiosonde,  # page 114
+                    time=f"{dt_timestamp:%Y %m %d %H %M %S}",  # page 123
+                    source=f"solar {solar_source_path}/kurudz_1.0nm.dat",  # page 119
+                    # sza=f"{sza_libradtran:.4f}",  # page 122
+                    # verbose="",  # page 123
+                    # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
+                    wavelength="250 2225",  # start with 250 due to fu parameterization
+                    zout=zout_str,  # page 127; altitude in km above surface altitude
+                )
 
-        # set options for libRadtran run - radiative transfer equation solver
-        rte_settings = dict(
-            rte_solver="disort",  # page 116
-        )
+                # set options for libRadtran run - radiative transfer equation solver
+                rte_settings = dict(
+                    rte_solver="disort",  # page 116
+                )
 
-        # set options for libRadtran run - post-processing
-        if integrate:
-            postprocess_settings = dict(
-                output_user="sza albedo zout edir edn eup heat enet eglo",  # page 109
-                output_process="integrate",  # page 108
-            )
-        else:
-            postprocess_settings = dict(
-                output_user="lambda sza zout albedo edir edn eup heat enet eglo p T CLWD CIWD",  # page 109
-            )
+                # set options for libRadtran run - post-processing
+                if integrate:
+                    postprocess_settings = dict(
+                        output_user="sza albedo zout edir edn eup heat enet eglo",  # page 109
+                        output_process="integrate",  # page 108
+                    )
+                else:
+                    postprocess_settings = dict(
+                        output_user="lambda sza zout albedo edir edn eup heat enet eglo p T CLWD CIWD",  # page 109
+                    )
 
-        # %% write input file
-        log.debug(f"Writing input file: {input_filepath}")
-        with open(input_filepath, "w") as ifile:
-            ifile.write(f"# libRadtran input file generated with libradtran_write_input_file_ifs.py "
-                        f"({datetime.datetime.utcnow():%c UTC})\n")
-            for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
-                                      ["Atmospheric", "RTE", "Post Process"]):
-                ifile.write(f"\n# {line} Settings\n")
-                for key, value in settings.items():
-                    if value is not None:
-                        ifile.write(f"{key} {value}\n")
+                # %% write input file
+                log.debug(f"Writing input file: {input_filepath}")
+                with open(input_filepath, "w") as ifile:
+                    ifile.write(f"# libRadtran input file generated with {file} "
+                                f"({datetime.datetime.utcnow():%c UTC})\n"
+                                f"# Experiment: {experiment}, re_eff_ice: {re_ice_u}, iwc: {iwc_u}\n")
+                    for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
+                                              ["Atmospheric", "RTE", "Post Process"]):
+                        ifile.write(f"\n# {line} Settings\n")
+                        for key, value in settings.items():
+                            if value is not None:
+                                ifile.write(f"{key} {value}\n")
 
-        # %% write atmosphere file
-        output_altitudes = np.flip(np.arange(0, 13.02, 0.02))
-        alt_atmos = np.flip(met.barometric_height(ifs_sel.pressure_hl.values.flatten(),
-                                                  ifs_sel.temperature_hl.values.flatten()))
-        alt_atmos[0] = 80000  # set uppermost layer to 80km
-        alt_atmos = alt_atmos / 1000  # convert to km
-        n_levels = len(output_altitudes)  # number of levels
-        # overwrite half_level coordinate with actual altitude
-        ifs = ifs_sel.assign_coords(half_level=alt_atmos)
-        # interpolate to output altitude grid
-        ifs_inp = ifs.interp(half_level=output_altitudes)
-        p_atmos = ifs_inp.pressure_hl.values.flatten() / 100
-        t_atmos = ifs_inp.temperature_hl.values.flatten()
-        k_b = 1.380649e-23  # Boltzmann constant
-        air_density = (p_atmos * units.hPa) / (k_b * (units.J / units.K) * t_atmos * units.K)
-        air_density = air_density.to('cm^-3')
-        o3_density = (ifs_inp["o3_vmr"].values * air_density).magnitude
-        o2_density = (ifs_inp["o2_vmr"].values * air_density).magnitude
-        molar_mass_air = 28.949 * units.g / units.mol  # mean Molar mass of air
-        molar_mass_h2o = 18 * units.g / units.mol
-        h2o_density = (ifs_inp["q"].values.flatten() * molar_mass_air / molar_mass_h2o * air_density).magnitude
-        co2_density = (ifs_inp["co2_vmr"].values * air_density).magnitude
-        air_density = air_density.magnitude
+                # %% write atmosphere file
+                output_altitudes = np.flip(np.arange(0, 13.02, 0.02))
+                alt_atmos = np.flip(met.barometric_height(ifs_sel.pressure_hl.values.flatten(),
+                                                          ifs_sel.temperature_hl.values.flatten()))
+                alt_atmos[0] = 80000  # set uppermost layer to 80km
+                alt_atmos = alt_atmos / 1000  # convert to km
+                n_levels = len(output_altitudes)  # number of levels
+                # overwrite half_level coordinate with actual altitude
+                ifs = ifs_sel.assign_coords(half_level=alt_atmos)
+                # interpolate to output altitude grid
+                ifs_inp = ifs.interp(half_level=output_altitudes)
+                p_atmos = ifs_inp.pressure_hl.values.flatten() / 100
+                t_atmos = ifs_inp.temperature_hl.values.flatten()
+                k_b = 1.380649e-23  # Boltzmann constant
+                air_density = (p_atmos * units.hPa) / (k_b * (units.J / units.K) * t_atmos * units.K)
+                air_density = air_density.to('cm^-3')
+                o3_density = (ifs_inp["o3_vmr"].values * air_density).magnitude
+                o2_density = (ifs_inp["o2_vmr"].values * air_density).magnitude
+                molar_mass_air = 28.949 * units.g / units.mol  # mean Molar mass of air
+                molar_mass_h2o = 18 * units.g / units.mol
+                h2o_density = (ifs_inp["q"].values.flatten() * molar_mass_air / molar_mass_h2o * air_density).magnitude
+                co2_density = (ifs_inp["co2_vmr"].values * air_density).magnitude
+                air_density = air_density.magnitude
 
-        log.debug(f"Writing atmosphere file: {atmosphere_filepath}")
-        with open(atmosphere_filepath, 'w') as f:
-            f.write("# z (km)\tpressure (hPa)\ttemperature (K)\tair density (cm^-3)\to3 density (cm^-3)\to2 density (cm^-3)\th2o density (cm^-3)\tco2 density (cm^-3)\n")
-            for i in range(n_levels):
-                f.write(f"{output_altitudes[i]:6.3f}\t{p_atmos[i]:10.5f}\t{t_atmos[i]:9.3f}\t{air_density[i]:14E}\t{o3_density[i]:14E}\t{o2_density[i]:14E}\t{h2o_density[i]:14E}\t{co2_density[i]:14E}\n")
+                log.debug(f"Writing atmosphere file: {atmosphere_filepath}")
+                with open(atmosphere_filepath, 'w') as f:
+                    f.write("# z (km)\tpressure (hPa)\ttemperature (K)\tair density (cm^-3)\to3 density (cm^-3)\to2 density (cm^-3)\th2o density (cm^-3)\tco2 density (cm^-3)\n")
+                    for i in range(n_levels):
+                        f.write(f"{output_altitudes[i]:6.3f}\t{p_atmos[i]:10.5f}\t{t_atmos[i]:9.3f}\t{air_density[i]:14E}\t{o3_density[i]:14E}\t{o2_density[i]:14E}\t{h2o_density[i]:14E}\t{co2_density[i]:14E}\n")
 
-        # %% write albedo file
-        # read in IFS albedo parameterization for sea ice (6 spectral bands for each month) and select right month
-        ci_albedo_bands = h.ci_albedo[month_id, :]
-        # albedo wavelength range (start_1, end_1, start_2, end_2, ...) in nanometer
-        alb_wavelengths = np.array([185, 250, 251, 440, 441, 690, 691, 1190, 1191, 2380, 2381, 2500])
-        # set spectral ocean albedo to constant
-        openocean_albedo_bands = np.repeat(0.6, 6)
-        # calculate spectral albedo bands
-        sw_alb_bands = ifs_sel.CI.values * ci_albedo_bands + (1. - ifs_sel.CI.values) * openocean_albedo_bands
+                # %% write albedo file
+                # read in IFS albedo parameterization for sea ice (6 spectral bands for each month) and select right month
+                ci_albedo_bands = h.ci_albedo[month_id, :]
+                # albedo wavelength range (start_1, end_1, start_2, end_2, ...) in nanometer
+                alb_wavelengths = np.array([185, 250, 251, 440, 441, 690, 691, 1190, 1191, 2380, 2381, 2500])
+                # set spectral ocean albedo to constant
+                openocean_albedo_bands = np.repeat(0.6, 6)
+                # calculate spectral albedo bands
+                sw_alb_bands = ifs_sel.CI.values * ci_albedo_bands + (1. - ifs_sel.CI.values) * openocean_albedo_bands
 
-        sw_alb_for_file_list = []
-        for i in range(len(sw_alb_bands)):
-            sw_alb_for_file_list.append(sw_alb_bands[i])
-            sw_alb_for_file_list.append(sw_alb_bands[i])
+                sw_alb_for_file_list = []
+                for i in range(len(sw_alb_bands)):
+                    sw_alb_for_file_list.append(sw_alb_bands[i])
+                    sw_alb_for_file_list.append(sw_alb_bands[i])
 
-        sw_alb_for_file = np.asarray(sw_alb_for_file_list)
+                sw_alb_for_file = np.asarray(sw_alb_for_file_list)
 
-        # write albedo file
-        log.debug(f'writing albedo file: {albedo_filepath}')
-        with open(albedo_filepath, 'w') as f:
-            f.write('# wavelength (nm)\talbedo (0-1)\n')
-            for i in range(len(alb_wavelengths)):
-                f.write(f"{alb_wavelengths[i]:6d}\t{sw_alb_for_file[i]:6.2f}\n")
+                # write albedo file
+                log.debug(f'writing albedo file: {albedo_filepath}')
+                with open(albedo_filepath, 'w') as f:
+                    f.write('# wavelength (nm)\talbedo (0-1)\n')
+                    for i in range(len(alb_wavelengths)):
+                        f.write(f"{alb_wavelengths[i]:6d}\t{sw_alb_for_file[i]:6.2f}\n")
 
-        # %% set ice cloud properties
-        iwc_user = 0.005  # g/m³
-        re_ice_user = 20  # mum
+                # %% write cloud files
+                cloud_top = 7.5  # define cloud top (km)
+                cloud_depth = 1  # define cloud depth (km)
+                cloud_base = cloud_top - cloud_depth
+                cloud_flag = (output_altitudes >= cloud_base) & (output_altitudes <= cloud_top)
+                cloud_fraction = np.where(cloud_flag, 1, 0)
+                iwc = np.where(cloud_flag, iwc_u, 0)
+                re_ice = np.where(cloud_flag, re_ice_u, 0)
 
-        # %% write cloud files
-        cloud_top = 7.5  # define cloud top (km)
-        cloud_depth = 1  # define cloud depth (km)
-        cloud_base = cloud_top - cloud_depth
-        cloud_flag = (output_altitudes >= cloud_base) & (output_altitudes <= cloud_top)
-        cloud_fraction = np.where(cloud_flag, 1, 0)
-        iwc = np.where(cloud_flag, iwc_user, 0)
-        re_ice = np.where(cloud_flag, re_ice_user, 0)
+                log.debug(f"Writing cloud fraction file: {cloud_fraction_filepath}")
+                with open(cloud_fraction_filepath, "w") as f:
+                    f.write("# z (km)\tCF (0-1)\n")
+                    for i in range(n_levels):
+                        f.write(f"{output_altitudes[i]:6.3f}\t{cloud_fraction[i]:4.2f}\n")
 
-        log.debug(f"Writing cloud fraction file: {cloud_fraction_filepath}")
-        with open(cloud_fraction_filepath, "w") as f:
-            f.write("# z (km)\tCF (0-1)\n")
-            for i in range(n_levels):
-                f.write(f"{output_altitudes[i]:6.3f}\t{cloud_fraction[i]:4.2f}\n")
+                log.debug(f"Writing ice cloud file: {ice_cloud_filepath}")
+                with open(ice_cloud_filepath, "w") as f:
+                    f.write("# Height (km)\tIWC (g/m3)\treff (mum)\n")
+                    for i in range(n_levels):
+                        f.write(f"{output_altitudes[i]:6.3f}\t{iwc[i]:10.8f}\t{re_ice[i]:8.5f}\n")
 
-        log.debug(f"Writing ice cloud file: {ice_cloud_filepath}")
-        with open(ice_cloud_filepath, "w") as f:
-            f.write("# Height (km)\tIWC (g/m3)\treff (mum)\n")
-            for i in range(n_levels):
-                f.write(f"{output_altitudes[i]:6.3f}\t{iwc[i]:10.8f}\t{re_ice[i]:8.5f}\n")
-
-        # end of for
+                # end of for
 
