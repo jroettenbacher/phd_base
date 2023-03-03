@@ -105,3 +105,44 @@ The same execution script is used as for the previous sea ice experiment.
 Only ``libradtran_dir`` in line 40 and ``nc_filepath`` in line 208 are adjusted.
 
 .. automodule:: experiments.libradtran_write_input_file_seaice_2
+
+Icecloud over sea ice experiment
+--------------------------------
+
+**Name:** iceloud
+
+*Scripts:*
+
+- :py:mod:`experiments.libradtran_write_input_file_icecloud.py`
+- :py:mod:`experiments.libradtran_run_uvspec_experiment.py`
+- :py:mod:`experiments.libradtran_icecloud_sensitivity_study.py`
+
+*Folders:*
+
+- ``icecloud``
+
+Setup
+^^^^^
+
+.. automodule:: experiments.libradtran_write_input_file_icecloud
+
+.. automodule:: experiments.libradtran_icecloud_sensitivity_study
+
+Icecloud along flight track for RF17
+------------------------------------
+
+**Name:** icecloud2
+
+*Scripts:*
+
+- :py:mod:`experiments.libradtran_write_input_file_icecloud2.py`
+- :py:mod:`experiments.libradtran_run_uvspec_experiment.py`
+
+*Folders:*
+
+- ``icelcoud2``
+
+Setup
+^^^^^
+
+.. automodule:: experiments.libradtran_write_input_file_icecloud2
