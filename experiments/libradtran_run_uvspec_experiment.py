@@ -39,7 +39,7 @@ if __name__ == "__main__":
     from pysolar.solar import get_azimuth
 
     # %% set options
-    experiment = "icecloud"  # string defining experiment name, will be used for input path and netCDF filename
+    experiment = "icecloud2"  # string defining experiment name, will be used for input path and netCDF filename
     campaign = "halo-ac3"
     # get all flights from dictionary
     all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(
@@ -167,10 +167,12 @@ if __name__ == "__main__":
                 for key, value in d.items():
                     experiment_settings[key].append(np.repeat(value, len_experiment))
 
-            # add numeric experiment settings to dataframe
+            # add numeric experiment settings to dataframe and extract additional dimensions for adding to index
+            additional_dimensions = list()
             for key in experiment_settings:
                 try:
                     output[key] = pd.to_numeric(np.array(experiment_settings[key]).flatten())
+                    additional_dimensions.append(key)
                 except ValueError as e:
                     log.debug(f"{e}\n"
                               f"Variable '{key}' with value: '{np.unique(experiment_settings[key])}' not added to"
@@ -197,8 +199,10 @@ if __name__ == "__main__":
             output = output.set_index(["time", "zout"]) if integrate_flag else output.set_index(
                 ["time", "lambda", "zout"])
         else:
-            output = output.set_index(["time", "zout", "re_eff_ice", "iwc"]) if integrate_flag else output.set_index(
-                ["time", "lambda", "zout", "re_eff_ice", "iwc"])
+            if integrate_flag:
+                output = output.set_index(["time", "zout", additional_dimensions[0], additional_dimensions[1]])
+            else:
+                output = output.set_index(["time", "lambda", "zout", additional_dimensions[0], additional_dimensions[1]])
 
         # calculate direct fraction
         output["direct_fraction"] = output["edir"] / (output["edir"] + output["edn"])
@@ -208,7 +212,9 @@ if __name__ == "__main__":
             output["eup"] = output["eup"] / 1000
             output["edn"] = output["edn"] / 1000
             # calculate solar clear sky downward irradiance
-            if not "eglo" in output:
+            if "eglo" in output:
+                output["eglo"] = output["eglo"] / 1000
+            else:
                 output["eglo"] = output["edir"] + output["edn"]
 
         # set up some metadata
@@ -246,7 +252,7 @@ if __name__ == "__main__":
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
             T=dict(units="K", long_name="air temperature", standard_name="air_temperature"),
             wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength"),
-            re_eff_ice=dict(units="mum", long_name="input ice effective radius"),
+            re_ice=dict(units="mum", long_name="input ice effective radius"),
             iwc=dict(units="g m^-3", long_name="input ice water content")
         )
 
@@ -277,7 +283,7 @@ if __name__ == "__main__":
             p=dict(units="hPa", long_name="atmospheric pressure", standard_name="air_pressure"),
             T=dict(units="K", long_name="air temperature", standard_name="air_temperature"),
             wavelength=dict(units="nm", long_name="wavelength", standard_name="radiation_wavelength"),
-            re_eff_ice=dict(units="mum", long_name="input ice effective radius"),
+            re_ice=dict(units="mum", long_name="input ice effective radius"),
             iwc=dict(units="g m^-3", long_name="input ice water content")
         )
 
