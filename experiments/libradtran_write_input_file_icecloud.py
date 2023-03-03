@@ -17,6 +17,7 @@ Input:
 * use_smart_ins flag
 * integrate flag
 * input_path, this is where the files will be saved to be executed by uvspec
+* different iwc and re_ice values
 
 **Output:**
 
@@ -120,7 +121,7 @@ if __name__ == "__main__":
 
     # %% set ice cloud properties
     iwc_user = [0.0001, 0.001, 0.005, 0.01, 0.1]  # g/m³
-    re_ice_user = [20, 30, 50, 100, 150]  # mum
+    re_ice_user = [10, 20, 30, 40, 50, 60]  # mum
 
     # %% write input files for each timestep
     timestamps = [pd.to_datetime("2022-04-11 11:15")]
@@ -172,7 +173,7 @@ if __name__ == "__main__":
         #         # calculate albedo after Taylor et al. 1996 for sea surface
         #         calc_albedo = 0.037 / (1.1 * cos_sza ** 1.4 + 0.15)
 
-        # %% loop through all possible combinations of re_eff_ice and iwc
+        # %% loop through all possible combinations of re_ice and iwc
         for iwc_u in iwc_user:
             for re_ice_u in re_ice_user:
                 # %% filepaths
@@ -233,7 +234,7 @@ if __name__ == "__main__":
                 with open(input_filepath, "w") as ifile:
                     ifile.write(f"# libRadtran input file generated with {file} "
                                 f"({datetime.datetime.utcnow():%c UTC})\n"
-                                f"# Experiment: {experiment}, re_eff_ice: {re_ice_u}, iwc: {iwc_u}\n")
+                                f"# Experiment: {experiment}, re_ice: {re_ice_u}, iwc: {iwc_u}\n")
                     for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                               ["Atmospheric", "RTE", "Post Process"]):
                         ifile.write(f"\n# {line} Settings\n")
