@@ -150,8 +150,8 @@ if __name__ == "__main__":
             exp_settings.append(input_info["experiment_settings"])
 
         log.info("Merging all output files and adding information from input files...")
-        output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+")
-                            for file in tqdm(output_files, desc="Output files")])
+        output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+").assign(time=ts)
+                            for file, ts in zip(tqdm(output_files, desc="Output files"), time_stamps)])
         # convert output altitude to m
         output["zout"] = output["zout"] * 1000
         len_zout = len(input_info["zout"])
@@ -161,7 +161,6 @@ if __name__ == "__main__":
             # performed
             nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
             len_experiment = nr_wavelengths * len_zout
-            time_stamps = np.repeat(np.unique(time_stamps), len_experiment * len(exp_settings))
             experiment_settings = {k: list() for k in exp_settings[0].keys()}
             for d in exp_settings:
                 for key, value in d.items():
@@ -181,18 +180,15 @@ if __name__ == "__main__":
         elif "lambda" in header and len_zout > 1:
             # here a spectral simulation with outputs on multiple levels has been performed
             nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
-            time_stamps = np.repeat(time_stamps, nr_wavelengths * len_zout)
 
         elif "lambda" in header and len_zout == 1:
             # here a spectral simulation for one altitude has been performed resulting in more than one line per file
             nr_wavelengths = len(output["lambda"].unique())  # retrieve the number of wavelengths which were simulated
-            time_stamps = np.repeat(time_stamps, nr_wavelengths)
             # retrieve wavelength independent variables from files
             # since the data frames are all concatenated with their original index we can use only the rows with index 0
             zout = output.loc[0, "zout"]
             sza = output.loc[0, "sza"]
 
-        output = output.assign(time=time_stamps)
         if len_zout == 1:
             output = output.set_index(["time"]) if integrate_flag else output.set_index(["time", "lambda"])
         elif exp_settings[0] is None:
@@ -327,8 +323,12 @@ if __name__ == "__main__":
             ds = ds.assign(zout=xr.DataArray(zout, coords={"time": ds.time}))
             ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
         elif not integrate_flag and len_zout > 1:
-            sza = np.unique(ds.sza)  # get constant solar zenith angle over wavelength
-            ds = ds.assign(sza=xr.DataArray(sza, coords={"time": ds.time}))
+            dims = ds.sza.dims
+            sza = ds.sza
+            for i, dim in enumerate(dims):
+                if dim != "time":
+                    sza = sza.isel({f"{dim}": 0}, drop=True)
+            ds["sza"] = sza
             for var in wavelength_independent_variables:
                 if var in ds:
                     ds[var] = ds[var].isel({"lambda": 0}, drop=True)
