@@ -9,15 +9,56 @@ import numpy as np
 import xarray as xr
 from tqdm import tqdm
 import logging
+import importlib_resources as pkg_resources
 
 log = logging.getLogger(__name__)
 
 
 def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PLAT):
+    """
+    From ice_effective_radius.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2016- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    PURPOSE
+    -------
+        Calculate effective radius of ice clouds
+
+    AUTHOR
+    ------
+        Robin Hogan, ECMWF (using code extracted from radlswr.F90)
+        Original: 2016-02-24
+
+    MODIFICATIONS
+    -------------
+        2022-09-22  J. Röttenbacher translated Sun and Rikus part to python3
+
+    -------------------------------------------------------------------
+
+    Ice effective radius = f(T,IWC) from Sun and Rikus (1999), revised by Sun (2001)
+
+    Args:
+        PPRESSURE: (Pa)
+        PTEMPERATURE: (K)
+        PCLOUD_FRAC: (kg/kg)
+        PQ_ICE: (kg/kg)
+        PQ_SNOW: (kg/kg)
+        PLAT: (degrees)
+
+    Returns: ice effective radius in micrometer
+
+    """
     # constants
     RRE2DE = 0.64952  # from suecrad.f90
-    RMIN_ICE = 60  # min ice radius
-    RTT = 273.15  # temperature of fusion of water
+    RMIN_ICE = 60  # min ice radius (um)
+    RTT = 273.15  # temperature of fusion of water (K)
     RD = 287  # J kg-1 K-1
 
     ZDEFAULT_RE_UM = 80 * RRE2DE
@@ -41,6 +82,43 @@ def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, 
 
 
 def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAIN):
+    """
+    From liquid_effective_radius.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2015- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    PURPOSE
+    -------
+        Calculate effective radius of liquid clouds
+
+    AUTHOR
+    ------
+        Robin Hogan, ECMWF (using code extracted from radlswr.F90)
+        Original: 2015-09-24
+
+    MODIFICATIONS
+    -------------
+        2022-09-22 J. Röttenbacher translated Martin et al. (JAS 1994) part to python3
+
+    -------------------------------------------------------------------
+
+    Args:
+        PPRESSURE: (Pa)
+        PTEMPERATURE: (K)
+        PCLOUD_FRAC: (kg/kg)
+        PQ_LIQ: (kg/kg)
+        PQ_RAIN: (kg/kg)
+
+    Returns: liquid effective radius in micrometer after Martin et al. (JAS 1994)
+
+    """
     # constants
     PP_MIN_RE_UM = 4  # min radius
     PP_MAX_RE_UM = 30  # max radius
@@ -81,6 +159,191 @@ def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAI
         PRE_UM = PP_MIN_RE_UM
 
     return PRE_UM * 1e-6
+
+
+def calc_ice_optics_baran2017(bands: str, ice_wp, qi, temperature):
+    """
+    Compute ice-particle scattering properties using a parameterization as a function of ice water mixing ratio
+    and temperature.
+
+    From radiation_ice_optics_baran2017.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2014- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    Author:  Robin Hogan
+    Email:   r.j.hogan@ecmwf.int
+
+    Modifications
+      2020-08-10  R. Hogan  Bounded re to be <= 100um and g to be < 1.0
+      2023-03-06  J. Röttenbacher  Translated to python3
+
+    Args:
+        bands: 'sw' or 'lw', shortwave or longwave bands
+        ice_wp: Ice water path (kg m-2)
+        qi: Mixing ratio (kg kg-1)
+        temperature: Temperature (K)
+
+    Returns:
+        od: Total optical depth
+        scat_od: Scattering optical depth
+        g: Asymmetry factor
+
+    """
+    # read in coefficients from netcdf file
+    filename = pkg_resources.files("pylim.data").joinpath("baran2017_ice_scattering_rrtm.nc")
+    ds = xr.open_dataset(filename)
+    nb = len(ds[f"band_{bands}"])  # number of bands
+    coeff_gen = ds["coeff_gen"].values  # General coefficients
+    coeff = ds[f"coeff_{bands}"]  # Band-specific coefficients
+    # Modified ice mixing ratio, and the same raised to an appropriate power
+    qi_mod = qi * np.exp(coeff_gen[0] * (temperature - coeff_gen[1]))
+    qi_mod_od = qi_mod ** coeff_gen[2]
+    qi_mod_ssa = qi_mod ** coeff_gen[3]
+    qi_mod_g = qi_mod ** coeff_gen[4]
+
+    od = ice_wp * (coeff[0:nb, 0] + coeff[0:nb, 1] / (1.0 + qi_mod_od * coeff[0:nb, 2]))
+    scat_od = od * (coeff[0:nb, 3] + coeff[0:nb, 4] / (1.0 + qi_mod_ssa * coeff[0:nb, 5]))
+    g = coeff[0:nb, 6] + coeff[0:nb, 7] / (1.0 + qi_mod_g * coeff[0:nb, 8])
+
+    return od, scat_od, g
+
+
+def calc_ice_optics_fu_sw(ice_wp, re):
+    """
+    Compute shortwave ice-particle scattering properties using Fu (1996) parameterization.
+    The asymmetry factor in band 14 goes larger than one for re > 100.8 um, so we cap re at 100 um.
+    Asymmetry factor is capped at just less than 1 because if it is exactly 1 then delta-Eddington scaling leads to a
+    zero scattering optical depth and then division by zero.
+
+    From radiation_ice_optics_fu.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2014- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    Author:  Robin Hogan
+    Email:   r.j.hogan@ecmwf.int
+
+    Modifications
+      2020-08-10  R. Hogan  Bounded re to be <= 100um and g to be < 1.0
+      2023-03-06  J. Röttenbacher  Translated to python3
+
+    Args:
+        ice_wp: Ice water path (kg m-2)
+        re: Effective radius (m)
+
+    Returns:
+
+    """
+    MaxAsymmetryFactor = 1.0 - 10.0 * np.finfo(dtype="float32").eps
+    MaxEffectiveRadius = 100.0e-6  # metres
+    # read in coefficients from netCDF file
+    filename = pkg_resources.files("pylim.data").joinpath("fu_ice_scattering_rrtm_new.nc")
+    ds = xr.open_dataset(filename)
+    coeff = ds.coeff_sw1
+    nb = 14  # number of shortwave bands
+    od = [0.0] * nb  # Total optical depth
+    scat_od = [0.0] * nb  # scattering optical depth
+    g = [0.0] * nb  # asymmetry factor
+
+    # cap effective radius at MaxEffectiveRadius and keep nan values
+    replace_values = np.isnan(re) | (~np.isnan(re) & (re < MaxEffectiveRadius))
+    re = re.where(replace_values, MaxEffectiveRadius)  # cap effective radius
+    # Convert to effective diameter using the relationship in the IFS
+    de_um = re * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
+    inv_de_um = 1.0 / de_um  # and its inverse
+    iwp_gm_2 = ice_wp * 1000.0  # Ice water path in g m-2
+
+    for jb in range(nb):
+        od[jb] = iwp_gm_2 * (coeff[jb, 0] + coeff[jb, 1] * inv_de_um)
+        scat_od[jb] = od[jb] * (
+                1.0 - (coeff[jb, 2] + de_um * (coeff[jb, 3] + de_um * (coeff[jb, 4] + de_um * coeff[jb, 5]))))
+        g_tmp = coeff[jb, 6] + de_um * (coeff[jb, 7] + de_um * (coeff[jb, 8] + de_um * coeff[jb, 9]))
+        replace_values = np.isnan(g_tmp) | (~np.isnan(g_tmp) & (g_tmp < MaxAsymmetryFactor))
+        g[jb] = g_tmp.where(replace_values, MaxAsymmetryFactor)
+
+    # convert to dataset with new dimension band_sw
+    od = xr.concat(od, "band_sw")
+    scat_od = xr.concat(scat_od, "band_sw")
+    g = xr.concat(g, "band_sw")
+
+    return od, scat_od, g
+
+
+def calc_ice_optics_fu_lw(ice_wp, re):
+    """
+    Compute longwave ice-particle scattering properties using Fu et al. (1998) parameterization.
+
+    From radiation_ice_optics_fu.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2014- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    Author:  Robin Hogan
+    Email:   r.j.hogan@ecmwf.int
+
+    Modifications
+      2020-08-10  R. Hogan  Bounded re to be <= 100um and g to be < 1.0
+      2023-03-06  J. Röttenbacher  Translated to python3
+
+    Args:
+        ice_wp: Ice water path (kg m-2)
+        re: Effective radius (m)
+
+    Returns:
+
+    """
+    MaxAsymmetryFactor = 1.0 - 10.0 * np.finfo(1.0).eps
+    MaxEffectiveRadius = 100.0e-6  # metres
+    # read in coefficients from netCDF file
+    filename = pkg_resources.files("pylim.data").joinpath("fu_ice_scattering_rrtm_new.nc")
+    ds = xr.open_dataset(filename)
+    coeff = ds.coeff_lw1
+    nb = 16  # number of longwave bands
+    od = [0.0] * nb  # Total optical depth
+    scat_od = [0.0] * nb  # scattering optical depth
+    g = [0.0] * nb  # asymmetry factor
+
+    # cap effective radius at MaxEffectiveRadius and keep nan values
+    replace_values = np.isnan(re) | (~np.isnan(re) & (re < MaxEffectiveRadius))
+    re = re.where(replace_values, MaxEffectiveRadius)  # cap effective radius
+    # Convert to effective diameter using the relationship in the IFS
+    de_um = min(re, MaxEffectiveRadius) * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
+    inv_de_um = 1.0 / de_um  # and its inverse
+    iwp_gm_2 = ice_wp * 1000.0  # Ice water path in g m-2
+
+    for jb in range(nb):
+        od[jb] = iwp_gm_2 * (coeff[jb, 0] + inv_de_um * (coeff[jb, 1] + inv_de_um * coeff[jb, 2]))
+        scat_od[jb] = od[jb] - iwp_gm_2 * inv_de_um * (
+                coeff[jb, 3] + de_um * (coeff[jb, 4] + de_um * (coeff[jb, 5] + de_um * coeff[jb, 6])))
+        g_tmp = coeff[jb, 7] + de_um * (coeff[jb, 8] + de_um * (coeff[jb, 9] + de_um * coeff[jb, 10]))
+        replace_values = np.isnan(g_tmp) | (~np.isnan(g_tmp) & (g_tmp < MaxAsymmetryFactor))
+        g[jb] = g_tmp.where(replace_values, MaxAsymmetryFactor)
+
+    # convert to dataset with new dimension band_lw
+    od = xr.concat(od, "band_lw")
+    scat_od = xr.concat(scat_od, "band_lw")
+    g = xr.concat(g, "band_lw")
+
+    return od, scat_od, g
 
 
 def calc_pressure(ds: xr.Dataset) -> xr.Dataset:
@@ -171,7 +434,7 @@ def apply_ice_effective_radius(ds: xr.Dataset) -> xr.Dataset:
     if "time" in ds.dims and "lat" in ds.dims and "lon" in ds.dims:
         chunk_dict = {"time": 1, "level": 10, "lat": 10, "lon": 10}
     elif "lat" in ds.dims and "lon" in ds.dims:
-        chunk_dict = {"level": 10,"lat": 10, "lon": 10}
+        chunk_dict = {"level": 10, "lat": 10, "lon": 10}
     elif "time" not in ds.dims and "lat" not in ds.dims and "lon" not in ds.dims:
         chunk_dict = {"level": 10}
     else:
@@ -314,9 +577,10 @@ if __name__ == '__main__':
 
     leffr_test = leffr.isel({"lev": 114, "lat": 129, "lon": 378}).compute()
     np.testing.assert_allclose(leffr_test.values, leffr_sel.values)  # check if both functions return the same result
+
+
     # no error is thrown -> same result
     # %%
-
 
     def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAIN, PLAND_FRAC, PCCN_SEA,
                                 PCCN_LAND, **kwargs):
