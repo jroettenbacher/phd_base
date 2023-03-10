@@ -73,6 +73,8 @@ radar_path = h.get_path("hamp_mira", halo_flight, campaign)
 radar_file = "radar_20220411_v1.6.nc"
 lidar_path = h.get_path("wales", halo_flight, campaign)
 bsrgl_file = "HALO-AC3_HALO_WALES_bsrgl_20220411_RF17_V1.nc"
+ecrad_baran2016_file = f"ecrad_merged_output_{date}_v7_mean.nc"
+ecrad_yi_file = f"ecrad_merged_output_{date}_v4_mean.nc"
 
 # set up metadata for access to HALO-AC3 cloud
 kwds = {'simplecache': dict(same_names=True)}
@@ -151,7 +153,11 @@ ecrad_ds["re_liquid"] = ecrad_ds.re_liquid.where(ecrad_ds.re_liquid != 4.000001e
 # mean or std over columns
 # ecrad_ds = ecrad_ds.mean std(dim="column")
 # ecrad_ds.to_netcdf(f"{ecrad_path}/{ecrad_file.replace('.nc', '_mean std.nc')}")
-print("")
+ecrad_baran2016 = xr.open_dataset(f"{ecrad_path}/{ecrad_baran2016_file}")
+ecrad_yi = xr.open_dataset(f"{ecrad_path}/{ecrad_yi_file}")
+# ecrad_yi = ecrad_yi.mean(dim="column")
+# ecrad_yi.to_netcdf(f"{ecrad_path}/{ecrad_yi_file.replace('.nc', '_mean.nc')}")
+# print("")
 
 # %% read in radar data
 radar_ds = xr.open_dataset(f"{radar_path}/{radar_file}")
@@ -364,19 +370,6 @@ figsize_wide = (24 * cm, 12 * cm)
 figsize_equal = (12 * cm, 12 * cm)
 
 # %% get height level of actual flight altitude in ecRad model on half levels
-press_height = ecrad_ds[["pressure_hl", "temperature_hl"]]
-p_array_list = list()
-for time in tqdm(press_height.time):
-    tmp = press_height.sel(time=time, drop=True)
-    press_height_new = met.barometric_height(tmp["pressure_hl"], tmp["temperature_hl"])
-    p_array = xr.DataArray(data=press_height_new[None, :], dims=["time", "half_level"],
-                           coords={"half_level": (["half_level"], np.flip(tmp.half_level.values)),
-                                   "time": np.array([time.values])},
-                           name="pressure_height")
-    p_array_list.append(p_array)
-
-ecrad_ds["press_height_hl"] = xr.merge(p_array_list).pressure_height
-ecrad_ds["press_height_hl"] = ecrad_ds["press_height_hl"].where(~np.isnan(ecrad_ds["press_height_hl"]), 80000)
 ins_tmp = ins_res.sel(time=ecrad_ds.time, method="nearest")
 ecrad_timesteps = len(ecrad_ds.time)
 aircraft_height_level = np.zeros(ecrad_timesteps)
@@ -389,19 +382,6 @@ height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"ti
 aircraft_height = ecrad_ds["press_height_hl"].isel(half_level=height_level_da)
 
 # %% get height level of actual flight altitude in ecRad model on full levels
-press_height = ecrad_ds[["pressure_full", "t"]]
-p_array_list = list()
-for time in tqdm(press_height.time):
-    tmp = press_height.sel(time=time, drop=True)
-    press_height_new = met.barometric_height(tmp["pressure_full"], tmp["t"])
-    p_array = xr.DataArray(data=press_height_new[None, :], dims=["time", "level"],
-                           coords={"level": (["level"], np.flip(tmp.level.values)),
-                                   "time": np.array([time.values])},
-                           name="pressure_height")
-    p_array_list.append(p_array)
-
-ecrad_ds["press_height_full"] = xr.merge(p_array_list).pressure_height
-ecrad_ds["press_height_full"] = ecrad_ds["press_height_full"].where(~np.isnan(ecrad_ds["press_height_full"]), 80000)
 aircraft_height_level_full = np.zeros(ecrad_timesteps)
 
 for i in tqdm(range(ecrad_timesteps)):
@@ -3011,3 +2991,7 @@ figname = f"{plot_path}/{halo_flight}_bases_tops_layered_lidar_filtered.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
+# %% plot spectra below cloud from simulations and measurements
+plot1 = smart_ds_filtered
+_, ax = plt.subplots(figsize=figsize_wide)
+
