@@ -99,7 +99,6 @@ def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAI
     | Modifications:
     |   2022-09-22 J. Röttenbacher translated Martin et al. (JAS 1994) part to python3
 
-    -------------------------------------------------------------------
 
     Args:
         PPRESSURE: (Pa)
