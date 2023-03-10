@@ -268,10 +268,10 @@ def calc_ice_optics_baran2017(bands: str, ice_wp, qi, temperature):
     return od, scat_od, g
 
 
-def calc_ice_optics_fu_sw(ice_wp, re):
+def calc_ice_optics_fu_sw(ice_wp, r_eff):
     """
     Compute shortwave ice-particle scattering properties using Fu (1996) parameterization.
-    The asymmetry factor in band 14 goes larger than one for re > 100.8 um, so we cap re at 100 um.
+    The asymmetry factor in band 14 goes larger than one for r_eff > 100.8 um, so we cap r_eff at 100 um.
     Asymmetry factor is capped at just less than 1 because if it is exactly 1 then delta-Eddington scaling leads to a
     zero scattering optical depth and then division by zero.
 
@@ -290,12 +290,12 @@ def calc_ice_optics_fu_sw(ice_wp, re):
     Email:   r.j.hogan@ecmwf.int
 
     Modifications
-      2020-08-10  R. Hogan  Bounded re to be <= 100um and g to be < 1.0
+      2020-08-10  R. Hogan  Bounded r_eff to be <= 100um and g to be < 1.0
       2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
         ice_wp: Ice water path (kg m-2)
-        re: Effective radius (m)
+        r_eff: Effective radius (m)
 
     Returns:
 
@@ -312,10 +312,10 @@ def calc_ice_optics_fu_sw(ice_wp, re):
     g = [0.0] * nb  # asymmetry factor
 
     # cap effective radius at MaxEffectiveRadius and keep nan values
-    replace_values = np.isnan(re) | (~np.isnan(re) & (re < MaxEffectiveRadius))
-    re = re.where(replace_values, MaxEffectiveRadius)  # cap effective radius
+    replace_values = np.isnan(r_eff) | (~np.isnan(r_eff) & (r_eff < MaxEffectiveRadius))
+    r_eff = r_eff.where(replace_values, MaxEffectiveRadius)  # cap effective radius
     # Convert to effective diameter using the relationship in the IFS
-    de_um = re * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
+    de_um = r_eff * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
     inv_de_um = 1.0 / de_um  # and its inverse
     iwp_gm_2 = ice_wp * 1000.0  # Ice water path in g m-2
 
@@ -335,7 +335,7 @@ def calc_ice_optics_fu_sw(ice_wp, re):
     return od, scat_od, g
 
 
-def calc_ice_optics_fu_lw(ice_wp, re):
+def calc_ice_optics_fu_lw(ice_wp, r_eff):
     """
     Compute longwave ice-particle scattering properties using Fu et al. (1998) parameterization.
 
@@ -354,12 +354,12 @@ def calc_ice_optics_fu_lw(ice_wp, re):
     Email:   r.j.hogan@ecmwf.int
 
     Modifications
-      2020-08-10  R. Hogan  Bounded re to be <= 100um and g to be < 1.0
+      2020-08-10  R. Hogan  Bounded r_eff to be <= 100um and g to be < 1.0
       2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
         ice_wp: Ice water path (kg m-2)
-        re: Effective radius (m)
+        r_eff: Effective radius (m)
 
     Returns:
 
@@ -376,10 +376,10 @@ def calc_ice_optics_fu_lw(ice_wp, re):
     g = [0.0] * nb  # asymmetry factor
 
     # cap effective radius at MaxEffectiveRadius and keep nan values
-    replace_values = np.isnan(re) | (~np.isnan(re) & (re < MaxEffectiveRadius))
-    re = re.where(replace_values, MaxEffectiveRadius)  # cap effective radius
+    replace_values = np.isnan(r_eff) | (~np.isnan(r_eff) & (r_eff < MaxEffectiveRadius))
+    r_eff = r_eff.where(replace_values, MaxEffectiveRadius)  # cap effective radius
     # Convert to effective diameter using the relationship in the IFS
-    de_um = min(re, MaxEffectiveRadius) * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
+    de_um = min(r_eff, MaxEffectiveRadius) * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
     inv_de_um = 1.0 / de_um  # and its inverse
     iwp_gm_2 = ice_wp * 1000.0  # Ice water path in g m-2
 
@@ -399,7 +399,7 @@ def calc_ice_optics_fu_lw(ice_wp, re):
     return od, scat_od, g
 
 
-def calc_ice_optics_yi(bands: str, ice_wp, re):
+def calc_ice_optics_yi(bands: str, ice_wp, r_eff):
     """
     Compute shortwave ice-particle scattering properties using Yi et al. (2013) parameterization.
 
@@ -428,7 +428,7 @@ def calc_ice_optics_yi(bands: str, ice_wp, re):
     Args:
         bands: 'sw' or 'lw', shortwave or longwave bands
         ice_wp: Ice water path (kg m-2)
-        re: effective radius (m)
+        r_eff: effective radius (m)
 
     Returns:
         od: Total optical depth
@@ -445,8 +445,8 @@ def calc_ice_optics_yi(bands: str, ice_wp, re):
     lu_offset = 1.0
     coeff = ds[f"coeff_{bands}1"]  # Band-specific coefficients
     # Convert to effective diameter using the relationship in the IFS
-    # de_um = re * (1.0e6 / 0.64952)
-    de_um = re * 2.0e6
+    # de_um = r_eff * (1.0e6 / 0.64952)
+    de_um = r_eff * 2.0e6
 
     # limit de_um to validity of LUT
     replace_values = np.isnan(de_um) | (~np.isnan(de_um) & (de_um < 119.99))
