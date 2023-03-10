@@ -161,6 +161,60 @@ def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAI
     return PRE_UM * 1e-6
 
 
+def calc_ice_optics_baran2016(bands: str, ice_wp, qi, temperature):
+    """
+    Compute ice-particle scattering properties using a parameterization as a function of ice water mixing ratio
+    and temperature.
+
+    From radiation_ice_optics_baran2016.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2016- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    Author:  Robin Hogan
+    Email:   r.j.hogan@ecmwf.int
+
+    Modifications
+      2023-03-09  J. Röttenbacher  Translated to python3
+
+    Args:
+        bands: 'sw' or 'lw', shortwave or longwave bands
+        ice_wp: Ice water path (kg m-2)
+        qi: Mixing ratio (kg kg-1)
+        temperature: Temperature (K)
+
+    Returns:
+        od: Total optical depth
+        scat_od: Scattering optical depth
+        g: Asymmetry factor
+
+    """
+    max_qi = 1.0e-3  # maximum mixing ratio (kg kg-1)
+    # read in coefficients from netcdf file
+    filename = pkg_resources.files("pylim.data").joinpath("baran2016_ice_scattering_rrtm.nc")
+    ds = xr.open_dataset(filename)
+    nb = len(ds[f"band_{bands}"])  # number of bands
+    coeff = ds[f"coeff_{bands}"]  # Band-specific coefficients
+    T2 = temperature * temperature
+    qi_over_T4 = 1.0 / (T2 * T2)
+
+    replace_values = np.isnan(qi) | (~np.isnan(qi) & (qi < max_qi))
+    qi_T = qi * temperature
+    qi_T = qi_T.where(replace_values, max_qi * temperature)
+
+    od = ice_wp * coeff[0:nb, 0] * qi_over_T4
+    scat_od = od * (coeff[0:nb, 1] + coeff[0:nb, 2] * qi_T)
+    g = coeff[0:nb, 3] + coeff[0: nb, 4] * qi_T
+
+    return od, scat_od, g
+
+
 def calc_ice_optics_baran2017(bands: str, ice_wp, qi, temperature):
     """
     Compute ice-particle scattering properties using a parameterization as a function of ice water mixing ratio
