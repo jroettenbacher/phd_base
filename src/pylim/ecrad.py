@@ -168,7 +168,7 @@ def calc_ice_optics_baran2017(bands: str, ice_wp, qi, temperature):
 
     From radiation_ice_optics_baran2017.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
 
-    (C) Copyright 2014- ECMWF.
+    (C) Copyright 2017- ECMWF.
 
     This software is licensed under the terms of the Apache Licence Version 2.0
     which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -181,7 +181,6 @@ def calc_ice_optics_baran2017(bands: str, ice_wp, qi, temperature):
     Email:   r.j.hogan@ecmwf.int
 
     Modifications
-      2020-08-10  R. Hogan  Bounded re to be <= 100um and g to be < 1.0
       2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
@@ -342,6 +341,96 @@ def calc_ice_optics_fu_lw(ice_wp, re):
     od = xr.concat(od, "band_lw")
     scat_od = xr.concat(scat_od, "band_lw")
     g = xr.concat(g, "band_lw")
+
+    return od, scat_od, g
+
+
+def calc_ice_optics_yi(bands: str, ice_wp, re):
+    """
+    Compute shortwave ice-particle scattering properties using Yi et al. (2013) parameterization.
+
+    From radiation_ice_optics_yi.F90 from the ecRad source code (https://github.com/ecmwf-ifs/ecrad).
+
+    (C) Copyright 2017- ECMWF.
+
+    This software is licensed under the terms of the Apache Licence Version 2.0
+    which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+    In applying this licence, ECMWF does not waive the privileges and immunities
+    granted to it by virtue of its status as an intergovernmental organisation
+    nor does it submit to any jurisdiction.
+
+    Authors:  Mark Fielding and Robin Hogan
+    Email:   r.j.hogan@ecmwf.int
+
+    The reference for this ice optics parameterization is:
+    Yi, B., P. Yang, B.A. Baum, T. L'Ecuyer, L. Oreopoulos, E.J. Mlawer, A.J. Heymsfield, and K. Liou, 2013:
+    Influence of Ice Particle Surface Roughening on the Global Cloud Radiative Effect. J. Atmos. Sci., 70, 2794–2807,
+    https://doi.org/10.1175/JAS-D-13-020.1
+
+    Modifications
+      2023-03-06  J. Röttenbacher  Translated to python3
+
+    Args:
+        bands: 'sw' or 'lw', shortwave or longwave bands
+        ice_wp: Ice water path (kg m-2)
+        re: effective radius (m)
+
+    Returns:
+        od: Total optical depth
+        scat_od: Scattering optical depth
+        g: Asymmetry factor
+
+    """
+    NSingleCoeffs = 23
+    # read in coefficients from netcdf file
+    filename = pkg_resources.files("pylim.data").joinpath("yi_ice_scattering_rrtm_new.nc")
+    ds = xr.open_dataset(filename)
+    nb = len(ds[f"band_{bands}"])  # number of bands
+    lu_scale = 0.2
+    lu_offset = 1.0
+    coeff = ds[f"coeff_{bands}1"]  # Band-specific coefficients
+    # Convert to effective diameter using the relationship in the IFS
+    # de_um = re * (1.0e6 / 0.64952)
+    de_um = re * 2.0e6
+
+    # limit de_um to validity of LUT
+    replace_values = np.isnan(de_um) | (~np.isnan(de_um) & (de_um < 119.99))
+    de_um = de_um.where(replace_values, 119.99)  # avoid greater than or equal to 120 um
+    replace_values = np.isnan(de_um) | (~np.isnan(de_um) & (de_um > 10))
+    de_um = de_um.where(replace_values, 10.0)  # avoid smaller 20 um
+
+    iwp_gm_2 = ice_wp * 1000.0  # convert to g/m2
+    lu_idx = np.floor(de_um * lu_scale - lu_offset)  # generate look up indices
+    wts_2 = (de_um * lu_scale - lu_offset) - lu_idx
+    wts_1 = 1.0 - wts_2
+
+    od_list, scat_od, g = list(), list(), list()  # define lists to append each band to
+    for i in range(nb):
+        c = coeff[i, :].values  # retrieve coefficients
+        c1, c2, c3, c4, c5, c6 = np.copy(lu_idx), np.copy(lu_idx), np.copy(lu_idx), np.copy(lu_idx), np.copy(lu_idx), np.copy(lu_idx)
+        # loop through coefficients
+        for key, value in enumerate(c):
+            k = key + 1  # look up indices start at 1
+            c1[lu_idx == k] = value
+            # use try and except to catch IndexError
+            try:
+                c2[lu_idx == k] = c[k]
+                c3[lu_idx == k] = c[key + NSingleCoeffs]
+                c4[lu_idx == k] = c[key + NSingleCoeffs + 1]
+                c5[lu_idx == k] = c[key + 2 * NSingleCoeffs]
+                c6[lu_idx == k] = c[key + 2 * NSingleCoeffs + 1]
+            except IndexError:
+                pass
+
+        od = (0.001 * iwp_gm_2 * (wts_1 * c1 + wts_2 * c2))
+        od_list.append(od)
+        scat_od.append(od * (wts_1 * c3 + wts_2 * c4))
+        g.append(wts_1 * c5 + wts_2 * c6)
+
+    od = xr.concat(od_list, dim=f"band_{bands}")
+    scat_od = xr.concat(scat_od, dim=f"band_{bands}")
+    g = xr.concat(g, dim=f"band_{bands}")
 
     return od, scat_od, g
 
