@@ -155,9 +155,12 @@ ecrad_ds["re_liquid"] = ecrad_ds.re_liquid.where(ecrad_ds.re_liquid != 4.000001e
 # ecrad_ds.to_netcdf(f"{ecrad_path}/{ecrad_file.replace('.nc', '_mean std.nc')}")
 ecrad_baran2016 = xr.open_dataset(f"{ecrad_path}/{ecrad_baran2016_file}")
 ecrad_yi = xr.open_dataset(f"{ecrad_path}/{ecrad_yi_file}")
-# ecrad_yi = ecrad_yi.mean(dim="column")
-# ecrad_yi.to_netcdf(f"{ecrad_path}/{ecrad_yi_file.replace('.nc', '_mean.nc')}")
-# print("")
+ecrad_baran2016 = ecrad_baran2016.assign_coords(half_level=ecrad_ds.half_level)
+ecrad_yi = ecrad_yi.assign_coords(half_level=ecrad_ds.half_level)
+
+# %% create new coordinate for ecRad bands to show spectrum on a continuous scale and calculate bandwidth
+ecrad_bands = [np.mean(h.ecRad_bands[band]) for band in h.ecRad_bands]
+ecrad_bandwidth = xr.DataArray([band[1] - band[0] for k, band in h.ecRad_bands.items()], coords=dict(band_sw=ecrad_bands))
 
 # %% read in radar data
 radar_ds = xr.open_dataset(f"{radar_path}/{radar_file}")
@@ -254,17 +257,18 @@ stabbi_filter = smart_ds.stabilization_flag == 0
 smart_ds_filtered = smart_ds.where(stabbi_filter)
 smart_std = smart_std.where(stabbi_filter)
 
-roll_center = np.abs(bahamas_ds["IRS_PHI"].median())  # -> 0.05...
-roll_threshold = 0.5
-# pitch is not centered on 0 thus we need to calculate the difference to the center and compare that to the threshold
-pitch_center = np.abs(bahamas_ds["IRS_THE"].median())
-pitch_threshold = 0.34
-# True -> keep value, False -> drop value (Nan)
-roll_filter = np.abs(bahamas_ds["IRS_PHI"]) < roll_threshold
-pitch_filter = np.abs(bahamas_ds["IRS_THE"] - pitch_center) < pitch_threshold
-motion_filter = roll_filter & pitch_filter
-bacardi_ds = bacardi_ds.where(motion_filter)
-bahamas_ds = bahamas_ds.where(motion_filter)
+# roll_center = np.abs(bahamas_ds["IRS_PHI"].median())  # -> 0.05...
+# roll_threshold = 0.5
+# # pitch is not centered on 0 thus we need to calculate the difference to the center and compare that to the threshold
+# pitch_center = np.abs(bahamas_ds["IRS_THE"].median())
+# pitch_threshold = 0.34
+# # True -> keep value, False -> drop value (Nan)
+# roll_filter = np.abs(bahamas_ds["IRS_PHI"]) < roll_threshold
+# pitch_filter = np.abs(bahamas_ds["IRS_THE"] - pitch_center) < pitch_threshold
+# motion_filter = roll_filter & pitch_filter
+# bacardi_ds = bacardi_ds.where(motion_filter)
+# bahamas_ds = bahamas_ds.where(motion_filter)
+print("")
 
 # %% filter values from bacardi which correspond to turns or descents
 selected_segments = segments.findSegments(above_cloud["start"].strftime('%Y-%m-%d %H:%M:%S'),
@@ -2991,7 +2995,42 @@ figname = f"{plot_path}/{halo_flight}_bases_tops_layered_lidar_filtered.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
-# %% plot spectra below cloud from simulations and measurements
-plot1 = smart_ds_filtered
-_, ax = plt.subplots(figsize=figsize_wide)
+# %% create list with ecRad band limits for plot
+band_limits = [h.ecRad_bands[key] for key in h.ecRad_bands]
+band_limits = [item for t in band_limits[3:12] for item in t]
+band_limits.sort()
+band_limits = band_limits[::2]
+band_limits.append(2150)
 
+# %% plot spectra below cloud from simulations and measurements
+timestamps = pd.date_range("2022-04-11 11:20:00", "2022-04-11 12:00:00", freq="1Min")
+for ts in timestamps:
+    hl = aircraft_height.sel(time=ts).half_level
+    altitude = aircraft_height.sel(time=ts).values
+    plot1 = smart_ds_filtered.Fdw_cor.sel(time=ts)
+    ecrad_plot = list()
+    var = "spectral_flux_dn_sw"
+    for ds in [ecrad_ds, ecrad_baran2016, ecrad_yi]:
+        ecrad_plot.append(ds[var].assign_coords(band_sw=ecrad_bands).isel(band_sw=slice(3, 12)).sel(time=ts, half_level=hl).sortby("band_sw"))
+    _, ax = plt.subplots(figsize=figsize_wide)
+    plot1.plot(x="wavelength", label="SMART")
+    for ds, l in zip(ecrad_plot, ["Fu-IFS", "Baran2016", "Yi"]):
+        # normalize with bandwidth
+        ds = ds / ecrad_bandwidth
+        ds.plot(x="band_sw", label=f"ecRad {l}", ls="", marker="o")
+
+    ax.vlines(band_limits, ymin=-0.02, ymax=0.4, colors=["grey"], linestyles="dashed")
+    band_names = [key.replace("and", "") for key in h.ecRad_bands][3:12]
+    for x, name in zip(ecrad_bands[3:12], band_names):
+        ax.text(x-35, -0.01, name, size=10)
+
+    ax.set_ylim(-0.02, 0.4)
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Spectral Irradiance (W$\,$m$^{-2}\,$nm$^{-1}$)")
+    ax.set_title(f"{halo_key} below cloud spectra\n time={ts}, altitude={altitude:.0f} m")
+    ax.legend()
+    ax.grid(axis="y")
+    figname = f"{plot_path}/SMART_ecRad_spectra/{halo_flight}_SMART_ecRad_below_cloud_spectra_{ts:%H%M}.png"
+    plt.savefig(figname)
+    plt.show()
+    plt.close()
