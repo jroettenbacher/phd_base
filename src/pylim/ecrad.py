@@ -27,20 +27,15 @@ def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, 
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    PURPOSE
-    -------
-        Calculate effective radius of ice clouds
+    | Purpose:
+    |   Calculate effective radius of ice clouds
 
-    AUTHOR
-    ------
-        Robin Hogan, ECMWF (using code extracted from radlswr.F90)
-        Original: 2016-02-24
+    | Author:
+    |   Robin Hogan, ECMWF (using code extracted from radlswr.F90)
+    |   Original: 2016-02-24
 
-    MODIFICATIONS
-    -------------
-        2022-09-22  J. Röttenbacher translated Sun and Rikus part to python3
-
-    -------------------------------------------------------------------
+    | Modifications:
+    |   2022-09-22  J. Röttenbacher translated Sun and Rikus part to python3
 
     Ice effective radius = f(T,IWC) from Sun and Rikus (1999), revised by Sun (2001)
 
@@ -94,18 +89,15 @@ def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAI
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    PURPOSE
-    -------
-        Calculate effective radius of liquid clouds
+    | Purpose:
+    |   Calculate effective radius of liquid clouds
 
-    AUTHOR
-    ------
-        Robin Hogan, ECMWF (using code extracted from radlswr.F90)
-        Original: 2015-09-24
+    | Author:
+    |   Robin Hogan, ECMWF (using code extracted from radlswr.F90)
+    |   Original: 2015-09-24
 
-    MODIFICATIONS
-    -------------
-        2022-09-22 J. Röttenbacher translated Martin et al. (JAS 1994) part to python3
+    | Modifications:
+    |   2022-09-22 J. Röttenbacher translated Martin et al. (JAS 1994) part to python3
 
     -------------------------------------------------------------------
 
@@ -177,11 +169,11 @@ def calc_ice_optics_baran2016(bands: str, ice_wp, qi, temperature):
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    Author:  Robin Hogan
-    Email:   r.j.hogan@ecmwf.int
+    | Author:  Robin Hogan
+    | Email:   r.j.hogan@ecmwf.int
 
-    Modifications
-      2023-03-09  J. Röttenbacher  Translated to python3
+    | Modifications
+    |   2023-03-09  J. Röttenbacher  Translated to python3
 
     Args:
         bands: 'sw' or 'lw', shortwave or longwave bands
@@ -231,11 +223,11 @@ def calc_ice_optics_baran2017(bands: str, ice_wp, qi, temperature):
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    Author:  Robin Hogan
-    Email:   r.j.hogan@ecmwf.int
+    | Author:  Robin Hogan
+    | Email:   r.j.hogan@ecmwf.int
 
-    Modifications
-      2023-03-06  J. Röttenbacher  Translated to python3
+    | Modifications
+    |   2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
         bands: 'sw' or 'lw', shortwave or longwave bands
@@ -286,18 +278,21 @@ def calc_ice_optics_fu_sw(ice_wp, r_eff):
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    Author:  Robin Hogan
-    Email:   r.j.hogan@ecmwf.int
+    | Author:  Robin Hogan
+    | Email:   r.j.hogan@ecmwf.int
 
-    Modifications
-      2020-08-10  R. Hogan  Bounded r_eff to be <= 100um and g to be < 1.0
-      2023-03-06  J. Röttenbacher  Translated to python3
+    | Modifications
+    |   2020-08-10  R. Hogan  Bounded r_eff to be <= 100um and g to be < 1.0
+    |   2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
         ice_wp: Ice water path (kg m-2)
         r_eff: Effective radius (m)
 
     Returns:
+        od: Total optical depth
+        scat_od: Scattering optical depth
+        g: Asymmetry factor
 
     """
     MaxAsymmetryFactor = 1.0 - 10.0 * np.finfo(dtype="float32").eps
@@ -350,18 +345,21 @@ def calc_ice_optics_fu_lw(ice_wp, r_eff):
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    Author:  Robin Hogan
-    Email:   r.j.hogan@ecmwf.int
+    | Author:  Robin Hogan
+    | Email:   r.j.hogan@ecmwf.int
 
-    Modifications
-      2020-08-10  R. Hogan  Bounded r_eff to be <= 100um and g to be < 1.0
-      2023-03-06  J. Röttenbacher  Translated to python3
+    | Modifications
+    |   2020-08-10  R. Hogan  Bounded r_eff to be <= 100um and g to be < 1.0
+    |   2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
         ice_wp: Ice water path (kg m-2)
         r_eff: Effective radius (m)
 
     Returns:
+        od: Total optical depth
+        scat_od: Scattering optical depth
+        g: Asymmetry factor
 
     """
     MaxAsymmetryFactor = 1.0 - 10.0 * np.finfo(1.0).eps
@@ -414,16 +412,16 @@ def calc_ice_optics_yi(bands: str, ice_wp, r_eff):
     granted to it by virtue of its status as an intergovernmental organisation
     nor does it submit to any jurisdiction.
 
-    Authors:  Mark Fielding and Robin Hogan
-    Email:   r.j.hogan@ecmwf.int
+    | Authors:  Mark Fielding and Robin Hogan
+    | Email:   r.j.hogan@ecmwf.int
 
     The reference for this ice optics parameterization is:
     Yi, B., P. Yang, B.A. Baum, T. L'Ecuyer, L. Oreopoulos, E.J. Mlawer, A.J. Heymsfield, and K. Liou, 2013:
     Influence of Ice Particle Surface Roughening on the Global Cloud Radiative Effect. J. Atmos. Sci., 70, 2794–2807,
     https://doi.org/10.1175/JAS-D-13-020.1
 
-    Modifications
-      2023-03-06  J. Röttenbacher  Translated to python3
+    | Modifications:
+    |   2023-03-06  J. Röttenbacher  Translated to python3
 
     Args:
         bands: 'sw' or 'lw', shortwave or longwave bands
