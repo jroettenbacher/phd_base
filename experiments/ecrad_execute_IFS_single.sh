@@ -2,7 +2,8 @@
 
 cwd=$(pwd)
 date="20220411"
-version="v3.1"
+input_version="v2"
+version="v8"
 if [[ ${cwd} =~ /home/jroettenbacher/.* ]]; then
 	data_basedir="/mnt/e/HALO-AC3"
 	ecrad_basedir="/usr/local"
@@ -20,13 +21,13 @@ mkdir -p "${outpath}"
 cd "${inpath}" || exit 1
 ecrad="${ecrad_basedir}/src/ecrad-1.5.0/bin/ecrad"
 namelist="../IFS_namelist_jr_${date}_${version}.nam"  # personal namelist
-filename="ecrad_input_standard_39660.0_sod_v1.nc" # new input (ecrad_read_ifs.py)
+filename="ecrad_input_standard_32460.0_sod_${input_version}.nc" # new input (ecrad_read_ifs.py)
 echo ecRad: processing file ${filename}
 echo using namelist "${namelist}"
 
 echo infile: ${filename}
 outfilename="${outpath}/${filename/input/output}"
-outfilename="${outfilename/v1/${version}}"
+outfilename="${outfilename/${input_version}/${version}}"
 echo outfile: ${outfilename}
 
 sod=$(echo $filename | grep -oP '(\d{5}\.\d{1})')
