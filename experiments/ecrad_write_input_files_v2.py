@@ -110,8 +110,12 @@ if __name__ == "__main__":
             ds_sel = xr.concat([ds_sel, tmp], dim="time")
         ending = ""
 
-    # %% calculate pressure height for model levels
-    ds_sel = calculate_pressure_height(ds_sel)
+    # %% calculate pressure height for model levels if needed
+    if "press_height_full" in ds_sel.data_vars:
+        log.debug("Pressure Height already in dataset. Moving on.")
+        pass
+    else:
+        ds_sel = calculate_pressure_height(ds_sel)
 
     # %% loop through time steps and write one file per time step
     for i in tqdm(range(len(varcloud_ds.time)), desc="Time loop"):
@@ -124,7 +128,7 @@ if __name__ == "__main__":
                               dsi_ml_out.q * units("kg/kg"))
         q_ice = varcloud_sel["Varcloud_Cloud_Ice_Water_Content"] * units("kg/m3") / air_density
         # overwrite ice water content
-        varcloud_ds["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
+        dsi_ml_out["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
         t = varcloud_sel.time
 
         # add cos_sza for the grid point using only model data
@@ -146,7 +150,7 @@ if __name__ == "__main__":
         dsi_ml_out = apply_liquid_effective_radius(dsi_ml_out)
         dsi_ml_out = dsi_ml_out.expand_dims("column", axis=0)
         # remove column dim from dimensionless variables
-        for var in ["co2_vmr", "n2o_vmr", "ch4_vmr", "o2_vmr", "cfc11_vmr", "cfc12_vmr"]:
+        for var in ["co2_vmr", "n2o_vmr", "ch4_vmr", "o2_vmr", "cfc11_vmr", "cfc12_vmr", "time"]:
             dsi_ml_out[var] = dsi_ml_out[var].isel(column=0)
         n_column = dsi_ml_out.dims["column"]  # get number of columns
         dsi_ml_out["column"] = np.arange(1, n_column + 1)

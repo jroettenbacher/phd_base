@@ -23,6 +23,7 @@ ecRad namelists and experiments
 * ``IFS_namelist_jr_20220411_v5.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and 3D parameterizations enabled
 * ``IFS_namelist_jr_20220411_v6.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model and 3D parameterizations enabled
 * ``IFS_namelist_jr_20220411_v7.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model
+* ``IFS_namelist_jr_20220411_v8.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
 
 
 Overlap decorrelation length experiment
@@ -31,6 +32,13 @@ Overlap decorrelation length experiment
 *Script:* :py:mod:`ecrad_experiment_v3_x.py`
 
 .. automodule:: experiments.ecrad_experiment_v3_x
+
+Varcloud retrieval input experiment
+-----------------------------------
+
+*Script:* :py:mod:`experiments.ecrad_write_input_files_v2.py`
+
+.. automodule:: experiments.ecrad_write_input_files_v2
 
 ecRad setups
 ============
