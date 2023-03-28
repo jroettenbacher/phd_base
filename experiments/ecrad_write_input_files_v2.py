@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 23-03-2023
 
-Use a processed IFS output file and the Varcloud retrieval from Florian Ewald, LMU and generate one ecRad input file for each time step.
+Use a processed IFS output file and the Varcloud retrieval from Florian Ewald, LMU and generate one ecRad input file for each time step along the flight path of HALO.
 Instead of the *CIWC* and :math:`r_{eff, ice}` from the IFS use the retrieved variables from the Varcloud lidar/radar retrieval.
 
 **Required User Input:**
