@@ -39,7 +39,7 @@ if __name__ == "__main__":
     from pysolar.solar import get_azimuth
 
     # %% set options
-    experiment = "icecloud2"  # string defining experiment name, will be used for input path and netCDF filename
+    experiment = "varcloud"  # string defining experiment name, will be used for input path and netCDF filename
     campaign = "halo-ac3"
     # get all flights from dictionary
     all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(

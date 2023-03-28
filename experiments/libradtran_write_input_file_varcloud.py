@@ -80,7 +80,7 @@ if __name__ == "__main__":
     flight = meta.flight_names[flight_key]
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
-    time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
+    time_step = pd.Timedelta(seconds=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     integrate = False
 
@@ -313,7 +313,7 @@ if __name__ == "__main__":
         nan_replace = np.isnan(varcloud_sel["Varcloud_Cloud_Ice_Water_Content"])
         iwc = (varcloud_sel["Varcloud_Cloud_Ice_Water_Content"] * 1000).where(~nan_replace, 0).to_numpy()
         re_ice = varcloud_sel["Varcloud_Cloud_Ice_Effective_Radius"] * 1e6
-        min_re_ice, max_re_ice = 9.315, 65.120
+        min_re_ice, max_re_ice = 9.315, 65.119
         max_re_ice_replace = re_ice > max_re_ice
         min_re_ice_replace = re_ice < min_re_ice
         # replace nan with 0, too large values with max_re_ice and too small values with min_re_ice
