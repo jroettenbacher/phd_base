@@ -10,10 +10,14 @@ import toml
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import colors
 import datetime
 import logging
+import cmasher as cmr
 
 log = logging.getLogger(__name__)
+
+cm = 1 / 2.54
 
 # ecRad bands in nanometers
 ecRad_bands = dict(Band1=(3077, 3846), Band2=(2500, 3076), Band3=(2150, 2500), Band4=(1942, 2150), Band5=(1626, 1941),
@@ -50,6 +54,56 @@ ci_albedo[:, 5] = (0.025, 0.025, 0.025, 0.025,
 # ozone sonde stations
 ozone_files = dict(Flight_20210629a="sc210624.b11",
                    RF17="ny220413.b16", RF18="ny220413.b16")
+
+# plotting metadata
+figsize_wide = (24 * cm, 12 * cm)
+figsize_equal = (12 * cm, 12 * cm)
+plot_units = dict(cloud_fraction="", clwc="mg$\,$kg$^{-1}$", ciwc="mg$\,$kg$^{-1}$", cswc="g$\,$kg$^{-1}$",
+                  q_ice="mg$\,$kg$^{-1}$", q_liquid="mg$\,$kg$^{-1}$", iwp="g$\,$m$^{-2}$", iwc="mg$\,$m$^{-3}$",
+                  crwc="g$\,$kg$^{-1}$", t="K", q="g$\,$kg$^{-1}$", re_ice="$\mu$m", re_liquid="$\mu$m",
+                  heating_rate_sw="K$\,$day$^{-1}$", heating_rate_lw="K$\,$day$^{-1}$",
+                  heating_rate_net="K$\,$day$^{-1}$",
+                  flux_dn_sw="W$\,$m$^{-2}$", flux_dn_lw="W$\,$m$^{-2}$", flux_up_sw="W$\,$m$^{-2}$",
+                  flux_up_lw="W$\,$m$^{-2}$",
+                  cre_sw="W$\,$m$^{-2}$", cre_lw="W$\,$m$^{-2}$", cre_total="W$\,$m$^{-2}$",
+                  transmissivity_sw="", transmissivity_lw="", reflectivity_sw="", reflectivity_lw="",
+                  od="", scat_od="", od_mean="", scat_od_mean="", g="", g_mean="", od_int="", scat_od_int="", g_int="")
+
+cbarlabels = dict(cloud_fraction="Cloud Fraction", clwc="Cloud Liquid Water Content", ciwc="Cloud Ice Water Content",
+                  cswc="Cloud Snow Water Content", crwc="Cloud Rain Water Content", t="Temperature",
+                  q="Specific Humidity", q_ice="Ice Cloud Mass Mixing Ratio", q_liquid="Liquid Cloud Mass Mixing Ratio",
+                  iwp="Ice Water Path", iwc="Ice Water Content",
+                  re_ice="Ice Effective Radius", re_liquid="Liquid Effective Radius",
+                  heating_rate_sw="Solar Heating Rate", heating_rate_lw="Terrestrial Heating Rate",
+                  heating_rate_net="Net Heating Rate",
+                  transmissivity_sw="Solar Transmissivity", transmissivity_lw="Terrestrial Transmissivity",
+                  reflectivity_sw="Solar Reflectivity", reflectivity_lw="Terrestrial Reflectivity",
+                  flux_dn_sw="Downward Solar Irradiance", flux_up_sw="Upward Solar Irradiance",
+                  flux_dn_lw="Downward Terrestrial Irradiance", flux_up_lw="Upward Terrestrial Irradiance",
+                  cre_sw="Solar Cloud Radiative Effect", cre_lw="Terrestrial Cloud Radiative Effect",
+                  cre_total="Total Cloud Radiative Effect",
+                  od=f"Total Optical Depth", scat_od=f"Scattering Optical Depth", od_mean=f"Mean Total Optical Depth",
+                  scat_od_mean=f"Mean Scattering Optical Depth", g=f"Asymmetry Factor", g_mean="Mean Asymmetry Factor",
+                  od_int="Integrated Total Optical Depth", scat_od_int="Integrated Scattering Optical Depth")
+
+scale_factors = dict(cloud_fraction=1, clwc=1e6, ciwc=1e6, cswc=1000, crwc=1000, t=1, q=1000, re_ice=1e6,
+                     re_liquid=1e6, q_ice=1e6, q_liquid=1e6, iwp=1000, iwc=1e6)
+
+cmaps = dict(t=cmr.prinsenvlag_r,
+             ciwc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85), q_ice=cmr.get_sub_cmap("cmr.freeze", .25, 0.85),
+             iwp=cmr.get_sub_cmap("cmr.freeze", .25, 0.85), iwc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85),
+             cloud_fraction=cmr.neutral,
+             re_ice=cmr.cosmic_r, re_liquid=cmr.cosmic_r,
+             heating_rate_sw=cmr.get_sub_cmap("cmr.ember_r", 0, 0.75), heating_rate_lw=cmr.fusion_r,
+             heating_rate_net=cmr.fusion_r,
+             cre_total=cmr.fusion_r,
+             flux_dn_sw=cmr.get_sub_cmap("cmr.torch", 0.2, 1))
+
+norms = dict(t=colors.TwoSlopeNorm(vmin=200, vcenter=235, vmax=280), clwc=colors.LogNorm(),
+             heating_rate_lw=colors.TwoSlopeNorm(vmin=-3, vcenter=0, vmax=1.5),
+             heating_rate_net=colors.TwoSlopeNorm(vmin=-2.5, vcenter=0, vmax=2),
+             od=colors.LogNorm(vmax=10), od_scat=colors.LogNorm(),
+             od_int=colors.LogNorm(vmax=10), scat_od_int=colors.LogNorm())
 
 
 def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:
