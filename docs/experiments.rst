@@ -124,7 +124,7 @@ Only ``libradtran_dir`` in line 40 and ``nc_filepath`` in line 208 are adjusted.
 
 .. automodule:: experiments.libradtran_write_input_file_seaice_2
 
-|halo-ac3| Icecloud over sea ice experiment
+|haloac3| Icecloud over sea ice experiment
 -------------------------------------------
 
 **Name:** iceloud
@@ -146,7 +146,7 @@ Icecloud Setup
 
 .. automodule:: experiments.libradtran_icecloud_sensitivity_study
 
-|halo-ac3| Icecloud along flight track for RF17
+|haloac3| Icecloud along flight track for RF17
 -----------------------------------------------
 
 **Name:** icecloud2
@@ -165,7 +165,7 @@ Icecloud 2 Setup
 
 .. automodule:: experiments.libradtran_write_input_file_icecloud2
 
-|halo-ac3| Varcloud simulation above cloud
+|haloac3| Varcloud simulation above cloud
 ------------------------------------------
 
 **Name:** varcloud
