@@ -58,16 +58,19 @@ ozone_files = dict(Flight_20210629a="sc210624.b11",
 # plotting metadata
 figsize_wide = (24 * cm, 12 * cm)
 figsize_equal = (12 * cm, 12 * cm)
-plot_units = dict(cloud_fraction="", clwc="mg$\,$kg$^{-1}$", ciwc="mg$\,$kg$^{-1}$", cswc="g$\,$kg$^{-1}$",
-                  q_ice="mg$\,$kg$^{-1}$", q_liquid="mg$\,$kg$^{-1}$", iwp="g$\,$m$^{-2}$", iwc="mg$\,$m$^{-3}$",
-                  crwc="g$\,$kg$^{-1}$", t="K", q="g$\,$kg$^{-1}$", re_ice="$\mu$m", re_liquid="$\mu$m",
-                  heating_rate_sw="K$\,$day$^{-1}$", heating_rate_lw="K$\,$day$^{-1}$",
-                  heating_rate_net="K$\,$day$^{-1}$",
-                  flux_dn_sw="W$\,$m$^{-2}$", flux_dn_lw="W$\,$m$^{-2}$", flux_up_sw="W$\,$m$^{-2}$",
-                  flux_up_lw="W$\,$m$^{-2}$",
-                  cre_sw="W$\,$m$^{-2}$", cre_lw="W$\,$m$^{-2}$", cre_total="W$\,$m$^{-2}$",
+plot_units = dict(cloud_fraction="", clwc=r"mg$\,$kg$^{-1}$", ciwc=r"mg$\,$kg$^{-1}$", cswc=r"g$\,$kg$^{-1}$",
+                  q_ice=r"mg$\,$kg$^{-1}$", q_liquid=r"mg$\,$kg$^{-1}$", iwp=r"g$\,$m$^{-2}$", iwc=r"mg$\,$m$^{-3}$",
+                  crwc=r"g$\,$kg$^{-1}$", t="K", q=r"g$\,$kg$^{-1}$", re_ice=r"$\mu$m", re_liquid=r"$\mu$m",
+                  heating_rate_sw=r"K$\,$day$^{-1}$", heating_rate_lw=r"K$\,$day$^{-1}$",
+                  heating_rate_net=r"K$\,$day$^{-1}$",
+                  flux_dn_sw=r"W$\,$m$^{-2}$", flux_dn_lw=r"W$\,$m$^{-2}$", flux_up_sw=r"W$\,$m$^{-2}$",
+                  flux_up_lw=r"W$\,$m$^{-2}$",
+                  cre_sw=r"W$\,$m$^{-2}$", cre_lw=r"W$\,$m$^{-2}$", cre_total=r"W$\,$m$^{-2}$",
                   transmissivity_sw="", transmissivity_lw="", reflectivity_sw="", reflectivity_lw="",
-                  od="", scat_od="", od_mean="", scat_od_mean="", g="", g_mean="", od_int="", scat_od_int="", g_int="")
+                  od="", scat_od="", od_mean="", scat_od_mean="", g="", g_mean="", od_int="", scat_od_int="", g_int="",
+                  absorption="", absorption_int="",
+                  eglo=r"W$\,$m$^{-2}\,$nm$^{-1}$", eglo_int=r"W$\,$m$^{-2}$", eup=r"W$\,$m$^{-2}\,$nm$^{-1}$",
+                  eup_int=r"W$\,$m$^{-2}$")
 
 cbarlabels = dict(cloud_fraction="Cloud Fraction", clwc="Cloud Liquid Water Content", ciwc="Cloud Ice Water Content",
                   cswc="Cloud Snow Water Content", crwc="Cloud Rain Water Content", t="Temperature",
@@ -84,7 +87,10 @@ cbarlabels = dict(cloud_fraction="Cloud Fraction", clwc="Cloud Liquid Water Cont
                   cre_total="Total Cloud Radiative Effect",
                   od=f"Total Optical Depth", scat_od=f"Scattering Optical Depth", od_mean=f"Mean Total Optical Depth",
                   scat_od_mean=f"Mean Scattering Optical Depth", g=f"Asymmetry Factor", g_mean="Mean Asymmetry Factor",
-                  od_int="Integrated Total Optical Depth", scat_od_int="Integrated Scattering Optical Depth")
+                  od_int="Integrated Total Optical Depth", scat_od_int="Integrated Scattering Optical Depth",
+                  absorption="Absorption", absorption_int="Integrated Absorption",
+                  eglo="Spectral Global Downward Irradiance", eglo_int="Global Downward Irradiance",
+                  eup="Spectral Diffuse Upward Irradiance", eup_int="Diffuse Upward Irradiance")
 
 scale_factors = dict(cloud_fraction=1, clwc=1e6, ciwc=1e6, cswc=1000, crwc=1000, t=1, q=1000, re_ice=1e6,
                      re_liquid=1e6, q_ice=1e6, q_liquid=1e6, iwp=1000, iwc=1e6)
