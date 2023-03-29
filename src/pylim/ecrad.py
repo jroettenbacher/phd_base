@@ -376,7 +376,7 @@ def calc_ice_optics_fu_lw(ice_wp, r_eff):
     replace_values = np.isnan(r_eff) | (~np.isnan(r_eff) & (r_eff < MaxEffectiveRadius))
     r_eff = r_eff.where(replace_values, MaxEffectiveRadius)  # cap effective radius
     # Convert to effective diameter using the relationship in the IFS
-    de_um = min(r_eff, MaxEffectiveRadius) * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
+    de_um = r_eff * (1.0e6 / 0.64952)  # Fu's effective diameter (microns)
     inv_de_um = 1.0 / de_um  # and its inverse
     iwp_gm_2 = ice_wp * 1000.0  # Ice water path in g m-2
 
@@ -521,7 +521,7 @@ def calculate_pressure_height(ds: xr.Dataset) -> xr.Dataset:
         ds: Dataset with temperature and pressure on model half and full levels (``pressure_hl``, ``temperature_hl``,
             ``pressure_full``, ``t``)
 
-    Returns: Dataset with two new variables ``pressure_height_hl`` and ``pressure_height_full`` in meters
+    Returns: Dataset with two new variables ``press_height_hl`` and ``press_height_full`` in meters
 
     """
     # calculate pressure height of model half levels
