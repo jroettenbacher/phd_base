@@ -58,9 +58,9 @@ ozone_files = dict(Flight_20210629a="sc210624.b11",
 # plotting metadata
 figsize_wide = (24 * cm, 12 * cm)
 figsize_equal = (12 * cm, 12 * cm)
-plot_units = dict(cloud_fraction="", clwc=r"mg$\,$kg$^{-1}$", ciwc=r"mg$\,$kg$^{-1}$", cswc=r"g$\,$kg$^{-1}$",
+plot_units = dict(cloud_fraction="", clwc=r"mg$\,$kg$^{-1}$", ciwc=r"mg$\,$kg$^{-1}$", cswc=r"mg$\,$kg$^{-1}$",
                   q_ice=r"mg$\,$kg$^{-1}$", q_liquid=r"mg$\,$kg$^{-1}$", iwp=r"g$\,$m$^{-2}$", iwc=r"mg$\,$m$^{-3}$",
-                  crwc=r"g$\,$kg$^{-1}$", t="K", q=r"g$\,$kg$^{-1}$", re_ice=r"$\mu$m", re_liquid=r"$\mu$m",
+                  crwc=r"mg$\,$kg$^{-1}$", t="K", q=r"g$\,$kg$^{-1}$", re_ice=r"$\mu$m", re_liquid=r"$\mu$m",
                   heating_rate_sw=r"K$\,$day$^{-1}$", heating_rate_lw=r"K$\,$day$^{-1}$",
                   heating_rate_net=r"K$\,$day$^{-1}$",
                   flux_dn_sw=r"W$\,$m$^{-2}$", flux_dn_lw=r"W$\,$m$^{-2}$", flux_up_sw=r"W$\,$m$^{-2}$",
@@ -92,11 +92,12 @@ cbarlabels = dict(cloud_fraction="Cloud Fraction", clwc="Cloud Liquid Water Cont
                   eglo="Spectral Global Downward Irradiance", eglo_int="Global Downward Irradiance",
                   eup="Spectral Diffuse Upward Irradiance", eup_int="Diffuse Upward Irradiance")
 
-scale_factors = dict(cloud_fraction=1, clwc=1e6, ciwc=1e6, cswc=1000, crwc=1000, t=1, q=1000, re_ice=1e6,
+scale_factors = dict(cloud_fraction=1, clwc=1e6, ciwc=1e6, cswc=1e6, crwc=1e6, t=1, q=1000, re_ice=1e6,
                      re_liquid=1e6, q_ice=1e6, q_liquid=1e6, iwp=1000, iwc=1e6)
 
 cmaps = dict(t=cmr.prinsenvlag_r,
-             ciwc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85), q_ice=cmr.get_sub_cmap("cmr.freeze", .25, 0.85),
+             ciwc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85), cswc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85),
+             crwc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85), q_ice=cmr.get_sub_cmap("cmr.freeze", .25, 0.85),
              iwp=cmr.get_sub_cmap("cmr.freeze", .25, 0.85), iwc=cmr.get_sub_cmap("cmr.freeze", .25, 0.85),
              cloud_fraction=cmr.neutral,
              re_ice=cmr.cosmic_r, re_liquid=cmr.cosmic_r,
