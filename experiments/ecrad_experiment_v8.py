@@ -69,6 +69,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from matplotlib import colors
     import pandas as pd
+    import os
     from tqdm import tqdm
     import cmasher as cmr
 
@@ -91,23 +92,33 @@ if __name__ == "__main__":
     ifs_path = f"{h.get_path('ifs', campaign=campaign)}/{date}"
     varcloud_path = h.get_path("varcloud", flight, campaign)
     libradtran_path = h.get_path("libradtran_exp", flight, campaign)
-    ecrad_input = "ecrad_merged_input_20220411_v2.nc"
-    ecrad_v8 = "ecrad_merged_output_20220411_v8.nc"
-    ecrad_v1 = "ecrad_merged_inout_20220411_v1.nc"
-    varcloud_file = "VAR2LAGR_L1D_V1_AC3_HALO_RF17_A20220411_090100_152000_TS1_AS100_P20230306190254.nc"
-    libradtran_file = "HALO-AC3_HALO_libRadtran_simulation_varcloud_1min_20220411_RF17.nc"
+    ecrad_input = f"ecrad_merged_input_{date}_v2.nc"
+    ecrad_v8 = f"ecrad_merged_output_{date}_v8.nc"
+    ecrad_v1 = f"ecrad_merged_inout_{date}_v1.nc"
+    varcloud_file = [f for f in os.listdir(varcloud_path) if "nc" in f][0]
+    libradtran_file = f"HALO-AC3_HALO_libRadtran_simulation_varcloud_1min_{date}_{key}.nc"
 
     # %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
     segments = flightphase.FlightPhaseFile(segmentation)
     above_cloud, below_cloud = dict(), dict()
-    above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
-    above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
-    below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
-    below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
-    above_slice = slice(above_cloud["start"], above_cloud["end"])
-    below_slice = slice(below_cloud["start"], below_cloud["end"])
-    case_slice = slice(pd.to_datetime("2022-04-11 10:30"), pd.to_datetime("2022-04-11 12:29"))
+    if key == "RF17":
+        above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
+        above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
+        below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
+        below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
+        above_slice = slice(above_cloud["start"], above_cloud["end"])
+        below_slice = slice(below_cloud["start"], below_cloud["end"])
+        case_slice = slice(pd.to_datetime("2022-04-11 10:30"), pd.to_datetime("2022-04-11 12:29"))
+    else:
+        above_cloud["start"] = segments.select("name", "polygon pattern 1")[0]["start"]
+        above_cloud["end"] = segments.select("name", "polygon pattern 1")[0]["parts"][-1]["start"]
+        below_cloud["start"] = segments.select("name", "polygon pattern 2")[0]["start"]
+        below_cloud["end"] = segments.select("name", "polygon pattern 2")[0]["end"]
+        above_slice = slice(above_cloud["start"], above_cloud["end"])
+        below_slice = slice(below_cloud["start"], below_cloud["end"])
+        case_slice = slice(above_cloud["start"], below_cloud["end"])
+
     time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 
     # %% read in varcloud data
@@ -137,11 +148,11 @@ if __name__ == "__main__":
 
     # %% compute cloud ice water path
     factor = ecrad_ds_v1.pressure_hl.diff(dim="half_level").to_numpy() / (
-                9.80665 * ecrad_ds_v1.cloud_fraction.to_numpy())
+            9.80665 * ecrad_ds_v1.cloud_fraction.to_numpy())
     ecrad_ds_v1["iwp"] = (["time", "level"], factor * ecrad_ds_v1.ciwc.to_numpy())
     ecrad_ds_v1["iwp"] = ecrad_ds_v1.iwp.where(ecrad_ds_v1.iwp != np.inf, np.nan)
     factor = ecrad_ds_v8.pressure_hl.diff(dim="half_level").to_numpy() / (
-                9.80665 * ecrad_ds_v8.cloud_fraction.to_numpy())
+            9.80665 * ecrad_ds_v8.cloud_fraction.to_numpy())
     ecrad_ds_v8["iwp"] = (["time", "level"], factor * ecrad_ds_v8.ciwc.to_numpy())
     ecrad_ds_v8["iwp"] = ecrad_ds_v8.iwp.where(ecrad_ds_v8.iwp != np.inf, np.nan)
 
@@ -186,18 +197,20 @@ if __name__ == "__main__":
     ecrad_ds_v8["reflectivity_sw"] = ecrad_ds_v8.flux_up_sw / ecrad_ds_v8.flux_dn_sw
     libradtran_ds["eglo_int"] = libradtran_ds["eglo"].integrate(coord="wavelength")
     libradtran_ds["eup_int"] = libradtran_ds["eup"].integrate(coord="wavelength")
-    ecrad_ds_v8["flux_dn_sw_int"] = ecrad_ds_v8["spectral_flux_dn_sw"].sel(band_sw=slice(3, 11)).integrate(coord="band_sw")
+    ecrad_ds_v8["flux_dn_sw_int"] = ecrad_ds_v8["spectral_flux_dn_sw"].sel(band_sw=slice(3, 11)).integrate(
+        coord="band_sw")
 
     # %% set plotting options
-    var = "flux_dn_sw"
-    v = "diff"
+    var = "iwc"
+    v = "v1"
     band = None
     band_str = f"_band{band}" if band is not None else ""
 
     # kwarg dicts
     alphas = dict()
     ct_fontsize = dict()
-    ct_lines = dict()
+    ct_lines = dict(ciwc=[1, 5, 10, 15], cswc=[1, 5, 10, 15], q_ice=[1, 5, 10, 15], clwc=[1, 5, 10, 15],
+                    iwc=[1, 5, 10, 15])
     linewidths = dict()
     robust = dict(iwc=False)
     cb_ticks = dict()
@@ -260,7 +273,7 @@ if __name__ == "__main__":
 
     ecrad_plot = xr.concat(ecrad_plot_new_z, dim="time")
     # filter very low to_numpy()
-    ecrad_plot = ecrad_plot.where(np.abs(ecrad_plot) > 0.0001)
+    ecrad_plot = ecrad_plot.where(np.abs(ecrad_plot) > 0.001)
 
     # select time height slice
     time_sel = above_slice
@@ -301,7 +314,7 @@ if __name__ == "__main__":
     xlabel = "Difference v1 - v8" if v == "diff" else v
     flat_array = ecrad_plot.to_numpy().flatten()
     _, ax = plt.subplots(figsize=h.figsize_wide)
-    ax.hist(flat_array, bins=20)
+    hist = ax.hist(flat_array, bins=20)
     ax.set(xlabel=f"{h.cbarlabels[var]} {xlabel} ({h.plot_units[var]})",
            ylabel="Number of Occurrence")
     ax.grid()
@@ -309,8 +322,8 @@ if __name__ == "__main__":
     plt.tight_layout()
     figname = f"{plot_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png"
     plt.savefig(figname, dpi=300, bbox_inches="tight")
-    figname = f"{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    # figname = f"{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png"
+    # plt.savefig(figname, dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -323,8 +336,10 @@ if __name__ == "__main__":
     plt.close()
 
     # %% calculate particle size distribution
-    plot_v1 = (ecrad_ds_v1.re_ice.sel(time=above_slice).to_numpy() * 1e6).flatten()
-    plot_v8 = (ecrad_ds_v8.re_ice.sel(time=above_slice).to_numpy() * 1e6).flatten()
+    time_sel = above_slice
+    plot_v1 = (ecrad_ds_v1.re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
+    plot_v8 = (ecrad_ds_v8.re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
+    t1, t2 = time_sel.start, time_sel.stop
     binsize = 2
     bins = np.arange(10, 110, binsize)
     _, ax = plt.subplots(figsize=h.figsize_wide)
@@ -334,11 +349,11 @@ if __name__ == "__main__":
     ax.text(0.8, 0.7, f"Binsize: {binsize} $\mu$m", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="white"))
     ax.grid()
     ax.set(xlabel=r"Ice effective radius ($\mu$m)", ylabel="Number of Occurrence",
-           title=f"Particle Size Distribution between 10:30 and 12:30 UTC")
+           title=f"Particle Size Distribution between {t1:%H:%M} and {t2:%H:%M} UTC")
     figname = f"{plot_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
     plt.savefig(figname, dpi=300, bbox_inches="tight")
-    figname = f"{fig_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    # figname = f"{fig_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
+    # plt.savefig(figname, dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -372,8 +387,10 @@ if __name__ == "__main__":
     # %% interpolate libradtran to ecrad_plot height axis
     libradtran_inp = libradtran_ds.interp(altitude=np.flip(ecrad_plot.height))
 
-    # %% calcualte difference between ecrad and libradtran
+    # %% calculate difference between ecrad and libradtran
     diff_plot = ecrad_plot - libradtran_inp["eglo_int"]
+
+    # %% plot difference between ecRad and libradtran along track
     _, ax = plt.subplots(figsize=h.figsize_wide)
     diff_plot.plot(x="time", ax=ax,
                    cbar_kwargs={"label": "Solar Downward Irradiance (W$\,$m$^{-2}$)"})
@@ -381,5 +398,15 @@ if __name__ == "__main__":
            title="Difference between ecRad varcloud and libRadtran varcloud")
     h.set_xticks_and_xlabels(ax, te)
     plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    # %% plot histogramm of difference between ecrad and libradtran
+    _, ax = plt.subplots(figsize=h.figsize_wide)
+    plot_array = diff_plot.to_numpy().flatten()
+    ax.hist(plot_array, bins=20)
+    ax.set(xlabel=f"Difference in Solar Downward Irradiance ({h.plot_units['flux_dn_sw']})",
+           ylabel="Number of Occurrence",
+           title="Histogram of Difference between ecRad varcloud and libRadtran varcloud")
     plt.show()
     plt.close()
