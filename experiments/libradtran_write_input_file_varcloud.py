@@ -76,11 +76,11 @@ if __name__ == "__main__":
     # %% user input
     experiment = "varcloud"
     campaign = "halo-ac3"
-    flight_key = "RF17"
+    flight_key = "RF18"
     flight = meta.flight_names[flight_key]
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
-    time_step = pd.Timedelta(seconds=1)  # define time steps of simulations
+    time_step = pd.Timedelta(minutes=1)  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INs system or the BAHAMAS file
     integrate = False
 
@@ -139,7 +139,10 @@ if __name__ == "__main__":
     varcloud_ds = varcloud_ds.interp(Height=zout)
 
     # %% write input files for each timestep
-    timestamps = pd.date_range("2022-04-11 10:48", "2022-04-11 11:08", freq=time_step)
+    if flight_key == "RF17":
+        timestamps = pd.date_range("2022-04-11 10:48", "2022-04-11 11:08", freq=time_step)  # RF17
+    else:
+        timestamps = pd.date_range("2022-04-12 11:03", "2022-04-12 12:16", freq=time_step)  # RF18
     for timestamp in tqdm(timestamps, desc="Write input files"):
         ins_ds_sel = ins_ds.sel(time=timestamp)
         if use_smart_ins:

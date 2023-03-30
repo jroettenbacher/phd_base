@@ -121,7 +121,7 @@ if __name__ == "__main__":
     ax.axvline(above_cloud["start"], label="Start above cloud section", color=cb_colors[3])
     ax.axvline(below_cloud["end"], label="End below cloud section", color=cb_colors[4])
     h.set_xticks_and_xlabels(ax, overlap_decorr_length.index[-1] - overlap_decorr_length.index[0])
-    ax.set_title("Overlap decorrelation length along flight path of RF17")
+    ax.set_title(f"Overlap decorrelation length along flight path of {halo_key}")
     ax.set_xlabel(f"Time (HH:MM {date[-2:]} April 2022 UTC)")
     ax.set_ylabel("Overlap decorrelation length (m)")
     ax.grid()
