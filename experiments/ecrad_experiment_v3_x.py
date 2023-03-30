@@ -55,6 +55,7 @@ The other option is to use the mean cloud overlap decorrelation length calculate
 if __name__ == "__main__":
     # %% import modules
     import pylim.helpers as h
+    import pylim.halo_ac3 as meta
     import ac3airborne
     from ac3airborne.tools import flightphase
     import xarray as xr
@@ -67,9 +68,9 @@ if __name__ == "__main__":
 
     # %% set paths
     campaign = "halo-ac3"
-    date = "20220411"
-    halo_key = "RF17"
-    halo_flight = f"HALO-AC3_{date}_HALO_{halo_key}"
+    halo_key = "RF18"
+    halo_flight = meta.flight_names[halo_key]
+    date = halo_flight[9:17]
 
     plot_path = f"{h.get_path('plot', halo_flight, campaign)}/{halo_flight}/experiment_v3.x"
     h.make_dir(plot_path)
@@ -83,12 +84,21 @@ if __name__ == "__main__":
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{halo_key}"]
     segments = flightphase.FlightPhaseFile(segmentation)
     above_cloud, below_cloud = dict(), dict()
-    above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
-    above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
-    below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
-    below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
-    above_slice = slice(above_cloud["start"], above_cloud["end"])
-    below_slice = slice(below_cloud["start"], below_cloud["end"])
+    if halo_key == "RF17":
+        above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
+        above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
+        below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
+        below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
+        above_slice = slice(above_cloud["start"], above_cloud["end"])
+        below_slice = slice(below_cloud["start"], below_cloud["end"])
+    else:
+        above_cloud["start"] = segments.select("name", "polygon pattern 1")[0]["start"]
+        above_cloud["end"] = segments.select("name", "polygon pattern 1")[0]["parts"][-1]["start"]
+        below_cloud["start"] = segments.select("name", "polygon pattern 2")[0]["start"]
+        below_cloud["end"] = segments.select("name", "polygon pattern 2")[0]["end"]
+        above_slice = slice(above_cloud["start"], above_cloud["end"])
+        below_slice = slice(below_cloud["start"], below_cloud["end"])
+        case_slice = slice(above_cloud["start"], below_cloud["end"])
 
     # %% read in ecrad data and overlap decorr file
     ecrad_ds_v31 = xr.open_dataset(f"{ecrad_path}/{ecrad_v3_1}")
@@ -112,7 +122,7 @@ if __name__ == "__main__":
     ax.axvline(below_cloud["end"], label="End below cloud section", color=cb_colors[4])
     h.set_xticks_and_xlabels(ax, overlap_decorr_length.index[-1] - overlap_decorr_length.index[0])
     ax.set_title("Overlap decorrelation length along flight path of RF17")
-    ax.set_xlabel("Time (HH:MM 11 April 2022 UTC)")
+    ax.set_xlabel(f"Time (HH:MM {date[-2:]} April 2022 UTC)")
     ax.set_ylabel("Overlap decorrelation length (m)")
     ax.grid()
     ax.legend()
