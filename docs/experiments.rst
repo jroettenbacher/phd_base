@@ -25,6 +25,8 @@ ecRad namelists and experiments
 * ``IFS_namelist_jr_20220411_v7.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model
 * ``IFS_namelist_jr_20220411_v8.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
 * ``IFS_namelist_jr_20220411_v9.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input
+* ``IFS_namelist_jr_20220412_v1.nam``: for flight HALO-AC3_20220412_HALO_RF17 with Fu-IFS ice model
+* ``IFS_namelist_jr_20220412_v8.nam``: for flight HALO-AC3_20220412_HALO_RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
 
 
 Overlap decorrelation length experiment
