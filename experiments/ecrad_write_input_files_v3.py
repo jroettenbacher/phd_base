@@ -118,10 +118,10 @@ if __name__ == "__main__":
     # %% select only case study time which features the cloud that HALO also underpassed
     sel_time = slice(above_cloud["start"], pd.to_datetime("2022-04-11 11:04"))
     fake_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1Min")
-    varcloud_ds = varcloud_ds.sel(time=sel_time)
 
     # %% resample varcloud data to minutely resolution
     varcloud_ds = varcloud_ds.resample(time="1min").asfreq()
+    varcloud_ds = varcloud_ds.sel(time=sel_time)
 
     # %% select lat and lon closest to flightpath
     lats, lons, times = varcloud_ds.Latitude, varcloud_ds.Longitude, varcloud_ds.time
