@@ -201,7 +201,7 @@ if __name__ == "__main__":
         coord="band_sw")
 
     # %% set plotting options
-    var = "iwc"
+    var = "od_int"
     v = "v1"
     band = None
     band_str = f"_band{band}" if band is not None else ""
@@ -284,8 +284,9 @@ if __name__ == "__main__":
     else:
         ecrad_plot = ecrad_plot.sel(time=time_sel, height=slice(13, 0))
 
-    # %% plot 2D IFS variables along flight track
     time_extend = pd.to_timedelta((ecrad_plot.time[-1] - ecrad_plot.time[0]).to_numpy())
+
+    # %% plot 2D IFS variables along flight track
     _, ax = plt.subplots(figsize=h.figsize_wide)
     # ecrad 2D field
     ecrad_plot.plot(x="time", y="height", cmap=cmap, ax=ax, robust=robust, vmin=vmin, vmax=vmax, alpha=alpha, norm=norm,
@@ -327,6 +328,22 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
+    # %% plot vertical integrated data
+    ecrad_1d = ecrad_plot.sum(dim="height")
+    _, ax = plt.subplots(figsize=h.figsize_wide)
+    # ecrad 1D profile
+    ecrad_1d.plot(x="time", ax=ax, ls="", marker="o")
+
+    ax.set(title=f"{key} ecRad along Flight Track - {v}", ylabel=f"{h.cbarlabels[var]}{band_str}", xlabel="Time (UTC)",
+           yscale="linear")
+    h.set_xticks_and_xlabels(ax, time_extend)
+    ax.grid()
+    plt.tight_layout()
+    # figname = f"{plot_path}/{flight}_ecrad_{v}_{var}{band_str}_integrated.png"
+    # plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
     # %% plot varcloud data
     v = "iwc"
     var_plot = varcloud[v].sel(time=above_slice) * 1e6
@@ -335,7 +352,7 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% calculate particle size distribution
+    # %% calculate histogram of particle size
     time_sel = above_slice
     plot_v1 = (ecrad_ds_v1.re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
     plot_v8 = (ecrad_ds_v8.re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
@@ -349,11 +366,11 @@ if __name__ == "__main__":
     ax.text(0.8, 0.7, f"Binsize: {binsize} $\mu$m", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="white"))
     ax.grid()
     ax.set(xlabel=r"Ice effective radius ($\mu$m)", ylabel="Number of Occurrence",
-           title=f"Particle Size Distribution between {t1:%H:%M} and {t2:%H:%M} UTC")
+           title=f"Histogram of Particle Size between {t1:%H:%M} and {t2:%H:%M} UTC")
     figname = f"{plot_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
     plt.savefig(figname, dpi=300, bbox_inches="tight")
-    # figname = f"{fig_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
-    # plt.savefig(figname, dpi=300, bbox_inches="tight")
+    figname = f"{fig_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
+    plt.savefig(figname, dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
