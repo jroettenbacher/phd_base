@@ -52,7 +52,6 @@ Finally, due to larger |re-ice| the ice cloud from the retrieval is less absorbi
 
     Histogramm of difference in broadband solar downward irradiance between IFS and VarCloud.
 
-.. |re-ice| replace:: :math:`r_{eff, ice}`
 """
 
 if __name__ == "__main__":
