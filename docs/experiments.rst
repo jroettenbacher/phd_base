@@ -6,7 +6,7 @@ Here different model setups and experiments are documented and discussed.
 A lot of knobs can be turned in models.
 This chapter is meant to track the different model setup used and their results.
 
-ecRad namelists and experiments
+ecRad Namelists and Experiments
 ===============================
 
 Namelists can be found in the corresponding date folder in the ecrad folder for each campaign (see ``config.toml``).
@@ -34,11 +34,13 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v8.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
 * ``IFS_namelist_jr_20220411_v9.nam``: for flight RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input
 * ``IFS_namelist_jr_20220411_v10.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input using v3 as input
+* ``IFS_namelist_jr_20220411_v11.nam``: for flight RF17 with Fu-IFS ice model using ciwc as q_ice instead of sum(ciwc, cswc)
 
 |haloac3| **2022-04-12**
 
 * ``IFS_namelist_jr_20220412_v1.nam``: for flight RF18 with Fu-IFS ice model
 * ``IFS_namelist_jr_20220412_v8.nam``: for flight RF18 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
+* ``IFS_namelist_jr_20220412_v11.nam``: for flight RF18 with Fu-IFS ice model using ciwc as q_ice instead of sum(ciwc, cswc)
 
 
 Overlap decorrelation length experiment
@@ -59,7 +61,19 @@ Varcloud retrieval input experiment
 
 .. automodule:: experiments.ecrad_experiment_v8
 
-ecRad setups
+Ice Mass Mixing Ratio Experiment
+--------------------------------
+
+*Script:* :py:mod:`experiments.ecrad_write_input_files_v4.py`
+
+.. automodule:: experiments.ecrad_write_input_files_v4
+
+*Script:* :py:mod:`experiments.ecrad_experiment_v11.py`
+
+.. automodule:: experiments.ecrad_experiment_v11
+
+
+ecRad Setups
 ============
 
 Setup ala Hanno
@@ -79,8 +93,8 @@ Standard IFS setup for |haloac3|
 * aerosol disabled
 
 
-libRadtran Setups
-=================
+libRadtran Setups and Experiments
+=================================
 
 |haloac3| BACARDI broadband simulation for BACARDI nc file
 ----------------------------------------------------------
