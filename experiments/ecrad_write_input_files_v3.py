@@ -116,11 +116,13 @@ if __name__ == "__main__":
     bahamas_ds = reader.read_bahamas(f"{path_bahamas}/{file_bahamas}")
 
     # %% select only case study time which features the cloud that HALO also underpassed
-    sel_time = slice(above_cloud["start"], pd.to_datetime("2022-04-11 11:04"))
-    fake_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1Min")
+    sel_time = slice(pd.to_datetime("2022-04-11 10:49"), pd.to_datetime("2022-04-11 11:04"))
+    fake_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1s")
 
     # %% resample varcloud data to minutely resolution
-    varcloud_ds = varcloud_ds.resample(time="1min").asfreq()
+    new_index = pd.date_range(str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy()),
+                              str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy()), freq="1s")
+    varcloud_ds = varcloud_ds.reindex(time=new_index, method="bfill")
     varcloud_ds = varcloud_ds.sel(time=sel_time)
 
     # %% select lat and lon closest to flightpath
@@ -128,7 +130,7 @@ if __name__ == "__main__":
     if t_interp:
         ds_sel = data_ml.sel(lat=lats[0], lon=lons[0], method="nearest").reset_coords(["lat", "lon"])
         ds_sel = ds_sel.interp(time=times[0])
-        for i in tqdm(range(1, len(lats))):
+        for i in tqdm(range(1, len(lats)), desc="Select closest IFS data"):
             tmp = data_ml.sel(lat=lats[i], lon=lons[i], method="nearest").reset_coords(["lat", "lon"])
             tmp = tmp.interp(time=times[i])
             ds_sel = xr.concat([ds_sel, tmp], dim="time")
