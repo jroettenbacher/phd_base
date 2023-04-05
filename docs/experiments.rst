@@ -9,24 +9,36 @@ This chapter is meant to track the different model setup used and their results.
 ecRad namelists and experiments
 ===============================
 
+Namelists can be found in the corresponding date folder in the ecrad folder for each campaign (see ``config.toml``).
+
 * ``IFS_namelist.nam``: Namelist as used by Kevin
 * ``IFS_namelist_jr.nam``: Adjusted namelist for first runs by Johannes
 * ``IFS_namelist_v2.nam``: Namelist with spectral short wave albedo enabled
 * ``IFS_namelist_hanno_org.nam``: Used by Hanno
+
+**CIRRUS-HL 2021-06-29**
+
 * ``IFS_namelist_jr_20210629a_v1.nam``: for flight 20210629a with Fu-IFS ice model
 * ``IFS_namelist_jr_20210629a_v2.nam``: for flight 20210629a with Baran2017 ice model
 * ``IFS_namelist_jr_20210629a_v3.nam``: for flight 20210629a with Baran2016 ice model
 * ``IFS_namelist_jr_20210629a_v4.nam``: for flight 20210629a with Yi2013 ice model
-* ``IFS_namelist_jr_20220411_v1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220411_v2.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2017 ice model
-* ``IFS_namelist_jr_20220411_v4.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Yi ice model
-* ``IFS_namelist_jr_20220411_v5.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and 3D parameterizations enabled
-* ``IFS_namelist_jr_20220411_v6.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model and 3D parameterizations enabled
-* ``IFS_namelist_jr_20220411_v7.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model
-* ``IFS_namelist_jr_20220411_v8.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
-* ``IFS_namelist_jr_20220411_v9.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input
-* ``IFS_namelist_jr_20220412_v1.nam``: for flight HALO-AC3_20220412_HALO_RF17 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220412_v8.nam``: for flight HALO-AC3_20220412_HALO_RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
+
+|haloac3| **2022-04-11**
+
+* ``IFS_namelist_jr_20220411_v1.nam``: for flight RF17 with Fu-IFS ice model
+* ``IFS_namelist_jr_20220411_v2.nam``: for flight RF17 with Baran2017 ice model
+* ``IFS_namelist_jr_20220411_v4.nam``: for flight RF17 with Yi ice model
+* ``IFS_namelist_jr_20220411_v5.nam``: for flight RF17 with Fu-IFS ice model and 3D parameterizations enabled
+* ``IFS_namelist_jr_20220411_v6.nam``: for flight RF17 with Baran2016 ice model and 3D parameterizations enabled
+* ``IFS_namelist_jr_20220411_v7.nam``: for flight RF17 with Baran2016 ice model
+* ``IFS_namelist_jr_20220411_v8.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
+* ``IFS_namelist_jr_20220411_v9.nam``: for flight RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input
+* ``IFS_namelist_jr_20220411_v10.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input using v3 as input
+
+|haloac3| **2022-04-12**
+
+* ``IFS_namelist_jr_20220412_v1.nam``: for flight RF18 with Fu-IFS ice model
+* ``IFS_namelist_jr_20220412_v8.nam``: for flight RF18 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
 
 
 Overlap decorrelation length experiment
