@@ -81,6 +81,9 @@ rst_prolog = """
 
 # variables which should be available for every rst file in the docs
 rst_epilog = f"""
-.. |version| replace:: {version}
+.. |version| replace:: {version}""" + \
+"""
 .. |haloac3| replace:: HALO-(AC)\\ :sup:`3`\\
+.. |re-ice| replace:: :math:`r_{eff, ice}`
+.. |q-ice| replace:: :math:`q_{ice}`
 """
