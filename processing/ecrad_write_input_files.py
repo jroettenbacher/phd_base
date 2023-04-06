@@ -123,19 +123,15 @@ if __name__ == "__main__":
         n_column = dsi_ml_out.dims["column"]  # get number of columns
         dsi_ml_out["column"] = np.arange(n_column)
         # some variables now need to have the dimension column as well
-        variables = ["overlap_param", "fractional_std", "inv_cloud_effective_size"]
+        variables = ["fractional_std"]
         for var in variables:
             arr = dsi_ml_out[var].values
             dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": n_column})
         dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first dimension
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
-        # ds_ml_out.to_netcdf(path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc4",
-        #                     format='NETCDF4')
         dsi_ml_out.to_netcdf(
-            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}.nc",
+            path=f"{path_ecrad}/ecrad_input_standard_{sod:7.1f}_sod{ending}_v1.nc",
             format='NETCDF4_CLASSIC')
-        # dsi_ml_out.to_netcdf(path=f"{path_ecrad}/{date}/ecrad_input_standard_{nav_data_ip.time.iloc[i]:7.1f}_sod_inp.nc",
-        #                      format='NETCDF3_CLASSIC')
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
