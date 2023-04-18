@@ -93,6 +93,14 @@ cirrus_hl_overview.py
 
 .. automodule:: analysis.halo_ac3_bahamas_pitch_filter
 
+|haloac3| ecRad 3D Parameterization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Script:* :py:mod:`analysis.halo_ac3_ecrad_3D_case_study.py`
+
+.. automodule:: analysis.halo_ac3_ecrad_3D_case_study
+
+
 SMART
 -----
 
