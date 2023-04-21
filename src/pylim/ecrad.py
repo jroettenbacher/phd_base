@@ -47,12 +47,12 @@ def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, 
         PQ_SNOW: (kg/kg)
         PLAT: (degrees)
 
-    Returns: ice effective radius in micrometer
+    Returns: ice effective radius in meter
 
     """
     # constants
     RRE2DE = 0.64952  # from suecrad.f90
-    RMIN_ICE = 60  # min ice radius (um)
+    RMIN_ICE = 60  # min ice diameter (um)
     RTT = 273.15  # temperature of fusion of water (K)
     RD = 287  # J kg-1 K-1
 
@@ -107,7 +107,7 @@ def liquid_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_LIQ, PQ_RAI
         PQ_LIQ: (kg/kg)
         PQ_RAIN: (kg/kg)
 
-    Returns: liquid effective radius in micrometer after Martin et al. (JAS 1994)
+    Returns: liquid effective radius in meter after Martin et al. (JAS 1994)
 
     """
     # constants
