@@ -4,18 +4,24 @@ ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.5.0/bin/ecrad"
 
 # standard options
 date_var=20220411
-reg_file="ecrad_input_*_sod_v1.nc"
 version="v1"
+input_version="v1"
+reg_file="ecrad_input_*_sod_${input_version}.nc"
 
 # read in command line args to overwrite standard options
-while getopts ":d:tv:" opt; do
+while getopts ":i:d:tv:" opt; do
   case ${opt} in
   d )
     date_var="${OPTARG}"
     echo Date given: "${date_var}"
   ;;
+  i )
+    input_version="${OPTARG}"
+    echo Input version selected: "${input_version}"
+    reg_file="ecrad_input_*_sod_${input_version}.nc"
+  ;;
   t )
-    reg_file="ecrad_input_*_sod_inp_v1.nc"
+    reg_file="ecrad_input_*_sod_inp_${input_version}.nc"
     echo Option -t set
   ;;
   v )
@@ -23,10 +29,11 @@ while getopts ":d:tv:" opt; do
     echo Version selected: "${version}"
   ;;
   ?)
-    echo "script usage: $(basename \$0) [-d yyyymmdd] [-t]" >&2
+    echo "script usage: $(basename \$0) [-i v1] [-d yyyymmdd] [-t] [-v v1]" >&2
     exit 1
   esac
 done
+shift $((OPTIND -1))
 
 #reg_file=${reg_file/.nc/_${version}.nc}
 inpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_input"
@@ -55,7 +62,7 @@ do
 	sod=$(echo $filename | grep -oP '(\d{5}\.\d{1})')
 	# generate the outfilename by replacing input with output
  	outfilename="${outpath}/${filename/input/output}"
- 	outfilename="${outfilename/v1/${version}}"
+ 	outfilename="${outfilename/${input_version}/${version}}"
 	echo "outfile: ${outfilename}"
  	echo Processing filenumber: "${counter}" of "${n_files}"
  	echo "${counter}"
