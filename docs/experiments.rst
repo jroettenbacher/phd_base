@@ -31,10 +31,10 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v5.nam``: for flight RF17 with Fu-IFS ice model and 3D parameterizations enabled
 * ``IFS_namelist_jr_20220411_v6.nam``: for flight RF17 with Baran2016 ice model and 3D parameterizations enabled
 * ``IFS_namelist_jr_20220411_v7.nam``: for flight RF17 with Baran2016 ice model
-* ``IFS_namelist_jr_20220411_v8.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
-* ``IFS_namelist_jr_20220411_v9.nam``: for flight RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input
-* ``IFS_namelist_jr_20220411_v10.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input using v3 as input
-* ``IFS_namelist_jr_20220411_v11.nam``: for flight RF17 with Fu-IFS ice model using ciwc as q_ice instead of sum(ciwc, cswc)
+* ``IFS_namelist_jr_20220411_v8.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input (input version v2)
+* ``IFS_namelist_jr_20220411_v9.nam``: for flight RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input (input version v2)
+* ``IFS_namelist_jr_20220411_v10.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice (input version v3)
+* ``IFS_namelist_jr_20220411_v11.nam``: for flight RF17 with Fu-IFS ice model using ciwc as q_ice instead of sum(ciwc, cswc) (input version v4)
 
 |haloac3| **2022-04-12**
 

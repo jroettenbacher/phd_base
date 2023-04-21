@@ -471,7 +471,9 @@ Workflow with ecRad
 #. ~~Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length~~ |rarr| not needed as it is calculated by ecRad internally
 #. Run :ref:`processing:ecrad_write_input_files.py`
 #. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input``
-#. Run :ref:`processing:ecrad_processing.py` to generate merged input and output files for and from the ecRad simulation
+#. Run :ref:`processing:ecrad_merge_files.py` to generate merged input and output files for and from the ecRad simulation
+#. Run :ref:`processing:ecrad_processing.py` to generate one merged file from input and output files for and from the ecRad simulation with additional variables
+#. Run :ref:`processing:ecrad_merge_radiative_properties.py` to generate one merged radiative properties file from the single files given by the ecRad simulation
 
 IFS Download
 ^^^^^^^^^^^^
@@ -501,15 +503,14 @@ ecrad_write_input_files.py
 ecrad_execute_IFS.sh
 ^^^^^^^^^^^^^^^^^^^^
 
-This script loops through all input files and runs ecrad with the setup given in ``IFS_namelist_x.nam``.
+This script loops through all input files and runs ecrad with the setup given in ``IFS_namelist_jr_{date}_{version}.nam``.
 
 **Attention (version 1.4.1):** ecRad has to be run without full paths for the input and output nc file.
 Only the namelist has to be given with its full path.
 The namelist has to be in the same folder as the input files and the output files have to be written in the same folder.
 
 
-
-The date defines the input path which is generally ``/projekt_agmwend/data/{campaign}/{ecrad/ifs_folder}/ecrad_input/yyyymmdd/``.
+The date defines the input path which is generally ``/projekt_agmwend/data/{campaign}/{ecrad_folder}/ecrad_input/yyyymmdd/``.
 It then writes the output to the given output path, one output file per input file.
 The ``radiative_properties.nc`` file which is optionally generated in each run depending on the namelist is renamed and moved to a separate folder to avoid overwriting the file.
 
@@ -523,6 +524,7 @@ The ``radiative_properties.nc`` file which is optionally generated in each run d
 * -t: use the time interpolated data
 * -d yyyymmdd: give the date to be processed
 * -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments:ecRad namelists and experiments` for details on version)
+* -i v1: select which input version to use
 
 **Output:**
 
@@ -535,7 +537,7 @@ This will write all output to the console and to the specified file.
 
 .. code-block:: shell
 
-   . ./ecrad_execute_IFS.sh [-t] [-d yyyymmdd] [-v v1] 2>&1 | tee ./log/today_ecrad_yyyymmdd.log
+   . ./ecrad_execute_IFS.sh [-t] [-d yyyymmdd] [-v v1] [-i v1] 2>&1 | tee ./log/today_ecrad_yyyymmdd.log
 
 
 ecrad_execute_IFS_single.sh
@@ -543,9 +545,17 @@ ecrad_execute_IFS_single.sh
 
 As above but runs only one file which has to be defined in the script.
 
+ecrad_merge_files.py
+^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_merge_files
+
 ecrad_processing.py
 ^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_processing
+
+ecrad_merge_radiative_properties.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_merge_radiative_properties
 
 
 GoPro Time Lapse quicklooks
