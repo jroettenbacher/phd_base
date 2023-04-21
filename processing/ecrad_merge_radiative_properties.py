@@ -141,7 +141,7 @@ def merge_radiative_properties_files(base_dir: str, date: str, version: str = "v
         ds = xr.open_mfdataset(merged_files, combine="nested", concat_dim="time")
         ds.to_netcdf(outfile, format="NETCDF4_CLASSIC",
                      encoding=dict(time=dict(units=f"seconds since {date_dt:%Y-%m-%d}")))
-        log.info(f"{outfile} saved")
+        log.info(f"Saved {outfile}")
     else:
         log.info(f"{outfile} already exists. Not overwritten!")
 
@@ -184,5 +184,4 @@ if __name__ == "__main__":
     log.info(f"Merging radiative property files")
     merge_radiative_properties_files(inpath, date, version)
 
-    log.info(f"Saved {outfile}")
     log.info(f"Done with merge_radiative_properties in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")
