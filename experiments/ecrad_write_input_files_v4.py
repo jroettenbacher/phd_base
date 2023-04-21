@@ -79,8 +79,10 @@ if __name__ == "__main__":
 
     nav_data_ip = pd.read_csv(f"{path_ifs_output}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
     data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc")
+    # set cswc to 0 as ciwc and cswc are added up in the calculation of the effective radius
+    data_ml["cswc"] = xr.zeros_like(data_ml["cswc"])
     # overwrite q_ice with ciwc
-    data_ml["q_ice"] = data_ml["ciwc"]
+    data_ml["q_ice"] = data_ml["ciwc"].copy()
 
     # %% subsample nav_data by step
     step = 1
