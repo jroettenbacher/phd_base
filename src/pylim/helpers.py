@@ -4,6 +4,7 @@
 *author*: Johannes Röttenbacher
 """
 import os
+import shutil
 import sys
 from itertools import groupby
 import toml
@@ -14,6 +15,7 @@ from matplotlib import colors
 import datetime
 import logging
 import cmasher as cmr
+from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
@@ -74,7 +76,7 @@ plot_units = dict(cloud_fraction="", clwc=r"mg$\,$kg$^{-1}$", ciwc=r"mg$\,$kg$^{
 
 cbarlabels = dict(cloud_fraction="Cloud Fraction", clwc="Cloud Liquid Water Content", ciwc="Cloud Ice Water Content",
                   cswc="Cloud Snow Water Content", crwc="Cloud Rain Water Content", t="Temperature",
-                  q="Specific Humidity", q_ice="Ice Cloud Mass Mixing Ratio", q_liquid="Liquid Cloud Mass Mixing Ratio",
+                  q="Specific Humidity", q_ice="Ice Mass Mixing Ratio", q_liquid="Liquid Mass Mixing Ratio",
                   iwp="Ice Water Path", iwc="Ice Water Content",
                   re_ice="Ice Effective Radius", re_liquid="Liquid Effective Radius",
                   heating_rate_sw="Solar Heating Rate", heating_rate_lw="Terrestrial Heating Rate",
@@ -168,6 +170,28 @@ def make_dir(folder: str) -> None:
         os.makedirs(folder)
     except FileExistsError:
         pass
+
+
+def delete_folder_contents(folder: str) -> None:
+    """
+    Deletes all files and subfolders in a folder.
+    From: https://stackoverflow.com/questions/185936/how-to-delete-the-contents-of-a-folder
+
+    Args:
+        folder: folder name or full path
+
+    Returns: nothing, but deletes all files in a folder
+
+    """
+    for filename in tqdm(os.listdir(folder)):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except OSError as e:
+            print(f"Failed to delete {file_path}.\n Reason: {e}")
 
 
 def arg_nearest(array, value):

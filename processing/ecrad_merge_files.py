@@ -211,4 +211,7 @@ if __name__ == "__main__":
         ecrad.to_netcdf(outfile, format="NETCDF4_CLASSIC")
         log.info(f"Saved {outfile}")
 
+    # %% remove all intermediate merged files in ecrad_merged
+    h.delete_folder_contents(f"{inpath}/ecrad_merged")
+
     log.info(f"Done with ecrad_processing in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")

@@ -184,4 +184,7 @@ if __name__ == "__main__":
     log.info(f"Merging radiative property files")
     merge_radiative_properties_files(inpath, date, version)
 
+    # %% remove all intermediate merged files in radiative_properties_merged
+    h.delete_folder_contents(f"{inpath}/radiative_properties_merged")
+
     log.info(f"Done with merge_radiative_properties in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")
