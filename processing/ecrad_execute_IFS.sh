@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
 ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.5.0/bin/ecrad"
+python="/home/jroettenbacher/.conda/envs/phd_base/bin/python"
 
 # standard options
 date_var=20220411
@@ -90,4 +91,10 @@ do
  	counter=$((counter+1))
 
 done
-echo ">" Done.
+echo "> Done with ecRad simulations."
+cd "/projekt_agmwend/home_rad/jroettenbacher/phd_base/processing" || exit 1  # cd to working directory
+echo "> Merging radiative_properties files..."
+${python} ecrad_merge_radiative_properties.py date="${date_var}" version="${version}"
+
+echo "> Merging output files..."
+${python} ecrad_merge_files.py date="${date_var}" io_flag=output version="${version}"
