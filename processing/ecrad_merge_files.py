@@ -183,6 +183,7 @@ if __name__ == "__main__":
     if date is None:
         raise ValueError("'date' needs to be given!")
     version = args["version"] if "version" in args else "v1"
+    i_version = args["i_version"] if "i_version" in args else "v1"
     t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
     flag = strtobool(args["merge_io"]) if "merge_io" in args else False
@@ -203,10 +204,14 @@ if __name__ == "__main__":
 
     # %% read in ecrad merged in and out file and merge them
     ending = f"_inp_{version}" if t_interp else f"_{version}"
+    i_ending = f"_inp_{i_version}" if t_interp else f"_{i_version}"
     outfile = f"{inpath}/ecrad_merged_inout_{date}{ending}.nc"
     if flag and not os.path.isfile(outfile):
-        ecrad_in = xr.open_dataset(f"{inpath}/ecrad_merged_input_{date}{ending}.nc")
-        ecrad_out = xr.open_dataset(f"{inpath}/ecrad_merged_output_{date}{ending}.nc")
+        ifile = f"ecrad_merged_input_{date}{i_ending}.nc"
+        ofile = f"ecrad_merged_output_{date}{ending}.nc"
+        log.info(f"Merging {ofile} with {ifile}")
+        ecrad_in = xr.open_dataset(f"{inpath}/{ifile}")
+        ecrad_out = xr.open_dataset(f"{inpath}/{ofile}")
         ecrad = xr.merge([ecrad_out, ecrad_in])#, compat="override")
         ecrad.to_netcdf(outfile, format="NETCDF4_CLASSIC")
         log.info(f"Saved {outfile}")
