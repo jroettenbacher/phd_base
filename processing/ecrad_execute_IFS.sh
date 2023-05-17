@@ -96,5 +96,11 @@ cd "/projekt_agmwend/home_rad/jroettenbacher/phd_base/processing" || exit 1  # c
 echo "> Merging radiative_properties files..."
 ${python} ecrad_merge_radiative_properties.py date="${date_var}" version="${version}"
 
+echo "> Merging input files..."
+${python} ecrad_merge_files.py date="${date_var}" io_flag=input version="${input_version}"
+
 echo "> Merging output files..."
 ${python} ecrad_merge_files.py date="${date_var}" io_flag=output version="${version}"
+
+echo "> Merging merged input and output file..."
+${python} ecrad_merge_files.py date="${date_var}" merge_io=True version="${version}" i_version="${input_version}"
