@@ -26,6 +26,8 @@ ecRad_bands = dict(Band1=(3077, 3846), Band2=(2500, 3076), Band3=(2150, 2500), B
                    Band6=(1299, 1625), Band7=(1242, 1298), Band8=(778, 1241), Band9=(625, 777), Band10=(442, 624),
                    Band11=(345, 442), Band12=(263, 344), Band13=(200, 262), Band14=(3846, 12195))
 
+# sea ice albedo bands micron
+ci_bands = [(0.185, 0.25), (0.25, 0.44), (0.44, 0.69), (0.69, 1.19), (1.19, 2.38), (2.38, 4.0)]
 # sea ice albedo in 6-spectral intervals for each month
 ci_albedo = np.empty((12, 6))
 # Sea ice surf. albedo for 0.185-0.25 micron (snow covered; Ebert and Curry, 1993)
@@ -74,25 +76,25 @@ plot_units = dict(cloud_fraction="", clwc=r"mg$\,$kg$^{-1}$", ciwc=r"mg$\,$kg$^{
                   eglo=r"W$\,$m$^{-2}\,$nm$^{-1}$", eglo_int=r"W$\,$m$^{-2}$", eup=r"W$\,$m$^{-2}\,$nm$^{-1}$",
                   eup_int=r"W$\,$m$^{-2}$")
 
-cbarlabels = dict(cloud_fraction="Cloud Fraction", clwc="Cloud Liquid Water Content", ciwc="Cloud Ice Water Content",
-                  cswc="Cloud Snow Water Content", crwc="Cloud Rain Water Content", t="Temperature",
-                  q="Specific Humidity", q_ice="Ice Mass Mixing Ratio", q_liquid="Liquid Mass Mixing Ratio",
-                  iwp="Ice Water Path", iwc="Ice Water Content",
-                  re_ice="Ice Effective Radius", re_liquid="Liquid Effective Radius",
-                  heating_rate_sw="Solar Heating Rate", heating_rate_lw="Terrestrial Heating Rate",
-                  heating_rate_net="Net Heating Rate",
-                  transmissivity_sw="Solar Transmissivity", transmissivity_lw="Terrestrial Transmissivity",
-                  reflectivity_sw="Solar Reflectivity", reflectivity_lw="Terrestrial Reflectivity",
-                  flux_dn_sw="Downward Solar Irradiance", flux_up_sw="Upward Solar Irradiance",
-                  flux_dn_lw="Downward Terrestrial Irradiance", flux_up_lw="Upward Terrestrial Irradiance",
-                  cre_sw="Solar Cloud Radiative Effect", cre_lw="Terrestrial Cloud Radiative Effect",
-                  cre_total="Total Cloud Radiative Effect",
-                  od=f"Total Optical Depth", scat_od=f"Scattering Optical Depth", od_mean=f"Mean Total Optical Depth",
-                  scat_od_mean=f"Mean Scattering Optical Depth", g=f"Asymmetry Factor", g_mean="Mean Asymmetry Factor",
-                  od_int="Integrated Total Optical Depth", scat_od_int="Integrated Scattering Optical Depth",
-                  absorption="Absorption", absorption_int="Integrated Absorption",
-                  eglo="Spectral Global Downward Irradiance", eglo_int="Global Downward Irradiance",
-                  eup="Spectral Diffuse Upward Irradiance", eup_int="Diffuse Upward Irradiance")
+cbarlabels = dict(cloud_fraction="Cloud fraction", clwc="Cloud liquid water content", ciwc="Cloud ice water content",
+                  cswc="Cloud snow water content", crwc="Cloud rain water content", t="Temperature",
+                  q="Specific humidity", q_ice="Ice mass mixing ratio", q_liquid="Liquid mass mixing ratio",
+                  iwp="Ice water path", iwc="Ice water content",
+                  re_ice="Ice effective radius", re_liquid="Liquid effective radius",
+                  heating_rate_sw="Solar heating rate", heating_rate_lw="Terrestrial heating rate",
+                  heating_rate_net="Net heating rate",
+                  transmissivity_sw="Solar transmissivity", transmissivity_lw="Terrestrial transmissivity",
+                  reflectivity_sw="Solar reflectivity", reflectivity_lw="Terrestrial reflectivity",
+                  flux_dn_sw="Downward solar irradiance", flux_up_sw="Upward solar irradiance",
+                  flux_dn_lw="Downward terrestrial irradiance", flux_up_lw="Upward terrestrial irradiance",
+                  cre_sw="Solar cloud radiative effect", cre_lw="Terrestrial cloud radiative effect",
+                  cre_total="Total cloud radiative effect",
+                  od=f"Total optical depth", scat_od=f"Scattering optical depth", od_mean=f"Mean total optical depth",
+                  scat_od_mean=f"Mean scattering optical depth", g=f"Asymmetry factor", g_mean="Mean asymmetry factor",
+                  od_int="Integrated total optical depth", scat_od_int="Integrated scattering optical depth",
+                  absorption="Absorption", absorption_int="Integrated absorption",
+                  eglo="Spectral global downward irradiance", eglo_int="Global downward irradiance",
+                  eup="Spectral diffuse upward irradiance", eup_int="Diffuse upward irradiance")
 
 scale_factors = dict(cloud_fraction=1, clwc=1e6, ciwc=1e6, cswc=1e6, crwc=1e6, t=1, q=1000, re_ice=1e6,
                      re_liquid=1e6, q_ice=1e6, q_liquid=1e6, iwp=1000, iwc=1e6)
