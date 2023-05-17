@@ -75,6 +75,17 @@ Ice Mass Mixing Ratio Experiment
 
 .. automodule:: experiments.ecrad_experiment_v11
 
+Fixed Albedo Experiment
+-----------------------
+
+*Script:* :py:mod:`experiments.ecrad_write_input_files_v5.py`
+
+.. automodule:: experiments.ecrad_write_input_files_v5
+
+*Script:* :py:mod:`experiments.ecrad_experiment_v13.py`
+
+.. automodule:: experiments.ecrad_experiment_v13
+
 
 ecRad Setups
 ============

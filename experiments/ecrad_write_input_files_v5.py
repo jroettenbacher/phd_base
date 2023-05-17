@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 15-04-2023
 
-Replace sw_albedo calculated according to Ebert and Curry 1996 with open ocean albedo (0.06) for the whole flight.
+Replace sw_albedo calculated according to :cite:t:`Ebert1992` with open ocean albedo (0.06) for the whole flight.
 
 **Required User Input:**
 
