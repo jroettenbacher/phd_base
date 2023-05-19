@@ -14,9 +14,6 @@ Focus is on the above cloud section in the high north before the below cloud sec
 
     Retrieved ice water content from VarCloud retrieval interpolated to IFS full level pressure altitudes.
 
-Results
-^^^^^^^^
-
 .. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_along_track.png
 
     Difference between IWC IFS and IWC VarCloud.
@@ -55,7 +52,7 @@ Finally, due to larger |re-ice| the ice cloud from the retrieval is less absorbi
 """
 
 if __name__ == "__main__":
-    # %% import modules
+# %% import modules
     import pylim.helpers as h
     import pylim.halo_ac3 as meta
     from pylim import ecrad
@@ -72,15 +69,15 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import cmasher as cmr
 
+    # plotting variables
     cm = 1 / 2.54
     cb_colors = h.get_cb_friendly_colors()
-    # %% plotting variables
     h.set_cb_friendly_colors()
     plt.rc("font", size=12)
 
-    # %% set paths
+# %% set paths
     campaign = "halo-ac3"
-    key = "RF17"
+    key = "RF18"
     flight = meta.flight_names[key]
     date = flight[9:17]
 
@@ -97,7 +94,7 @@ if __name__ == "__main__":
     varcloud_file = [f for f in os.listdir(varcloud_path) if "nc" in f][0]
     libradtran_file = f"HALO-AC3_HALO_libRadtran_simulation_varcloud_1min_{date}_{key}.nc"
 
-    # %% get flight segments for case study period
+# %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
     segments = flightphase.FlightPhaseFile(segmentation)
     above_cloud, below_cloud = dict(), dict()
@@ -120,7 +117,7 @@ if __name__ == "__main__":
 
     time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 
-    # %% read in varcloud data
+# %% read in varcloud data
     varcloud = xr.open_dataset(f"{varcloud_path}/{varcloud_file}").swap_dims(time="Time", height="Height").rename(
         Time="time")
     varcloud = varcloud.rename(Varcloud_Cloud_Ice_Water_Content="iwc")
@@ -128,7 +125,7 @@ if __name__ == "__main__":
     libradtran_ds["altitude"] = libradtran_ds.altitude / 1000
     libradtran_ds = libradtran_ds.rename(CIWD="iwc")
 
-    # %% read in ecrad data
+# %% read in ecrad data
     ecrad_ds_input = xr.open_dataset(f"{ecrad_path}/{ecrad_input}")
     ecrad_ds_v8 = xr.open_dataset(f"{ecrad_path}/{ecrad_v8}")
     ecrad_ds_v1 = xr.open_dataset(f"{ecrad_path}/{ecrad_v1}")
@@ -144,65 +141,47 @@ if __name__ == "__main__":
 
     # select time range of v8
     ecrad_ds_v1 = ecrad_ds_v1.sel(time=ecrad_ds_v8.time)
+    ecrad_dict = dict(v1=ecrad_ds_v1, v8=ecrad_ds_v8)
 
-    # %% compute cloud ice water path
-    factor = ecrad_ds_v1.pressure_hl.diff(dim="half_level").to_numpy() / (
-            9.80665 * ecrad_ds_v1.cloud_fraction.to_numpy())
-    ecrad_ds_v1["iwp"] = (["time", "level"], factor * ecrad_ds_v1.ciwc.to_numpy())
-    ecrad_ds_v1["iwp"] = ecrad_ds_v1.iwp.where(ecrad_ds_v1.iwp != np.inf, np.nan)
-    factor = ecrad_ds_v8.pressure_hl.diff(dim="half_level").to_numpy() / (
-            9.80665 * ecrad_ds_v8.cloud_fraction.to_numpy())
-    ecrad_ds_v8["iwp"] = (["time", "level"], factor * ecrad_ds_v8.ciwc.to_numpy())
-    ecrad_ds_v8["iwp"] = ecrad_ds_v8.iwp.where(ecrad_ds_v8.iwp != np.inf, np.nan)
+# %% modify dataset
+    for k in ecrad_dict:
+        ds = ecrad_dict[k].copy()
+        factor = ds.pressure_hl.diff(dim="half_level").to_numpy() / (9.80665 * ds.cloud_fraction.to_numpy())
+        ds["iwp"] = (["time", "level"], factor * ds.ciwc.to_numpy())
+        ds["iwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan)
 
-    # %% convert kg/kg to kg/m³
-    air_density = density(ecrad_ds_v1.pressure_full * units.Pa, ecrad_ds_v1.t * units.K, ecrad_ds_v1.q * units("kg/kg"))
-    ecrad_ds_v1["iwc"] = ecrad_ds_v1["q_ice"] * units("kg/kg") * air_density
+        # convert kg/kg to kg/m³
+        air_density = density(ds.pressure_full * units.Pa, ds.t * units.K, ds.q * units("kg/kg"))
+        ds["iwc"] = ds["q_ice"] * units("kg/kg") * air_density
 
-    air_density = density(ecrad_ds_v8.pressure_full * units.Pa, ecrad_ds_v8.t * units.K, ecrad_ds_v8.q * units("kg/kg"))
-    ecrad_ds_v8["iwc"] = ecrad_ds_v8["q_ice"] * units("kg/kg") * air_density
+        # add optical properties to data sets
+        ice_optics_fu = ecrad.calc_ice_optics_fu_sw(ds["iwp"], ds.re_ice)
+        ds["od"] = ice_optics_fu[0]
+        ds["scat_od"] = ice_optics_fu[1]
+        ds["g"] = ice_optics_fu[2]
+        ds["band_sw"] = range(1, 15)
+        ds["band_lw"] = range(1, 17)
+        ds["absorption"] = ds["od"] - ds["scat_od"]
+        ds["od_mean"] = ds["od"].mean(dim="band_sw")
+        ds["scat_od_mean"] = ds["scat_od"].mean(dim="band_sw")
+        ds["g_mean"] = ds["g"].mean(dim="band_sw")
+        ds["scat_od_int"] = ds["scat_od"].integrate(coord="band_sw")
+        ds["od_int"] = ds["od"].integrate(coord="band_sw")
+        ds["absorption_int"] = ds["absorption"].integrate(coord="band_sw")
 
-    # %% add optical properties to data sets
-    ice_optics_fu = ecrad.calc_ice_optics_fu_sw(ecrad_ds_v1["iwp"], ecrad_ds_v1.re_ice)
-    ecrad_ds_v1["od"] = ice_optics_fu[0]
-    ecrad_ds_v1["scat_od"] = ice_optics_fu[1]
-    ecrad_ds_v1["g"] = ice_optics_fu[2]
-    ecrad_ds_v1["band_sw"] = range(1, 15)
-    ecrad_ds_v1["band_lw"] = range(1, 17)
-    ecrad_ds_v1["absorption"] = ecrad_ds_v1["od"] - ecrad_ds_v1["scat_od"]
-    ecrad_ds_v1["od_mean"] = ecrad_ds_v1["od"].mean(dim="band_sw")
-    ecrad_ds_v1["scat_od_mean"] = ecrad_ds_v1["scat_od"].mean(dim="band_sw")
-    ecrad_ds_v1["g_mean"] = ecrad_ds_v1["g"].mean(dim="band_sw")
-    ecrad_ds_v1["scat_od_int"] = ecrad_ds_v1["scat_od"].integrate(coord="band_sw")
-    ecrad_ds_v1["od_int"] = ecrad_ds_v1["od"].integrate(coord="band_sw")
-    ecrad_ds_v1["absorption_int"] = ecrad_ds_v1["absorption"].integrate(coord="band_sw")
-    # version8
-    ice_optics_fu = ecrad.calc_ice_optics_fu_sw(ecrad_ds_v8["iwp"], ecrad_ds_v8.re_ice)
-    ecrad_ds_v8["od"] = ice_optics_fu[0]
-    ecrad_ds_v8["scat_od"] = ice_optics_fu[1]
-    ecrad_ds_v8["g"] = ice_optics_fu[2]
-    ecrad_ds_v8["band_sw"] = range(1, 15)
-    ecrad_ds_v8["band_lw"] = range(1, 17)
-    ecrad_ds_v8["absorption"] = ecrad_ds_v8["od"] - ecrad_ds_v8["scat_od"]
-    ecrad_ds_v8["od_mean"] = ecrad_ds_v8["od"].mean(dim="band_sw")
-    ecrad_ds_v8["scat_od_mean"] = ecrad_ds_v8["scat_od"].mean(dim="band_sw")
-    ecrad_ds_v8["g_mean"] = ecrad_ds_v8["g"].mean(dim="band_sw")
-    ecrad_ds_v8["scat_od_int"] = ecrad_ds_v8["scat_od"].integrate(coord="band_sw")
-    ecrad_ds_v8["od_int"] = ecrad_ds_v8["od"].integrate(coord="band_sw")
-    ecrad_ds_v8["absorption_int"] = ecrad_ds_v8["absorption"].integrate(coord="band_sw")
+        # calculate other optical parameters
+        ds["reflectivity_sw"] = ds.flux_up_sw / ds.flux_dn_sw
+        libradtran_ds["eglo_int"] = libradtran_ds["eglo"].integrate(coord="wavelength")
+        libradtran_ds["eup_int"] = libradtran_ds["eup"].integrate(coord="wavelength")
+        ds["flux_dn_sw_int"] = ds["spectral_flux_dn_sw"].sel(band_sw=slice(3, 11)).integrate(coord="band_sw")
 
-    # %% calculate other optical parameters
-    ecrad_ds_v1["reflectivity_sw"] = ecrad_ds_v1.flux_up_sw / ecrad_ds_v1.flux_dn_sw
-    ecrad_ds_v8["reflectivity_sw"] = ecrad_ds_v8.flux_up_sw / ecrad_ds_v8.flux_dn_sw
-    libradtran_ds["eglo_int"] = libradtran_ds["eglo"].integrate(coord="wavelength")
-    libradtran_ds["eup_int"] = libradtran_ds["eup"].integrate(coord="wavelength")
-    ecrad_ds_v8["flux_dn_sw_int"] = ecrad_ds_v8["spectral_flux_dn_sw"].sel(band_sw=slice(3, 11)).integrate(
-        coord="band_sw")
+        ecrad_dict[k] = ds.copy()
 
-    # %% set plotting options
-    var = "od_int"
+# %% set plotting options
+    var = "cswc"
     v = "v1"
     band = None
+# %% prepare data set for plotting
     band_str = f"_band{band}" if band is not None else ""
 
     # kwarg dicts
@@ -240,31 +219,32 @@ if __name__ == "__main__":
     # prepare ecrad dataset for plotting
     sf = h.scale_factors[var] if var in h.scale_factors else 1
     if v == "v8":
-        ecrad_plot = ecrad_ds_v8[var] * sf
+        ecrad_plot = ecrad_dict["v8"][var] * sf
     elif v == "v1":
-        ecrad_plot = ecrad_ds_v1[var] * sf
+        ecrad_plot = ecrad_dict["v1"][var] * sf
     else:
         # calculate difference between simulations
-        ecrad_ds_diff = ecrad_ds_v1[var] - ecrad_ds_v8[var]
-        ecrad_plot = ecrad_ds_diff.where((ecrad_ds_v8[var] != 0) | (~np.isnan(ecrad_ds_v8[var]))) * sf
+        ds = ecrad_dict["v8"]
+        ecrad_ds_diff = ecrad_dict["v1"][var] - ds[var]
+        ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
 
     # add new z axis mean pressure altitude
     if "half_level" in ecrad_plot.dims:
-        new_z = ecrad_ds_v8["press_height_hl"].mean(dim="time") / 1000
+        new_z = ecrad_dict["v8"]["press_height_hl"].mean(dim="time") / 1000
     else:
-        new_z = ecrad_ds_v8["press_height_full"].mean(dim="time") / 1000
+        new_z = ecrad_dict["v8"]["press_height_full"].mean(dim="time") / 1000
 
     ecrad_plot_new_z = list()
     for t in tqdm(ecrad_plot.time, desc="New Z-Axis"):
         tmp_plot = ecrad_plot.sel(time=t)
         if "half_level" in tmp_plot.dims:
             tmp_plot = tmp_plot.assign_coords(
-                half_level=ecrad_ds_v8["press_height_hl"].sel(time=t, drop=True).to_numpy() / 1000)
+                half_level=ecrad_dict["v8"]["press_height_hl"].sel(time=t, drop=True).to_numpy() / 1000)
             tmp_plot = tmp_plot.rename(half_level="height")
 
         else:
             tmp_plot = tmp_plot.assign_coords(
-                level=ecrad_ds_v8["press_height_full"].sel(time=t, drop=True).to_numpy() / 1000)
+                level=ecrad_dict["v8"]["press_height_full"].sel(time=t, drop=True).to_numpy() / 1000)
             tmp_plot = tmp_plot.rename(level="height")
 
         tmp_plot = tmp_plot.interp(height=new_z.to_numpy())
@@ -285,7 +265,7 @@ if __name__ == "__main__":
 
     time_extend = pd.to_timedelta((ecrad_plot.time[-1] - ecrad_plot.time[0]).to_numpy())
 
-    # %% plot 2D IFS variables along flight track
+# %% plot 2D IFS variables along flight track
     _, ax = plt.subplots(figsize=h.figsize_wide)
     # ecrad 2D field
     ecrad_plot.plot(x="time", y="height", cmap=cmap, ax=ax, robust=robust, vmin=vmin, vmax=vmax, alpha=alpha, norm=norm,
@@ -310,7 +290,7 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% plot histogram
+# %% plot histogram
     xlabel = "Difference v1 - v8" if v == "diff" else v
     flat_array = ecrad_plot.to_numpy().flatten()
     _, ax = plt.subplots(figsize=h.figsize_wide)
