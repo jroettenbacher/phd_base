@@ -82,6 +82,10 @@ Fixed Albedo Experiment
 
 .. automodule:: experiments.ecrad_write_input_files_v5
 
+*Script:* :py:mod:`experiments.ecrad_write_input_files_v5_1.py`
+
+.. automodule:: experiments.ecrad_write_input_files_v5_1
+
 *Script:* :py:mod:`experiments.ecrad_experiment_v13.py`
 
 .. automodule:: experiments.ecrad_experiment_v13
