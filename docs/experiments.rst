@@ -19,14 +19,14 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 **CIRRUS-HL 2021-06-29**
 
 * ``IFS_namelist_jr_20210629a_v1.nam``: for flight 20210629a with Fu-IFS ice model
-* ``IFS_namelist_jr_20210629a_v2.nam``: for flight 20210629a with Baran2017 ice model
+* ``IFS_namelist_jr_20210629a_v2.nam``: for flight 20210629a with Baran2017 ice model (deprecated)
 * ``IFS_namelist_jr_20210629a_v3.nam``: for flight 20210629a with Baran2016 ice model
 * ``IFS_namelist_jr_20210629a_v4.nam``: for flight 20210629a with Yi2013 ice model
 
 |haloac3| **2022-04-11**
 
 * ``IFS_namelist_jr_20220411_v1.nam``: for flight RF17 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220411_v2.nam``: for flight RF17 with Baran2017 ice model
+* ``IFS_namelist_jr_20220411_v2.nam``: for flight RF17 with Baran2017 ice model (deprecated)
 * ``IFS_namelist_jr_20220411_v4.nam``: for flight RF17 with Yi ice model
 * ``IFS_namelist_jr_20220411_v5.nam``: for flight RF17 with Fu-IFS ice model and 3D parameterizations enabled
 * ``IFS_namelist_jr_20220411_v6.nam``: for flight RF17 with Baran2016 ice model and 3D parameterizations enabled
