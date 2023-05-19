@@ -3,15 +3,14 @@
 | *author:* Johannes Röttenbacher
 | *created:* 05-04-2023
 
-Analyze the impact of using only Cloud Ice Water Content (ciwc) as ice mass mixing ratio (|q-ice|) instead of summing up  ciwc and Cloud Snow Water Content (cswc) for the |q-ice|.
+Analyze the impact of using only Cloud Ice Water Content (ciwc) as ice mass mixing ratio (|q-ice|) instead of summing up  ciwc and Cloud Snow Water Content (cswc) for |q-ice|.
 
 * ``IFS_namelist_jr_20220411_v1.nam``: for flight RF17 with Fu-IFS ice model
 * ``IFS_namelist_jr_20220411_v11.nam``: for flight RF17 with Fu-IFS ice model and ciwc as q_ice
 
 **Problem statement:** Using the Varcloud retrieval as input for IWC (converted to |q-ice|) seemed to explain the overestimation of optical depth in the IFS.
 However, RF18 did not show the same bias in downward solar irradiance below the cloud as RF17.
-One possible reason to explain this inconsistency could be the differing cswc between the two flights which is not reflected in the Varcloud retrieval.
-The cswc also extends the clouds to lower altitudes.
+One possible reason to explain this inconsistency could be the cswc which increased the clouds size in both cases but more so in RF18.
 Thus, we investigate the impact of removing it from the simulation.
 
 Focus is on the case study in the high north.
@@ -118,7 +117,6 @@ if __name__ == "__main__":
 # %% read in ecrad data
     ecrad_ds_input = xr.open_dataset(f"{ecrad_path}/{ecrad_input}")
     ecrad_ds_v1 = xr.open_dataset(f"{ecrad_path}/{ecrad_v1}")
-    ecrad_ds_v1 = ecrad.calculate_pressure_height(ecrad_ds_v1)
     ecrad_ds_v11 = xr.open_dataset(f"{ecrad_path}/{ecrad_v11}")
     ecrad_dict = dict(v1=ecrad_ds_v1, v11=ecrad_ds_v11)
 
@@ -159,8 +157,8 @@ if __name__ == "__main__":
         ecrad_dict[k] = ds.copy()
 
 # %% set plotting options
-    var = "q_ice"
-    v = "v11"
+    var = "re_ice"
+    v = "diff"
     band = None
 
 # %% prepare data set for plotting
