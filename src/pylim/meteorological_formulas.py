@@ -5,6 +5,7 @@
 """
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import ArrayLike
 from typing import Union
 
 
@@ -66,7 +67,7 @@ def barometric_height_old(p_high, p_low, T_high):
     return delta_h
 
 
-def barometric_height(pressure_profile, temperature_profile):
+def barometric_height(pressure_profile: ArrayLike, temperature_profile: ArrayLike) -> np.ndarray:
     """
     Calculate the barometric height from a pressure and temperature profile.
 

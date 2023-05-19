@@ -7,7 +7,7 @@
 import pylim.meteorological_formulas as met
 import numpy as np
 import xarray as xr
-from tqdm import tqdm
+import warnings
 import logging
 import importlib_resources as pkg_resources
 
@@ -524,39 +524,45 @@ def calculate_pressure_height(ds: xr.Dataset) -> xr.Dataset:
     Returns: Dataset with two new variables ``press_height_hl`` and ``press_height_full`` in meters
 
     """
-    # calculate pressure height of model half levels
-    vertical_profiles = ds[["pressure_hl", "temperature_hl"]]
-    p_array_list = list()
-    # ignore division by zero error
-    with np.errstate(divide='ignore'):
-        for time in tqdm(vertical_profiles.time, desc="Half Levels"):
-            tmp = vertical_profiles.sel(time=time, drop=True)
-            press_height = met.barometric_height(tmp["pressure_hl"], tmp["temperature_hl"])
-            p_array = xr.DataArray(data=press_height[None, :], dims=["time", "half_level"],
-                                   coords={"half_level": (["half_level"], np.flip(tmp.half_level.values)),
-                                           "time": np.array([time.values])},
-                                   name="pressure_height")
-            p_array_list.append(p_array)
+    if "half_level" in ds:
+        # ignore division by zero error
+        with np.errstate(divide='ignore'):
+            press_height_hl = xr.apply_ufunc(met.barometric_height,
+                                             ds["pressure_hl"],
+                                             ds["temperature_hl"],
+                                             input_core_dims=[["half_level"], ["half_level"]],  # list with one entry per arg
+                                             output_core_dims=[["half_level"]],
+                                             # list with one entry per arg
+                                             vectorize=True,  # loop over non-core dims
+                                             dask="parallelized",
+                                             output_dtypes=[ds.temperature_hl.dtype])
 
-    ds["press_height_hl"] = xr.merge(p_array_list).pressure_height
-    # replace nan (TOA) with 80km
-    ds["press_height_hl"] = ds["press_height_hl"].where(~np.isnan(ds["press_height_hl"]), 80000)
+        ds["press_height_hl"] = press_height_hl.assign_coords(half_level=np.flip(press_height_hl.half_level.to_numpy()))
+        # replace nan (TOA) with 80km
+        ds["press_height_hl"] = ds["press_height_hl"].where(~np.isnan(ds["press_height_hl"]), 80000)
+    else:
+        warnings.warn("Dimension 'half_level' not found in data set!")
 
-    # calculate pressure height of model full levels
-    vertical_profiles = ds[["pressure_full", "t"]]
-    p_array_list = list()
-    for time in tqdm(vertical_profiles.time, desc="Full Levels"):
-        tmp = vertical_profiles.sel(time=time, drop=True)
-        press_height = met.barometric_height(tmp["pressure_full"], tmp["t"])
-        p_array = xr.DataArray(data=press_height[None, :], dims=["time", "level"],
-                               coords={"level": (["level"], np.flip(tmp.level.values)),
-                                       "time": np.array([time.values])},
-                               name="pressure_height")
-        p_array_list.append(p_array)
+    if "level" in ds:
+        # calculate pressure height of model full levels
+        press_height_full = xr.apply_ufunc(met.barometric_height,
+                                           ds["pressure_full"],
+                                           ds["t"],
+                                           input_core_dims=[["level"], ["level"]],  # list with one entry per arg
+                                           output_core_dims=[["level"]],
+                                           # list with one entry per arg
+                                           vectorize=True,  # loop over non-core dims
+                                           dask="parallelized",
+                                           output_dtypes=[ds.t.dtype])
 
-    ds["press_height_full"] = xr.merge(p_array_list).pressure_height
-    # replace nan (TOA) with 80km
-    ds["press_height_full"] = ds["press_height_full"].where(~np.isnan(ds["press_height_full"]), 80000)
+        ds["press_height_full"] = press_height_full.assign_coords(level=np.flip(press_height_full.level.to_numpy()))
+        # replace nan (TOA) with 80km
+        ds["press_height_full"] = ds["press_height_full"].where(~np.isnan(ds["press_height_full"]), 80000)
+    else:
+        warnings.warn("Dimension 'level' not found in data set!")
+
+    if "half_level" not in ds and "level" not in ds:
+        raise ValueError("Data set must have one of the dimensions 'half_level' or 'level'!")
 
     return ds
 

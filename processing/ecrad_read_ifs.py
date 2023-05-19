@@ -268,8 +268,7 @@ if __name__ == "__main__":
     data_ml["temperature_hl"] = xr.concat(t_hl, dim="half_level").transpose("time", ...)
 
     # %% calculate pressure height for model half and full levels
-    # data_ml = calculate_pressure_height(data_ml)
-    # TODO: adjust calculate_pressure_height to work on multidimensional data
+    data_ml = calculate_pressure_height(data_ml)
 
     # %% rename surface variables
     data_srf = data_srf.rename({"U10M": "u_wind_10m",
