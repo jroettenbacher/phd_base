@@ -186,7 +186,7 @@ if __name__ == "__main__":
     i_version = args["i_version"] if "i_version" in args else "v1"
     t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
-    flag = strtobool(args["merge_io"]) if "merge_io" in args else False
+    merge_io = strtobool(args["merge_io"]) if "merge_io" in args else False
     # setup logging
     try:
         file = __file__
@@ -194,7 +194,7 @@ if __name__ == "__main__":
         file = None
     log = h.setup_logging("./logs", file, f"{io_flag}_tinp-{t_interp}_{date}")
     log.info(f"The following options have been passed:\nio_flag: {io_flag}\nt_interp: {t_interp}\nversion: {version}\n"
-             f"base_dir: {base_dir}\ndate: {date}\nmerge_io: {flag}")
+             f"i_version: {i_version}\nbase_dir: {base_dir}\ndate: {date}\nmerge_io: {merge_io}")
     # create input path according to given base_dir and date
     inpath = os.path.join(base_dir, date)
     if io_flag is not None:
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     ending = f"_inp_{version}" if t_interp else f"_{version}"
     i_ending = f"_inp_{i_version}" if t_interp else f"_{i_version}"
     outfile = f"{inpath}/ecrad_merged_inout_{date}{ending}.nc"
-    if flag and not os.path.isfile(outfile):
+    if merge_io and not os.path.isfile(outfile):
         ifile = f"ecrad_merged_input_{date}{i_ending}.nc"
         ofile = f"ecrad_merged_output_{date}{ending}.nc"
         log.info(f"Merging {ofile} with {ifile}")
@@ -219,4 +219,4 @@ if __name__ == "__main__":
     # %% remove all intermediate merged files in ecrad_merged
     h.delete_folder_contents(f"{inpath}/ecrad_merged")
 
-    log.info(f"Done with ecrad_processing in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")
+    log.info(f"Done with ecrad_merge_files in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")
