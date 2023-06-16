@@ -6,13 +6,13 @@
 Create a smaller subset of SMART data to be uploaded to the HALO database.
 
 """
-import pandas as pd
 
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
     import pylim.cirrus_hl as meta
     import os
+    import pandas as pd
     import xarray as xr
     from datetime import datetime
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         fup = xr.open_dataset(f"{smart_dir}/{fup_file}")
         ds = xr.merge([fdw, fup], compat="override")
 
-    # %% create metadata for ncfile
+        # %% create metadata for ncfile
         var_attrs_fdw = dict(
             F_down_solar_wl_422=dict(
                 long_name='Spectral downward solar irradiance (422 nm) (SMART)',
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
         encoding = dict(time=dict(units=units, _FillValue=None))
 
-    # %% extract six specific wavelengths which corresponds with standard satellite wavelengths averaged over +-5nm
+        # %% extract six specific wavelengths which corresponds with standard satellite wavelengths averaged over +-5nm
         wavelengths = [422, 532, 648, 858, 1238, 1638, 0]
         for var_dw, var_up, wl in zip(var_attrs_fdw, var_attrs_fup, wavelengths):
             if wl != 0:
@@ -153,15 +153,15 @@ if __name__ == "__main__":
                 ds[var_dw].attrs = var_attrs_fdw[var_dw]
                 ds[var_up].attrs = var_attrs_fup[var_up]
 
-    # %% remove unwanted variables by dropping unnecessary dimension
+        # %% remove unwanted variables by dropping unnecessary dimension
         ds = ds.drop_dims("wavelength")
 
-    # %% add global meta data and encoding
+        # %% add global meta data and encoding
         ds.attrs = global_attrs
         for var in ds:
             encoding[var] = dict(_FillValue=None)
 
-    # %% create ncfile
+        # %% create ncfile
         outfile = f"{campaign.swapcase()}_{flight_nr}_{date}_HALO_SMART_spectral_irradiance_subset_{version}.nc"
         outpath = os.path.join(smart_dir, outfile)
         ds.to_netcdf(outpath, format="NETCDF3_CLASSIC", encoding=encoding)
