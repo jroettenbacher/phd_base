@@ -87,67 +87,6 @@ EOF
 
     done
 
-    # write retrievals for 12Z the day before if the day before is not in the dates list
-    if [[ ! " ${dates[*]} " =~ ${date_12} ]]; then
-        # write surface retrieval
-        cat > mars_ifs_surface_"${date_12}"_12 <<EOF
-retrieve,
-target   =ifs_${date_12}_12_sfc_${grid}.grb,
-levtype  =sfc,
-date     =${date},
-time     =12,
-step     =12/to/36/by/1,
-grid     =${grid},
-accuracy =av,
-area     =${latlon_area},
-class    =od,
-padding  =0,
-param    =31/32/34/134/136/137/151/164/165/166/172/235/243/cbh/169/175/176/177,
-stream   =oper,
-type     =fc
-EOF
-
-        # write bash script to call with sbatch which will then execute the mars request
-        # due to a new version of slurm calling mars with sbatch is no longer possible...
-        cat > mars_ifs_surface_"${date_12}"_12.sh << EOF
-#!/bin/bash
-#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/${date}
-cd /ec/res4/scratch/gdmw/scratch_jr/${date}
-mars mars_ifs_surface_${date_12}_12
-EOF
-
-        sbatch --job-name=mars_ifs_surface_"${date_12}"_12 --time=05:00:00 --dependency=singleton mars_ifs_surface_"${date_12}"_12.sh
-
-        # write multilevel retrieval
-        cat > mars_ifs_ml_"${date_12}"_12 <<EOF
-retrieve,
-target   =ifs_${date_12}_12_ml_${grid}.grb,
-levtype  =ml,
-levellist=1/to/137,
-date     =${date},
-time     =12,
-step     =12/to/36/by/1,
-grid     =${grid},
-param    =54/75/76/130/131/132/133/135/152/246/247/248,
-accuracy =av,
-area     =${latlon_area},
-class    =od,
-padding  =0,
-stream   =oper,
-type     =fc
-EOF
-
-        cat > mars_ifs_ml_"${date_12}"_12.sh << EOF
-#!/bin/bash
-#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/${date}
-cd /ec/res4/scratch/gdmw/scratch_jr/${date}
-mars mars_ifs_ml_${date_12}_12
-EOF
-
-        sbatch --job-name=mars_ifs_ml_"${date}"_12 --time=05:00:00 --dependency=singleton mars_ifs_ml_"${date_12}"_12.sh
-
-    fi
-
 cd ..
 
 done
