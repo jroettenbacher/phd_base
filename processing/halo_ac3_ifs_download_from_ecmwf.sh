@@ -6,7 +6,7 @@ cd /ec/res4/scratch/gdmw/scratch_jr || exit
 # download surface files for the complete area and multi level files
 latlon_area='90/-60/67/30'  # HALO-(AC)3 area
 declare -a dates=(20220312 20220313 20220314 20220315 20220316 20220320 20220321 20220328 20220329 20220330 20220404 20220407 20220408 20220410 20220411 20220412)
-#declare -a dates=(20220411)  # if you only want to run one date
+declare -a dates=(20220410)  # if you only want to run one date
 declare -a times=(00 12)
 grid='F1280'  # regular (lat lon) gaussian grid
 grid='O1280'  # octahedral reduced gaussian grid (original grid)
@@ -27,7 +27,7 @@ do
             end_step=24  # select 24 steps when starting at 00Z
         fi
         # write MARS surface retrievals for 00Z and 12Z
-        cat > mars_ifs_surface_"${date}"_"${time}" << EOF
+        cat > mars_ifs_surface_"${date}"_"${time}"_"${grid}" << EOF
 retrieve,
 target   =ifs_${date}_${time}_sfc_${grid}.grb,
 levtype  =sfc,
@@ -46,17 +46,17 @@ EOF
 
         # write bash script to call with sbatch which will then execute the mars request
         # due to a new version of slurm calling mars with sbatch is no longer possible...
-       cat > mars_ifs_surface_"${date}"_"${time}".sh << EOF
+       cat > mars_ifs_surface_"${date}"_"${time}"_"${grid}".sh << EOF
 #!/bin/bash
 #SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/${date}
 cd /ec/res4/scratch/gdmw/scratch_jr/${date}
-mars mars_ifs_surface_${date}_${time}
+mars mars_ifs_surface_${date}_${time}_${grid}
 EOF
         # start sbatch job for surface
-        sbatch --job-name=mars_ifs_surface_"${date}"_"${time}" --time=05:00:00 --dependency=singleton mars_ifs_surface_"${date}"_"${time}".sh
+        sbatch --job-name="${date}"_"${time}"_"${grid}"_ifs_surface --time=01:00:00 --dependency=singleton mars_ifs_surface_"${date}"_"${time}"_"${grid}".sh
 
         # write MARS retrievals for multi level files for 00Z and 12Z
-        cat > mars_ifs_ml_"${date}"_"${time}" <<EOF
+        cat > mars_ifs_ml_"${date}"_"${time}"_"${grid}" <<EOF
 retrieve,
 target   =ifs_${date}_${time}_ml_${grid}.grb,
 levtype  =ml,
@@ -76,14 +76,14 @@ EOF
 
         # write bash script to call with sbatch which will then execute the mars request
         # due to a new version of slurm calling mars with sbatch is no longer possible...
-        cat > mars_ifs_ml_"${date}"_"${time}".sh << EOF
+        cat > mars_ifs_ml_"${date}"_"${time}"_"${grid}".sh << EOF
 #!/bin/bash
 #SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/${date}
 cd /ec/res4/scratch/gdmw/scratch_jr/${date}
-mars mars_ifs_ml_${date}_${time}
+mars mars_ifs_ml_${date}_${time}_${grid}
 EOF
         # start sbatch job for multi levels
-        sbatch --job-name=mars_ifs_ml_"${date}"_"${time}" --time=05:00:00 --dependency=singleton mars_ifs_ml_"${date}"_"${time}".sh
+        sbatch --job-name="${date}"_"${time}"_"${grid}"_ifs_ml --time=03:00:00 --dependency=singleton mars_ifs_ml_"${date}"_"${time}"_"${grid}".sh
 
     done
 
