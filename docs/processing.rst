@@ -464,26 +464,32 @@ Workflow with ecRad
 | SMART measurements during flight + ecRad output files for aircraft track
 | |rarr| compare upward and downward (spectral/banded) irradiance
 
-#. Download IFS data for campaign |rarr| :ref:`processing:IFS Download`
-#. Run :ref:`processing:IFS Preprocessing` to convert grib to nc files
+#. Download IFS/CAMS data for campaign |rarr| :ref:`processing:IFS/CAMS Download`
+#. Run :ref:`processing:IFS/CAMS Preprocessing` to convert grib to nc files
 #. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py` or give it via commandline
-#. Run :ref:`processing:ecrad_read_ifs.py` with the options and ``step`` as you want them to be (see scripts)
-#. ~~Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length~~ |rarr| not needed as it is calculated by ecRad internally
+#. Run :ref:`processing:ecrad_read_ifs.py` with the options as you want them to be (see script for details)
+#. Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length |rarr| choose one value which is representative for the period you want to study
 #. Run :ref:`processing:ecrad_write_input_files.py`
 #. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input``
 #. Run :ref:`processing:ecrad_merge_files.py` to generate merged input and output files for and from the ecRad simulation
 #. Run :ref:`processing:ecrad_processing.py` to generate one merged file from input and output files for and from the ecRad simulation with additional variables
 #. Run :ref:`processing:ecrad_merge_radiative_properties.py` to generate one merged radiative properties file from the single files given by the ecRad simulation
 
-IFS Download
-^^^^^^^^^^^^
-
-To download IFS data from the ECMWF servers we got a user account there. For details on how to download data there please see the internal Strahlungs Wiki.
-
-IFS Preprocessing
+IFS/CAMS Download
 ^^^^^^^^^^^^^^^^^
 
-IFS data comes in grib format.
+To download IFS/CAMS data from the ECMWF servers we got a user account there.
+For details on how to access and download data there please see the internal Strahlungs Wiki.
+These are the download scripts used and run on the ECMWF server:
+
+IFS download script: :py:mod:`processing.halo_ac3_ifs_download_from_ecmwf.sh`
+
+CAMS download script: :py:mod:`processing.halo_ac3_cams_downlaod_from_ecmwf.sh`
+
+IFS/CAMS Preprocessing
+^^^^^^^^^^^^^^^^^^^^^^
+
+IFS/CAMS data comes in grib format.
 To convert it to netcdf and rename the parameters according to the ecmwf codes run
 
 .. code-block:: shell
@@ -491,6 +497,18 @@ To convert it to netcdf and rename the parameters according to the ecmwf codes r
    cdo -t ecmwf -f nc copy infile.grb outfile.nc
 
 on each file.
+
+The CAMS monthly files are not so big.
+Thus, you can merge them into one big file and run the above command only on one file.
+The merging and conversion to netCDF will take a while though.
+The download script for CAMS data generates yearly folders for better structure in case more than two months are downloaded.
+You can move all files into one folder by calling the following command in the CAMS folder and then merge the files with cdo:
+
+.. code-block:: shell
+
+    mv --target-directory=. 20*/20*.grb
+    cdo mergetime 20*.grb cams_ml_halo_ac3.grb
+
 
 ecrad_read_ifs.py
 ^^^^^^^^^^^^^^^^^
