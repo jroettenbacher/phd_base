@@ -1,20 +1,19 @@
 #!/bin/bash
-#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr
-cd /ec/res4/scratch/gdmw/scratch_jr || exit
+#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/ifs_data
+cd /ec/res4/scratch/gdmw/scratch_jr/ifs_data || exit
 
 
 # download surface files for the complete area and multi level files
 latlon_area='90/-60/67/30'  # HALO-(AC)3 area
 declare -a dates=(20220312 20220313 20220314 20220315 20220316 20220320 20220321 20220328 20220329 20220330 20220404 20220407 20220408 20220410 20220411 20220412)
-declare -a dates=(20220410)  # if you only want to run one date
-declare -a times=(00 12)
+# declare -a dates=(20220410 20220411 20220412)  # if you only want to run one date
+declare -a times=(00)
 grid='F1280'  # regular (lat lon) gaussian grid
-grid='O1280'  # octahedral reduced gaussian grid (original grid)
+# grid='O1280'  # octahedral reduced gaussian grid (original grid)
 
 # loop over dates if needed
 for date in "${dates[@]}"
 do
-    date_12=$(date +%Y%m%d -d "${date} - 1 day")  # define date before
     mkdir -p "${date}"
     cd "${date}" || exit
 
@@ -39,7 +38,7 @@ accuracy =av,
 area     =${latlon_area},
 class    =od,
 padding  =0,
-param    =31/32/34/134/136/137/151/164/165/166/172/235/243/cbh/169/175/176/177,
+param    =31/32/34/47/134/136/137/141/151/164/165/166/172/175/176/177/178/179/208/209/210/211/212/235/238/243/174098/228021/228022/228023/228129/228130,
 stream   =oper,
 type     =fc
 EOF
@@ -48,8 +47,8 @@ EOF
         # due to a new version of slurm calling mars with sbatch is no longer possible...
        cat > mars_ifs_surface_"${date}"_"${time}"_"${grid}".sh << EOF
 #!/bin/bash
-#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/${date}
-cd /ec/res4/scratch/gdmw/scratch_jr/${date}
+#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/ifs_data/${date}
+cd /ec/res4/scratch/gdmw/scratch_jr/ifs_data/${date}
 mars mars_ifs_surface_${date}_${time}_${grid}
 EOF
         # start sbatch job for surface
@@ -78,8 +77,8 @@ EOF
         # due to a new version of slurm calling mars with sbatch is no longer possible...
         cat > mars_ifs_ml_"${date}"_"${time}"_"${grid}".sh << EOF
 #!/bin/bash
-#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/${date}
-cd /ec/res4/scratch/gdmw/scratch_jr/${date}
+#SBATCH --chdir=/ec/res4/scratch/gdmw/scratch_jr/ifs_data/${date}
+cd /ec/res4/scratch/gdmw/scratch_jr/ifs_data/${date}
 mars mars_ifs_ml_${date}_${time}_${grid}
 EOF
         # start sbatch job for multi levels
