@@ -26,6 +26,7 @@ Can be passed via the command line (except step).
 * campaign ('cirrus-hl' or 'halo-ac3')
 * step, one can choose the time resolution on which to interpolate the IFS data on (e.g. '1Min')
 * use_bahamas, whether to use BAHAMAS or the SMART INS for navigation data (True/False)
+* grid (O1280 or None), which grid the IFS data is on
 
 **Output:**
 
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import time
     from scipy.interpolate import interp1d
+    import scipy.spatial as sp
     from distutils.util import strtobool
 
     start = time.time()
@@ -63,6 +65,7 @@ if __name__ == "__main__":
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
     use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
     ozone_flag = args["ozone"] if "ozone" in args else "sonde"
+    grid = f"_{args['grid']}" if "grid" in args else "_O1280"
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
     else:
@@ -98,24 +101,25 @@ if __name__ == "__main__":
         init_time = 12
     else:
         ifs_date = date
-    ml_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_ml.nc"
+    ml_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_ml{grid}.nc"
     data_ml = xr.open_dataset(ml_file)
-    srf_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_sfc.nc"
+    srf_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_sfc{grid}.nc"
     data_srf = xr.open_dataset(srf_file)
     # hack while only incomplete ml file is available
     # data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
 
-    # test if longitude coordinates are equal
-    try:
-        np.testing.assert_array_equal(data_ml.lon, data_srf.lon)
-    except AssertionError:
-        log.debug("longitude coordinates are not equal, replace srf lon with ml lon")
-        data_srf = data_srf.assign_coords(lon=data_ml.lon)
-    # try:
-    #     np.testing.assert_array_equal(data_ml.lat, data_srf.lat)
-    # except AssertionError:
-    #     log.debug("latitude coordinates are not equal, replace srf lat with ml lat")
-    #     data_srf = data_srf.assign_coords(lat=data_ml.lat)
+    if "F" in grid:
+        # test if longitude coordinates are equal
+        try:
+            np.testing.assert_array_equal(data_ml.lon, data_srf.lon)
+        except AssertionError:
+            log.debug("longitude coordinates are not equal, replace srf lon with ml lon")
+            data_srf = data_srf.assign_coords(lon=data_ml.lon)
+        # try:
+        #     np.testing.assert_array_equal(data_ml.lat, data_srf.lat)
+        # except AssertionError:
+        #     log.debug("latitude coordinates are not equal, replace srf lat with ml lat")
+        #     data_srf = data_srf.assign_coords(lat=data_ml.lat)
 
     # %% read navigation file
     log.info(f"Processed flight: {flight}")
@@ -141,7 +145,7 @@ if __name__ == "__main__":
     # %% select every step row of nav_data to interpolate IFS data on
     step = "1Min"  # User input
     nav_data_ip = nav_data.resample(step).mean()
-    idx = len(nav_data_ip)
+    ts = len(nav_data_ip)
     nav_data_ip["seconds"] = nav_data_ip.index.hour * 60 * 60 + nav_data_ip.index.minute * 60
 
     # %% convert every nav_data time to datetime
@@ -152,25 +156,70 @@ if __name__ == "__main__":
         for i in range(0, len(nav_data_ip.time)):
             dt_nav_data.append(dt_day + timedelta(seconds=nav_data_ip.time.iloc[i]))
 
+    # %% calculate latitude and longitude values for gaussian grid points and add lat lon as dimensions
+    if "F" in grid:
+        # generate an array with all possible lat, lon combinations for a full gaussian grid for a kdTree nearest neighbour search
+        ifs_latlon = data_ml["t"].isel(lev=1, time=1, drop=True).stack(latlon=["lat", "lon"])
+        ifs_lat_lon = np.array([np.array(element) for element in ifs_latlon["latlon"].to_numpy()])
+    else:
+        # calculate longitude and latitude values for a reduced gaussian grid
+        lat_values, lon_values = h.longitude_values_for_gaussian_grid(data_srf.lat.to_numpy(),
+                                                                      data_srf.reduced_points.to_numpy(),
+                                                                      longitude_boundaries=[-60, 30])
+        len_lon_values = len(lon_values)
+        nr_rgid = data_srf.rgrid.shape[0]
+
+        data_srf = data_srf.drop_dims("lat")
+        data_ml = data_ml.drop_dims("lat")
+        # somehow there are not the correct number of longitude points returned by the above function for O1280
+        # dirty fix: cut of either the last rgrid points or reduce the size of the lat lon values
+        # this assumes that the problem lies in the last longitude
+        #TODO: research this more
+        if len_lon_values != nr_rgid:
+            if len_lon_values < nr_rgid:
+                data_srf = data_srf.isel(rgrid=slice(0, len(lon_values)))
+                data_ml = data_ml.isel(rgrid=slice(0, len(lon_values)))
+            else:
+                lat_values, lon_values = lat_values[:nr_rgid], lon_values[:nr_rgid]
+        # add new coordinates and set them as a multiindex
+        data_srf = data_srf.assign_coords(lat=("rgrid", lat_values), lon=("rgrid", lon_values))
+        data_srf = data_srf.set_index(rgrid=["lat", "lon"])
+        data_ml = data_ml.assign_coords(lat=("rgrid", lat_values), lon=("rgrid", lon_values))
+        data_ml = data_ml.set_index(rgrid=["lat", "lon"])
+        # generate an array with all possible lat, lon combinations for a kdTree nearest neighbour search
+        ifs_lat_lon = np.column_stack((data_srf.lat, data_srf.lon))
+
     # %% calculate cosine of solar zenith angle along flight track
-    sza = np.empty(idx)  # initialize some arrays
-    cos_sza = np.empty(idx)
+    ifs_tree = sp.KDTree(ifs_lat_lon)  # build the kd tree for nearest neighbour look up
+    # generate an array with lat, lon values from the flight position
+    points = np.column_stack((nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy()))
+    dist, idx = ifs_tree.query(points, k=1)  # query the tree
+    closest_latlons = ifs_tree.data[idx]  # get the closest lat lon values to the flight path from the ifs
+    # initialize some arrays and lists
+    sza = np.empty(ts)
+    cos_sza = np.empty(ts)
     closest_lats, closest_lons = list(), list()
 
-    for i in tqdm(range(0, idx), desc="Calc cos_sza"):
+    for i in tqdm(range(0, ts), desc="Calc cos_sza"):
         # aircraft position
         sod = nav_data_ip.seconds.iloc[i]
         xpos = nav_data_ip.lon.iloc[i]
         ypos = nav_data_ip.lat.iloc[i]
+        # closest ifs latitude, longitude
+        ifs_lat, ifs_lon = closest_latlons[i][0], closest_latlons[i][1]
+        # get closest time stamp index and value
         t_idx = np.abs(data_srf.time - np.datetime64(dt_nav_data[i])).argmin()
-        lat_idx = np.abs(data_srf.lat - ypos).argmin()
-        lon_idx = np.abs(data_srf.lon - xpos).argmin()
-        p_surf_nearest = data_srf.SP.isel(time=t_idx, lat=lat_idx, lon=lon_idx).values / 100  # hPa
-        t_surf_nearest = data_srf.SKT.isel(time=t_idx, lat=lat_idx, lon=lon_idx).values - 273.15  # degree Celsius
+        t_sel = data_srf.time.isel(time=t_idx)
+        # get indices of closest lat, lon values
+        lat_idx = np.nonzero(data_srf.lat.to_numpy() == ifs_lat)[0]
+        lon_idx = np.nonzero(data_srf.lon.to_numpy() == ifs_lon)[0]
+        # get surface pressure and temperature for refraction correction of sza
+        p_surf_nearest = data_srf.SP.sel(time=t_sel, lat=ifs_lat, lon=ifs_lon).to_numpy() / 100  # hPa
+        t_surf_nearest = data_srf.SKT.sel(time=t_sel, lat=ifs_lat, lon=ifs_lon).values - 273.15  # degree Celsius
         sza[i] = get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest, t_surf_nearest)
         cos_sza[i] = np.cos(sza[i] / 180. * np.pi)
-        closest_lats.append(lat_idx.values)
-        closest_lons.append(lon_idx.values)
+        closest_lats.append(lat_idx)
+        closest_lons.append(lon_idx)
 
     # %% add cos_sza to navdata
     nav_data_ip = nav_data_ip.assign(cos_sza=cos_sza)
@@ -181,19 +230,20 @@ if __name__ == "__main__":
     decorr_len.to_csv(decorr_file)
     log.info(f"Decorrelation length saved in {decorr_file}")
 
-    # %% select only closest (+-10) lats and lons from datasets to reduce size in memory
-    closest_lats = np.unique(closest_lats)
-    closest_lons = np.unique(closest_lons)
-    # include 10 points in both direction to allow for a rectangle selection around the closest lat lon point
-    # to avoid edge cases
-    lat_sel = np.arange(closest_lats.min() - 10, closest_lats.max() + 10)
-    lon_sel = np.arange(closest_lons.min() - 10, closest_lons.max() + 10)
-    # make sure that all latitude indices are available in the file
-    lat_sel = lat_sel[np.where(lat_sel < data_ml.sizes["lat"])[0]]
-    # drop indices < 0
-    lat_sel = lat_sel[np.where(lat_sel >= 0)[0]]
-    data_ml = data_ml.isel(lat=lat_sel, lon=lon_sel)
-    data_srf = data_srf.isel(lat=lat_sel, lon=lon_sel)
+    # %% select only closest (+-10) lats and lons from datasets to reduce size in memory (only for full resolution)
+    if "F" in grid:
+        closest_lats = np.unique(closest_lats)
+        closest_lons = np.unique(closest_lons)
+        # include 10 points in both direction to allow for a rectangle selection around the closest lat lon point
+        # to avoid edge cases
+        lat_sel = np.arange(closest_lats.min() - 10, closest_lats.max() + 10)
+        lon_sel = np.arange(closest_lons.min() - 10, closest_lons.max() + 10)
+        # make sure that all latitude indices are available in the file
+        lat_sel = lat_sel[np.where(lat_sel < data_ml.sizes["lat"])[0]]
+        # drop indices < 0
+        lat_sel = lat_sel[np.where(lat_sel >= 0)[0]]
+        data_ml = data_ml.isel(lat=lat_sel, lon=lon_sel)
+        data_srf = data_srf.isel(lat=lat_sel, lon=lon_sel)
 
     # %% calculate pressure and modify datasets
     data_ml = calc_pressure(data_ml)
@@ -223,12 +273,14 @@ if __name__ == "__main__":
     lw_em_shape = data_srf.SKT.shape + (2,)
     lw_em_ratio = np.ones(lw_em_shape)
     # The thermal emissivity of the surface outside the 800–1250 cm−1 spectral region is assumed to be 0.99 everywhere
-    lw_em_ratio[:, :, :, 0] = 0.99
+    lw_em_ratio[..., 0] = 0.99
     # In the window region, the spectral emissivity is constant for open water, sea ice, the interception layer and
     # exposed snow tiles.
-    lw_em_ratio[:, :, :, 1] = 0.98  # see Table 2.6
-    data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon", "lw_emiss_band"],
+    lw_em_ratio[..., 1] = 0.98  # see Table 2.6
+    dims = ["lat", "lon"] if "F" in grid else ["rgrid"]
+    data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time"] + dims + ["lw_emiss_band"],
                                             attrs=dict(unit="1", long_name="Longwave surface emissivity"))
+
     # %% calculate shortwave albedo according to sea ice concentration and shortwave band albedo climatology for sea ice
     month_idx = dt_day.month - 1
     open_ocean_albedo = 0.06
@@ -240,7 +292,8 @@ if __name__ == "__main__":
     sw_albedo.attrs = dict(unit=1, long_name="Banded short wave albedo")
     sw_albedo = sw_albedo.transpose("time", ...)  # transpose so time is first dimension
     # set sw_albedo to constant 0.2 when over land
-    sw_albedo = sw_albedo.where(data_srf.LSM < 0.5, 0.2)
+    data_ml["sw_albedo"] = sw_albedo
+    data_ml["sw_albedo"] = data_ml["sw_albedo"].where(data_srf.LSM < 0.5, 0.2)
 
     # %% select only relevant variables
     data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]
@@ -287,13 +340,22 @@ if __name__ == "__main__":
         ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
         # create interpolation function
         f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate", bounds_error=False)
-        ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
-        # copy interpolated ozone concentration over time, lat and longitude dimension
-        o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-        o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
-        o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
-        # create DataArray
-        o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
+        if "F" in grid:
+            ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
+            # copy interpolated ozone concentration over time, lat and longitude dimension
+            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
+            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
+            o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
+            # create DataArray
+            o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
+        else:
+            ozone_interp = f_ozone(data_ml.pressure_full.isel(rgrid=0, time=0))
+            # copy interpolated ozone concentration over time, lat and longitude dimension
+            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
+            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["rgrid"], axis=2)
+            # create DataArray
+            o3_vmr = xr.DataArray(o3_lat, coords=data_ml.pressure_full.coords, dims=["level", "time", "rgrid"])
+
         o3_vmr = o3_vmr.transpose("time", ...)
         o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
         o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
@@ -309,7 +371,7 @@ if __name__ == "__main__":
     data_ml["n2o_vmr"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
     data_ml["cfc11_vmr"] = xr.DataArray(280e-12, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
     data_ml["cfc12_vmr"] = xr.DataArray(484e-12, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
-    # other constants
+    # other constant
     data_ml["o2_vmr"] = xr.DataArray(0.209488, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
     # monthly surface mean value from https://gml.noaa.gov/ccgg/trends_ch4/
     data_ml["ch4_vmr"] = xr.DataArray(1900e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
@@ -328,7 +390,6 @@ if __name__ == "__main__":
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
     # sum up cloud liquid and cloud rain water content
     data_ml["q_liquid"] = data_ml.clwc + data_ml.crwc
-    data_ml["sw_albedo"] = sw_albedo
 
     # %% merge surface and multilevel file
     data_ml = data_ml.merge(data_srf)
@@ -342,7 +403,13 @@ if __name__ == "__main__":
     data_ml.attrs["contact"] = f"johannes.roettenbacher@uni-leipzig.de, hanno.mueller@uni-leipzig.de"
 
     # %% write output files
-    filename = f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc"
+    filename = f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml{grid}_processed.nc"
+    if not "F" in grid:
+        data_ml = data_ml.reset_index(["rgrid", "lat", "lon"])
+        data_ml["rgrid"] = np.arange(0, data_ml.lat.shape[0])
+        data_ml = data_ml.reset_coords(["lat", "lon"])
+        for var in ["lat", "lon"]:
+            data_ml[var] = xr.DataArray(data_ml[var].to_numpy(), dims="rgrid")
     data_ml.to_netcdf(filename, format='NETCDF4_CLASSIC')
     log.info(f"Saved {filename}")
     csv_filename = f"{path_ifs_output}/nav_data_ip_{date}.csv"
