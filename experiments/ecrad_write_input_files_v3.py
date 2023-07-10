@@ -33,7 +33,6 @@ if __name__ == "__main__":
     import xarray as xr
     import os
     import pandas as pd
-    from datetime import datetime
     from tqdm import tqdm
     import time
     from distutils.util import strtobool
@@ -151,8 +150,8 @@ if __name__ == "__main__":
         sod = t.hour * 3600 + t.minute * 60 + t.second
         p_surf_nearest = dsi_ml_out.pressure_hl.isel(half_level=137).to_numpy() / 100  # hPa
         t_surf_nearest = dsi_ml_out.temperature_hl.isel(half_level=137).to_numpy() - 273.15  # degree Celsius
-        ypos = bahamas_ds.IRS_LAT.sel(time=t).to_numpy()
-        xpos = bahamas_ds.IRS_LON.sel(time=t).to_numpy()
+        ypos = dsi_ml_out.lat.to_numpy()
+        xpos = dsi_ml_out.lon.to_numpy()
         sza = sp.get_sza(sod / 3600, ypos, xpos, t.year, t.month, t.day, p_surf_nearest, t_surf_nearest)
         cos_sza = np.cos(sza / 180. * np.pi)
 
