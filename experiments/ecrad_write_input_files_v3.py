@@ -27,8 +27,6 @@ if __name__ == "__main__":
     import pylim.solar_position as sp
     from pylim.ecrad import apply_liquid_effective_radius, calculate_pressure_height
     from pylim import reader
-    import ac3airborne
-    from ac3airborne.tools import flightphase
     from metpy.calc import density
     from metpy.units import units
     import numpy as np
@@ -59,7 +57,7 @@ if __name__ == "__main__":
 
         flight = key
         date = flight[7:15]
-    dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
+
     # setup logging
     try:
         file = __file__
@@ -69,29 +67,6 @@ if __name__ == "__main__":
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\nflight: {flight}\ndate: {date}"
              f"\ninit time: {init_time}\nt_interp: {t_interp}")
-
-    # %% get flight segments for case study period
-    segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
-    segments = flightphase.FlightPhaseFile(segmentation)
-    above_cloud, below_cloud = dict(), dict()
-    if key == "RF17":
-        above_cloud["start"] = segments.select("name", "high level 7")[0]["start"]
-        above_cloud["end"] = segments.select("name", "high level 8")[0]["end"]
-        below_cloud["start"] = segments.select("name", "high level 9")[0]["start"]
-        below_cloud["end"] = segments.select("name", "high level 10")[0]["end"]
-        above_slice = slice(above_cloud["start"], above_cloud["end"])
-        below_slice = slice(below_cloud["start"], below_cloud["end"])
-        case_slice = slice(pd.to_datetime("2022-04-11 10:30"), pd.to_datetime("2022-04-11 12:29"))
-    else:
-        above_cloud["start"] = segments.select("name", "polygon pattern 1")[0]["start"]
-        above_cloud["end"] = segments.select("name", "polygon pattern 1")[0]["parts"][-1]["start"]
-        below_cloud["start"] = segments.select("name", "polygon pattern 2")[0]["start"]
-        below_cloud["end"] = segments.select("name", "polygon pattern 2")[0]["end"]
-        above_slice = slice(above_cloud["start"], above_cloud["end"])
-        below_slice = slice(below_cloud["start"], below_cloud["end"])
-        case_slice = slice(above_cloud["start"], below_cloud["end"])
-
-    time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 
     # %% set paths
     path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
@@ -117,16 +92,22 @@ if __name__ == "__main__":
 
     # %% select only case study time which features the cloud that HALO also underpassed
     sel_time = slice(pd.to_datetime("2022-04-11 10:49"), pd.to_datetime("2022-04-11 11:04"))
-    fake_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1s")
+    # time for which to simulate
+    sim_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1s")
 
-    # %% resample varcloud data to minutely resolution
+    # %% resample varcloud data to secondly resolution (replace index to match bahamas data)
     new_index = pd.date_range(str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy()),
                               str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy()), freq="1s")
     varcloud_ds = varcloud_ds.reindex(time=new_index, method="bfill")
     varcloud_ds = varcloud_ds.sel(time=sel_time)
+    # reverse varcloud data as the last retrieval point is the first point that HALO underpasses on its way back
+    varcloud_ds = varcloud_ds.sortby("time", ascending=False)
 
-    # %% select lat and lon closest to flightpath
-    lats, lons, times = varcloud_ds.Latitude, varcloud_ds.Longitude, varcloud_ds.time
+    # %% select bahamas data for simulation
+    bahamas_ds = bahamas_ds.sel(time=sim_time)
+
+    # %% select lat and lon closest to flightpath (needed to possibly add pressure height)
+    lats, lons, times = bahamas_ds.IRS_LAT, bahamas_ds.IRS_LON, sim_time
     if t_interp:
         ds_sel = data_ml.sel(lat=lats[0], lon=lons[0], method="nearest").reset_coords(["lat", "lon"])
         ds_sel = ds_sel.interp(time=times[0])
@@ -139,7 +120,7 @@ if __name__ == "__main__":
     else:
         ds_sel = data_ml.sel(lat=lats[0], lon=lons[0], time=times[0], method="nearest").reset_coords(["lat", "lon"])
         ds_sel["time"] = times[0]
-        for i in tqdm(range(1, len(lats))):
+        for i in tqdm(range(1, len(lats)), desc="Select closest IFS data"):
             tmp = data_ml.sel(lat=lats[i], lon=lons[i], time=times[i], method="nearest").reset_coords(["lat", "lon"])
             tmp["time"] = times[i]
             ds_sel = xr.concat([ds_sel, tmp], dim="time")
@@ -154,7 +135,8 @@ if __name__ == "__main__":
 
     # %% loop through time steps and write one file per time step
     for i in tqdm(range(len(varcloud_ds.time)), desc="Time loop"):
-        dsi_ml_out = ds_sel.isel(time=i).reset_coords("time")
+        t = sim_time[i]
+        dsi_ml_out = ds_sel.sel(time=t).reset_coords("time")
         varcloud_sel = varcloud_ds.isel(time=i)
         # interpolate varcloud height to model height
         varcloud_sel = varcloud_sel.interp(Height=dsi_ml_out.press_height_full).reset_coords(["time", "Height"])
@@ -164,7 +146,6 @@ if __name__ == "__main__":
         q_ice = varcloud_sel["Varcloud_Cloud_Ice_Water_Content"] * units("kg/m3") / air_density
         # overwrite ice water content
         dsi_ml_out["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
-        t = fake_time[i]
 
         # add cos_sza for the grid point using only model data
         sod = t.hour * 3600 + t.minute * 60 + t.second
@@ -172,7 +153,7 @@ if __name__ == "__main__":
         t_surf_nearest = dsi_ml_out.temperature_hl.isel(half_level=137).to_numpy() - 273.15  # degree Celsius
         ypos = bahamas_ds.IRS_LAT.sel(time=t).to_numpy()
         xpos = bahamas_ds.IRS_LON.sel(time=t).to_numpy()
-        sza = sp.get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest, t_surf_nearest)
+        sza = sp.get_sza(sod / 3600, ypos, xpos, t.year, t.month, t.day, p_surf_nearest, t_surf_nearest)
         cos_sza = np.cos(sza / 180. * np.pi)
 
         dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
