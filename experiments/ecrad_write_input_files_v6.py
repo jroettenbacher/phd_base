@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
         flight = key
         date = flight[7:15]
-    dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
+
     # setup logging
     try:
         file = __file__
@@ -79,10 +79,6 @@ if __name__ == "__main__":
     data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_O1280_processed.nc")
     data_ml = data_ml.set_index(rgrid=["lat", "lon"])
 
-    # %% subsample nav_data by step
-    step = 1
-    nav_data_ip = nav_data_ip[::step]
-
     # %% loop through time steps and write one file per time step
     idx = len(nav_data_ip)
     dt_nav_data = nav_data_ip.index.to_pydatetime()
@@ -93,7 +89,7 @@ if __name__ == "__main__":
     dist, idxs = ifs_tree.query(points, k=33)  # query the tree
     closest_latlons = ifs_tree.data[idxs]
 
-    def write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, path_ecrad, i):
+    def write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, nav_data_ip, path_ecrad, i):
         """
         Helper function to be called in parallel to speed up file creation.
         Variables are from outer script.
@@ -104,12 +100,13 @@ if __name__ == "__main__":
         # select the 33 nearest grid points around closest grid point
         latlon_sel = [(x, y) for x,y in closest_latlons[i]]
         ds_sel = data_ml.sel(rgrid=latlon_sel)
+        dt_time = dt_nav_data[i]
 
         if t_interp:
-            dsi_ml_out = ds_sel.interp(time=dt_nav_data[i])  # interpolate to time step
+            dsi_ml_out = ds_sel.interp(time=dt_time)  # interpolate to time step
             ending = "_inp"
         else:
-            dsi_ml_out = ds_sel.sel(time=dt_nav_data[i], method="nearest")  # select closest time step
+            dsi_ml_out = ds_sel.sel(time=dt_time, method="nearest")  # select closest time step
             ending = ""
 
         n_rgrid = len(ds_sel.rgrid)
@@ -122,7 +119,7 @@ if __name__ == "__main__":
             t_surf_nearest = dsi_ml_out.temperature_hl.isel(rgrid=rgrid_idx, half_level=137).to_numpy() - 273.15  # degree Celsius
             ypos = dsi_ml_out.lat.isel(rgrid=rgrid_idx).to_numpy()
             xpos = dsi_ml_out.lon.isel(rgrid=rgrid_idx).values
-            sza[rgrid_idx] = sp.get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest,
+            sza[rgrid_idx] = sp.get_sza(sod / 3600, ypos, xpos, dt_time.year, dt_time.month, dt_time.day, p_surf_nearest,
                                         t_surf_nearest)
             cos_sza[rgrid_idx] = np.cos(sza[rgrid_idx] / 180. * np.pi)
 
@@ -159,6 +156,8 @@ if __name__ == "__main__":
         return None
 
 
-    Parallel(n_jobs=cpu_count() - 2)(delayed(write_ecrad_input_file)(data_ml, closest_latlons, t_interp, dt_nav_data, path_ecrad, i)
+    Parallel(n_jobs=cpu_count() - 2)(delayed(write_ecrad_input_file)(data_ml, closest_latlons, t_interp, dt_nav_data,
+                                                                     nav_data_ip, path_ecrad, i)
                                      for i in tqdm(range(0, idx)))
+
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
