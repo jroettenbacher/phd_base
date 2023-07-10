@@ -25,7 +25,6 @@ if __name__ == "__main__":
     import xarray as xr
     import os
     import pandas as pd
-    from datetime import datetime
     import time
     from distutils.util import strtobool
     from tqdm import tqdm
