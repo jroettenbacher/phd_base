@@ -215,7 +215,7 @@ if __name__ == "__main__":
         ecrad = xr.merge([ecrad_out, ecrad_in])#, compat="override")
         ecrad.to_netcdf(outfile, format="NETCDF4_CLASSIC")
         log.info(f"Saved {outfile}")
-        if "column" in ecrad:
+        if "column" in ecrad.dims:
             log.info("Take mean over column dimension")
             ecrad.mean(dim="column").to_netcdf(outfile.replace(".nc", "_mean.nc"), format="NETCDF4_CLASSIC")
             log.info(f"Saved {outfile.replace('.nc', '_mean.nc')}")
