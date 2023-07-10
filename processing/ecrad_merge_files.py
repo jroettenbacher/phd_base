@@ -2,7 +2,7 @@
 """Bundle postprocessing steps for ecRad input and output files
 
 This script takes all in- and outfiles for and from ecRad and merges them together on a given time axis which is constructed from the file names.
-It takes about one hour to merge one day but that should rapidly increase further work with ecRad data.
+That should rapidly increase further work with ecRad data.
 It merges stepwise to reduce IO.
 In a selectable step the merged input and output files can also be merged.
 
@@ -215,6 +215,10 @@ if __name__ == "__main__":
         ecrad = xr.merge([ecrad_out, ecrad_in])#, compat="override")
         ecrad.to_netcdf(outfile, format="NETCDF4_CLASSIC")
         log.info(f"Saved {outfile}")
+        if "column" in ecrad:
+            log.info("Take mean over column dimension")
+            ecrad.mean(dim="column").to_netcdf(outfile.replace(".nc", "_mean.nc"), format="NETCDF4_CLASSIC")
+            log.info(f"Saved {outfile.replace('.nc', '_mean.nc')}")
 
     # %% remove all intermediate merged files in ecrad_merged
     h.delete_folder_contents(f"{inpath}/ecrad_merged")
