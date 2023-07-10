@@ -172,4 +172,4 @@ ecrad = "/projekt_agmwend/data/HALO-AC3/08_ecrad"
 libradtran_exp = "/projekt_agmwend/data/HALO-AC3/12_libRadtran"  # folder for libRadtran experiments
 ozone = "/projekt_agmwend2/data_raw/HALO-AC3_raw_only/05_ozone_sondes"  # ozone sondes from Ny-Alesund
 trajectories = "/projekt_agmwend/data/HALO-AC3/07_trajs"  # trajectories from LAGRANTO using ERA5 data
-era5 = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/ERA5/ERA5_ml_noOMEGAscale"  # ERA5 data as downloaded by Benjamin
+era5 = "/projekt_agmwend/home_rad/BenjaminK/HALO-AC3/models/ERA5/ERA5_ml_noOMEGAscale"  # ERA5 data as downloaded by Benjamin
