@@ -41,7 +41,7 @@ if __name__ == "__main__":
     import numpy as np
     from metpy.units import units as un
     from metpy.calc import density, mixing_ratio_from_specific_humidity
-    from metpy.constants import Cp_d
+    from metpy.constants import Cp_d, g
     import os
     import time
 
@@ -119,18 +119,21 @@ if __name__ == "__main__":
 
     # calculate IWP
     da = ds.pressure_hl.diff(dim="half_level").rename(half_level="level").assign_coords(level=ds.level.to_numpy())
-    factor = da  / (9.80665 * ds.cloud_fraction)
-    ds["iwp"] = factor * ds.ciwc
-    ds["iwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan)
+    factor = da * un.Pa  / (g * ds.cloud_fraction)
+    iwp = (factor * ds.ciwc * un("kg/kg")).metpy.convert_units("kg/m^2")
+    ds["iwp"] = iwp.metpy.dequantify().where(ds.iwp != np.inf, np.nan)
+    ds["iwp"].attrs = {"units": "kg m^-2", "long_name": "Ice water path"}
 
     # calculate density
     pressure = ds["pressure_full"] * un.Pa
     temperature = ds["t"] * un.K
-    mixing_ratio = mixing_ratio_from_specific_humidity(ds["q"] * un("kg/kg")).metpy.convert_units("g/kg")
+    mixing_ratio = mixing_ratio_from_specific_humidity(ds["q"] * un("kg/kg"))
     ds["air_density"] = density(pressure, temperature, mixing_ratio)
+    ds["air_density"].attrs = {"units": "kg m^-3", "long_name": "Air density"}
 
     # convert kg/kg to kg/m³
     ds["iwc"] = ds["q_ice"] * un("kg/kg") * ds["air_density"]
+    ds["iwc"].attrs = {"units": "kg m^-3", "long_name": "Ice water content"}
 
     # calculate bulk optical properties
     if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18"]:

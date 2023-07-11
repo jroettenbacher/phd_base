@@ -27,7 +27,7 @@ if __name__ == "__main__":
     import pylim.solar_position as sp
     from pylim.ecrad import apply_liquid_effective_radius, calculate_pressure_height
     from pylim import reader
-    from metpy.calc import density
+    from metpy.calc import density, mixing_ratio_from_specific_humidity
     from metpy.units import units
     import numpy as np
     import xarray as xr
@@ -140,8 +140,8 @@ if __name__ == "__main__":
         # interpolate varcloud height to model height
         varcloud_sel = varcloud_sel.interp(Height=dsi_ml_out.press_height_full).reset_coords(["time", "Height"])
         # convert kg/m3 to kg/kg
-        air_density = density(dsi_ml_out.pressure_full * units.Pa, dsi_ml_out.t * units.K,
-                              dsi_ml_out.q * units("kg/kg"))
+        mixing_ratio = mixing_ratio_from_specific_humidity(dsi_ml_out["q"] * units("kg/kg"))
+        air_density = density(dsi_ml_out.pressure_full * units.Pa, dsi_ml_out.t * units.K, mixing_ratio)
         q_ice = varcloud_sel["Varcloud_Cloud_Ice_Water_Content"] * units("kg/m3") / air_density
         # overwrite ice water content
         dsi_ml_out["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
