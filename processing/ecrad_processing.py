@@ -123,6 +123,15 @@ if __name__ == "__main__":
     ds["iwp"] = factor * ds.ciwc
     ds["iwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan)
 
+    # calculate density
+    pressure = ds["pressure_full"] * un.Pa
+    temperature = ds["t"] * un.K
+    mixing_ratio = mixing_ratio_from_specific_humidity(ds["q"] * un("kg/kg")).metpy.convert_units("g/kg")
+    ds["air_density"] = density(pressure, temperature, mixing_ratio)
+
+    # convert kg/kg to kg/m³
+    ds["iwc"] = ds["q_ice"] * un("kg/kg") * ds["air_density"]
+
     # calculate bulk optical properties
     if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18"]:
         ice_optics = ecrad.calc_ice_optics_fu_sw(ds.iwp, ds.re_ice)
@@ -156,12 +165,6 @@ if __name__ == "__main__":
         except KeyError:
             print(f"{var} not found in ds")
 
-    # calculate density
-    pressure = ds["pressure_full"] * un.Pa
-    temperature = ds["t"] * un.K
-    mixing_ratio = mixing_ratio_from_specific_humidity(ds["q"] * un("kg/kg")).metpy.convert_units("g/kg")
-    ds["air_density"] = density(pressure, temperature, mixing_ratio)
-
     # calculate heating rates, solar
     fdw_top = ds.flux_dn_sw.sel(half_level=slice(137)).to_numpy() * un("W/m2")
     fup_top = ds.flux_up_sw.sel(half_level=slice(137)).to_numpy() * un("W/m2")
@@ -190,9 +193,10 @@ if __name__ == "__main__":
     log.info(f"Saved {outfile}")
 
     # %% take the mean over all columns and save it
-    mean_outfile = f"{inpath}/ecrad_merged_inout_{date}_{ov}_mean.nc"
-    ds_mean = ds.mean(dim="column")
-    ds_mean.to_netcdf(mean_outfile, format="NETCDF4_CLASSIC")
-    log.info(f"Saved {mean_outfile}")
+    if "column" in ds.dims:
+        mean_outfile = f"{inpath}/ecrad_merged_inout_{date}_{ov}_mean.nc"
+        ds_mean = ds.mean(dim="column")
+        ds_mean.to_netcdf(mean_outfile, format="NETCDF4_CLASSIC")
+        log.info(f"Saved {mean_outfile}")
 
     log.info(f"Done with ecrad_processing in: {h.seconds_to_fstring(time.time() - start)} [h:mm:ss]")
