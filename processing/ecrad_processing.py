@@ -46,7 +46,7 @@ if __name__ == "__main__":
     import time
 
     start = time.time()
-    # read in command line arguments or set defaults
+    # %% read in command line arguments or set defaults
     args = h.read_command_line_args()
     date = args["date"] if "date" in args else None
     if date is None:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     ov = args["ov"] if "ov" in args else "v1"
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
 
-    # setup logging
+    # %% setup logging
     try:
         file = __file__
     except NameError:
@@ -83,8 +83,8 @@ if __name__ == "__main__":
     ds = ds.assign_coords(half_level=np.arange(0.5, 138.5))
     ds["band_sw"] = range(1, 15)
     ds["band_lw"] = range(1, 17)
-    ds["re_ice"] = ds.re_ice.where(ds.re_ice != 5.196162e-05, np.nan)
-    ds["re_liquid"] = ds.re_liquid.where(ds.re_liquid != 4.000001e-06, np.nan)
+    ds["re_ice"] = ds.re_ice.where(ds.re_ice != 5.19616e-05, np.nan)
+    ds["re_liquid"] = ds.re_liquid.where(ds.re_liquid != 4.e-06, np.nan)
     for var in ["ciwc", "cswc", "q_ice"]:
         ds[var] = ds[var].where(ds[var] != 0, np.nan)
 
