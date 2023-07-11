@@ -103,4 +103,4 @@ echo "> Merging output files..."
 ${python} ecrad_merge_files.py date="${date_var}" io_flag=output version="${version}"
 
 echo "> Merging merged input and output file..."
-${python} ecrad_merge_files.py date="${date_var}" merge_io=True version="${version}" i_version="${input_version}"
+${python} ecrad_processing.py date="${date_var}" ov="${version}" iv="${input_version}"
