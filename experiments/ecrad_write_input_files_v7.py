@@ -102,8 +102,8 @@ if __name__ == "__main__":
     bahamas_ds = bahamas_ds.sel(time=sim_time)
 
 # %% loop through time steps and write one file per time step
-    lats, lons = bahamas_ds.IRS_LAT.sel(time=sim_time), bahamas_ds.IRS_LON.sel(time=sim_time)
-    idx = len(varcloud_ds.time)
+    lats, lons = bahamas_ds.IRS_LAT, bahamas_ds.IRS_LON
+    idx = len(sim_time)
     ifs_lat_lon = np.column_stack((data_ml.lat, data_ml.lon))
     ifs_tree = ssp.KDTree(ifs_lat_lon)  # build the kd tree for nearest neighbour look up
     # generate an array with lat, lon values from the flight position
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     closest_latlons = ifs_tree.data[idxs]
 
 
-    def write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i):
+    def write_ecrad_input_file(data_ml, varcloud_ds, closest_latlons, sim_time, path_ecrad, i):
         """
         Helper function to be called in parallel to speed up file creation.
         Variables are from outer script.
@@ -180,6 +180,6 @@ if __name__ == "__main__":
     #                                  for i in tqdm(range(0, idx)))
 
     for i in tqdm(range(0, idx)):
-        write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i)
+        write_ecrad_input_file(data_ml, varcloud_ds, closest_latlons, sim_time, path_ecrad, i)
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
