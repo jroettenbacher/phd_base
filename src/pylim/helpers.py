@@ -530,6 +530,56 @@ def find_bases_tops(mask, rg_list):
     return cloud_prop, cloud_mask
 
 
+def longitude_values_for_gaussian_grid(latitudes: np.array,
+                                       n_points: np.array,
+                                       longitude_boundaries: np.array = None) -> (np.array, np.array):
+    """
+    Calculate the longitude values for each latitude circle on a reduced Gaussian grid.
+    If the longitude boundaries are given only the longitude values within these boundaries are returned.
+
+    The ECMWF uses regular/reduced Gaussian grids to represent their model data.
+    These have a fixed number of latitudes between the equator and each pole with either a regular amount of longitude
+    points on each latitude ring or in case of a reduced Gaussian grid with a decreasing number of points towards the
+    poles on each latitude ring.
+    For more information on Gaussian grids as used by the ECMWF see: https://confluence.ecmwf.int/display/FCST/Gaussian+grids
+
+    When retrieving data on a reduced Gaussian grid the exact longitude values are not included in the data set and have
+    to be calculated according to the definition of the grid.
+    For this the latitude rings (latitudes) and the amount of longitude points on each latitude ring is needed (n_points).
+    As one rarely retrieves the whole domain of the model the longitude boundaries are also needed to return the correct
+    longitude values.
+
+
+    Args:
+        latitudes: The latitude values of the Gaussian grid starting in the North
+        n_points: The number of longitude points on each latitude circle (needs to be of same length as latitudes)
+        longitude_boundaries: The longitude boundaries (E, W). E =-90, W =90, N=0, S=-180/180
+
+    Returns: Two arrays with repeating latitude values and the corresponding longitude values
+
+    """
+    assert len(latitudes) == len(n_points), "Number of latitudes does not match number of points given!"
+    steps = 360 / n_points
+    lon_values = [np.arange(0, 360, step) for step in steps]
+    lon_values_out = np.array([])
+    lon_values_list = list()
+    for lons in lon_values:
+        all_lons = np.where(lons > 180, (lons+180)%360 - 180, lons)
+        if longitude_boundaries is not None:
+            all_lons = all_lons[(all_lons >= longitude_boundaries[0]) & (all_lons <= longitude_boundaries[1])]
+            all_lons.sort()
+        lon_values_out = np.concatenate([lon_values_out, all_lons])
+        lon_values_list.append(all_lons)
+
+    # create list of latitude values as coordinate
+    lat_values_out = np.array([])
+    for i, lon_array in enumerate(lon_values_list):
+        lat = np.repeat(latitudes[i], lon_array.size)
+        lat_values_out = np.concatenate([lat_values_out, lat])
+
+    return lat_values_out, lon_values_out
+
+
 _COLORS = {
     "green": "#3cb371",
     "darkgreen": "#253A24",
