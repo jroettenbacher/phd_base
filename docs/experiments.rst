@@ -38,10 +38,12 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v12.nam``: for flight RF17 with Fu-IFS ice model using general cloud optics
 * ``IFS_namelist_jr_20220411_v13.nam``: for flight RF17 with Fu-IFS ice model setting albedo to open ocean (input version v5)
 * ``IFS_namelist_jr_20220411_v13.1.nam``: for flight RF17 with Fu-IFS ice model setting albedo to 0.99 (input version v5.1)
-* ``IFS_namelist_jr_20220411_v14.nam``: for flight RF17 with Fu-IFS ice model including aerosol in run (TBD, input version v8)
+* ``IFS_namelist_jr_20220411_v14.nam``: for flight RF17 with Fu-IFS ice model including aerosol in run (TBD, input version v9)
 * ``IFS_namelist_jr_20220411_v15.nam``: for flight RF17 with Fu-IFS ice model using IFS data from its original O1280 grid (input version v6)
 * ``IFS_namelist_jr_20220411_v16.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input for the below cloud section (input version v7)
 * ``IFS_namelist_jr_20220411_v17.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input (input version v8)
+* ``IFS_namelist_jr_20220411_v18.nam``: for flight RF17 with Baran2016 ice model using IFS data from its original O1280 grid (input version v6)
+* ``IFS_namelist_jr_20220411_v19.nam``: for flight RF17 with Yi ice model using IFS data from its original O1280 grid (input version v6)
 
 
 |haloac3| **2022-04-12**

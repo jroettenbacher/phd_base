@@ -11,7 +11,7 @@ Instead of the *CIWC* and :math:`r_{eff, ice}` from the IFS use the retrieved va
 All options can be set in the script or given as command line key=value pairs.
 The first possible option is the default.
 
-* version (v2), modifies the version number at the end of the input filename
+* version (v8), modifies the version number at the end of the input filename
 * campaign (halo-ac3, cirrus-hl)
 * key (RF17), flight key
 * t_interp (False), interpolate time or use the closest time step
