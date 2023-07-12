@@ -312,7 +312,7 @@ def read_ozone_sonde(filepath: str) -> pd.DataFrame():
 
 def read_ecrad_output(filepath: str) -> xr.Dataset:
     """
-    Read in and preprocess a merged ecRad output file from :py:module:ecrad_processing.py
+    Read in and preprocess a merged ecRad output file from :py:module:ecrad_merge_files.py
 
     - Assign coordinates to dimensions
     - Calculate pressure height in m
@@ -323,6 +323,8 @@ def read_ecrad_output(filepath: str) -> xr.Dataset:
     Returns: xarray DataSet with added coordinates to all dimensions of the file
 
     """
+    warnings.warn("This is done in its own script now. The function is obsolete and should not be used.",
+                  DeprecationWarning, stacklevel=2)
     ds = xr.open_dataset(filepath)
     # assign coordinates to band_sw, band_lw and half_level
     ds = ds.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17), "half_level": range(138)})
