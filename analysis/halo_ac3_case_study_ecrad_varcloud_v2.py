@@ -1,58 +1,23 @@
 #!/usr/bin/env python
 """
 | *author:* Johannes Röttenbacher
-| *created:* 04-04-2023
+| *created:* 12-07-2023
 
 Comparison between using the VarCloud retrieval for *IWC* and |re-ice| or the forecasted values from the IFS as input for an ecRad simulation using the Fu-IFS ice optic parameterization.
 In addition, an experiment is run where the above cloud retrieved IWC and |re-ice| is used as input for the below cloud section.
 This allows for a comparison between measurements and simulations.
 The assumption is that the cloud does not change in the 30 minutes it takes to reach the below cloud section.
 
-* ``IFS_namelist_jr_20220411_v1.nam``: for flight RF17 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220411_v8.nam``: for flight RF17 with Fu-IFS ice model and VarCloud input
-* ``IFS_namelist_jr_20220411_v10.nam``: for flight RF17 with Fu-IFS ice model and VarCloud input but shifted to the below cloud section
+* ``IFS_namelist_jr_20220411_v15.nam``: for flight RF17 with Fu-IFS ice model using IFS data from its original O1280 grid (input version v6)
+* ``IFS_namelist_jr_20220411_v16.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input for the below cloud section (input version v7)
+* ``IFS_namelist_jr_20220411_v17.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input (input version v8)
 
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_v8_iwc_along_track.png
+.. figure:: figures/varcloud/HALO-AC3_20220411_HALO_RF17_ecrad_v16_iwc_along_track.png
 
     Retrieved ice water content from VarCloud retrieval interpolated to IFS full level pressure altitudes.
 
 Results
 ^^^^^^^^
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_along_track.png
-
-    Difference between IWC IFS and IWC VarCloud.
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_re_ice_along_track.png
-
-    Difference between |re-ice| IFS and |re-ice| VarCloud.
-
-From the two figures above it can be seen that the VarCloud retrieval produces a higher IWC and larger |re-ice|.
-The histograms show the same picture.
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_hist.png
-
-    Histogramm of difference between IWC IFS and IWC VarCloud.
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_v1_v8_re_ice_psd.png
-
-    Histogramm of |re-ice| used in the IFS run and the VarCloud run.
-
-The differences in microphysical properties also translate to differences in optical properties of the cloud such as higher total optical depth (integrated over all bands) in the IFS run.
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_od_int_along_track.png
-
-    Difference in total optical depth integrated over all shortwave bands between the IFS run and the VarCloud run.
-
-Finally, due to larger |re-ice| the ice cloud from the retrieval is less absorbing/reflecting than the IFS forecasted ice cloud.
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track.png
-
-    Difference in broadband solar downward irradiance between IFS and VarCloud.
-
-.. figure:: figures/experiment_v8/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist.png
-
-    Histogramm of difference in broadband solar downward irradiance between IFS and VarCloud.
 
 """
 
@@ -65,8 +30,6 @@ if __name__ == "__main__":
     from ac3airborne.tools import flightphase
     import xarray as xr
     import numpy as np
-    from metpy.calc import density
-    from metpy.units import units
     import matplotlib.pyplot as plt
     from matplotlib import colors
     import pandas as pd
@@ -75,7 +38,6 @@ if __name__ == "__main__":
     import cmasher as cmr
 
     # plotting variables
-    cm = 1 / 2.54
     cbc = h.get_cb_friendly_colors()
     h.set_cb_friendly_colors()
     plt.rc("font", size=12)
@@ -86,23 +48,19 @@ if __name__ == "__main__":
     flight = meta.flight_names[key]
     date = flight[9:17]
 
-    plot_path = f"{h.get_path('plot', flight, campaign)}/{flight}/ecrad_case_study"
-    fig_path = "./docs/figures/ecrad_case_study"
+    plot_path = f"{h.get_path('plot', flight, campaign)}/{flight}/varcloud"
+    fig_path = "./docs/figures/varcloud"
     h.make_dir(plot_path)
     ecrad_path = f"{h.get_path('ecrad', campaign=campaign)}/{date}/"
     ifs_path = f"{h.get_path('ifs', campaign=campaign)}/{date}"
     varcloud_path = h.get_path("varcloud", flight, campaign)
     libradtran_path = h.get_path("libradtran_exp", flight, campaign)
     bacardi_path = h.get_path("bacardi", flight, campaign)
-    ecrad_inputv2 = f"ecrad_merged_input_{date}_v2.nc"
-    ecrad_inputv3 = f"ecrad_merged_input_{date}_v3.nc"
-    ecrad_v1 = f"ecrad_merged_inout_{date}_v1.nc"
-    ecrad_v8 = f"ecrad_merged_output_{date}_v8.nc"
-    ecrad_v10 = f"ecrad_merged_output_{date}_v10.nc"
     varcloud_file = [f for f in os.listdir(varcloud_path) if "nc" in f][0]
     bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_1s.nc"
-    bacard_std = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_std_1s.nc"
+    bacardi_std = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_std_1s.nc"
     libradtran_file = f"HALO-AC3_HALO_libRadtran_simulation_varcloud_1min_{date}_{key}.nc"
+    ecrad_versions = ["v15", "v16", "v17", "v18"]
 
 # %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
@@ -136,92 +94,61 @@ if __name__ == "__main__":
     varcloud = varcloud.sel(time=sel_time).resample(time="1Min").asfreq()
 
     bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")  # read in BACARDI data
-    bacardi_std = xr.open_dataset(f"{bacardi_path}/{bacard_std}")
+    bacardi_std = xr.open_dataset(f"{bacardi_path}/{bacardi_std}")
     bacardi_ds_res = bacardi_ds.resample(time="1Min").mean()
 
     libradtran_ds = xr.open_dataset(f"{libradtran_path}/{libradtran_file}")  # read in libradtran data
     libradtran_ds["altitude"] = libradtran_ds.altitude / 1000
     libradtran_ds = libradtran_ds.rename(CIWD="iwc")
 
-# %% read in ecrad data
-    ecrad_ds_inputv2 = xr.open_dataset(f"{ecrad_path}/{ecrad_inputv2}")
-    ecrad_ds_inputv3 = xr.open_dataset(f"{ecrad_path}/{ecrad_inputv3}")
-    ecrad_ds_v1 = xr.open_dataset(f"{ecrad_path}/{ecrad_v1}")
-    ecrad_ds_v8 = xr.open_dataset(f"{ecrad_path}/{ecrad_v8}")
-    ecrad_ds_v10 = xr.open_dataset(f"{ecrad_path}/{ecrad_v10}")
-    # select only center column from version 1, version 8/10 has only one column, select above and below cloud time
-    ecrad_ds_v1 = ecrad_ds_v1.sel(column=16, time=slice(above_cloud["start"], ecrad_ds_v10.time[-1]))
-    # add pressure height to v1
-    ecrad_ds_v1 = ecrad.calculate_pressure_height(ecrad_ds_v1)
-    # merge input and output
-    ecrad_ds_v8 = xr.merge([ecrad_ds_v8, ecrad_ds_inputv2])
-    ecrad_ds_v10 = xr.merge([ecrad_ds_v10, ecrad_ds_inputv3])
-    ecrad_ds_v8 = ecrad_ds_v8.sel(time=sel_time)
-
-    # put all data sets in a dictionary
-    ecrad_dict = dict(v1=ecrad_ds_v1, v8=ecrad_ds_v8, v10=ecrad_ds_v10)
-
-# %% modify data sets
-    for v in ecrad_dict:
-        ds = ecrad_dict[v].copy()
-        # replace default values with nan
-        ds["re_ice"] = ds.re_ice.where(ds.re_ice != 5.19616e-05, np.nan)
-        ds["re_liquid"] = ds.re_liquid.where(ds.re_liquid != 4.000001e-06, np.nan)
-        # compute cloud ice water path
-        factor = ds.pressure_hl.diff(dim="half_level").to_numpy() / (
-                9.80665 * ds.cloud_fraction.to_numpy())
-        ds["iwp"] = (["time", "level"], factor * ds.ciwc.to_numpy())
-        ds["iwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan)
-
-        # convert kg/kg to kg/m³
-        air_density = density(ds.pressure_full * units.Pa, ds.t * units.K, ds.q * units("kg/kg"))
-        ds["iwc"] = ds["q_ice"] * units("kg/kg") * air_density
-
-        # add optical properties to data sets
-        ice_optics_fu = ecrad.calc_ice_optics_fu_sw(ds["iwp"], ds.re_ice)
-        ds["od"] = ice_optics_fu[0]
-        ds["scat_od"] = ice_optics_fu[1]
-        ds["g"] = ice_optics_fu[2]
-        ds["band_sw"] = range(1, 15)
-        ds["band_lw"] = range(1, 17)
-        ds["absorption"] = ds["od"] - ds["scat_od"]
-        ds["od_mean"] = ds["od"].mean(dim="band_sw")
-        ds["scat_od_mean"] = ds["scat_od"].mean(dim="band_sw")
-        ds["g_mean"] = ds["g"].mean(dim="band_sw")
-        ds["scat_od_int"] = ds["scat_od"].integrate(coord="band_sw")
-        ds["od_int"] = ds["od"].integrate(coord="band_sw")
-        ds["absorption_int"] = ds["absorption"].integrate(coord="band_sw")
-        # calculate other optical parameters
-        ds["reflectivity_sw"] = ds.flux_up_sw / ds.flux_dn_sw
+# %% read in ecrad data and add more variables to each data set
+    ecrad_dict = dict()
+    cloud_properties = ["iwc", "iwp", "re_ice", "re_liquid", "q_liquid", "q_ice", "ciwc", "cswc", "clwc", "crwc"]
+    above_cloud_hl, below_cloud_hl = 87.5, 103.5
+    for v in tqdm(ecrad_versions):
+        # merged input and output file with additional variables
+        ecrad_file = f"ecrad_merged_inout_{date}_{v}.nc"
+        ds = xr.open_dataset(f"{ecrad_path}/{ecrad_file}")
+        # select only closest column to flight path
+        if "column" in ds.dims:
+            ds = ds.sel(column=1, drop=True)
+        # calculate spectral absorption by cloud, above cloud - below cloud spectrum
+        for var in ["spectral_flux_dn_sw", "spectral_flux_dn_lw", "spectral_flux_up_sw", "spectral_flux_up_lw"]:
+            ds_tmp = ds[var]
+            ds[f"{var}_diff"] = ds_tmp.sel(half_level=above_cloud_hl) - ds_tmp.sel(half_level=below_cloud_hl)
+        # filter cloud properties with cloud_fraction
+        for p in cloud_properties:
+            ds[p] = ds[p].where(ds.cloud_fraction > 0)
 
         ecrad_dict[v] = ds.copy()
 
-# %% get height level of actual flight altitude in ecRad model on half levels
-    ins_tmp = bacardi_ds.resample(time="1Min").asfreq().sel(time=case_slice)
-    ds = ecrad_dict["v1"]
-    ecrad_timesteps = len(ds.time)
-    aircraft_height_level = np.zeros(ecrad_timesteps)
+# %% calculate difference between IFS run varcloud runs
+    ds_fu = ecrad_dict["v15"]
+    for k in ["v16", "v17"]:
+        ds = ecrad_dict[k].copy()
+        ds_diff = ds_fu - ds
+        ecrad_dict[f"{k}_diff"] = ds_diff.copy()
 
-    for i in tqdm(range(ecrad_timesteps)):
-        aircraft_height_level[i] = h.arg_nearest(ds["press_height_hl"][i, :].values, ins_tmp.alt[i].values)
+# %% get model level of flight altitude for half and full level
+    level_da = ecrad.get_model_level_of_altitude(bacardi_ds.alt, ecrad_dict["v15"], "level")
+    hlevel_da = ecrad.get_model_level_of_altitude(bacardi_ds.alt, ecrad_dict["v15"], "half_level")
 
-    aircraft_height_level = aircraft_height_level.astype(int)
-    height_level_da = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ds.time})
-    aircraft_height = ds["press_height_hl"].isel(half_level=height_level_da)
-
-# %% get height level of actual flight altitude in ecRad model on full levels
-    aircraft_height_level_full = np.zeros(ecrad_timesteps)
-
-    for i in tqdm(range(ecrad_timesteps)):
-        aircraft_height_level_full[i] = h.arg_nearest(ds["press_height_full"][i, :].values, ins_tmp.alt[i].values)
-
-    aircraft_height_level_full = aircraft_height_level_full.astype(int)
-    height_level_da_full = xr.DataArray(aircraft_height_level_full, dims=["time"], coords={"time": ds.time})
-    aircraft_height_full = ds["press_height_full"].isel(level=height_level_da_full)
+# %% create selection array for all above cloud sections
+    end_ascend = pd.to_datetime(segments.select("name", "high level 1")[0]["start"])
+    end_ascend2 = pd.to_datetime(segments.select("name", "high level 11")[0]["start"])
+    t = pd.to_datetime(bacardi_ds_res.time)
+    above_sel = xr.DataArray(((t > end_ascend) & (t < above_cloud["end"])) | (t > end_ascend2),
+                             coords={"time": bacardi_ds_res.time})
+# %% plotting preparation
+    var_dict = dict(flux_dn_sw="F_down_solar", flux_dn_lw="F_down_terrestrial",
+                    flux_up_sw="F_up_solar", flux_up_lw="F_up_terrestrial")
+    version_labels = dict(v15="Fu-IFS", v16="VarCloud Below Cloud", v17="VarCloud", v18="Baran2016", v19="Yi",
+                          v18_diff="Fu-IFS-Baran2016", v19_diff="Fu-IFS-Yi")
 
 # %% set plotting options
-    var = "re_ice"
-    v = "v1"
+    v_ref = "v15"
+    var = "cloud_fraction"
+    v = "v15"
     band = None
 
 # %% prepare data set for plotting
@@ -237,7 +164,7 @@ if __name__ == "__main__":
     cb_ticks = dict()
     vmaxs = dict()
     vmins = dict(iwp=0)
-    xlabels = dict(v1="v1", v8="v8", v10="v10", diffv8="Difference v1 - v8", diffv10="Difference v1 - v10")
+    xlabels = dict(v15="v15", v16="v16", v17="v17", v16_diff="Difference v15 - v16", v17_diff="Difference v15 - v17")
 
     # set kwargs
     alpha = alphas[var] if var in alphas else 1
@@ -256,21 +183,14 @@ if __name__ == "__main__":
     else:
         vmax, vmin = None, None
 
-    if v == "diff":
-        cmap = cmr.fusion
-        norm = colors.TwoSlopeNorm(vcenter=0)
-
     # prepare ecrad dataset for plotting
     sf = h.scale_factors[var] if var in h.scale_factors else 1
-    if v == "diffv8":
+    if "diff" in v:
+        cmap = cmr.fusion
+        norm = colors.TwoSlopeNorm(vcenter=0)
         # calculate difference between simulations
-        ds = ecrad_dict["v8"].copy()
-        ecrad_ds_diff = ecrad_dict["v1"][var] - ds[var]
-        ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
-    elif v == "diffv10":
-        # calculate difference between simulations
-        ds = ecrad_dict["v10"].copy()
-        ecrad_ds_diff = ecrad_dict["v1"][var] - ds[var]
+        ds = ecrad_dict[v[:3]].copy()
+        ecrad_ds_diff = ecrad_dict[v_ref][var] - ds[var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     else:
         ds = ecrad_dict[v]
@@ -299,11 +219,11 @@ if __name__ == "__main__":
         ecrad_plot_new_z.append(tmp_plot)
 
     ecrad_plot = xr.concat(ecrad_plot_new_z, dim="time")
-    # filter very low to_numpy()
-    ecrad_plot = ecrad_plot.where(np.abs(ecrad_plot) > 0.001)
+    # filter very low values
+    ecrad_plot = ecrad_plot.where(np.abs(ecrad_plot) > 0)
 
     # select time height slice
-    time_sel = case_slice if v == "v10" else sel_time
+    time_sel = case_slice if v == "v16" else sel_time
     if len(ecrad_plot.dims) > 2:
         dim3 = "band_sw"
         dim3 = dim3 if dim3 in ecrad_plot.dims else None
@@ -370,44 +290,45 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-# %% plot varcloud data
-    v = "re_ice"
-    var_plot = varcloud[v].sel(time=sel_time) * 1e6
-    var_plot.plot(x="time", cmap=h.cmaps[v], figsize=h.figsize_wide)
-    plt.ylabel("Altitude (m)")
-    plt.show()
-    plt.close()
-
-# %% plot histogram of particle sizes
+# %% plot histograms of variable
+    var = "iwc"
+    all_bins = dict(cre_sw=np.arange(-25, 1, 0.5), cre_lw=np.arange(0, 50), cre_total=np.arange(-2, 28),
+                reflectivity_sw=np.arange(0.675, 0.85, 0.01),
+                transmissivity_sw=np.arange(0.8, 1.01, 0.01), transmissivity_lw=np.arange(1, 1.51, 0.01),
+                flux_dn_sw=np.arange(105, 270, 5), flux_up_sw=np.arange(85, 190, 3),
+                flux_dn_lw=np.arange(25, 200, 5), flux_up_lw=np.arange(165, 245, 5),
+                g_mean=np.arange(0.78, 0.9, 0.005), od_int=np.arange(0, 3, 0.05), scat_od_int=np.arange(0, 3, 0.05),
+                    iwc=np.arange(0, 5, 0.25), re_ice=np.arange(10, 100, 2))
+    bins = all_bins[var] if var in all_bins else None
     time_sel = above_slice
-    plot_v1 = (ecrad_ds_v1.re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
-    plot_v8 = (ecrad_ds_v8.re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
+    plot1 = (ecrad_dict["v15"][var].sel(time=time_sel).to_numpy() * 1e6).flatten()
+    plot2 = (ecrad_dict["v17"][var].sel(time=time_sel).to_numpy() * 1e6).flatten()
     t1, t2 = time_sel.start, time_sel.stop
-    binsize = 2
-    bins = np.arange(10, 110, binsize)
+    binsize = bins[1] - bins[0]
     _, ax = plt.subplots(figsize=h.figsize_wide)
-    hist = ax.hist(plot_v1, bins=bins, label="IFS", histtype="step", lw=3)
-    ax.hist(plot_v8, bins=bins, label="VarCloud", histtype="step", lw=3)
+    ax.hist(plot1, bins=bins, label="IFS", histtype="step", lw=3)
+    ax.hist(plot2, bins=bins, label="VarCloud", histtype="step", lw=3)
     ax.legend()
-    ax.text(0.8, 0.7, f"Binsize: {binsize} $\mu$m", transform=ax.transAxes, bbox=dict(boxstyle="round", fc="white"))
+    ax.text(0.8, 0.7, f"Binsize: {binsize} {h.plot_units[var]}", transform=ax.transAxes,
+            bbox=dict(boxstyle="round", fc="white"))
     ax.grid()
-    ax.set(xlabel=r"Ice effective radius ($\mu$m)", ylabel="Number of Occurrence",
-           title=f"Histogram of Particle Size between {t1:%H:%M} and {t2:%H:%M} UTC")
-    figname = f"{plot_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
+    ax.set(xlabel=f"{h.cbarlabels[var]} ({h.plot_units[var]})", ylabel="Number of Occurrence",
+           title=f"Histogram of {h.cbarlabels[var]} between {t1:%H:%M} and {t2:%H:%M} UTC")
+    figname = f"{plot_path}/{flight}_ecrad_v15_v17_{var}_psd.png"
     plt.savefig(figname, dpi=300, bbox_inches="tight")
     # figname = f"{fig_path}/{flight}_ecrad_v1_v8_re_ice_psd.png"
     # plt.savefig(figname, dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
-# %% plot BACARDI and ecrad v10 along track
-    ds10, ds1 = ecrad_dict["v10"], ecrad_dict["v1"]
+# %% plot BACARDI and ecrad along track
+    ds10, ds1 = ecrad_dict["v16"], ecrad_dict["v15"]
     ds10_res = ds10.resample(time="1Min").first()
     time_sel = slice(ds10.time[0], ds10.time[-1])
-    hl_sel = height_level_da.sel(time=ds10.time, method="nearest").assign_coords(time=ds10.time)
+    hl_sel = hlevel_da.sel(time=ds10.time, method="nearest").assign_coords(time=ds10.time)
     ecrad_plot = ds10["flux_dn_sw"].isel(half_level=hl_sel)
-    ecrad_plot1 = ds1["flux_dn_sw"].isel(half_level=height_level_da).sel(time=time_sel)
-    ecrad_plot2 = ds10_res["flux_dn_sw"].isel(half_level=height_level_da.sel(time=ds10_res.time))
+    ecrad_plot1 = ds1["flux_dn_sw"].isel(half_level=hlevel_da).sel(time=time_sel)
+    ecrad_plot2 = ds10_res["flux_dn_sw"].isel(half_level=hlevel_da.sel(time=ds10_res.time))
     bacardi_plot = bacardi_ds["F_down_solar"].sel(time=time_sel)
     std_plot = bacardi_std["F_down_solar"].sel(time=time_sel).to_numpy()
 
@@ -461,9 +382,10 @@ if __name__ == "__main__":
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
+
 # %% plot scatterplot of below cloud measurements
     labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestrial=r"$F_{\downarrow, terrestrial}$",
-              F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
+                  F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
 
     # prepare metadata for comparing ecRad and BACARDI
     titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
@@ -471,9 +393,9 @@ if __name__ == "__main__":
     names = ["Fdw_solar", "Fdw_terrestrial", "Fup_solar", "Fup_terrestrial"]
     bacardi_vars = ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]
     ecrad_vars = ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]
-    ds10 = ecrad_dict["v10"]
+    ds10 = ecrad_dict["v16"]
     time_sel = slice(ds10.time[100], ds10.time[-1])
-    hl_sel = height_level_da.sel(time=ds10.time, method="nearest").assign_coords(time=ds10.time)
+    hl_sel = hlevel_da.sel(time=ds10.time, method="nearest").assign_coords(time=ds10.time)
     bacardi_plot = bacardi_ds.sel(time=time_sel)
     ecrad_plot = ds10.isel(half_level=hl_sel).sel(time=time_sel)
     lims = [(150, 240), (80, 110), (110, 160), (210, 220)]
@@ -503,9 +425,9 @@ if __name__ == "__main__":
         plt.show()
         plt.close()
 
-# %% plot scatterplot of above cloud measurements
+# %% plot scatterplot of above cloud measurements whole flight
     labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestrial=r"$F_{\downarrow, terrestrial}$",
-              F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
+                  F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
     # prepare metadata for comparing ecRad and BACARDI
     titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
               "Terrestrial Upward Irradiance"]
@@ -513,12 +435,10 @@ if __name__ == "__main__":
     bacardi_vars = ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]
     ecrad_vars = ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]
 
-    time_sel = above_slice
-    ecrad_ds = xr.open_dataset(f"{ecrad_path}/{ecrad_v8}").sel(time=time_sel)
-    hl_sel = height_level_da.sel(time=ecrad_ds.time, method="nearest")
-    bacardi_plot = bacardi_ds_res.sel(time=time_sel)
-    ecrad_plot = ecrad_ds.isel(half_level=hl_sel)
-    lims = [(200, 270), (25, 35), (150, 200), (175, 195)]
+    ecrad_ds = ecrad_dict["v15"].where(above_sel)
+    bacardi_plot = bacardi_ds_res.where(above_sel)
+    ecrad_plot = ecrad_ds.isel(half_level=hlevel_da)
+    lims = [(200, 600), (25, 35), (150, 200), (175, 195)]
     for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
         rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
         bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
@@ -544,3 +464,25 @@ if __name__ == "__main__":
         # plt.savefig(f"{plot_path}/{flight}_{names[i]}_bacardi_vs_ecrad_varcloud_scatter_above_cloud.png", dpi=300)
         plt.show()
         plt.close()
+
+# %% plot BACARDI and ecRad at flight altitude along track
+    var = "flux_dn_sw"
+    bacardi_plot = bacardi_ds_res[var_dict[var]]
+
+    _, ax = plt.subplots(figsize=h.figsize_wide)
+
+    ax.plot(bacardi_plot.time, bacardi_plot, label="BACARDI")
+
+    for v in ["v15", "v17", "v18"]:
+        ecrad_plot = ecrad_dict[v][var].isel(half_level=hlevel_da.sel(time=ecrad_dict[v].time))
+        ax.plot(ecrad_plot.time, ecrad_plot, label=version_labels[v])
+
+    ax.set(xlabel="Time (UTC)", ylabel=f"Broadband irradiance ({h.plot_units[var]})")
+    ax.legend()
+    ax.grid()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+# %% plot IFS variables
+
