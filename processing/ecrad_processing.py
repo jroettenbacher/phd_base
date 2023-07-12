@@ -121,7 +121,7 @@ if __name__ == "__main__":
     da = ds.pressure_hl.diff(dim="half_level").rename(half_level="level").assign_coords(level=ds.level.to_numpy())
     factor = da * un.Pa  / (g * ds.cloud_fraction)
     iwp = (factor * ds.ciwc * un("kg/kg")).metpy.convert_units("kg/m^2")
-    ds["iwp"] = iwp.metpy.dequantify().where(ds.iwp != np.inf, np.nan)
+    ds["iwp"] = iwp.metpy.dequantify().where(iwp != np.inf, np.nan)
     ds["iwp"].attrs = {"units": "kg m^-2", "long_name": "Ice water path"}
 
     # calculate density
@@ -136,13 +136,13 @@ if __name__ == "__main__":
     ds["iwc"].attrs = {"units": "kg m^-3", "long_name": "Ice water content"}
 
     # calculate bulk optical properties
-    if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18"]:
+    if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17"]:
         ice_optics = ecrad.calc_ice_optics_fu_sw(ds.iwp, ds.re_ice)
     elif ov == "v2":
         ice_optics = ecrad.calc_ice_optics_baran2017("sw", ds.iwp, ds.q_ice, ds.t)
-    elif ov == "v4":
+    elif ov in ["v4", "v19"]:
         ice_optics = ecrad.calc_ice_optics_yi("sw", ds.iwp, ds.re_ice)
-    elif ov in ["v6", "v7", "v9"]:
+    elif ov in ["v6", "v7", "v9", "v18"]:
         ice_optics = ecrad.calc_ice_optics_baran2016("sw", ds.iwp, ds.q_ice, ds.t)
     else:
         raise ValueError(f"No parameterization for {ov} defined")
