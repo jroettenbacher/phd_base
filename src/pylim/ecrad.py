@@ -4,9 +4,11 @@
 *author*: Johannes Röttenbacher
 """
 
+import pylim.helpers as h
 import pylim.meteorological_formulas as met
 import numpy as np
 import xarray as xr
+from tqdm import tqdm
 import warnings
 import logging
 import importlib_resources as pkg_resources
@@ -675,6 +677,37 @@ def cloud_overlap_decorr_len(latitude: float, scheme: int):
     decorr_len_ratio = 0.5
 
     return decorr_len_edges_km, decorr_len_water_km, decorr_len_ratio
+
+
+def get_model_level_of_altitude(altitude: xr.DataArray, model_ds: xr.Dataset, coord: str) -> xr.DataArray:
+    """
+    Retrieve the model levels corresponding to a time series of altitude values such as given by a flight path.
+
+    Args:
+        altitude: time series of altitude values in m, has to have the dimension time
+        model_ds: model data set with index time, level and/or half_level and variables press_height_hl and/or press_height_full
+        coord: which vertical coordinate to use for selection, either "half_level" or "level"
+
+    Returns:
+
+    """
+    alt = altitude.sel(time=model_ds.time, method="nearest")
+    ts = len(model_ds.time)
+    height_level = np.zeros(ts)
+    if coord == "half_level":
+        var = "press_height_hl"
+    elif coord == "level":
+        var = "press_height_full"
+    else:
+        raise ValueError(f"'coord' has to be either 'half_level' or 'level' but is '{coord}'")
+
+    for i in tqdm(range(ts)):
+        height_level[i] = h.arg_nearest(model_ds[var][i, :].to_numpy(), alt[i].to_numpy())
+
+    height_level = height_level.astype(int)
+    height_level_da = xr.DataArray(height_level, dims=["time"], coords={"time": model_ds.time})
+
+    return height_level_da
 
 
 if __name__ == '__main__':
