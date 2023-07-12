@@ -468,7 +468,7 @@ plt.close()
 # %% calculate differences between ecrad and bacardi
 ds1 = ecrad_dict["v1"].isel(half_level=height_level_da["v1"])
 ds8 = ecrad_dict["v8"].isel(half_level=height_level_da["v1"].sel(time=ecrad_dict["v8"].time))
-ds10 = ecrad_plot
+ds10 = ecrad_dict["v10"].isel(half_level=height_level_da["v10"].sel(time=ecrad_dict["v10"].time))
 ifs_fdn = ds1.flux_dn_sw - bacardi_ds["F_down_solar"]
 ifs_fup = ds1.flux_up_sw - bacardi_ds["F_up_solar"]
 ifs_fdn_above = ifs_fdn.sel(time=above_slice).to_numpy().flatten()
