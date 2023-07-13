@@ -11,7 +11,6 @@ Instead of the *CIWC* and :math:`r_{eff, ice}` from the IFS use the retrieved va
 All options can be set in the script or given as command line key=value pairs.
 The first possible option is the default.
 
-* version (v2), modifies the version number at the end of the input filename
 * campaign (halo-ac3, cirrus-hl)
 * key (RF17), flight key
 * t_interp (False), interpolate time or use the closest time step
@@ -41,7 +40,7 @@ if __name__ == "__main__":
     start = time.time()
     # %% read in command line arguments
     args = h.read_command_line_args()
-    version = args["version"] if "version" in args else "v2"
+    version = "v2"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
     # set interpolate flag
