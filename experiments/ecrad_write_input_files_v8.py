@@ -91,7 +91,7 @@ if __name__ == "__main__":
         Time="time")
 
     # %% resample varcloud data to minutely resolution
-    varcloud_ds = varcloud_ds.resample(time="1min").asfreq()
+    varcloud_ds = varcloud_ds.resample(time="1min").mean()
 
     # %% select lat and lon closest to flightpath
     lats, lons, times = varcloud_ds.Latitude, varcloud_ds.Longitude, varcloud_ds.time
@@ -125,12 +125,12 @@ if __name__ == "__main__":
         # overwrite ice water content
         dsi_ml_out["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
 
-        # add cos_sza for the grid point using only model data
+        # add cos_sza for the grid point using model data for the thermodynamics and aircraft data for the location
         sod = (t.dt.hour * 3600 + t.dt.minute * 60 + t.dt.second).to_numpy()
         p_surf_nearest = dsi_ml_out.pressure_hl.isel(half_level=137).to_numpy() / 100  # hPa
         t_surf_nearest = dsi_ml_out.temperature_hl.isel(half_level=137).to_numpy() - 273.15  # degree Celsius
-        ypos = dsi_ml_out.lat.to_numpy()
-        xpos = dsi_ml_out.lon.to_numpy()
+        ypos = varcloud_sel.Latitude.to_numpy()
+        xpos = varcloud_sel.Longitude.to_numpy()
         sza = sp.get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest, t_surf_nearest)
         cos_sza = np.cos(sza / 180. * np.pi)
 

@@ -109,20 +109,7 @@ if __name__ == "__main__":
             ending = ""
 
         n_rgrid = len(ds_sel.rgrid)
-        # add cos_sza for each grid point using only model data
-        cos_sza = np.empty(n_rgrid)
-        sza = np.empty(n_rgrid)
-        sod = nav_data_ip.seconds.iloc[i]
-        for rgrid_idx in range(cos_sza.shape[0]):
-            p_surf_nearest = dsi_ml_out.pressure_hl.isel(rgrid=rgrid_idx, half_level=137).to_numpy() / 100  # hPa
-            t_surf_nearest = dsi_ml_out.temperature_hl.isel(rgrid=rgrid_idx, half_level=137).to_numpy() - 273.15  # degree Celsius
-            ypos = dsi_ml_out.lat.isel(rgrid=rgrid_idx).to_numpy()
-            xpos = dsi_ml_out.lon.isel(rgrid=rgrid_idx).values
-            sza[rgrid_idx] = sp.get_sza(sod / 3600, ypos, xpos, dt_time.year, dt_time.month, dt_time.day, p_surf_nearest,
-                                        t_surf_nearest)
-            cos_sza[rgrid_idx] = np.cos(sza[rgrid_idx] / 180. * np.pi)
-
-        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
+        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(nav_data_ip.cos_sza[i],
                                                             dims=["rgrid"],
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))
@@ -149,7 +136,7 @@ if __name__ == "__main__":
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(
-            path=f"{path_ecrad}/ecrad_input_standard_{sod:7.1f}_sod{ending}_v6.nc",
+            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds[i]:7.1f}_sod{ending}_v6.nc",
             format='NETCDF4_CLASSIC')
 
         return None

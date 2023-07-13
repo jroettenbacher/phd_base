@@ -112,7 +112,7 @@ if __name__ == "__main__":
     closest_latlons = ifs_tree.data[idxs]
 
 
-    def write_ecrad_input_file(data_ml, varcloud_ds, closest_latlons, sim_time, path_ecrad, i):
+    def write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i):
         """
         Helper function to be called in parallel to speed up file creation.
         Variables are from outer script.
@@ -135,12 +135,12 @@ if __name__ == "__main__":
         # overwrite ice water content
         dsi_ml_out["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
 
-        # add cos_sza for the grid point using only model data
+        # add cos_sza for the grid point using model data for the thermodynamics and aircraft data for the location
         sod = t.hour * 3600 + t.minute * 60 + t.second
         p_surf_nearest = dsi_ml_out.pressure_hl.isel(half_level=137).to_numpy() / 100  # hPa
         t_surf_nearest = dsi_ml_out.temperature_hl.isel(half_level=137).to_numpy() - 273.15  # degree Celsius
-        ypos = dsi_ml_out.lat.to_numpy()
-        xpos = dsi_ml_out.lon.to_numpy()
+        ypos = bahamas_ds.IRS_LAT.sel(time=t).to_numpy()
+        xpos = bahamas_ds.IRS_LON.sel(time=t).to_numpy()
         sza = sp.get_sza(sod / 3600, ypos, xpos, t.year, t.month, t.day, p_surf_nearest, t_surf_nearest)
         cos_sza = np.cos(sza / 180. * np.pi)
 
@@ -180,6 +180,6 @@ if __name__ == "__main__":
     #                                  for i in tqdm(range(0, idx)))
 
     for i in tqdm(range(0, idx)):
-        write_ecrad_input_file(data_ml, varcloud_ds, closest_latlons, sim_time, path_ecrad, i)
+        write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i)
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
