@@ -22,6 +22,7 @@ Can be called from the command line with the following key=values pairs:
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
+    import pylim.solar_position as sp
     from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
     import numpy as np
     import xarray as xr
@@ -92,7 +93,24 @@ if __name__ == "__main__":
             dsi_ml_out = ds_sel.sel(time=dt_nav_data[i], method="nearest")  # select closest time step
             ending = ""
 
-        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(nav_data_ip.cos_sza[i],
+        # add cos_sza for each grid point using only model data
+        cos_sza = np.empty((len(lat_circle), len(lon_circle)))
+        sza = np.empty((len(lat_circle), len(lon_circle)))
+        sod = nav_data_ip.seconds.iloc[i]
+        for lat_idx in range(cos_sza.shape[0]):
+            for lon_idx in range(cos_sza.shape[1]):
+                p_surf_nearest = dsi_ml_out.pressure_hl.isel(lat=lat_idx, lon=lon_idx,
+                                                             half_level=137).values / 100  # hPa
+                t_surf_nearest = dsi_ml_out.temperature_hl.isel(lat=lat_idx, lon=lon_idx,
+                                                                half_level=137).values - 273.15  # degree Celsius
+                ypos = dsi_ml_out.lat.isel(lat=lat_idx).values
+                xpos = dsi_ml_out.lon.isel(lon=lon_idx).values
+                sza[lat_idx, lon_idx] = sp.get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day,
+                                                   p_surf_nearest, t_surf_nearest)
+                cos_sza[lat_idx, lon_idx] = np.cos(sza[lat_idx, lon_idx] / 180. * np.pi)
+
+
+        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
                                                             dims=["lat", "lon"],
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))
@@ -114,6 +132,8 @@ if __name__ == "__main__":
             arr = dsi_ml_out[var].values
             dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": n_column})
         dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first dimension
+        # overwrite the value closest to the aircraft with the actual cos_sza from the aircraft
+        dsi_ml_out["cos_solar_zenith_angle"][16] = nav_data_ip.cos_sza[i]
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(
