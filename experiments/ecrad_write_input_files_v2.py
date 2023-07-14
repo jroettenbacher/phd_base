@@ -24,7 +24,6 @@ The first possible option is the default.
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
-    import pylim.solar_position as sp
     from pylim.ecrad import apply_liquid_effective_radius, calculate_pressure_height
     from metpy.calc import density, mixing_ratio_from_specific_humidity
     from metpy.units import units
@@ -82,19 +81,20 @@ if __name__ == "__main__":
     else:
         ifs_date = date
 
+    nav_data_ip = pd.read_csv(f"{path_ifs_output}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
     data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc")
     varcloud_ds = xr.open_dataset(f"{path_varcloud}/{file_varcloud}").swap_dims(time="Time", height="Height").rename(
         Time="time")
 
     # %% resample varcloud data to minutely resolution
-    varcloud_ds = varcloud_ds.resample(time="1min").asfreq()
+    varcloud_ds = varcloud_ds.resample(time="1min").mean()
 
     # %% select lat and lon closest to flightpath
     lats, lons, times = varcloud_ds.Latitude, varcloud_ds.Longitude, varcloud_ds.time
     if t_interp:
         ds_sel = data_ml.sel(lat=lats[0], lon=lons[0], method="nearest").reset_coords(["lat", "lon"])
         ds_sel = ds_sel.interp(time=times[0])
-        for i in tqdm(range(1, len(lats))):
+        for i in tqdm(range(1, len(lats)), desc="Select closest IFS data"):
             tmp = data_ml.sel(lat=lats[i], lon=lons[i], method="nearest").reset_coords(["lat", "lon"])
             tmp = tmp.interp(time=times[i])
             ds_sel = xr.concat([ds_sel, tmp], dim="time")
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     else:
         ds_sel = data_ml.sel(lat=lats[0], lon=lons[0], time=times[0], method="nearest").reset_coords(["lat", "lon"])
         ds_sel["time"] = times[0]
-        for i in tqdm(range(1, len(lats))):
+        for i in tqdm(range(1, len(lats)), desc="Select closest IFS data"):
             tmp = data_ml.sel(lat=lats[i], lon=lons[i], time=times[i], method="nearest").reset_coords(["lat", "lon"])
             tmp["time"] = times[i]
             ds_sel = xr.concat([ds_sel, tmp], dim="time")
@@ -129,17 +129,9 @@ if __name__ == "__main__":
         # overwrite ice water content
         dsi_ml_out["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
         t = varcloud_sel.time
+        nav_data = nav_data_ip.loc[t.to_numpy()]  # get bahamas data with cos_sza
 
-        # add cos_sza for the grid point using only model data
-        sod = (t.dt.hour * 3600 + t.dt.minute * 60 + t.dt.second).to_numpy()
-        p_surf_nearest = dsi_ml_out.pressure_hl.isel(half_level=137).to_numpy() / 100  # hPa
-        t_surf_nearest = dsi_ml_out.temperature_hl.isel(half_level=137).to_numpy() - 273.15  # degree Celsius
-        ypos = varcloud_ds.Latitude.sel(time=t).to_numpy()
-        xpos = varcloud_ds.Longitude.sel(time=t).to_numpy()
-        sza = sp.get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest, t_surf_nearest)
-        cos_sza = np.cos(sza / 180. * np.pi)
-
-        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
+        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(nav_data.cos_sza,
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))
 
@@ -156,7 +148,7 @@ if __name__ == "__main__":
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(
-            path=f"{path_ecrad}/ecrad_input_standard_{sod:7.1f}_sod{ending}_{version}.nc",
+            path=f"{path_ecrad}/ecrad_input_standard_{nav_data.seconds:7.1f}_sod{ending}_{version}.nc",
             format='NETCDF4_CLASSIC')
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
