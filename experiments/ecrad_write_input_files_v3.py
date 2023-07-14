@@ -133,7 +133,7 @@ if __name__ == "__main__":
         ds_sel = calculate_pressure_height(ds_sel)
 
     # %% loop through time steps and write one file per time step
-    for i in tqdm(range(len(varcloud_ds.time)), desc="Time loop"):
+    for i in tqdm(range(len(sim_time)), desc="Time loop"):
         t = sim_time[i]
         dsi_ml_out = ds_sel.sel(time=t).reset_coords("time")
         varcloud_sel = varcloud_ds.isel(time=i)
