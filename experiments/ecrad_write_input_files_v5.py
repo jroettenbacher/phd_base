@@ -103,7 +103,8 @@ if __name__ == "__main__":
             dsi_ml_out = ds_sel.sel(time=dt_nav_data[i], method="nearest")  # select closest time step
             ending = ""
 
-        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(nav_data_ip.cos_sza[i],
+        cos_sza = np.full((len(lat_circle), len(lon_circle)), fill_value=nav_data_ip.cos_sza[i])
+        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
                                                             dims=["lat", "lon"],
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))

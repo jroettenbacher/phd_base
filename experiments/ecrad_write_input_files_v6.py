@@ -109,7 +109,8 @@ if __name__ == "__main__":
             ending = ""
 
         n_rgrid = len(ds_sel.rgrid)
-        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(nav_data_ip.cos_sza[i],
+        cos_sza = np.full(n_rgrid, fill_value=nav_data_ip.cos_sza[i])
+        dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
                                                             dims=["rgrid"],
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))
@@ -142,8 +143,11 @@ if __name__ == "__main__":
         return None
 
 
-    Parallel(n_jobs=cpu_count() - 2)(delayed(write_ecrad_input_file)(data_ml, closest_latlons, t_interp, dt_nav_data,
-                                                                     nav_data_ip, path_ecrad, i)
-                                     for i in tqdm(range(0, idx)))
+    # Parallel(n_jobs=cpu_count() - 2)(delayed(write_ecrad_input_file)(data_ml, closest_latlons, t_interp, dt_nav_data,
+    #                                                                  nav_data_ip, path_ecrad, i)
+    #                                  for i in tqdm(range(0, idx)))
+
+    for i in tqdm(range(0, idx)):
+        write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, nav_data_ip, path_ecrad, i)
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
