@@ -101,6 +101,13 @@ cirrus_hl_overview.py
 .. automodule:: analysis.halo_ac3_ecrad_3D_case_study
 
 
+|haloac3| ecRad VarCloud retrieval
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Script:* :py:mod:`analysis.halo_ac3_case_study_ecrad_varcloud_v2.py`
+
+.. automodule:: analysis.halo_ac3_case_study_ecrad_varcloud_v2
+
 SMART
 -----
 
