@@ -585,6 +585,8 @@ def apply_ice_effective_radius(ds: xr.Dataset) -> xr.Dataset:
         chunk_dict = {"level": 10, "lat": 10, "lon": 10}
     elif "time" not in ds.dims and "lat" not in ds.dims and "lon" not in ds.dims:
         chunk_dict = {"level": 10}
+    elif "time" in ds.dims and "level" in ds.dims:
+        chunk_dict = {"time": 10, "level": 10}
     else:
         raise ValueError(f"Input dimensions {ds.dims} do not match any combination of expected dimensions")
 
