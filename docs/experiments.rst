@@ -27,6 +27,8 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 
 * ``IFS_namelist_jr_20220411_v1.nam``: for flight RF17 with Fu-IFS ice model
 * ``IFS_namelist_jr_20220411_v2.nam``: for flight RF17 with Baran2017 ice model (deprecated)
+* ``IFS_namelist_jr_20220411_v3.1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and `overlap_decorr_length = 1028 m`
+* ``IFS_namelist_jr_20220411_v3.2.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and `overlap_decorr_length = 450 m`
 * ``IFS_namelist_jr_20220411_v4.nam``: for flight RF17 with Yi ice model
 * ``IFS_namelist_jr_20220411_v5.nam``: for flight RF17 with Fu-IFS ice model and 3D parameterizations enabled
 * ``IFS_namelist_jr_20220411_v6.nam``: for flight RF17 with Baran2016 ice model and 3D parameterizations enabled
@@ -44,6 +46,7 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v17.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input (input version v8)
 * ``IFS_namelist_jr_20220411_v18.nam``: for flight RF17 with Baran2016 ice model using IFS data from its original O1280 grid (input version v6)
 * ``IFS_namelist_jr_20220411_v19.nam``: for flight RF17 with Yi ice model using IFS data from its original O1280 grid (input version v6)
+* ``IFS_namelist_jr_20220411_v20.nam``: for flight RF17 with Baran2016 ice model using IFS data from its original O1280 grid and the varcloud retrieval for ciwc and re_ice input for the below cloud section (input version v7)
 
 
 |haloac3| **2022-04-12**
