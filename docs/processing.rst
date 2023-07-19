@@ -421,9 +421,9 @@ ecRad
 
 `ecRad <https://confluence.ecmwf.int/display/ECRAD>`_ is the radiation scheme used in the ECMWF's IFS numerical weather prediction model.
 For my PhD we are comparing measured radiative fluxes with simulated fluxes along the flight track.
-For this we run ecRad in a offline mode and adjust input parameters.
+For this we run ecRad in an offline mode and adjust input parameters.
 Those experiments are documented in :ref:`experiments:Experiments`.
-Here the general processing of ecRad is described.
+Here the general processing with ecRad is described.
 
 **Notes**
 
@@ -439,6 +439,16 @@ General Notes on setting up ecRad
 - To avoid a floating point error when running ecrad, run ``create_practical.sh`` from the ecrad ``practical`` folder in the directory of the ecRad executable once. Somehow the data link is needed to avoid this error. (for version 1.4.1)
 - changing the verbosity in the namelist files causes an floating point error (for version 1.4.1)
 - decided to use ecRad version 1.5.0 for PhD
+
+*Thoughts on the solar zenith angle:*
+
+The ultimate goal is to compare irradiances measured by aircraft with the ones simulated by ecRad.
+A big influence on these irradiances in the Arctic is the solar zenith angle or the cosine thereof.
+In principle we search for the closest IFS grid point and use this data as input to ecRad.
+However, for the calculation of the solar zenith angle we should not use the latitude and longitude value of the grid point as these are probably slightly off of the values recorded by the aircraft.
+This slight offset in position between aircraft and grid point can cause a big difference in solar zenith angle and thus in the simulated irradiances.
+To avoid additional uncertainty we therefore calculate the solar zenith angle using the latitude and longitude value of the aircraft.
+As we compare minutely simulations to minutely averages of the measured data, we also take the minutely mean of the BAHAMAS data to get the aircraft's location.
 
 **Folder Structure**
 
@@ -470,10 +480,33 @@ Workflow with ecRad
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options as you want them to be (see script for details)
 #. Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length |rarr| choose one value which is representative for the period you want to study
 #. Run :ref:`processing:ecrad_write_input_files.py`
-#. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input``
-#. Run :ref:`processing:ecrad_merge_files.py` to generate merged input and output files for and from the ecRad simulation
-#. Run :ref:`processing:ecrad_processing.py` to generate one merged file from input and output files for and from the ecRad simulation with additional variables
-#. Run :ref:`processing:ecrad_merge_radiative_properties.py` to generate one merged radiative properties file from the single files given by the ecRad simulation
+#. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input`` and then runs the following processing steps
+
+    #. Run :ref:`processing:ecrad_merge_radiative_properties.py` to generate one merged radiative properties file from the single files given by the ecRad simulation
+    #. Run :ref:`processing:ecrad_merge_files.py` to generate merged input and output files for and from the ecRad simulation
+    #. Run :ref:`processing:ecrad_processing.py` to generate one merged file from input and output files for and from the ecRad simulation with additional variables
+
+In general one can either vary the input to ecRad or the given namelist.
+For this purpose different input versions can be/were created using modified copies of :py:mod:`ecrad_write_input_files.py`.
+They can be found in the ``experiments`` folder.
+An overview of which input versions should be run with which namelist versions can be found in the following table.
+The version numbers reflect the process in which experiments were thought of or conducted.
+With version 6 we switched from the interpolated regular lat lon grid (F1280) to the original grid resolution of the IFS which is a octahedral reduced gaussian grid (O1280).
+
+=============   ==============================  =================
+Input version   Namelist version                Short description
+=============   ==============================  =================
+1               1, 2, 3.1, 3.2, 4, 5, 6, 7, 12  Original along track data from F1280 IFS output
+2               8, 9                            Use VarCloud retrieval as iwc and |re-ice| input along flight track
+3               10                              Use VarCloud retrieval for below cloud simulation
+4               11                              Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc
+5               13                              Set albedo to open ocean
+5.1             13.1                            Set albedo to 0.99
+6               15, 18, 19                      Along track data from O1280 IFS output (used instead of v1)
+7               16, 20                          As v3 but with O1280 IFS output
+8               17                              As v2 but with O1280 IFS output
+9               14                              Turn on aerosol and use CAMS data for it
+=============   ==============================  =================
 
 IFS/CAMS Download
 ^^^^^^^^^^^^^^^^^
@@ -490,13 +523,18 @@ IFS/CAMS Preprocessing
 ^^^^^^^^^^^^^^^^^^^^^^
 
 IFS/CAMS data comes in grib format.
-To convert it to netcdf and rename the parameters according to the ecmwf codes run
+To convert it to netcdf and rename the parameters according to the ECMWF codes run
 
 .. code-block:: shell
 
    cdo -t ecmwf -f nc copy infile.grb outfile.nc
 
 on each file.
+
+We want to get yearly monthly means from the CAMS reanalysis.
+For this we download 3-hourly data and preprocess it on the ECMWF server to avoid downloading a huge amount of data.
+
+CAMS preprocessing script: :py:mod:`processing.halo_ac3_preprocess_cams_data_on_ecmwf.py`
 
 The CAMS monthly files are not so big.
 Thus, you can merge them into one big file and run the above command only on one file.
@@ -539,9 +577,9 @@ The ``radiative_properties.nc`` file which is optionally generated in each run d
 
 **Required User Input:**
 
-* -t: use the time interpolated data
+* -t: use the time interpolated data (default: False)
 * -d yyyymmdd: give the date to be processed
-* -v v1: select which version (experimental setup) of the namelist to use (see :ref:`experiments:ecRad namelists and experiments` for details on version)
+* -v v1: select which namelist version (experimental setup) to use (see :ref:`experiments:ecRad namelists and experiments` for details on version)
 * -i v1: select which input version to use
 
 **Output:**
@@ -563,6 +601,10 @@ ecrad_execute_IFS_single.sh
 
 As above but runs only one file which has to be defined in the script.
 
+ecrad_merge_radiative_properties.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_merge_radiative_properties
+
 ecrad_merge_files.py
 ^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_merge_files
@@ -570,10 +612,6 @@ ecrad_merge_files.py
 ecrad_processing.py
 ^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_processing
-
-ecrad_merge_radiative_properties.py
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.ecrad_merge_radiative_properties
 
 
 GoPro Time Lapse quicklooks
