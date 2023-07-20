@@ -559,12 +559,12 @@ def longitude_values_for_gaussian_grid(latitudes: np.array,
 
     """
     assert len(latitudes) == len(n_points), "Number of latitudes does not match number of points given!"
-    steps = 360 / n_points
-    lon_values = [np.arange(0, 360, step) for step in steps]
+    lon_values = [np.linspace(0, 360, num=points, endpoint=False) for points in n_points]
     lon_values_out = np.array([])
     lon_values_list = list()
-    for lons in lon_values:
+    for i, lons in enumerate(lon_values):
         all_lons = np.where(lons > 180, (lons+180)%360 - 180, lons)
+        assert len(all_lons) == len(np.unique(all_lons)), f"Non unique longitude values found for {i}! Check input!"
         if longitude_boundaries is not None:
             all_lons = all_lons[(all_lons >= longitude_boundaries[0]) & (all_lons <= longitude_boundaries[1])]
             all_lons.sort()
