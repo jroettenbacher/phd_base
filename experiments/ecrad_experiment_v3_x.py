@@ -12,8 +12,7 @@ Input file from dropsonde location at 11:01 UTC: `ecrad_input_standard_39660.0_s
 * ``IFS_namelist_jr_20220411_v3.1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and `overlap_decorr_length = 1028 m`
 * ``IFS_namelist_jr_20220411_v3.2.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and `overlap_decorr_length = 450 m`
 
-Results
-^^^^^^^^
+**Results**
 
 The actual calculated overlap decorrelation length for the location at 11:01 UTC is 482.19 m.
 
@@ -46,8 +45,11 @@ However, :math:`C` cannot be known from model data alone and thus the overlap pa
 
 The other option is to use the mean cloud overlap decorrelation length calculated for the case study period.
 
-| Case study period: 2022-04-11 10:48:47 - 2022-04-11 12:00:32
+| Case study period for RF17: 2022-04-11 10:48:47 - 2022-04-11 12:00:32
 | Mean cloud overlap decorrelation length for case study period: **482.87 m**
+
+| Case study period for RF18: 2022-04-12 11:03:36 - 2022-04-12 12:15:45
+| Mean overlap decorrelation length for case study period: **453.10 m**
 
 *author*: Johannes Röttenbacher
 """
