@@ -18,7 +18,6 @@ Use a processed IFS output file on a O1280 grid and generate one ecRad input fil
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
-    import pylim.solar_position as sp
     from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
     import numpy as np
     import scipy.spatial as ssp
@@ -28,7 +27,6 @@ if __name__ == "__main__":
     import time
     from distutils.util import strtobool
     from tqdm import tqdm
-    from joblib import Parallel, delayed, cpu_count
 
     start = time.time()
 
@@ -88,6 +86,7 @@ if __name__ == "__main__":
     dist, idxs = ifs_tree.query(points, k=33)  # query the tree
     closest_latlons = ifs_tree.data[idxs]
 
+
     def write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, nav_data_ip, path_ecrad, i):
         """
         Helper function to be called in parallel to speed up file creation.
@@ -97,7 +96,7 @@ if __name__ == "__main__":
 
         """
         # select the 33 nearest grid points around closest grid point
-        latlon_sel = [(x, y) for x,y in closest_latlons[i]]
+        latlon_sel = [(x, y) for x, y in closest_latlons[i]]
         ds_sel = data_ml.sel(rgrid=latlon_sel)
         dt_time = dt_nav_data[i]
 
@@ -142,10 +141,6 @@ if __name__ == "__main__":
 
         return None
 
-
-    # Parallel(n_jobs=cpu_count() - 2)(delayed(write_ecrad_input_file)(data_ml, closest_latlons, t_interp, dt_nav_data,
-    #                                                                  nav_data_ip, path_ecrad, i)
-    #                                  for i in tqdm(range(0, idx)))
 
     for i in tqdm(range(0, idx)):
         write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, nav_data_ip, path_ecrad, i)

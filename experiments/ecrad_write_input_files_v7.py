@@ -32,7 +32,6 @@ if __name__ == "__main__":
     import pandas as pd
     import time
     from tqdm import tqdm
-    # from joblib import cpu_count, delayed, Parallel
 
     start = time.time()
 
@@ -173,11 +172,6 @@ if __name__ == "__main__":
 
         return None
 
-
-    # somehow this throws a PickleError
-    # Parallel(n_jobs=cpu_count() - 2)(delayed(write_ecrad_input_file)(data_ml, varcloud_ds, bahamas_ds, closest_latlons,
-    #                                                                  sim_time.to_numpy(), path_ecrad, i)
-    #                                  for i in tqdm(range(0, idx)))
 
     for i in tqdm(range(0, idx)):
         write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i)
