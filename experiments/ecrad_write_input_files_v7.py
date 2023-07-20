@@ -81,26 +81,43 @@ if __name__ == "__main__":
 
     data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_O1280_processed.nc")
     data_ml = data_ml.set_index(rgrid=["lat", "lon"])
-    varcloud_ds = xr.open_dataset(f"{path_varcloud}/{file_varcloud}").swap_dims(time="Time", height="Height").rename(
-        Time="time")
+    varcloud_ds = (xr.open_dataset(f"{path_varcloud}/{file_varcloud}")
+                   .swap_dims(time="Time", height="Height")
+                   .rename(Time="time"))
     bahamas_ds = reader.read_bahamas(f"{path_bahamas}/{file_bahamas}")
 
     # %% select only case study time which features the cloud that HALO also underpassed
-    sel_time = slice(pd.to_datetime("2022-04-11 10:49"), pd.to_datetime("2022-04-11 11:04"))
-    sim_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1s")
+    if key == "RF17":
+        sel_time = slice(pd.to_datetime("2022-04-11 10:49"), pd.to_datetime("2022-04-11 11:04"))
+        sim_time = pd.date_range("2022-04-11 11:35", "2022-04-11 11:50", freq="1s")
+    elif key == "RF18":
+        sel_time = slice(pd.to_datetime("2022-04-12 11:04"), pd.to_datetime("2022-04-12 11:24"))
+        sim_time = pd.date_range("2022-04-12 11:41", "2022-04-12 12:14", freq="1s")
+    else:
+        raise KeyError(f"No below cloud section available for flight {flight}")
 
-    # %% resample varcloud data to secondly resolution
-    new_index = pd.date_range(str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy()),
-                              str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy()), freq="1s")
+    # %% reindex varcloud data to round second resolution
+    start_time_str = str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy())
+    end_time_str = str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy())
+    new_index = pd.date_range(start_time_str, end_time_str, freq="1s")
     varcloud_ds = varcloud_ds.reindex(time=new_index, method="bfill")
-    varcloud_ds = varcloud_ds.sel(time=sel_time)
-    # reverse varcloud data as the last retrieval point is the first point that HALO underpasses on its way back
-    varcloud_ds = varcloud_ds.sortby("time", ascending=False)
+
+    # %% replace time index of varcloud data with a time index that has as many values as sim_time is long
+    varcloud_ds = varcloud_ds.sel(time=sel_time)  # select the above cloud time
+    new_index = pd.date_range(str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy()),
+                              str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy()),
+                              periods=len(sim_time))
+    # this "stretches" the varcloud data over the time range of the simulation
+    varcloud_ds = varcloud_ds.reindex(time=new_index, method="nearest")
+    if key == "RF17":
+        # reverse varcloud data as the last retrieval point is the first point that HALO underpasses on its way back
+        # not needed for RF18 as this was a circle
+        varcloud_ds = varcloud_ds.sortby("time", ascending=False)
 
     # %% select bahamas data for simulation
     bahamas_ds = bahamas_ds.sel(time=sim_time)
 
-# %% loop through time steps and write one file per time step
+    # %% loop through time steps and write one file per time step
     lats, lons = bahamas_ds.IRS_LAT, bahamas_ds.IRS_LON
     idx = len(sim_time)
     ifs_lat_lon = np.column_stack((data_ml.lat, data_ml.lon))
