@@ -25,36 +25,54 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 
 |haloac3| **2022-04-11**
 
-* ``IFS_namelist_jr_20220411_v1.nam``: for flight RF17 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220411_v2.nam``: for flight RF17 with Baran2017 ice model (deprecated)
-* ``IFS_namelist_jr_20220411_v3.1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and `overlap_decorr_length = 1028 m`
-* ``IFS_namelist_jr_20220411_v3.2.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and `overlap_decorr_length = 450 m`
-* ``IFS_namelist_jr_20220411_v4.nam``: for flight RF17 with Yi ice model
-* ``IFS_namelist_jr_20220411_v5.nam``: for flight RF17 with Fu-IFS ice model and 3D parameterizations enabled
-* ``IFS_namelist_jr_20220411_v6.nam``: for flight RF17 with Baran2016 ice model and 3D parameterizations enabled
-* ``IFS_namelist_jr_20220411_v7.nam``: for flight RF17 with Baran2016 ice model
-* ``IFS_namelist_jr_20220411_v8.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input (input version v2)
-* ``IFS_namelist_jr_20220411_v9.nam``: for flight RF17 with Baran2016 ice model using varcloud retrieval for ciwc and re_ice input (input version v2)
-* ``IFS_namelist_jr_20220411_v10.nam``: for flight RF17 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice for the below cloud section as well (input version v3)
-* ``IFS_namelist_jr_20220411_v11.nam``: for flight RF17 with Fu-IFS ice model using ciwc as q_ice instead of sum(ciwc, cswc) (input version v4)
-* ``IFS_namelist_jr_20220411_v12.nam``: for flight RF17 with Fu-IFS ice model using general cloud optics
-* ``IFS_namelist_jr_20220411_v13.nam``: for flight RF17 with Fu-IFS ice model setting albedo to open ocean (input version v5)
-* ``IFS_namelist_jr_20220411_v13.1.nam``: for flight RF17 with Fu-IFS ice model setting albedo to 0.99 (input version v5.1)
-* ``IFS_namelist_jr_20220411_v14.nam``: for flight RF17 with Fu-IFS ice model including aerosol in run (TBD, input version v9)
-* ``IFS_namelist_jr_20220411_v15.nam``: for flight RF17 with Fu-IFS ice model using IFS data from its original O1280 grid (input version v6)
-* ``IFS_namelist_jr_20220411_v16.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input for the below cloud section (input version v7)
-* ``IFS_namelist_jr_20220411_v17.nam``: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input (input version v8)
-* ``IFS_namelist_jr_20220411_v18.nam``: for flight RF17 with Baran2016 ice model using IFS data from its original O1280 grid (input version v6)
-* ``IFS_namelist_jr_20220411_v19.nam``: for flight RF17 with Yi ice model using IFS data from its original O1280 grid (input version v6)
-* ``IFS_namelist_jr_20220411_v20.nam``: for flight RF17 with Baran2016 ice model using IFS data from its original O1280 grid and the varcloud retrieval for ciwc and re_ice input for the below cloud section (input version v7)
-
+* ``IFS_namelist_jr_20220411_v1.nam``: for RF17 with **Fu-IFS** ice model
+* ``IFS_namelist_jr_20220411_v2.nam``: for RF17 with **Baran2017** ice model (deprecated)
+* ``IFS_namelist_jr_20220411_v3.1.nam``: for RF17 with Fu-IFS ice model and `overlap_decorr_length = 1028 m`
+* ``IFS_namelist_jr_20220411_v3.2.nam``: for RF17 with Fu-IFS ice model and `overlap_decorr_length = 450 m`
+* ``IFS_namelist_jr_20220411_v4.nam``: for RF17 with **Yi** ice model
+* ``IFS_namelist_jr_20220411_v5.nam``: for RF17 with **Fu-IFS** ice model and **3D** parameterizations enabled
+* ``IFS_namelist_jr_20220411_v6.nam``: for RF17 with **Baran2016** ice model and **3D** parameterizations enabled
+* ``IFS_namelist_jr_20220411_v7.nam``: for RF17 with **Baran2016** ice model
+* ``IFS_namelist_jr_20220411_v8.nam``: for RF17 with **Fu-IFS** ice model using **varcloud** retrieval for ciwc and re_ice input (input version v2)
+* ``IFS_namelist_jr_20220411_v9.nam``: for RF17 with **Baran2016** ice model using **varcloud** retrieval for ciwc and re_ice input (input version v2)
+* ``IFS_namelist_jr_20220411_v10.nam``: for RF17 with **Fu-IFS** ice model using **varcloud** retrieval for ciwc and re_ice for the **below cloud** section as well (input version v3)
+* ``IFS_namelist_jr_20220411_v11.nam``: for RF17 with **Fu-IFS** ice model using ciwc as q_ice instead of sum(ciwc, cswc) (input version v4)
+* ``IFS_namelist_jr_20220411_v12.nam``: for RF17 with **Fu-IFS** ice model using general cloud optics
+* ``IFS_namelist_jr_20220411_v13.nam``: for RF17 with **Fu-IFS** ice model setting albedo to open ocean (input version v5)
+* ``IFS_namelist_jr_20220411_v13.1.nam``: for RF17 with **Fu-IFS** ice model setting albedo to 0.99 (input version v5.1)
+* ``IFS_namelist_jr_20220411_v14.nam``: for RF17 with **Fu-IFS** ice model including aerosol in run (TBD, input version v9)
+* ``IFS_namelist_jr_20220411_v15.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220411_v16.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
+* ``IFS_namelist_jr_20220411_v17.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* ``IFS_namelist_jr_20220411_v18.nam``: for RF17 with **Baran2016** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220411_v19.nam``: for RF17 with **Yi** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220411_v20.nam``: for RF17 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
+* ``IFS_namelist_jr_20220411_v21.nam``: for RF17 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* ``IFS_namelist_jr_20220411_v22.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **3D** parameterizations enabled (input version **v6**)
+* ``IFS_namelist_jr_20220411_v23.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input and **3D** parameterizations enabled (input version **v8**)
+* ``IFS_namelist_jr_20220411_v24.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **3D** parameterizations enabled (input version **v6**)
+* ``IFS_namelist_jr_20220411_v25.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input and **3D** parameterizations enabled (input version **v8**)
+* ``IFS_namelist_jr_20220411_v26.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
+* ``IFS_namelist_jr_20220411_v27.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
 
 |haloac3| **2022-04-12**
 
-* ``IFS_namelist_jr_20220412_v1.nam``: for flight RF18 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220412_v8.nam``: for flight RF18 with Fu-IFS ice model using varcloud retrieval for ciwc and re_ice input
-* ``IFS_namelist_jr_20220412_v11.nam``: for flight RF18 with Fu-IFS ice model using ciwc as q_ice instead of sum(ciwc, cswc)
-
+* ``IFS_namelist_jr_20220412_v1.nam``: for RF18 with **Fu-IFS** ice model
+* ``IFS_namelist_jr_20220412_v8.nam``: for RF18 with **Fu-IFS** ice model using **varcloud** retrieval for ciwc and re_ice input
+* ``IFS_namelist_jr_20220412_v11.nam``: for RF18 with **Fu-IFS** ice model using ciwc as q_ice instead of sum(ciwc, cswc)
+* ``IFS_namelist_jr_20220412_v15.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220412_v16.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
+* ``IFS_namelist_jr_20220412_v17.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* ``IFS_namelist_jr_20220412_v18.nam``: for RF18 with **Baran2016** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220412_v19.nam``: for RF18 with **Yi** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220412_v20.nam``: for RF18 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
+* ``IFS_namelist_jr_20220412_v21.nam``: for RF18 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* ``IFS_namelist_jr_20220412_v22.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **3D** parameterizations enabled (input version **v6**)
+* ``IFS_namelist_jr_20220412_v23.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input and **3D** parameterizations enabled (input version **v8**)
+* ``IFS_namelist_jr_20220412_v24.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **3D** parameterizations enabled (input version **v6**)
+* ``IFS_namelist_jr_20220412_v25.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input and **3D** parameterizations enabled (input version **v8**)
+* ``IFS_namelist_jr_20220412_v26.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
+* ``IFS_namelist_jr_20220412_v27.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
 
 Overlap decorrelation length experiment
 ---------------------------------------
