@@ -144,7 +144,7 @@ if __name__ == "__main__":
         for var in ["co2_vmr", "n2o_vmr", "ch4_vmr", "o2_vmr", "cfc11_vmr", "cfc12_vmr", "time"]:
             dsi_ml_out[var] = dsi_ml_out[var].isel(column=0)
         n_column = dsi_ml_out.dims["column"]  # get number of columns
-        dsi_ml_out["column"] = np.arange(1, n_column + 1)
+        dsi_ml_out["column"] = np.arange(n_column)
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(

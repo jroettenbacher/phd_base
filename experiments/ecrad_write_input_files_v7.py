@@ -26,7 +26,7 @@ if __name__ == "__main__":
     from metpy.calc import density, mixing_ratio_from_specific_humidity
     from metpy.units import units
     import numpy as np
-    import scipy.spatial as ssp
+    from sklearn.neighbors import BallTree
     import xarray as xr
     import os
     import pandas as pd
@@ -121,21 +121,15 @@ if __name__ == "__main__":
     lats, lons = bahamas_ds.IRS_LAT, bahamas_ds.IRS_LON
     idx = len(sim_time)
     ifs_lat_lon = np.column_stack((data_ml.lat, data_ml.lon))
-    ifs_tree = ssp.KDTree(ifs_lat_lon)  # build the kd tree for nearest neighbour look up
+    ifs_tree = BallTree(np.deg2rad(ifs_lat_lon), metric="haversine")  # build the tree with haversine distances
     # generate an array with lat, lon values from the flight position
-    points = np.column_stack((lats.to_numpy(), lons.to_numpy()))
-    dist, idxs = ifs_tree.query(points, k=1)  # query the tree
-    closest_latlons = ifs_tree.data[idxs]
+    points = np.deg2rad(np.column_stack((lats.to_numpy(), lons.to_numpy())))
+    dist, idxs = ifs_tree.query(points, k=1)  # query the tree for the closest point
+    closest_latlons = ifs_lat_lon[idxs.flatten()]
+    # a sphere with radius 1 is assumed so multiplying by Earth's radius gives the distance in km
+    distances = dist.flatten() * 6371
 
-
-    def write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i):
-        """
-        Helper function to be called in parallel to speed up file creation.
-        Variables are from outer script.
-
-        Returns: ecRad input files
-
-        """
+    for i in tqdm(range(idx)):
         # select the nearest grid point to flight path
         latlon_sel = (closest_latlons[i][0], closest_latlons[i][1])
         t = sim_time[i]
@@ -175,10 +169,15 @@ if __name__ == "__main__":
         for var in ["co2_vmr", "n2o_vmr", "ch4_vmr", "o2_vmr", "cfc11_vmr", "cfc12_vmr", "time"]:
             dsi_ml_out[var] = dsi_ml_out[var].isel(column=0)
         n_column = dsi_ml_out.dims["column"]  # get number of columns
-        dsi_ml_out["column"] = np.arange(1, n_column + 1)
+        dsi_ml_out["column"] = np.arange(n_column)
         # overwrite lat lon values, somehow this is necessary
         for var in ["lat", "lon"]:
-            dsi_ml_out[var] = xr.DataArray(dsi_ml_out[var].to_numpy(), dims="columns")
+            dsi_ml_out[var] = xr.DataArray(dsi_ml_out[var].to_numpy(), dims="column")
+
+        # add distance to aircraft location
+        dsi_ml_out["distance"] = xr.DataArray(np.expand_dims(distances[i], axis=0), dims="column",
+                                              attrs=dict(long_name="distance", units="km",
+                                                         description="Haversine distance to aircraft location"))
 
         dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first dimension
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
@@ -186,11 +185,5 @@ if __name__ == "__main__":
         dsi_ml_out.to_netcdf(
             path=f"{path_ecrad}/ecrad_input_standard_{sod:7.1f}_sod_v7.nc",
             format='NETCDF4_CLASSIC')
-
-        return None
-
-
-    for i in tqdm(range(0, idx)):
-        write_ecrad_input_file(data_ml, varcloud_ds, bahamas_ds, closest_latlons, sim_time, path_ecrad, i)
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")

@@ -20,7 +20,7 @@ if __name__ == "__main__":
     import pylim.helpers as h
     from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
     import numpy as np
-    import scipy.spatial as ssp
+    from sklearn.neighbors import BallTree
     import xarray as xr
     import os
     import pandas as pd
@@ -80,21 +80,15 @@ if __name__ == "__main__":
     idx = len(nav_data_ip)
     dt_nav_data = nav_data_ip.index.to_pydatetime()
     ifs_lat_lon = np.column_stack((data_ml.lat, data_ml.lon))
-    ifs_tree = ssp.KDTree(ifs_lat_lon)  # build the kd tree for nearest neighbour look up
+    ifs_tree = BallTree(np.deg2rad(ifs_lat_lon), metric="haversine")
     # generate an array with lat, lon values from the flight position
-    points = np.column_stack((nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy()))
+    points = np.deg2rad(np.column_stack((nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy())))
     dist, idxs = ifs_tree.query(points, k=33)  # query the tree
-    closest_latlons = ifs_tree.data[idxs]
+    closest_latlons = ifs_lat_lon[idxs]
+    # a sphere with radius 1 is assumed so multiplying by Earth's radius gives the distance in km
+    distances = dist * 6371
 
-
-    def write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, nav_data_ip, path_ecrad, i):
-        """
-        Helper function to be called in parallel to speed up file creation.
-        Variables are from outer script.
-
-        Returns: ecRad input files
-
-        """
+    for i in tqdm(range(0, idx)):
         # select the 33 nearest grid points around closest grid point
         latlon_sel = [(x, y) for x, y in closest_latlons[i]]
         ds_sel = data_ml.sel(rgrid=latlon_sel)
@@ -121,7 +115,7 @@ if __name__ == "__main__":
         dsi_ml_out = dsi_ml_out.reset_index(["rgrid", "lat", "lon"])
         # overwrite the MultiIndex object with simple integers as column numbers
         # otherwise it can not be saved to a netCDF file
-        dsi_ml_out["rgrid"] = np.arange(0, dsi_ml_out.lat.shape[0])
+        dsi_ml_out["rgrid"] = np.arange(n_rgrid)
         # turn lat, lon, time into variables for cleaner output and to avoid later problems when merging data
         dsi_ml_out = dsi_ml_out.reset_coords(["lat", "lon", "time"]).drop_dims("reduced_points")
 
@@ -132,17 +126,15 @@ if __name__ == "__main__":
         variables = ["fractional_std"]
         for var in variables:
             dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": np.arange(n_rgrid)})
+        # add distance to aircraft location for each point
+        dsi_ml_out["distance"] = xr.DataArray(distances[i, :], dims="column",
+                                              attrs=dict(long_name="distance", units="km",
+                                                         description="Haversine distance to aircraft location"))
         dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first dimension
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(
             path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds[i]:7.1f}_sod{ending}_v6.nc",
             format='NETCDF4_CLASSIC')
-
-        return None
-
-
-    for i in tqdm(range(0, idx)):
-        write_ecrad_input_file(data_ml, closest_latlons, t_interp, dt_nav_data, nav_data_ip, path_ecrad, i)
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
