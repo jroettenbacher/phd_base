@@ -131,7 +131,7 @@ plt.rcdefaults()
 h.set_cb_friendly_colors()
 
 # %% read in and select closest column ecrad data
-ecrad_versions = ["v15", "v16", "v17", "v18"]
+ecrad_versions = ["v15", "v16", "v17", "v18", "v19", "v20"]
 ecrad_dict = dict()
 
 for k in ecrad_versions:
@@ -141,7 +141,7 @@ for k in ecrad_versions:
             ds = ds.sel(column=16, drop=True)  # select center column which corresponds to grid cell closest to aircraft
         else:
             # other versions have their nearest points selected via kdTree, thus the first column should be the closest
-            ds = ds.sel(column=1, drop=True)
+            ds = ds.sel(column=0, drop=True)
 
     ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
 
@@ -637,11 +637,76 @@ plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
 
+# %% plot BACARDI and ecRad below cloud including Yi
+ds16, ds15, ds18, ds19 = ecrad_dict["v16"], ecrad_dict["v15"], ecrad_dict["v18"], ecrad_dict["v19"]
+time_sel = slice(ds16.time[0], ds16.time[-1])
+hl_sel = height_level_da.sel(time=ds16.time, method="nearest").assign_coords(time=ds16.time)
+ecrad_plot = ds16.isel(half_level=hl_sel)
+ecrad_plot1 = ds15.isel(half_level=height_level_da).sel(time=time_sel)
+ecrad_plot2 = ds18.isel(half_level=height_level_da).sel(time=time_sel)
+ecrad_plot3 = ds19.isel(half_level=height_level_da).sel(time=time_sel)
+bacardi_lat = bacardi_ds["lat"].sel(time=time_sel)
+bacardi_lon = bacardi_ds["lon"].sel(time=time_sel)
+bacardi_plot = bacardi_ds["F_down_solar"].sel(time=time_sel)
+bacardi_error = bacardi_plot * 0.03
+
+plt.rc("font", size=19)
+_, ax = plt.subplots(figsize=(41 * h.cm , 21 * h.cm ))
+ax.plot(bacardi_plot.time, bacardi_plot, label="$F_{\downarrow , solar}$ BACARDI", lw=4)
+ax.fill_between(bacardi_plot.time, bacardi_plot + bacardi_error, bacardi_plot - bacardi_error, color=cbc[0],
+                alpha=0.5, label="BACARDI uncertainty")
+ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw, label="$F_{\downarrow , solar}$ ecRad Varcloud", lw=4)
+ax.plot(ecrad_plot1.time, ecrad_plot1.flux_dn_sw, marker="o", label="$F_{\downarrow , solar}$ ecRad IFS Fu-IFS", lw=4,
+        markersize=10, color=cbc[3])
+ax.plot(ecrad_plot2.time, ecrad_plot2.flux_dn_sw, marker="o", label="$F_{\downarrow , solar}$ ecRad IFS Baran2016", lw=4,
+        markersize=10, color=cbc[7])
+ax.plot(ecrad_plot3.time, ecrad_plot3.flux_dn_sw, marker="o", label="$F_{\downarrow , solar}$ ecRad IFS Yi", lw=4,
+        markersize=10, color=cbc[8])
+ax.legend(loc=4)
+ax.grid()
+h.set_xticks_and_xlabels(ax, pd.to_timedelta((ds16.time[-1] - ds16.time[0]).to_numpy()))
+ax.set_ylabel(f"Broadband Irradiance ({h.plot_units['flux_dn_sw']})")
+ax.set_xlabel("Time (UTC)", labelpad=-15)
+
+# add latitude and longitude axis
+axs2 = ax.twiny(), ax.twiny()
+xlabels = ["Latitude (°N)", "Longitude (°E)"]
+for i, ax2 in enumerate(axs2):
+    # Move twinned axis ticks and label from top to bottom
+    ax2.xaxis.set_ticks_position("bottom")
+    ax2.xaxis.set_label_position("bottom")
+
+    # Offset the twin axis below the host
+    ax2.spines["bottom"].set_position(("axes", -0.09 * (i + 1)))
+
+    # Turn on the frame for the twin axis, but then hide all
+    # but the bottom spine
+    ax2.set_frame_on(True)
+    ax2.patch.set_visible(False)
+
+    for sp in ax2.spines.values():
+        sp.set_visible(False)
+    ax2.spines["bottom"].set_visible(True)
+
+    ticklocs = ax.xaxis.get_ticklocs()  # get tick locations
+    ts = pd.to_datetime(mpl.dates.num2date(ticklocs)).tz_localize(None)  # convert matplotlib dates to pandas dates
+    xticklabels = [bacardi_lat.sel(time=ts).to_numpy(), bacardi_lon.sel(time=ts).to_numpy()]  # get xticklables
+    ax2.set_xticks(np.linspace(0.05, 0.95, len(ts)))
+    ax2.set_xticklabels(np.round(xticklabels[i], 2))
+    ax2.set_xlabel(xlabels[i], labelpad=-20)
+
+plt.tight_layout()
+figname = f"{plot_path}/{flight}_ecrad_varcloud_BACARDI_F_down_solar_below_cloud_2.png"
+plt.savefig(figname, dpi=300, bbox_inches="tight")
+plt.show()
+plt.close()
+
 # %% calculate differences between ecrad and bacardi
 ds15 = ecrad_dict["v15"].isel(half_level=height_level_da)
 ds16 = ecrad_dict["v16"]
 ds17 = ecrad_dict["v17"].isel(half_level=height_level_da.sel(time=ecrad_dict["v17"].time))
 ds18 = ecrad_dict["v18"].isel(half_level=height_level_da.sel(time=ecrad_dict["v18"].time))
+ds19 = ecrad_dict["v19"].isel(half_level=height_level_da.sel(time=ecrad_dict["v19"].time))
 hl_sel = height_level_da.sel(time=ds16.time, method="nearest").assign_coords(time=ds16.time)
 ds16 = ds16.isel(half_level=hl_sel)
 ifs_fdn = ds15.flux_dn_sw - bacardi_ds["F_down_solar"]
@@ -649,6 +714,9 @@ ifs_fup = ds15.flux_up_sw - bacardi_ds["F_up_solar"]
 baran_ifs_fdn = ds18.flux_dn_sw - bacardi_ds["F_down_solar"]
 baran_ifs_fup = ds18.flux_up_sw - bacardi_ds["F_up_solar"]
 baran_ifs_fdn_below = baran_ifs_fdn.sel(time=below_slice).to_numpy().flatten()
+yi_ifs_fdn = ds19.flux_dn_sw - bacardi_ds["F_down_solar"]
+yi_ifs_fup = ds19.flux_up_sw - bacardi_ds["F_up_solar"]
+yi_ifs_fdn_below = yi_ifs_fdn.sel(time=below_slice).to_numpy().flatten()
 ifs_fdn_above = ifs_fdn.sel(time=above_slice).to_numpy().flatten()
 ifs_fup_above = ifs_fup.sel(time=above_slice).to_numpy().flatten()
 ifs_fdn_below = ifs_fdn.sel(time=below_slice).to_numpy().flatten()
@@ -680,7 +748,6 @@ plt.close()
 # %% plot histogram ecRad VarCloud - BACARDI and ecRad IFS - BACARDI F down only
 bias_varcloud = np.mean(varcloud_fdn_below).to_numpy()
 bias_ifs = np.nanmean(ifs_fdn_below)
-bias_ifs_baran = np.nanmean(baran_ifs_fdn_below)
 wm2 = h.plot_units["flux_dn_sw"]
 binsize = 4
 bins = np.arange(-50, 29, binsize)
@@ -701,6 +768,7 @@ figname = f"{plot_path}/{flight}_ecrad-bacardi_varcloud_ifs_pdf_below_cloud.png"
 plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
+print(f"Mean Bias ({wm2})\nVarCloud: {bias_varcloud:.2f}\nIFS Fu-IFS: {bias_ifs:.2f}")
 
 # %% plot histogram ecRad baran2016 - BACARDI and ecRad IFS - BACARDI F down only
 bias_varcloud = np.mean(varcloud_fdn_below).to_numpy()
@@ -726,6 +794,32 @@ figname = f"{plot_path}/{flight}_ecrad-bacardi_baran_ifs_pdf_below_cloud.png"
 plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
+print(f"Mean Bias ({wm2})\nIFS Fu-IFS: {bias_ifs:.2f}\nIFS Baran2016: {bias_ifs_baran:.2f}")
+
+# %% plot histogram ecRad yi - BACARDI and ecRad IFS - BACARDI F down only
+bias_ifs = np.nanmean(ifs_fdn_below)
+bias_ifs_yi = np.nanmean(yi_ifs_fdn_below)
+wm2 = h.plot_units["flux_dn_sw"]
+binsize = 4
+bins = np.arange(-50, 29, binsize)
+_, ax = plt.subplots(figsize=(22 * h.cm , 13 * h.cm ))
+ax.hist([ifs_fdn_below, yi_ifs_fdn_below], density=True, histtype="step", lw=4, bins=bins, color=[cbc[3], cbc[7]],
+        label=["IFS Fu-IFS", "IFS Yi"])
+ax.text(0.02, 0.63, f"Binsize: {binsize} {wm2}", transform=ax.transAxes,
+        bbox=dict(boxstyle="round", fc="white"))
+# ax.text(0.015, 0.735, f"Mean Bias ({wm2})\nIFS Fu-IFS: {bias_ifs:.2f}\nIFS Baran2016: {bias_ifs_baran:.2f}",
+#         transform=ax.transAxes, bbox=dict(boxstyle="round", fc="white", alpha=0.5))
+ax.set(xlabel=f"Solar downward irradiance ecRad - BACARDI ({wm2})",
+       ylabel="Probability density function")
+ax.grid()
+ax.legend(loc=2)
+plt.tight_layout()
+
+figname = f"{plot_path}/{flight}_ecrad-bacardi_yi_ifs_pdf_below_cloud.png"
+plt.savefig(figname, dpi=300, bbox_inches="tight")
+plt.show()
+plt.close()
+print(f"Mean Bias ({wm2})\nIFS Fu-IFS: {bias_ifs:.2f}\nIFS Yi: {bias_ifs_yi:.2f}")
 
 # %% plot PDF of IWC retrieved and predicted
 time_sel = sel_time
@@ -807,7 +901,7 @@ plt.close()
 # %% plot IFS data
 t = "2022-04-11T15:00"
 plot_ds = ifs.cloud_fraction.sel(time=t).where(ifs.sel(time=t).pressure_full < 60000).sum(dim="level")
-extent = [-60, 30, 70, 90]
+extent = [-60, 30, 85, 90]
 x, y, z = plot_ds.lon.to_numpy(), plot_ds.lat.to_numpy(), plot_ds.to_numpy()
 # z = ds_plot1.unstack(["rgrid"])
 crs_data = ccrs.PlateCarree()
@@ -823,13 +917,55 @@ ax.plot(ins.lon, ins.lat, transform=crs_data, lw=3, color=cbc[3], label="HALO fl
 _.colorbar(cntr2, ax=ax, label="High Cloud Cover")
 
 
-# ax.plot(plot_ds.lon, plot_ds.lat, 'k.', ms=2, transform=crs_data)
+ax.plot(plot_ds.lon, plot_ds.lat, 'k.', ms=2, transform=crs_data)
 gl = ax.gridlines(crs=crs_data, linewidth=1, color='black', alpha=0.5, linestyle='--', draw_labels=True)
 gl.top_labels = False
 gl.left_labels = False
 gl.right_labels = True
 gl.xlines = True
 
+ax.set_title("IFS O1280 grid point coverage")
+
+figname = f"{plot_path}/{flight}_IFS_gridpoint_resolution.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot actual IFS grid points used
+plot_ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_v15.nc")
+plot_ds = xr.open_dataset(f"{ecrad_path}/ecrad_input/ecrad_input_standard_28500.0_sod_v6.nc")
+extent = [15, 30, 67, 70]
+lons, lats, values = plot_ds.lon.to_numpy(), plot_ds.lat.to_numpy(), plot_ds["skin_temperature"].to_numpy()
+# z = ds_plot1.unstack(["rgrid"])
+crs_data = ccrs.PlateCarree()
+crs_plot = ccrs.PlateCarree()
+
+_, ax = plt.subplots(figsize=h.figsize_wide, subplot_kw=dict(projection=crs_plot))
+# O1280
+ax.set_extent(extent, crs=crs_data)
+# ax.tricontour(x, y, z, levels=10, linewidths=0.5, colors='k', transform=crs_data)
+ax.coastlines()
+# for i, z in enumerate(values):
+#     try:
+cntr2 = ax.tricontourf(lons, lats, values, levels=10, cmap=h.cmaps["t"], transform=crs_data)
+ax.plot(ins.lon[::60], ins.lat[::60], marker="d", ls="", transform=crs_data, color=cbc[3], label="HALO flight path")
+ax.plot(lons[0], lats[0], 'r*', ms=4, transform=crs_data)
+ax.plot(lons, lats, 'k.', ms=2, transform=crs_data)
+    # except:
+    #     print(i)
+
+_.colorbar(cntr2, ax=ax, label="Skin Temperature (°C)")
+
+gl = ax.gridlines(crs=crs_data, linewidth=1, color='black', alpha=0.5, linestyle='--', draw_labels=True)
+gl.top_labels = False
+gl.left_labels = False
+gl.right_labels = True
+gl.xlines = True
+
+ax.set_title("IFS O1280 grid point coverage")
+
+figname = f"{plot_path}/{flight}_IFS_gridpoint_resolution_along_track.png"
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
