@@ -32,6 +32,8 @@ import cartopy.crs as ccrs
 from tqdm import tqdm
 from matplotlib import colors
 from metpy import constants as mc
+from metpy.calc import relative_humidity_from_specific_humidity
+from metpy.units import units as u
 
 h.set_cb_friendly_colors()
 cbc = h.get_cb_friendly_colors()
@@ -52,7 +54,8 @@ keys = ["RF17", "RF18"]
     slices,
     ecrad_orgs,
     ifs_ds,
-) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
+    dropsonde_ds
+) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
 
 for key in keys:
     flight = meta.flight_names[key]
@@ -64,6 +67,7 @@ for key in keys:
     ifs_path = f"{h.get_path('ifs', flight, campaign)}/{date}"
     ecrad_path = f"{h.get_path('ecrad', flight, campaign)}/{date}"
     varcloud_path = h.get_path("varcloud", flight, campaign)
+    dropsonde_path = h.get_path("dropsondes", flight, campaign)
 
     # filenames
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
@@ -72,10 +76,18 @@ for key in keys:
     libradtran_bb_thermal_si = f"HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_si_{date}_{key}.nc"
     ifs_file = f"ifs_{date}_00_ml_O1280_processed.nc"
     varcloud_file = [f for f in os.listdir(varcloud_path) if f.endswith(".nc")][0]
+    dropsonde_files = [f for f in os.listdir(dropsonde_path) if f.endswith("QC.nc")]
 
     # read in aircraft data
     bahamas_ds[key] = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
     bacardi = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
+
+    # read in dropsonde data
+    dropsondes = dict()
+    for file in dropsonde_files:
+        k = file[-11:-5]
+        dropsondes[k] = xr.open_dataset(f"{dropsonde_path}/{file}")
+    dropsonde_ds[key] = dropsondes
 
     # read in ifs data
     ifs_ds[key] = xr.open_dataset(f"{ifs_path}/{ifs_file}")
@@ -437,6 +449,58 @@ axs[1].text(0.03, 0.88, "b)", transform=axs[1].transAxes, bbox=dict(boxstyle="Ro
 plt.tight_layout()
 
 figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot temperature and humidity profiles from IFS and from dropsonde
+plt.rc("font", size=6.5)
+_, axs = plt.subplots(1, 4, figsize=(18 * h.cm, 10 * h.cm))
+for i, key in enumerate(keys):
+    ax = axs[i*2]
+    ifs_plot = ecrad_dicts[key]["v15"].sel(time=slices[key]["case"])
+
+    # Air temperature
+    for t in ifs_plot.time:
+        ifs_p = ifs_plot.sel(time=t)
+        ax.plot(ifs_p.temperature_hl, ifs_p.press_height_hl / 1000, color="grey", lw=0.5)
+    ds_plot = dropsonde_ds[key]
+    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823"]
+    for k in times:
+        ds = ds_plot[k]
+        ds = ds.where(~np.isnan(ds.tdry), drop=True)
+        ax.plot(ds.tdry + 273.15, ds.alt / 1000, label=f"Dropsonde {k[:2]}:{k[2:4]} UTC", lw=2)
+    ax.set(xlim=(215, 265), ylim=(0, 12), xlabel="Air temperature (K)", title=f"{key}")
+    ax.plot([], color="grey", label="IFS profiles")
+    ax.grid()
+
+    # RH
+    ax = axs[i*2+1]
+    ifs_plot = ecrad_dicts[key]["v15"].sel(time=slices[key]["case"])
+    for t in ifs_plot.time:
+        ifs_p = ifs_plot.sel(time=t)
+        rh = relative_humidity_from_specific_humidity(ifs_p.pressure_full * u.Pa, ifs_p.t * u.K, ifs_p.q * u("kg/kg"))
+        ax.plot(rh * 100, ifs_p.press_height_full / 1000, color="grey", lw=0.5)
+    ds_plot = dropsonde_ds[key]
+    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823"]
+    for k in times:
+        ds = ds_plot[k]
+        ds = ds.where(~np.isnan(ds.rh), drop=True)
+        ax.plot(ds.rh, ds.alt / 1000, label=f"Dropsonde {k[:2]}:{k[2:4]} UTC", lw=2)
+    ax.set(xlim=(0, 100), ylim=(0, 12), xlabel="Relative humidity (%)", title=f"{key}")
+    ax.plot([], color="grey", label="IFS profiles")
+    ax.legend()
+    ax.grid()
+
+axs[0].set_ylabel("Altitude (km)")
+axs[0].text(0.05, 0.95, "a)", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[1].text(0.05, 0.95, "b)", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[2].text(0.05, 0.95, "c)", transform=axs[2].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[3].text(0.05, 0.95, "d)", transform=axs[3].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+
+plt.tight_layout()
+
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_ifs_dropsonde_t_rh.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
