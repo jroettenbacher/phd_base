@@ -703,6 +703,11 @@ def get_model_level_of_altitude(altitude: xr.DataArray, model_ds: xr.Dataset, co
     else:
         raise ValueError(f"'coord' has to be either 'half_level' or 'level' but is '{coord}'")
 
+    assert len(model_ds[var].dims) == 2, (
+        f"{var} should be two dimensional!"
+        f" Remove dimension(s) {[d for d in model_ds[var].dims if d not in ['time', coord]]} from input!"
+    )
+
     for i in tqdm(range(ts)):
         height_level[i] = h.arg_nearest(model_ds[var][i, :].to_numpy(), alt[i].to_numpy())
 
