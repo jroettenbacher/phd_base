@@ -116,6 +116,12 @@ norms = dict(t=colors.TwoSlopeNorm(vmin=200, vcenter=235, vmax=280), clwc=colors
              od=colors.LogNorm(vmax=10), od_scat=colors.LogNorm(),
              od_int=colors.LogNorm(vmax=10), scat_od_int=colors.LogNorm())
 
+# plotting dictionaries for BACARDI
+bacardi_labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestrial=r"$F_{\downarrow, terrestrial}$",
+                      F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$",
+                      F_net_solar=r"$F_{net, solar}$", F_net_terrestrial=r"$F_{net, terrestrial}$",
+                      CRE_solar=r"CRE$_{solar}$", CRE_terrestrial=r"CRE$_{terrestrial}$",
+                      CRE_total=r"CRE$_{total}$")
 
 def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:
     """
