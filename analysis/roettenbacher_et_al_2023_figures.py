@@ -119,28 +119,53 @@ for key in keys:
     bacardi["CRE_solar"] = bacardi["F_net_solar"] - bacardi["F_net_solar_sim"]
     bacardi["CRE_terrestrial"] = bacardi["F_net_terrestrial"] - bacardi["F_net_terrestrial_sim"]
     bacardi["CRE_total"] = bacardi["CRE_solar"] + bacardi["CRE_terrestrial"]
+    bacardi["error"] = np.abs(bacardi["F_down_solar"] * 0.03)
     bacardi_ds[key] = bacardi
 
     # read in ecrad data
     ecrad_versions = ["v15", "v16", "v17", "v18", "v19", "v20", "v21"]
-    ecrad_dict = dict()
-    ecrad_orgs[key] = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_v15.nc")
+    ecrad_dict, ecrad_org = dict(), dict()
+    bacardi_res = bacardi.resample(time="1Min").mean(dim="time")  # resample BACARDI to 1 min
+    bacardi_res = bacardi_res.expand_dims(dict(column=np.arange(0, 33))).copy()
+
 
     for k in ecrad_versions:
         ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{k}.nc")
+
         if "column" in ds.dims:
+            height_sel = ecrad.get_model_level_of_altitude(bacardi_res.sel(column=0).alt, ds.sel(column=0), "half_level")
+            ecrad_ds = ds.isel(half_level=height_sel)
+            ds["flux_dn_sw_diff"] = ecrad_ds.flux_dn_sw - bacardi_res.F_down_solar
+            ds["error"] = xr.DataArray(
+                np.array(
+                    [
+                        ds["flux_dn_sw_diff"].min(dim="column").to_numpy(),
+                        ds["flux_dn_sw_diff"].max(dim="column").to_numpy(),
+                    ]
+                ),
+                coords=dict(x=[0, 1], time=ecrad_ds.time),
+            )
+            ecrad_org[k] = ds.copy(deep=True)
             if k == "v1":
                 ds = ds.sel(column=16,
                             drop=True)  # select center column which corresponds to grid cell closest to aircraft
             else:
-                # other versions have their nearest points selected via kdTree, thus the first column should be the closest
+                # other versions have their nearest points selected via
+                # kdTree, thus the first column should be the closest
                 ds = ds.sel(column=0, drop=True)
+        else:
+            # height_sel = ecrad.get_model_level_of_altitude(bacardi_res.sel(column=0).alt, ds, "half_level")
+            # ecrad_ds = ds.isel(half_level=height_sel)
+            # ds["flux_dn_sw_diff"] = ecrad_ds.flux_dn_sw - bacardi_res.F_down_solar
+            # ecrad_org[k] = ds.copy(deep=True)
+            pass
 
         ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
 
         ecrad_dict[k] = ds.copy()
 
     ecrad_dicts[key] = ecrad_dict
+    ecrad_orgs[key] = ecrad_org
 
     # get flight segmentation and select below and above cloud section
     fl_segments = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
@@ -208,7 +233,7 @@ plt.show()
 plt.close()
 
 # %% minimum distance between two grid points
-ds = ecrad_orgs["RF17"].sel(column=0)
+ds = ecrad_orgs["RF17"]["v15"].sel(column=0)
 a = 6371229  # radius of sphere assumed by IFS
 distances_between_longitudes = np.pi / 180 * a * np.cos(np.deg2rad(ds.lat)) / 1000
 distances_between_longitudes.min()
@@ -504,6 +529,113 @@ figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_ifs_dropsonde_t_rh.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
+
+# %% plot above cloud comparison as scatter plot
+plt.rc("font", size=7)
+label = ["a)", "b)"]
+_, axs = plt.subplots(1, 2, figsize=(16 * h.cm, 9 * h.cm))
+
+for i, key in enumerate(keys):
+    ax = axs[i]
+    above_sel = (bahamas_ds[key].IRS_ALT > 11000).resample(time="1Min").first()
+    bacardi_res = bacardi_ds[key].resample(time="1Min").mean()
+    bacardi_plot = bacardi_res.where(bacardi_res.alt > 11000)
+    ecrad_ds = ecrad_dicts[key]["v15"]
+    height_sel = ecrad.get_model_level_of_altitude(
+        bacardi_res.alt, ecrad_ds, "half_level"
+    )
+    ecrad_plot = ecrad_ds.flux_dn_sw.isel(half_level=height_sel).where(above_sel)
+    # ecrad_mean = ecrad_orgs[key]["v15"].flux_dn_sw.isel(half_level=height_sel).sel(column=slice(0, 10)).mean(dim="column")
+    # ecrad_sum = ecrad_ds.spectral_flux_dn_sw.isel(half_level=height_sel, band_sw=slice(1, 12)).sum(dim="band_sw")
+
+    # actual plotting
+    rmse = np.sqrt(np.mean((ecrad_plot - bacardi_plot["F_down_solar"]) ** 2)).to_numpy()
+    bias = np.nanmean((ecrad_plot - bacardi_plot["F_down_solar"]).to_numpy())
+    ax.scatter(bacardi_plot.F_down_solar, ecrad_plot, color=cbc[3])
+    ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
+    # ticks = ax.get_yticks() if i == 0 else ax.get_xticks()
+    # ax.set_yticks(ticks)
+    # ax.set_xticks(ticks)
+    ax.set(
+        aspect="equal",
+        xlabel="BACARDI irradiance (W$\,$m$^{-2}$)",
+        ylabel="ecRad irradiance (W$\,$m$^{-2}$)",
+        xlim=(200, 525),
+        ylim=(200, 525),
+    )
+    ax.grid()
+    ax.text(
+        0.025,
+        0.95,
+        f"{label[i]} {key}\n# points: {sum(~np.isnan(bacardi_plot['F_down_solar'])):.0f}\n"
+        f"RMSE: {rmse:.0f} {h.plot_units['flux_dn_sw']}\n"
+        f"Bias: {bias:.0f} {h.plot_units['flux_dn_sw']}",
+        ha="left",
+        va="top",
+        transform=ax.transAxes,
+        bbox=dict(fc="white", ec="black", alpha=0.8, boxstyle="round"),
+    )
+
+plt.tight_layout()
+
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_f_down_solar_above_cloud_all.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot scatter plot of below cloud measurements and simulations
+plt.rc("font", size=7)
+label = ["a)", "b)"]
+lims = [(110, 260), (100, 160)]
+version_names = dict(v15="Fu-IFS", v18="Baran2016", v19="Yi2013")
+for v in ["v15", "v18", "v19"]:
+    _, axs = plt.subplots(1, 2, figsize=(16 * h.cm, 9 * h.cm))
+
+    for i, key in enumerate(keys):
+        ax = axs[i]
+        bacardi_res = bacardi_ds[key].resample(time="1Min").mean()
+        bacardi_plot = bacardi_res.sel(time=slices[key]["below"])
+        ecrad_ds = ecrad_dicts[key][v]
+        yerr = np.abs(ecrad_ds["error"].sel(time=slices[key]["below"]).to_numpy())
+        height_sel = ecrad.get_model_level_of_altitude(bacardi_res.alt, ecrad_ds, "half_level")
+        ecrad_plot = ecrad_ds.flux_dn_sw.isel(half_level=height_sel).sel(time=slices[key]["below"])
+        # ecrad_mean = ecrad_orgs[key]["v15"].flux_dn_sw.isel(half_level=height_sel).sel(column=slice(0, 10)).mean(dim="column")
+        # ecrad_sum = ecrad_ds.spectral_flux_dn_sw.isel(half_level=height_sel, band_sw=slice(1, 12)).sum(dim="band_sw")
+
+        # actual plotting
+        rmse = np.sqrt(np.mean((ecrad_plot - bacardi_plot["F_down_solar"]) ** 2)).to_numpy()
+        bias = np.nanmean((ecrad_plot - bacardi_plot["F_down_solar"]).to_numpy())
+        ax.errorbar(bacardi_plot.F_down_solar, ecrad_plot, xerr=bacardi_plot["error"], yerr=yerr, color=cbc[3], fmt="o", capsize=4)
+        ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
+        # ticks = ax.get_yticks() if i == 0 else ax.get_xticks()
+        # ax.set_yticks(ticks)
+        # ax.set_xticks(ticks)
+        ax.set(
+            aspect="equal",
+            xlabel="BACARDI irradiance (W$\,$m$^{-2}$)",
+            ylabel="ecRad irradiance (W$\,$m$^{-2}$)",
+            xlim=lims[i],
+            ylim=lims[i],
+        )
+        ax.grid()
+        ax.text(
+            0.025,
+            0.95,
+            f"{label[i]} {key} {version_names[v]}\n# points: {sum(~np.isnan(bacardi_plot['F_down_solar'])):.0f}\n"
+            f"RMSE: {rmse:.0f} {h.plot_units['flux_dn_sw']}\n"
+            f"Bias: {bias:.0f} {h.plot_units['flux_dn_sw']}",
+            ha="left",
+            va="top",
+            transform=ax.transAxes,
+            bbox=dict(fc="white", ec="black", alpha=0.8, boxstyle="round"),
+        )
+
+    plt.tight_layout()
+
+    figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_f_down_solar_below_cloud_{v}.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
 
 # %% plot BACARDI and libRadtran simulation
 _, ax = plt.subplots(figsize=h.figsize_wide)
