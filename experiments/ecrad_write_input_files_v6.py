@@ -134,7 +134,7 @@ if __name__ == "__main__":
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(
-            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds[i]:7.1f}_sod{ending}_v6.nc",
+            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds[i]:7.1f}_sod{ending}_{version}.nc",
             format='NETCDF4_CLASSIC')
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
