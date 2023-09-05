@@ -25,6 +25,7 @@ if __name__ == "__main__":
     import pylim.helpers as h
     import pylim.solar_position as sp
     from pylim.ecrad import apply_liquid_effective_radius, apply_ice_effective_radius
+    from sklearn.neighbors import BallTree
     import numpy as np
     import xarray as xr
     import os
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     log = h.setup_logging("./logs", file, key)
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\nt_interp: {t_interp}")
+             f"\ninit time: {init_time}\nt_interp: {t_interp}\nversion: {version}")
 
     # %% set paths
     path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
@@ -78,53 +79,66 @@ if __name__ == "__main__":
         ifs_date = date
 
     nav_data_ip = pd.read_csv(f"{path_ifs_output}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
-    data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc")
+    data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_O1280_processed.nc")
+    data_ml = data_ml.set_index(rgrid=["lat", "lon"])
     # set sw_albedo to 0.06
     data_ml["sw_albedo"] = xr.full_like(data_ml["sw_albedo"], 0.06)
 
-    # %% loop through time steps and write one file per time step
+    # %% select lat and lon closest to flightpath
     idx = len(nav_data_ip)
     dt_nav_data = nav_data_ip.index.to_pydatetime()
+    ifs_lat_lon = np.column_stack((data_ml.lat, data_ml.lon))
+    ifs_tree = BallTree(np.deg2rad(ifs_lat_lon), metric="haversine")
+    # generate an array with lat, lon values from the flight position
+    points = np.deg2rad(np.column_stack((nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy())))
+    dist, idxs = ifs_tree.query(points, k=10)  # query the tree
+    closest_latlons = ifs_lat_lon[idxs]
+    # a sphere with radius 1 is assumed so multiplying by Earth's radius gives the distance in km
+    distances = dist * 6371
 
-    for i in tqdm(range(0, idx), desc="Time loop"):
-        # select a 3 x 11 lat/lon grid around closest grid point
-        lat_id = h.arg_nearest(data_ml.lat, nav_data_ip.lat.iat[i])
-        lon_id = h.arg_nearest(data_ml.lon, nav_data_ip.lon.iat[i])
-        lat_circle = np.arange(lat_id - 1, lat_id + 2)
-        lon_circle = np.arange(lon_id - 5, lon_id + 6)
-        # make sure latitude indices are available in data
-        lat_circle = lat_circle[np.where(lat_circle < data_ml.sizes["lat"])[0]]
-        ds_sel = data_ml.isel(lat=lat_circle, lon=lon_circle)
+    # %% loop through time steps and write one file per time step
+    for i in tqdm(range(idx), desc="Time loop"):
+        # select the 10 nearest grid points around closest grid point
+        latlon_sel = [(x, y) for x, y in closest_latlons[i]]
+        ds_sel = data_ml.sel(rgrid=latlon_sel)
+        dt_time = dt_nav_data[i]
 
         if t_interp:
-            dsi_ml_out = ds_sel.interp(time=dt_nav_data[i])  # interpolate to time step
+            dsi_ml_out = ds_sel.interp(time=dt_time)  # interpolate to time step
             ending = "_inp"
         else:
-            dsi_ml_out = ds_sel.sel(time=dt_nav_data[i], method="nearest")  # select closest time step
+            dsi_ml_out = ds_sel.sel(time=dt_time, method="nearest")  # select closest time step
             ending = ""
 
-        cos_sza = np.full((len(lat_circle), len(lon_circle)), fill_value=nav_data_ip.cos_sza[i])
+        n_rgrid = len(ds_sel.rgrid)
+        cos_sza = np.full(n_rgrid, fill_value=nav_data_ip.cos_sza[i])
         dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
-                                                            dims=["lat", "lon"],
+                                                            dims=["rgrid"],
                                                             attrs=dict(unit="1",
                                                                        long_name="Cosine of the solar zenith angle"))
 
         # calculate effective radius for all levels
         dsi_ml_out = apply_ice_effective_radius(dsi_ml_out)
         dsi_ml_out = apply_liquid_effective_radius(dsi_ml_out)
-        # stack lat, lon to a multi index named column, reset the index,
-        # turn lat, lon, time into variables for cleaner output and to avoid later problems when merging data
-        # this turns the two dimensions lat lon into one new dimension column with which ecrad can work
-        dsi_ml_out = dsi_ml_out.stack(column=("lat", "lon")).reset_index("column").reset_coords(["lat", "lon", "time"])
+        # reset the MultiIndex
+        dsi_ml_out = dsi_ml_out.reset_index(["rgrid", "lat", "lon"])
         # overwrite the MultiIndex object with simple integers as column numbers
         # otherwise it can not be saved to a netCDF file
-        n_column = dsi_ml_out.dims["column"]  # get number of columns
-        dsi_ml_out["column"] = np.arange(n_column)
+        dsi_ml_out["rgrid"] = np.arange(n_rgrid)
+        # turn lat, lon, time into variables for cleaner output and to avoid later problems when merging data
+        dsi_ml_out = dsi_ml_out.reset_coords(["lat", "lon", "time"]).drop_dims("reduced_points")
+
+        for var in ["lat", "lon"]:
+            dsi_ml_out[var] = xr.DataArray(dsi_ml_out[var].to_numpy(), dims="rgrid")
+        dsi_ml_out = dsi_ml_out.rename(rgrid="column")  # rename rgrid to column for ecrad
         # some variables now need to have the dimension column as well
         variables = ["fractional_std"]
         for var in variables:
-            arr = dsi_ml_out[var].values
-            dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": n_column})
+            dsi_ml_out[var] = dsi_ml_out[var].expand_dims(dim={"column": np.arange(n_rgrid)})
+        # add distance to aircraft location for each point
+        dsi_ml_out["distance"] = xr.DataArray(distances[i, :], dims="column",
+                                              attrs=dict(long_name="distance", units="km",
+                                                         description="Haversine distance to aircraft location"))
         dsi_ml_out = dsi_ml_out.transpose("column", ...)  # move column to the first dimension
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 

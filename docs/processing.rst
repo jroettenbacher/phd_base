@@ -491,11 +491,12 @@ For this purpose different input versions can be/were created using modified cop
 They can be found in the ``experiments`` folder.
 An overview of which input versions should be run with which namelist versions can be found in the following table.
 The version numbers reflect the process in which experiments were thought of or conducted.
-With version 6 we switched from the interpolated regular lat lon grid (F1280) to the original grid resolution of the IFS which is a octahedral reduced gaussian grid (O1280).
+With version 5 we switched from the interpolated regular lat lon grid (F1280) to the original grid resolution of the IFS which is a octahedral reduced gaussian grid (O1280).
 The namelists mainly differ in the chosen ice optic parameterization (*Fu-IFS*, *Baran2016*, etc.) and whether the 3D parameterizations are turned on or not.
 The output file names of the simulations only differ in the version string (e.g. *..._v16.nc*) reflecting the namelist version.
 Thus, many namelists have the same settings but only have different experiment names and the difference comes due to the input.
 This repetition was chosen to have a better overview of the different combinations of input version and namelist version.
+An overview is given in the following table.
 
 =============   ==============================  =================
 Input version   Namelist version                Short description
@@ -504,8 +505,9 @@ Input version   Namelist version                Short description
 2               8, 9                            Use VarCloud retrieval as iwc and |re-ice| input along flight track
 3               10                              Use VarCloud retrieval for below cloud simulation
 4               11                              Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc
-5               13                              Set albedo to open ocean
+5               13                              Set albedo to open ocean (0.06)
 5.1             13.1                            Set albedo to 0.99
+5.2             13.2                            Set albedo to BACARDI measurement below cloud
 6               15, 18, 19, 22, 24              Along track data from O1280 IFS output (used instead of v1)
 7               16, 20, 26, 27                  As v3 but with O1280 IFS output
 8               17, 21, 23, 25                  As v2 but with O1280 IFS output
