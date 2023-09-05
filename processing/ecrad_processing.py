@@ -136,7 +136,7 @@ if __name__ == "__main__":
     ds["iwc"].attrs = {"units": "kg m^-3", "long_name": "Ice water content"}
 
     # calculate bulk optical properties
-    if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v13.1", "v14", "v15", "v16", "v17", "v22", "v23", "v26"]:
+    if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v13.1", "v13.2", "v14", "v15", "v16", "v17", "v22", "v23", "v26"]:
         ice_optics = ecrad.calc_ice_optics_fu_sw(ds.iwp, ds.re_ice)
     elif ov == "v2":
         ice_optics = ecrad.calc_ice_optics_baran2017("sw", ds.iwp, ds.q_ice, ds.t)
