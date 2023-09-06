@@ -3,44 +3,47 @@
 | *author:* Johannes Röttenbacher
 | *created:* 15-04-2023
 
-Set the albedo during the whole flight to 0.06 (open ocean) or 0.99 (maximum albedo) and analyze the impact on the offset between simulation and measurement during the below cloud section in RF17.
+Set the albedo during the whole flight to 0.06 (open ocean) or scale it to 0.99 (maximum albedo) and analyze the impact on the offset between simulation and measurement during the below cloud section in RF17.
 
 * ``IFS_namelist_jr_20220411_v13.nam``: for flight RF17 with Fu-IFS ice model setting albedo to open ocean (input version v5)
 * ``IFS_namelist_jr_20220411_v13.1.nam``: for flight RF17 with Fu-IFS ice model setting albedo to 0.99 (input version v5.1)
+* ``IFS_namelist_jr_20220411_v13.2.nam``: for flight RF17 with Fu-IFS ice model setting albedo BACARDI measurement from below cloud section (input version v5.2)
 
 **Problem statement:** A clear offset can be observed in the solar downward irradiance below the cloud between ecRad and BACARDI with ecRad showing lower values than BACARDI.
 One idea is that multiple scattering from the sea ice surface to the cloud and back down plays a role here.
 By setting the albedo to open ocean (0.06) we can eliminate this multiple backscattering between cloud and surface.
 Comparing this experiment with the standard experiment can show us the potential impact of multiple scattering.
-We also run a experiment where we set the albedo to 0.99 to see how much more downward irradiance we can observe that way.
+We also run an experiment where we scale the albedo to 0.99 to see how much more downward irradiance we can observe that way.
+
+**Extension:** We extend the analysis and use the scaled measured below cloud albedo from BACARDI as input.
 
 We will focus on the above and below cloud section in the far north.
-The corresponding spectral surface albedo can be seen in :numref:`surface-albedo-cs`.
+The corresponding spectral surface albedo as used in the IFS can be seen in :numref:`surface-albedo-cs`.
 
 .. _surface-albedo-cs:
 
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v1.png
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v15.png
 
     Short wave albedo along track above and below cloud for all six spectral bands after :cite:t:`Ebert1992`.
 
-At first, we look at the difference in solar upward and downward irradiance between v1 (IFS albedo after :cite:t:`Ebert1992`) and v13 (ocean albedo 0.06).
+At first, we look at the difference in solar upward and downward irradiance between v15 (IFS albedo after :cite:t:`Ebert1992`) and v13 (ocean albedo 0.06).
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track.png
 
-    Difference in solar upward irradiance between v1 and v13.
+    Difference in solar upward irradiance between v15 and v13.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track.png
 
-    Difference in solar downward irradiance between v1 and v13.
+    Difference in solar downward irradiance between v15 and v13.
 
 We can see an unsurprising substantial difference in upward irradiance which then propagates to a smaller but still relevant difference in downward irradiance.
 This is especially pronounced for the thicker section of the cirrus at around 11:15 UTC.
 
 Looking at this from a more statistical point of view we can see the bias between simulation and measurement increase by about :math:`10\,Wm^{-2}`.
 
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v1.png
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v15.png
 
-    Scatterplot of along track difference between ecRad and BACARDI for v1.
+    Scatterplot of along track difference between ecRad and BACARDI for v15.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v13.png
 
@@ -54,7 +57,7 @@ For this we can take a look at the histogramm of differences and some statistics
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist.png
 
-    Histogram of differences between v1 and v13.
+    Histogram of differences between v15 and v13.
 
 We see that a lot of values are rather small.
 They correspond to the area above the cloud where only the atmosphere causes some minor scattering.
@@ -62,13 +65,15 @@ The median and mean of the distribution, however, are around :math:`10\\,Wm^{-2}
 
 So albedo does obviously have a major influence on the downward irradiance in this scenario.
 The next question now is, whether we can reduce the bias by increasing the surface albedo?
-For this we take a look at experiment v13.1 with an albedo of 0.99.
+For this we take a look at experiment v13.1 with a scaled albedo of 0.99.
+The albedo is scaled in such a way that the maximum albedo in the first short wave albedo band is set to 0.99 and the following bands are scaled according to the relative differences between the original short wave albedo bands.
+See the script for details.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff1_flux_dn_sw_along_track.png
 
-    Difference in solar downward irradiance between v1 and v13.1 (albedo = 0.99).
+    Difference in solar downward irradiance between v15 and v13.1 (albedo = 0.99).
 
-By increasing the albedo to an unrealistic value of 0.99 we get a maximum of :math:`3\\,Wm^{-2}` difference in solar downward irradiance.
+By scaling the albedo to an unrealistic value of 0.99 we get a maximum of :math:`0.7\\,Wm^{-2}` difference in solar downward irradiance.
 Comparing the spectral albedo of each experiment in :numref:`spectral-albedo-all-experiments` we can also see, that the standard albedo for the scene is already high.
 So increasing it does not seem to be a sensible idea.
 
@@ -76,7 +81,19 @@ So increasing it does not seem to be a sensible idea.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_IFS_sw_albedo_spectrum_1100.png
 
-    Spectral albedo for all three experiments at one timestep below cloud.
+    Spectral albedo for all four experiments at one timestep below cloud.
+
+However, what happens if we use the measured albedo from BACARDI for the below cloud simulation which is lower than the one in the IFS but not as low as 0.06?
+Looking at the difference in solar downward irradiance we can see that it is still a positive difference meaning the predicted downward irradiance is still smaller compared to the IFS run.
+
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff2_flux_dn_sw_along_track.png
+
+    Difference in solar downward irradiance between v15 and v13.2 (albedo from BACARDI).
+
+The comparison with the measurements also show a worse match compared to v15.
+
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v13.2.png
+
 
 From all this we can conclude that **the albedo does not seem to be the major problem** in this scene.
 
@@ -86,14 +103,10 @@ if __name__ == "__main__":
 # %% import modules
     import pylim.helpers as h
     import pylim.halo_ac3 as meta
-    from pylim import ecrad
     import ac3airborne
     from ac3airborne.tools import flightphase
-    import os
     import xarray as xr
     import numpy as np
-    from metpy.calc import density
-    from metpy.units import units
     import matplotlib.pyplot as plt
     from matplotlib import colors
     import pandas as pd
@@ -119,11 +132,6 @@ if __name__ == "__main__":
     bahamas_path = h.get_path("bahamas", flight, campaign)
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_1s.nc"
 
-    # set up metadata for access to HALO-AC3 cloud
-    kwds = {'simplecache': dict(same_names=True)}
-    credentials = {"user": os.environ.get("AC3_CLOUD_USER"), "password": os.environ.get("AC3_CLOUD_PASSWORD")}
-    cat = ac3airborne.get_intake_catalog()["HALO-AC3"]["HALO"]
-
 # %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
     segments = flightphase.FlightPhaseFile(segmentation)
@@ -147,7 +155,7 @@ if __name__ == "__main__":
 
     time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 
-# %% read in data from HALO-AC3 cloud
+# %% read in bahamas data
     ins = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
 
 # %% read in BACARDI data
@@ -156,9 +164,9 @@ if __name__ == "__main__":
 
 # %% read in ecrad data
     ecrad_dict = dict()
-    for v in ["v1", "v13", "v13.1"]:
+    for v in ["v15", "v13", "v13.1", "v13.2"]:
         # use mean over columns data
-        ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{v}_mean.nc")
+        ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{v}.nc").isel(column=0)
         # select above and below cloud time
         ds = ds.sel(time=case_slice)
         ecrad_dict[v] = ds.copy()
@@ -167,43 +175,16 @@ if __name__ == "__main__":
     for k in ecrad_dict:
         ds = ecrad_dict[k].copy()
         # add coordinate values
-        ds = ds.assign_coords({"band_sw": range(1, 15), "band_lw": range(1, 17), "sw_albedo_band": range(1, 7)})
-        # replace default values with nan
-        ds["re_ice"] = ds.re_ice.where(ds.re_ice != 5.196162e-05, np.nan)
-        ds["re_liquid"] = ds.re_liquid.where(ds.re_liquid != 4.000001e-06, np.nan)
+        ds = ds.assign_coords({"sw_albedo_band": range(1, 7)})
 
-        # compute cloud ice water path
-        factor = ds.pressure_hl.diff(dim="half_level").to_numpy() / (9.80665 * ds.cloud_fraction.to_numpy())
-        ds["iwp"] = (["time", "level"], factor * ds.ciwc.to_numpy())
+        # replace inf with nan in ice water path
         ds["iwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan)
-
-        # convert kg/kg to kg/m³
-        air_density = density(ds.pressure_full * units.Pa, ds.t * units.K, ds.q * units("kg/kg"))
-        ds["iwc"] = ds["q_ice"] * units("kg/kg") * air_density
-
-        # add optical properties to data sets
-        ice_optics_fu = ecrad.calc_ice_optics_fu_sw(ds["iwp"], ds.re_ice)
-        ds["od"] = ice_optics_fu[0]
-        ds["scat_od"] = ice_optics_fu[1]
-        ds["g"] = ice_optics_fu[2]
-        ds["band_sw"] = range(1, 15)
-        ds["band_lw"] = range(1, 17)
-        ds["absorption"] = ds["od"] - ds["scat_od"]
-        ds["od_mean"] = ds["od"].mean(dim="band_sw")
-        ds["scat_od_mean"] = ds["scat_od"].mean(dim="band_sw")
-        ds["g_mean"] = ds["g"].mean(dim="band_sw")
-        ds["scat_od_int"] = ds["scat_od"].integrate(coord="band_sw")
-        ds["od_int"] = ds["od"].integrate(coord="band_sw")
-        ds["absorption_int"] = ds["absorption"].integrate(coord="band_sw")
-
-        # calculate other optical parameters
-        ds["reflectivity_sw"] = ds.flux_up_sw / ds.flux_dn_sw
 
         ecrad_dict[k] = ds.copy()
 
 # %% get height level of actual flight altitude in ecRad model, this determines only the index of the level
     aircraft_height_da, height_level_da = dict(), dict()
-    for v in ["v1", "v13"]:
+    for v in ["v15", "v13", "v13.2"]:
         ds = ecrad_dict[v]
         bahamas_tmp = ins.sel(time=ds.time, method="nearest")
         ecrad_timesteps = len(ds.time)
@@ -242,7 +223,7 @@ if __name__ == "__main__":
     cb_ticks = dict()
     vmaxs = dict()
     vmins = dict(iwp=0)
-    xlabels = dict(v1="v1", v11="v11", diff="Difference v1 - v11")
+    xlabels = dict(v15="v15", v13="v13", diff="Difference v15 - v13")
 
     # set kwargs
     alpha = alphas[var] if var in alphas else 1
@@ -270,12 +251,17 @@ if __name__ == "__main__":
     if v == "diff":
         # calculate difference between simulations
         ds = ecrad_dict["v13"]
-        ecrad_ds_diff = ecrad_dict["v1"][var] - ds[var]
+        ecrad_ds_diff = ecrad_dict["v15"][var] - ds[var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     elif v == "diff1":
         # calculate difference between simulations
         ds = ecrad_dict["v13.1"]
-        ecrad_ds_diff = ecrad_dict["v1"][var] - ds[var]
+        ecrad_ds_diff = ecrad_dict["v15"][var] - ds[var]
+        ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
+    elif v == "diff2":
+        # calculate difference between simulations
+        ds = ecrad_dict["v13.2"]
+        ecrad_ds_diff = ecrad_dict["v15"][var] - ds[var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     else:
         ds = ecrad_dict[v]
@@ -345,7 +331,7 @@ if __name__ == "__main__":
     plt.close()
 
 # %% plot histogram
-    xlabels = dict(diff="difference v1 - v13", diff1="difference v1 - v13.1")
+    xlabels = dict(diff="difference v15 - v13", diff1="difference v15 - v13.1", diff2="difference v15 - v13.2")
     xlabel = xlabels[v] if v in xlabels else v
     flat_array = ecrad_plot.to_numpy().flatten()
     mean = np.mean(flat_array)
@@ -369,10 +355,10 @@ if __name__ == "__main__":
 
 # %% plot timeseries
     var = "sw_albedo"
-    v = "v1"
+    v = "v15"
     band = None
     if v == "diff":
-        ecrad_plot = ecrad_dict["v1"][var] - ecrad_dict["v13"][var]
+        ecrad_plot = ecrad_dict["v15"][var] - ecrad_dict["v13"][var]
     else:
         ecrad_plot = ecrad_dict[v][var]
 
@@ -394,9 +380,9 @@ if __name__ == "__main__":
 
 # %% plot albedo spectrum from below cloud
     _, ax = plt.subplots(figsize=h.figsize_wide)
-    for v in ["v1", "v13", "v13.1"]:
-        ds_plot = ecrad_dict[v]["sw_albedo"].sel(time="2022-04-11 11:00")
-        ax.plot(ds_plot.to_numpy(), lw=3, label=v)
+    for v in ["v15", "v13", "v13.1", "v13.2"]:
+        ds_plot = ecrad_dict[v]["sw_albedo"].sel(time="2022-04-11 11:00", method="nearest")
+        ax.plot(ds_plot.to_numpy(), lw=3, label=v, marker="X", ms=12)
     ax.grid()
     ax.legend()
     xticklabels = list(x[1] for x in h.ci_bands)
@@ -410,11 +396,12 @@ if __name__ == "__main__":
     plt.close()
 
 # %% plot scatterplot of below cloud measurements
-    v = "v13"
+    v = "v13.2"
     bacardi_plot = bacardi_ds_res.sel(time=below_slice)
     ecrad_plot = ecrad_dict[v].isel(half_level=height_level_da[v]).sel(time=below_slice)
     plt.rc("font", size=12)
-    lims = dict(v1=[(120, 240), (80, 130), (95, 170), (210, 220)], v13=[(110, 240), (80, 150), (0, 200), (210, 220)])
+    lims = {"v15": [(120, 240), (80, 130), (95, 170), (210, 220)], "v13": [(110, 240), (80, 150), (0, 200), (210, 220)],
+            "v13.2": [(110, 240), (80, 150), (0, 200), (210, 220)]}
     lims = lims[v]
     for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
         rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))

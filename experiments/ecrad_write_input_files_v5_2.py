@@ -143,12 +143,15 @@ if __name__ == "__main__":
             dsi_ml_out = ds_sel.sel(time=dt_time, method="nearest")  # select closest time step
             ending = ""
 
+        # get relative difference from all sw albedo bands to the first band in the IFS to scale the constant albedo from BACARDI
+        sw_albedo = xr.full_like(dsi_ml_out["sw_albedo"], sw_albedo)
+        diffs = (dsi_ml_out["sw_albedo"][0, ...] - dsi_ml_out["sw_albedo"][1:, ...]) / dsi_ml_out["sw_albedo"][0, :]
+        sw_albedo[1:6, ...] = sw_albedo[1:6, ...] - diffs * sw_albedo[0, ...]
+        dsi_ml_out["sw_albedo"] = sw_albedo
+
+        # add cos solar zenith angle to the data set
         n_rgrid = len(ds_sel.rgrid)
-        sw_albedo = np.full(n_rgrid, fill_value=sw_albedo)
         cos_sza = np.full(n_rgrid, fill_value=nav_data_ip.cos_sza[i])
-        dsi_ml_out["sw_albedo"] = xr.DataArray(sw_albedo, dims=["rgrid"],
-                                               attrs=dict(unit="1",
-                                                          long_name="Short wave albedo calculated from BACARDI measurements corrected for diffuse radiation"))
         dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
                                                             dims=["rgrid"],
                                                             attrs=dict(unit="1",
