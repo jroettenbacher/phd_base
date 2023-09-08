@@ -7,12 +7,16 @@
 # %% module import
 from pylim.helpers import get_path
 from pylim.cirrus_hl import coordinates, radiosonde_stations
+import os
 import datetime
 import pandas as pd
 from geopy.distance import geodesic
 import re
 from typing import List
 import logging
+from tqdm import tqdm
+from subprocess import Popen
+from joblib import cpu_count
 
 log = logging.getLogger(__name__)
 
@@ -230,3 +234,71 @@ def get_info_from_libradtran_input(filepath: str) -> dict:
             output_dict["integrate_flag"] = False
 
     return output_dict
+
+
+def run_uvspec_parallel(input_files: list, uvspec_exe: str):
+    """
+    Run libRadtran simulations for all input files in parallel and check if an output has been created. 
+    Rerun the failed simulations a couple of times before quitting.
+    
+    Args:
+        input_files: list with full paths to each input file
+        uvspec_exe: path to uvspec executable
+
+    Returns: Writes output and log files in directory of the input files
+
+    Raises: UsesWarning if a simulation fails more than 10 times
+
+    """
+    # create output and log file names
+    output_files = [f.replace(".inp", ".out") for f in input_files]
+    error_logs = [f.replace(".inp", ".log") for f in input_files]
+
+    # call uvspec for all files
+    processes = set()
+    max_processes = cpu_count() - 4
+    tqdm_desc = f"libRadtran simulations"
+    for infile, outfile, log_file in zip(tqdm(input_files, desc=tqdm_desc), output_files, error_logs):
+        with open(infile, "r") as ifile, open(outfile, "w") as ofile, open(log_file, "w") as lfile:
+            processes.add(Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile))
+        if len(processes) >= max_processes:
+            os.wait()
+            processes.difference_update([p for p in processes if p.poll() is not None])
+
+    # wait for all simulations to finish
+    while len(processes) > 0:
+        os.wait()
+        # this will remove elements of the set which are also in the list.
+        # the list has only terminated processes in it,
+        # p.poll returns a non None value if the process is still running
+        processes.difference_update([p for p in processes if p.poll() is not None])
+
+    # check if all simulations created an output and rerun them if not
+    file_check = sum([os.path.getsize(file) == 0 for file in output_files])
+    # if file size is 0 -> file is empty
+    counter = 0  # add a counter to terminate loop if necessary
+    while file_check > 0:
+        files_to_rerun = [f for f in input_files if os.path.getsize(f.replace(".inp", ".out")) == 0]
+        # rerun simulations
+        for infile in tqdm(files_to_rerun, desc="redo libRadtran simulations"):
+            with open(infile, "r") as ifile, \
+                    open(infile.replace(".inp", ".out"), "w") as ofile, \
+                    open(infile.replace(".inp", ".log"), "w") as lfile:
+                processes.add(Popen([uvspec_exe], stdin=ifile, stdout=ofile, stderr=lfile))
+            if len(processes) >= max_processes:
+                os.wait()
+                processes.difference_update([p for p in processes if p.poll() is not None])
+
+        # wait for all simulations to finish
+        while len(processes) > 0:
+            # this will remove elements of the set which are also in the list.
+            # the list has only terminated processes in it,
+            # p.poll returns a non None value if the process is still running
+            processes.difference_update([p for p in processes if p.poll() is not None])
+        # update file_check
+        file_check = sum([os.path.getsize(file) == 0 for file in output_files])
+        counter += 1
+        if counter > 10:
+            raise UserWarning(f"Simulation of {files_to_rerun} does not compute!\nCheck for other errors!")
+
+    return None
