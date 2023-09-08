@@ -95,6 +95,10 @@ if __name__ == "__main__":
     # %% read in ifs data
     ifs_ds = xr.open_dataset(f"{ifs_path}/ifs_{date}_00_ml_processed.nc")
 
+    # %% get maximum flight altitude for extra simulation output altitude
+    zout_max = ins_ds.IRS_ALT.max() if not use_smart_ins else ins_ds.alt.max()
+    zout_max = zout_max / 1000  # convert to km
+
     # %% write input files for each timestep
     timestamp = ins_ds.time[0]
     time_step = pd.to_timedelta(time_step)
@@ -168,7 +172,7 @@ if __name__ == "__main__":
             # verbose="",  # page 123
             # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
             wavelength="290 3600" if solar_flag else "4000 100000",
-            zout=f"{zout:.3f}",  # page 127; altitude in km above surface altitude
+            zout=f"{zout:.3f} {zout_max:.3f} TOA",  # page 127; altitude in km above surface altitude
         )
 
         # set options for libRadtran run - radiative transfer equation solver
