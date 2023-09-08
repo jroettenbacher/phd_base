@@ -118,8 +118,8 @@ This folder contains one folder for each instrument which holds all data for the
 This data is stored on the server but can also be stored locally.
 To access it without needing to worry about changing the paths every time one switches from the server to local data, the function :py:func:`pylim.helpers.get_path` is used together with ``config.toml`` to generate the correct paths.
 In the configuration toml file the path to each instrument can be defined either as a absolute path or -to allow for easy path creation- relative to the base directory and the flight folder.
-Providing :py:func:`pylim.helpes.get_path` with the instrument key (e.g. "smart") and the flight (e.g. "Flight_20210625a") the correct path will then be created according to the current working directory.
-:py:func:`pylim.helpes.get_path` also accepts a campaign keyword as well to switch between different campaigns.
+Providing :py:func:`pylim.helpers.get_path` with the instrument key (e.g. "smart") and the flight (e.g. "Flight_20210625a") the correct path will then be created according to the current working directory.
+:py:func:`pylim.helpers.get_path` also accepts a campaign keyword as well to switch between different campaigns.
 
 .. attention::
    The ``config.toml`` file has to be in the current working directory of the python console. So when you run a script in a different folder (like :file:`processing`) be sure to copy your most recent ``config.toml`` to that folder as well. Or you change into the directory with the ``config.toml`` using :py:func:`os.chdir`.
@@ -127,7 +127,7 @@ Providing :py:func:`pylim.helpes.get_path` with the instrument key (e.g. "smart"
 
 There are two ways of setting up paths to your local data source:
 
-1. Edit the existing paths under ``jr_local`` or ``jr_unbuntu`` depending on whether you are using Windows or Linux.
+1. Edit the existing paths under ``jr_local`` or ``jr_ubuntu`` depending on whether you are using Windows or Linux.
 2. Create a new campaign which defines the paths as you need them.
 
 The second options is kind of hacky but would allow everyone to use the same config file.
