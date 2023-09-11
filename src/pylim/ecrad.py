@@ -15,6 +15,8 @@ import importlib_resources as pkg_resources
 
 log = logging.getLogger(__name__)
 
+version_names = dict(v15="Fu-IFS", v16="Fu-IFS VarCloud", v18="Baran2016", v19="Yi2013", v20="Baran2016 VarCloud",
+                     v22="Fu-IFS 3D")
 
 def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PLAT):
     """
