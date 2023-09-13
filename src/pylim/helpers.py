@@ -586,6 +586,29 @@ def longitude_values_for_gaussian_grid(latitudes: np.array,
     return lat_values_out, lon_values_out
 
 
+def hellinger_distance(p, q):
+    """
+    Compute the Hellinger distance between two probability distributions.
+
+    Parameters:
+    p (numpy array): Probability distribution 1 (e.g., histogram).
+    q (numpy array): Probability distribution 2 (e.g., histogram).
+
+    Returns:
+    float: Hellinger distance between the two distributions.
+
+    Reference:
+    - https://en.wikipedia.org/wiki/Hellinger_distance
+    """
+    # Ensure that p and q have the same shape
+    assert p.shape == q.shape, "Input distributions must have the same shape."
+
+    # Calculate the Hellinger distance
+    h = (1.0 / np.sqrt(2.0)) * np.sqrt(np.sum((np.sqrt(p) - np.sqrt(q))**2))
+
+    return h
+
+
 _COLORS = {
     "green": "#3cb371",
     "darkgreen": "#253A24",
