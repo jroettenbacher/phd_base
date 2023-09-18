@@ -536,6 +536,11 @@ To convert it to netcdf and rename the parameters according to the ECMWF codes r
    cdo -t ecmwf -f nc copy infile.grb outfile.nc
 
 on each file.
+Or run the python script :py:mod:`processing.ecrad_preprocessing.py` (currently only working for IFS files):
+
+.. automodule:: processing.ecrad_preprocessing
+
+**CAMS files**
 
 We want to get yearly monthly means from the CAMS reanalysis.
 For this we download 3-hourly data and preprocess it on the ECMWF server to avoid downloading a huge amount of data.
