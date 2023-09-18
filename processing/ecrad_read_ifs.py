@@ -13,6 +13,7 @@
 * IFS model level (ml) file
 * IFS surface (sfc) file
 * SMART horidata with flight track or BAHAMAS file
+* Ozone sonde (optional)
 
 **Required User Input:**
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     # %% read in command line arguments
     args = h.read_command_line_args()
-    flight_key = args["flight_key"] if "flight_key" in args else "RF17"
+    key = args["key"] if "key" in args else "RF03"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     init_time = args["init"] if "init" in args else "00"
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
@@ -70,7 +71,7 @@ if __name__ == "__main__":
         import pylim.halo_ac3 as meta
     else:
         import pylim.cirrus_hl as meta
-    flight = meta.flight_names[flight_key]
+    flight = meta.flight_names[key]
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
     # setup logging
@@ -78,11 +79,11 @@ if __name__ == "__main__":
         file = __file__
     except NameError:
         file = None
-    log = h.setup_logging("./logs", file, flight_key)
+    log = h.setup_logging("./logs", file, key)
 
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\nozone: {ozone_flag}\nuse_bahamas: {use_bahamas}")
+             f"\ninit time: {init_time}\ngrid: {grid}\nozone: {ozone_flag}\nuse_bahamas: {use_bahamas}")
 
     # %% set paths
     path_ifs_raw = f"{h.get_path('ifs_raw', campaign=campaign)}/{date}"
@@ -108,6 +109,10 @@ if __name__ == "__main__":
     # hack while only incomplete ml file is available
     # data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
 
+    # %% cut data to time of ml file if necessary
+    if len(data_ml.time) != len(data_srf.time):
+        data_srf = data_srf.sel(time=data_ml.time)
+
     if "F" in grid:
         # test if longitude coordinates are equal
         try:
@@ -126,7 +131,7 @@ if __name__ == "__main__":
 
     if aircraft == "halo":
         if use_bahamas:
-            bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{flight_key}_v1.nc"
+            bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
             nav_data = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
             nav_data = nav_data.to_dataframe()
             nav_data.rename(columns={"IRS_LAT": "lat", "IRS_LON": "lon"}, inplace=True)
@@ -175,17 +180,16 @@ if __name__ == "__main__":
         # dirty fix: cut of either the last rgrid points or reduce the size of the lat lon values
         # this assumes that the problem lies in the last longitude
         #TODO: research this more
-        if len_lon_values != nr_rgid:
-            if len_lon_values < nr_rgid:
-                data_srf = data_srf.isel(rgrid=slice(0, len(lon_values)))
-                data_ml = data_ml.isel(rgrid=slice(0, len(lon_values)))
-            else:
-                lat_values, lon_values = lat_values[:nr_rgid], lon_values[:nr_rgid]
+        if len_lon_values < nr_rgid:
+            data_srf = data_srf.isel(rgrid=slice(0, len(lon_values)))
+            data_ml = data_ml.isel(rgrid=slice(0, len(lon_values)))
+        elif len_lon_values > nr_rgid:
+            lat_values, lon_values = lat_values[:nr_rgid], lon_values[:nr_rgid]
         # add new coordinates and set them as a multiindex
         data_srf = data_srf.assign_coords(lat=("rgrid", lat_values), lon=("rgrid", lon_values))
-        data_srf = data_srf.set_index(rgrid=["lat", "lon"])
+        data_srf = data_srf.set_index(rgrid=["lat", "lon"]).sortby("rgrid").copy()
         data_ml = data_ml.assign_coords(lat=("rgrid", lat_values), lon=("rgrid", lon_values))
-        data_ml = data_ml.set_index(rgrid=["lat", "lon"])
+        data_ml = data_ml.set_index(rgrid=["lat", "lon"]).sortby("rgrid").copy()
         # generate an array with all possible lat, lon combinations for a kdTree nearest neighbour search
         ifs_lat_lon = np.column_stack((data_srf.lat, data_srf.lon))
 
@@ -321,6 +325,7 @@ if __name__ == "__main__":
     data_ml["temperature_hl"] = xr.concat(t_hl, dim="half_level").transpose("time", ...)
 
     # %% calculate pressure height for model half and full levels
+    log.info("Calculate pressure height for whole data set...")
     data_ml = calculate_pressure_height(data_ml)
 
     # %% rename surface variables
@@ -333,40 +338,49 @@ if __name__ == "__main__":
     # %% add trace gases
     if ozone_flag == "sonde":
         log.info(f"ozone flag set to {ozone_flag}\ninterpolating sonde measurement onto IFS full pressure levels...")
-        # read the corresponding ozone file for the flight
-        ozone_file = h.ozone_files[flight_key]
-        # interpolate ozone sonde data on IFS full pressure levels
-        ozone_sonde = reader.read_ozone_sonde(f"{path_ozone}/{ozone_file}")
-        ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
-        # create interpolation function
-        f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate", bounds_error=False)
-        if "F" in grid:
-            ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
-            # copy interpolated ozone concentration over time, lat and longitude dimension
-            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
-            o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
-            # create DataArray
-            o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
-        else:
-            ozone_interp = f_ozone(data_ml.pressure_full.isel(rgrid=0, time=0))
-            # copy interpolated ozone concentration over time, lat and longitude dimension
-            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["rgrid"], axis=2)
-            # create DataArray
-            o3_vmr = xr.DataArray(o3_lat, coords=data_ml.pressure_full.coords, dims=["level", "time", "rgrid"])
+        try:
+            # read the corresponding ozone file for the flight
+            ozone_file = h.ozone_files[key]
+            # interpolate ozone sonde data on IFS full pressure levels
+            ozone_sonde = reader.read_ozone_sonde(f"{path_ozone}/{ozone_file}")
+            ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
+            # create interpolation function
+            f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate",
+                               bounds_error=False)
+            if "F" in grid:
+                ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
+                # copy interpolated ozone concentration over time, lat and longitude dimension
+                o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
+                o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
+                o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
+                # create DataArray
+                o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
+            else:
+                ozone_interp = f_ozone(data_ml.pressure_full.isel(rgrid=0, time=0))
+                # copy interpolated ozone concentration over time and column dimension
+                o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
+                o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["rgrid"], axis=2)
+                # create DataArray
+                o3_vmr = xr.DataArray(o3_lat, coords=data_ml.pressure_full.coords, dims=["level", "time", "rgrid"])
 
-        o3_vmr = o3_vmr.transpose("time", ...)
-        o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
-        o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
-        o3_vmr.attrs = dict(unit="1", long_name="Ozone volume mass mixing ratio")
-        data_ml["o3_vmr"] = o3_vmr
+            o3_vmr = o3_vmr.transpose("time", ...)
+            o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
+            o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
+            o3_vmr.attrs = dict(unit="1", long_name="Ozone volume mass mixing ratio")
+            data_ml["o3_vmr"] = o3_vmr
+
+        except KeyError:
+            log.info(f"No ozone sonde found for {key}! Using standard value.")
+            data_ml["o3_mmr"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
+                                             dims=["level"],
+                                             attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
 
     else:
         assert ozone_flag == "default", f"ozone flag set to unrecognized value {ozone_flag}! Check input!"
         data_ml["o3_mmr"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
                                          dims=["level"],
                                          attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
+
     # constants according to IFS Documentation Part IV Section 2.8.4
     data_ml["n2o_vmr"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
     data_ml["cfc11_vmr"] = xr.DataArray(280e-12, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
