@@ -421,7 +421,7 @@ ecRad
 
 `ecRad <https://confluence.ecmwf.int/display/ECRAD>`_ is the radiation scheme used in the ECMWF's IFS numerical weather prediction model.
 For my PhD we are comparing measured radiative fluxes with simulated fluxes along the flight track.
-For this we run ecRad in an offline mode and adjust input parameters.
+For this we run ecRad version 1.5.0 in an offline mode and adjust input parameters.
 Those experiments are documented in :ref:`experiments:Experiments`.
 Here the general processing with ecRad is described.
 
@@ -476,10 +476,10 @@ Workflow with ecRad
 
 #. Download IFS/CAMS data for campaign |rarr| :ref:`processing:IFS/CAMS Download`
 #. Run :ref:`processing:IFS/CAMS Preprocessing` to convert grib to nc files
-#. Decide which flight to work on -> set date in :ref:`processing:ecrad_read_ifs.py` or give it via commandline
+#. Decide which flight to work on -> set key in :ref:`processing:ecrad_read_ifs.py` or give it via commandline
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options as you want them to be (see script for details)
 #. Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length |rarr| choose one value which is representative for the period you want to study
-#. Run :ref:`processing:ecrad_write_input_files.py`
+#. Run one of :ref:`processing:ecrad_write_input_files_vx.py`
 #. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input`` and then runs the following processing steps
 
     #. Run :ref:`processing:ecrad_merge_radiative_properties.py` to generate one merged radiative properties file from the single files given by the ecRad simulation
@@ -496,7 +496,6 @@ The namelists mainly differ in the chosen ice optic parameterization (*Fu-IFS*, 
 The output file names of the simulations only differ in the version string (e.g. *..._v16.nc*) reflecting the namelist version.
 Thus, many namelists have the same settings but only have different experiment names and the difference comes due to the input.
 This repetition was chosen to have a better overview of the different combinations of input version and namelist version.
-An overview is given in the following table.
 
 =============   ==============================  =================
 Input version   Namelist version                Short description
@@ -563,7 +562,7 @@ ecrad_read_ifs.py
 ^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_read_ifs
 
-ecrad_write_input_files.py
+ecrad_write_input_files_vx.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_write_input_files
 

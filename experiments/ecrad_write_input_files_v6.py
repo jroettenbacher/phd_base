@@ -83,7 +83,7 @@ if __name__ == "__main__":
     ifs_tree = BallTree(np.deg2rad(ifs_lat_lon), metric="haversine")
     # generate an array with lat, lon values from the flight position
     points = np.deg2rad(np.column_stack((nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy())))
-    dist, idxs = ifs_tree.query(points, k=33)  # query the tree
+    dist, idxs = ifs_tree.query(points, k=10)  # query the tree
     closest_latlons = ifs_lat_lon[idxs]
     # a sphere with radius 1 is assumed so multiplying by Earth's radius gives the distance in km
     distances = dist * 6371

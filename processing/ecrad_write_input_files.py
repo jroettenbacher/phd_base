@@ -3,6 +3,10 @@
 | *author*: Johannes Röttenbacher
 | *created*: 22-09-2022
 
+
+.. deprecated:: 0.7.0
+   Use :py:mod:`experiments.ecrad_write_input_files_vx.py` instead!
+
 Use a processed IFS output file and generate one ecRad input file for each time step.
 Can be called from the command line with the following key=values pairs:
 
@@ -37,23 +41,28 @@ if __name__ == "__main__":
     # %% read in command line arguments
     args = h.read_command_line_args()
     # set interpolate flag
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
-    date = args["date"] if "date" in args else "20220411"
-    init_time = args["init"] if "init" in args else "00"
-    flight = args["flight"] if "flight" in args else "HALO-AC3_20220411_HALO_RF17"
-    aircraft = args["aircraft"] if "aircraft" in args else "halo"
+    key = args["key"] if "key" in args else "RF03"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
+    init_time = args["init"] if "init" in args else "00"
+    aircraft = args["aircraft"] if "aircraft" in args else "halo"
+    grid = f"_{args['grid']}" if "grid" in args else "O1280"
+    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
+    if campaign == "halo-ac3":
+        import pylim.halo_ac3 as meta
+    else:
+        import pylim.cirrus_hl as meta
+    flight = meta.flight_names[key]
+    date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
-    flight_key = flight[-4:] if campaign == "halo-ac3" else flight
     # setup logging
     try:
         file = __file__
     except NameError:
         file = None
-    log = h.setup_logging("./logs", file, flight_key)
+    log = h.setup_logging("./logs", file, key)
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\nt_interp: {t_interp}")
+             f"\ninit time: {init_time}\ngrid: {grid}\nt_interp: {t_interp}")
 
     # %% set paths
     path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
@@ -69,7 +78,7 @@ if __name__ == "__main__":
         ifs_date = date
 
     nav_data_ip = pd.read_csv(f"{path_ifs_output}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
-    data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_processed.nc")
+    data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_{grid}_processed.nc")
 
     # %% loop through time steps and write one file per time step
     idx = len(nav_data_ip)
