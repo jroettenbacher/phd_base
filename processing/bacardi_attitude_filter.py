@@ -25,6 +25,7 @@ campaign = "halo-ac3"
 # keys = "RF17"  # run for single flight
 keys = [f"RF{i:02}" for i in range(3, 19)]  # run for all flights
 
+# %% run motion filter for all flights in keys
 for key in tqdm(keys):
     flight = meta.flight_names[key]
     date = flight[9:17]
@@ -52,7 +53,7 @@ for key in tqdm(keys):
     bacardi_ds = bacardi_ds.sel(time=bahamas_ds.time)
 
     # %% filter values which exceeded certain motion threshold
-    roll_center = np.abs(bahamas_ds["IRS_PHI"].median())  # -> 0.06...
+    roll_center = np.abs(bahamas_ds["IRS_PHI"].median())
     roll_threshold = 0.5
     # pitch is not centered on 0 thus we need to calculate the difference to the center and compare that to the threshold
     # the pitch center changes during flight due to loss of weight (fuel) and speed
