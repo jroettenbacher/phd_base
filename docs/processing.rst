@@ -563,7 +563,7 @@ ecrad_read_ifs.py
 .. automodule:: processing.ecrad_read_ifs
 
 ecrad_write_input_files_vx.py
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_write_input_files
 
 ecrad_execute_IFS.sh

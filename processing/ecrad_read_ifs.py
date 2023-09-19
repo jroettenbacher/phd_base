@@ -31,7 +31,7 @@ Can be passed via the command line (except step).
 
 **Output:**
 
-* processed IFS file for input to :ref:`processing:ecrad_write_input_files.py`
+* processed IFS file for input to :ref:`processing:ecrad_write_input_files_vx.py`
 * decorrelation length for ecRad namelist file |rarr| manually change that in the namelist file
 
 
@@ -232,6 +232,7 @@ if __name__ == "__main__":
     decorr_len, b, c = cloud_overlap_decorr_len(nav_data_ip.lat, 1)  # operational scheme 1
     decorr_file = f"{path_ifs_output}/{date}_decorrelation_length.csv"
     decorr_len.to_csv(decorr_file)
+    log.info(f"Mean decorrelation lenght for whole flight: {decorr_len.mean() * 1000:.2f} m")
     log.info(f"Decorrelation length saved in {decorr_file}")
 
     # %% select only closest (+-10) lats and lons from datasets to reduce size in memory (only for full resolution)
@@ -387,7 +388,8 @@ if __name__ == "__main__":
     data_ml["cfc12_vmr"] = xr.DataArray(484e-12, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
     # other constant
     data_ml["o2_vmr"] = xr.DataArray(0.209488, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
-    # monthly surface mean value from https://gml.noaa.gov/ccgg/trends_ch4/
+    # greenhouse gas mixing ratios from CAMS climatology
+    # ch4 = cams_ml["ch4_vmr"]
     data_ml["ch4_vmr"] = xr.DataArray(1900e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
     # monthly mean CO2 from the Keeling curve https://keelingcurve.ucsd.edu/
     data_ml["co2_vmr"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
