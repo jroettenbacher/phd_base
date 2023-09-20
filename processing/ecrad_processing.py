@@ -136,16 +136,16 @@ if __name__ == "__main__":
     ds["iwc"].attrs = {"units": "kg m^-3", "long_name": "Ice water content"}
 
     # calculate bulk optical properties
-    if ov in ["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v13.1", "v13.2", "v14", "v15", "v16", "v17", "v22", "v23", "v26"]:
+    if ov in ecrad.ice_optic_parameterizations["fu"]:
         ice_optics = ecrad.calc_ice_optics_fu_sw(ds.iwp, ds.re_ice)
     elif ov == "v2":
         ice_optics = ecrad.calc_ice_optics_baran2017("sw", ds.iwp, ds.q_ice, ds.t)
-    elif ov in ["v4", "v19"]:
+    elif ov in ecrad.ice_optic_parameterizations["yi"]:
         ice_optics = ecrad.calc_ice_optics_yi("sw", ds.iwp, ds.re_ice)
-    elif ov in ["v6", "v7", "v9", "v18", "v20", "v21", "v24", "v25", "v27"]:
+    elif ov in ecrad.ice_optic_parameterizations["baran2016"]:
         ice_optics = ecrad.calc_ice_optics_baran2016("sw", ds.iwp, ds.q_ice, ds.t)
     else:
-        raise ValueError(f"No parameterization for {ov} defined")
+        raise ValueError(f"No parameterization for {ov} defined!")
 
     ds["od"] = ice_optics[0]
     ds["scat_od"] = ice_optics[1]

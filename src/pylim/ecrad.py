@@ -16,7 +16,14 @@ import importlib_resources as pkg_resources
 log = logging.getLogger(__name__)
 
 version_names = dict(v15="Fu-IFS", v16="Fu-IFS VarCloud", v18="Baran2016", v19="Yi2013", v20="Baran2016 VarCloud",
-                     v22="Fu-IFS 3D")
+                     v22="Fu-IFS 3D", v28="Yi VarCloud")
+
+# which ice optic parameterization is used by which namelist version
+ice_optic_parameterizations = dict(
+    fu=["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v13.1", "v13.2", "v14", "v15", "v16", "v17", "v22", "v23",
+        "v26"],
+    baran2016=["v6", "v7", "v9", "v18", "v20", "v21", "v24", "v25", "v27"],
+    yi=["v4", "v19", "v28"])
 
 def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PLAT):
     """
