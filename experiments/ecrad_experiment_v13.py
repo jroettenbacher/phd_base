@@ -110,6 +110,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from matplotlib import colors
     import pandas as pd
+    import seaborn as sns
     from tqdm import tqdm
     import cmasher as cmr
 
@@ -128,9 +129,9 @@ if __name__ == "__main__":
     h.make_dir(plot_path)
     ecrad_path = f"{h.get_path('ecrad', campaign=campaign)}/{date}"
     bacardi_path = h.get_path("bacardi", flight, campaign)
-    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_1s.nc"
+    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR_1Min.nc"
     bahamas_path = h.get_path("bahamas", flight, campaign)
-    bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_1s.nc"
+    bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_1Min.nc"
 
 # %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
@@ -159,13 +160,12 @@ if __name__ == "__main__":
     ins = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
 
 # %% read in BACARDI data
-    bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
-    bacardi_ds_res = bacardi_ds.resample(time="1Min").first().sel(time=case_slice)
+    bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}").sel(time=case_slice)
 
 # %% read in ecrad data
     ecrad_dict = dict()
     for v in ["v15", "v13", "v13.1", "v13.2"]:
-        # use mean over columns data
+        # use center column data
         ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{v}.nc").isel(column=0)
         # select above and below cloud time
         ds = ds.sel(time=case_slice)
@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
 # %% get height level of actual flight altitude in ecRad model, this determines only the index of the level
     aircraft_height_da, height_level_da = dict(), dict()
-    for v in ["v15", "v13", "v13.2"]:
+    for v in ["v15", "v13", "v13.1", "v13.2"]:
         ds = ecrad_dict[v]
         bahamas_tmp = ins.sel(time=ds.time, method="nearest")
         ecrad_timesteps = len(ds.time)
@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
 # %% plot scatterplot of below cloud measurements
     v = "v13.2"
-    bacardi_plot = bacardi_ds_res.sel(time=below_slice)
+    bacardi_plot = bacardi_ds.sel(time=below_slice)
     ecrad_plot = ecrad_dict[v].isel(half_level=height_level_da[v]).sel(time=below_slice)
     plt.rc("font", size=12)
     lims = {"v15": [(120, 240), (80, 130), (95, 170), (210, 220)], "v13": [(110, 240), (80, 150), (0, 200), (210, 220)],
@@ -431,3 +431,23 @@ if __name__ == "__main__":
         plt.savefig(figname, bbox_inches="tight", dpi=300)
         plt.show()
         plt.close()
+# %% prepare data for box plot
+    values = list()
+    for v in ["v15", "v13", "v13.1", "v13.2"]:
+        values.append(ecrad_dict[v].flux_dn_sw.isel(half_level=height_level_da[v]).sel(time=below_slice).to_numpy())
+
+    df = pd.DataFrame({"IFS": values[0], "Open Ocean": values[1],
+                       "Maximum": values[2], "Measured":values[3]})
+    df.to_csv(f"C:/Users/Johannes/Documents/Doktor/manuscripts/2023_arctic_cirrus/figures/{flight}_boxplot_data.csv",
+              index=False)
+
+# %% plot boxplots of solar downward irradiance below cloud for each experiment
+    plt.rc("font", size=7)
+    _, ax = plt.subplots(figsize=(8*h.cm, 8*h.cm))
+    sns.boxplot(df, notch=True, ax=ax)
+    ax.set_ylabel("Solar downward irradiance (W$\,$m$^{-2}$)")
+    plt.tight_layout()
+    figname = f"{plot_path}/{flight}_ecrad_flux_dn_sw_below_cloud_boxplot.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
