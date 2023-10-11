@@ -53,14 +53,14 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import time
     from scipy.interpolate import interp1d
-    import scipy.spatial as sp
+    from sklearn.neighbors import BallTree
     from distutils.util import strtobool
 
     start = time.time()
 
     # %% read in command line arguments
     args = h.read_command_line_args()
-    key = args["key"] if "key" in args else "RF03"
+    key = args["key"] if "key" in args else "RF17"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     init_time = args["init"] if "init" in args else "00"
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
@@ -167,7 +167,7 @@ if __name__ == "__main__":
         ifs_latlon = data_ml["t"].isel(lev=1, time=1, drop=True).stack(latlon=["lat", "lon"])
         ifs_lat_lon = np.array([np.array(element) for element in ifs_latlon["latlon"].to_numpy()])
     else:
-        # calculate longitude and latitude values for a reduced gaussian grid
+        # calculate longitude values for a reduced gaussian grid
         lat_values, lon_values = h.longitude_values_for_gaussian_grid(data_srf.lat.to_numpy(),
                                                                       data_srf.reduced_points.to_numpy(),
                                                                       longitude_boundaries=[-60, 30])
@@ -193,13 +193,16 @@ if __name__ == "__main__":
         # generate an array with all possible lat, lon combinations for a kdTree nearest neighbour search
         ifs_lat_lon = np.column_stack((data_srf.lat, data_srf.lon))
 
-    # %% calculate cosine of solar zenith angle along flight track
-    ifs_tree = sp.KDTree(ifs_lat_lon)  # build the kd tree for nearest neighbour look up
+    # %% build kd Tree and get the closest lat lons to flight path
+    ifs_tree = BallTree(np.deg2rad(ifs_lat_lon), metric="haversine")
     # generate an array with lat, lon values from the flight position
-    points = np.column_stack((nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy()))
-    dist, idx = ifs_tree.query(points, k=1)  # query the tree
-    closest_latlons = ifs_tree.data[idx]  # get the closest lat lon values to the flight path from the ifs
-    # initialize some arrays and lists
+    points = np.deg2rad(
+        np.column_stack(
+            (nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy())))
+    dist, idx_ifs = ifs_tree.query(points, k=1)  # query the tree
+    closest_latlons = ifs_lat_lon[idx_ifs.flatten()]  # get the closest lat lon values to the flight path from the ifs
+
+    # %% calculate cosine of solar zenith angle along flight track
     sza = np.empty(ts)
     cos_sza = np.empty(ts)
     closest_lats, closest_lons = list(), list()
@@ -250,7 +253,7 @@ if __name__ == "__main__":
         data_ml = data_ml.isel(lat=lat_sel, lon=lon_sel)
         data_srf = data_srf.isel(lat=lat_sel, lon=lon_sel)
 
-    # %% calculate pressure and modify datasets
+    # %% calculate pressure and modify ifs datasets
     data_ml = calc_pressure(data_ml)
     data_ml = data_ml.sel(lev_2=1).reset_coords("lev_2", drop=True)  # drop lev_2 dimension
     data_ml = data_ml.rename({"nhyi": "half_level", "lev": "level"})  # rename variables and thus dimensions
@@ -393,8 +396,6 @@ if __name__ == "__main__":
     data_ml["ch4_vmr"] = xr.DataArray(1900e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
     # monthly mean CO2 from the Keeling curve https://keelingcurve.ucsd.edu/
     data_ml["co2_vmr"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
-    #TODO: get profile from CAMS
-    #TODO: Add NO2 profile from CAMS
 
     # %% add cloud properties
     data_ml["fractional_std"] = xr.DataArray(np.repeat([1.], n_levels),
