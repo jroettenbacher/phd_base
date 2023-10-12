@@ -8,7 +8,7 @@ Read in CAMS from different sources (ADS, MARS online, MARS ECMWF, Copernicus Kn
 
 Required User Input:
 
-- source (ADS, MARS, ECMWF, CKB)
+- source (ADS, 47r1, MARS, ECMWF)
 - year (2019, 2020)
 
 Input:
@@ -17,7 +17,7 @@ Input:
 
 Output:
 
-- merged CAMS monthly mean data along flight track
+- trace gas and aerosol monthly climatology interpolated to flight day along flight track
 
 """
 
@@ -31,50 +31,86 @@ from datetime import datetime
 
 # %% set source and paths
 campaign = "halo-ac3"
-source = "ADS"
+source = "47r1"
 year = "2020"
 date = "20220411"
 
 cams_path = h.get_path("cams_raw", campaign=campaign)
 cams_output_path = h.get_path("cams", campaign=campaign)
-eac4_file = f"cams_eac4_global_reanalysis_mm_{year}_pl.nc"
-gghg_file = f"cams_global_ghg_reanalysis_mm_{year}_pl.nc"
 # IFS path for flight track file
 ifs_path = h.get_path("ifs", campaign=campaign)
+if source == "ADS":
+    aerosol_file = f"cams_eac4_global_reanalysis_mm_{year}_pl.nc"
+    trace_gas_file = f"cams_global_ghg_reanalysis_mm_{year}_pl.nc"
+elif source == "47r1":
+    aerosol_file = "aerosol_cams_3d_climatology_47r1.nc"
+    trace_gas_file = "greenhouse_gas_climatology_46r1.nc"
 
 # %% read in data
-eac4 = xr.open_dataset(f"{cams_path}/{eac4_file}")
-gghg = xr.open_dataset(f"{cams_path}/{gghg_file}")
-cams_ml = xr.merge([eac4, gghg]).sel(time=f"2020-{date[4:6]}-01")
 nav_data_ip = pd.read_csv(f"{ifs_path}/{date}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
+aerosol = xr.open_dataset(f"{cams_path}/{aerosol_file}")
+trace_gas = xr.open_dataset(f"{cams_path}/{trace_gas_file}")
+
+# %% linearly interpolate in time and rename dimensions
+new_time_axis = pd.date_range(f"{date[0:4]}-01-15", f"{date[0:4]}-12-15", freq=pd.offsets.SemiMonthBegin(2))
+date_dt = pd.to_datetime(date)
+if source == "ADS":
+    aerosol = (aerosol
+               .assign_coords(time=new_time_axis)
+               .interp(time=date_dt)
+               .rename({"latitude": "lat", "longitude": "lon"}))
+    trace_gas = (trace_gas
+                 .assign_coords(time=new_time_axis)
+                 .interp(time=date_dt)
+                 .rename({"latitude": "lat", "longitude": "lon"}))
+elif source == "47r1":
+    aerosol = (aerosol
+               .assign_coords(month=new_time_axis)
+               .interp(month=date_dt)
+               .rename(month="time"))
+    trace_gas = (trace_gas
+                 .assign_coords(month=new_time_axis)
+                 .interp(month=date_dt)
+                 .rename(latitude="lat", month="time"))
 
 # %% create array of aircraft locations
 points = np.deg2rad(
     np.column_stack(
         (nav_data_ip.lat.to_numpy(), nav_data_ip.lon.to_numpy())))
 
-# %% select closest points along flight track from cams data
-cams_latlon = cams_ml.stack(latlon=["latitude", "longitude"])  # combine lat and lon into one dimension
+# %% select closest points along flight track from aerosol data
+aerosol_latlon = aerosol.stack(latlon=["lat", "lon"])  # combine lat and lon into one dimension
 # make an array with all lat lon combinations
-cams_lat_lon = np.array([np.array(element) for element in cams_latlon["latlon"].to_numpy()])
+aerosol_lat_lon = np.array([np.array(element) for element in aerosol_latlon["latlon"].to_numpy()])
 # build the look up tree
-cams_tree = BallTree(np.deg2rad(cams_lat_lon), metric="haversine")
+aerosol_tree = BallTree(np.deg2rad(aerosol_lat_lon), metric="haversine")
 # query the tree for the closest CAMS grid points to the flight track
-dist, idx = cams_tree.query(points, k=1)
+dist, idx = aerosol_tree.query(points, k=1)
 # select only the closest grid points along the flight track
-cams_sel = cams_latlon.isel(latlon=idx.flatten())
+aerosol_sel = aerosol_latlon.isel(latlon=idx.flatten())
 # reset index and make lat, lon and time (month) a variable
-cams_sel = (cams_sel
-            .reset_index(["latlon", "latitude", "longitude"])
-            .reset_coords(["latitude", "longitude", "time"])
-            .drop_vars(["time", "latitude", "longitude"])
-            .rename(latlon="time")
-            .assign(time=nav_data_ip.index.to_numpy()))  # replace latlon with time as a dimension/coordinate
+aerosol_sel = (aerosol_sel
+               .reset_index(["latlon", "lat", "lon"])
+               .reset_coords(["lat", "lon", "time"])
+               .drop_vars(["time", "lat", "lon"])
+               .rename(latlon="time")
+               .assign(time=nav_data_ip.index.to_numpy()))  # replace latlon with time as a dimension/coordinate
 
-# %% save file to netcdf
-cams_sel.attrs["history"] = (cams_sel.attrs["history"]
-                             + f" {datetime.today().strftime('%c')}: "
-                               f"formatted file to serve as input to ecRad"
-                               f" using ecrad_cams_preprocessing.py")
-cams_sel.to_netcdf(f"{cams_output_path}/cams_mm_climatology_{year}_{source}_{date}.nc",
-                   format='NETCDF4_CLASSIC')
+# %% select zonal mean closest to flight track from greenhouse gas data
+trace_gas_sel = trace_gas.sel(lat=nav_data_ip.lat.to_numpy(), method="nearest")
+
+# %% save files to netcdf
+history_str = (f"\n{datetime.today().strftime('%c')}: "
+               f"formatted file to serve as input to ecRad"
+               f" using ecrad_cams_preprocessing.py")
+try:
+    aerosol_sel.attrs["history"] = aerosol_sel.attrs["history"] + history_str
+    trace_gas_sel.attrs["history"] = trace_gas_sel.attrs["history"] + history_str
+except KeyError:
+    aerosol_sel.attrs["history"] = history_str
+    trace_gas_sel.attrs["history"] = history_str
+
+aerosol_sel.to_netcdf(f"{cams_output_path}/aerosol_mm_climatology_{year}_{source}_{date}.nc",
+                      format='NETCDF4_CLASSIC')
+trace_gas_sel.to_netcdf(f"{cams_output_path}/trace_gas_mm_climatology_{year}_{source}_{date}.nc",
+                        format='NETCDF4_CLASSIC')
