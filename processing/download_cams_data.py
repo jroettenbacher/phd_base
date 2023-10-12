@@ -11,7 +11,7 @@ import cdsapi
 
 c = cdsapi.Client()
 
-cams_path = h.get_path("cams", campaign="halo-ac3")
+cams_path = h.get_path("cams_raw", campaign="halo-ac3")
 year = 2019
 
 # aerosol and ozone
@@ -79,8 +79,8 @@ c.retrieve(
         ],
         "product_type": "monthly_mean",
         "area": [
-            90, -40, 60,
-            40,
+            90, -180, -90,
+            180,
         ],
         "format": "netcdf",
     },
