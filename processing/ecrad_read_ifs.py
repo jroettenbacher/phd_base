@@ -44,6 +44,7 @@ if __name__ == "__main__":
     from pylim import helpers as h
     from pylim.solar_position import get_sza
     from pylim.ecrad import calc_pressure, cloud_overlap_decorr_len, calculate_pressure_height
+    import pylim.meteorological_formulas as met
     import numpy as np
     import xarray as xr
     import glob
@@ -228,8 +229,9 @@ if __name__ == "__main__":
         closest_lats.append(lat_idx)
         closest_lons.append(lon_idx)
 
-    # %% add cos_sza to navdata
+    # %% add cos_sza and open ocean albedo after Taylor et al. 1996 to navdata
     nav_data_ip = nav_data_ip.assign(cos_sza=cos_sza)
+    nav_data_ip = nav_data_ip.assign(open_ocen_albedo_taylor=met.calculate_open_ocean_albedo_taylor(cos_sza))
 
     # %% calculate decorrelation length to put into namelist
     decorr_len, b, c = cloud_overlap_decorr_len(nav_data_ip.lat, 1)  # operational scheme 1
