@@ -51,6 +51,11 @@ nav_data_ip = pd.read_csv(f"{ifs_path}/{date}/nav_data_ip_{date}.csv", index_col
 aerosol = xr.open_dataset(f"{cams_path}/{aerosol_file}")
 trace_gas = xr.open_dataset(f"{cams_path}/{trace_gas_file}")
 
+# %% calculate pressure at full model level for aerosol file
+# add half the difference between the pressure at the base and top of the layer to the pressure at the base of the layer
+aerosol["full_level_pressure"] = (aerosol.half_level_pressure
+                                  + 0.5 * aerosol.half_level_delta_pressure)
+
 # %% linearly interpolate in time and rename dimensions
 new_time_axis = pd.date_range(f"{date[0:4]}-01-15", f"{date[0:4]}-12-15", freq=pd.offsets.SemiMonthBegin(2))
 date_dt = pd.to_datetime(date)
@@ -93,11 +98,16 @@ aerosol_sel = (aerosol_sel
                .reset_index(["latlon", "lat", "lon"])
                .reset_coords(["lat", "lon", "time"])
                .drop_vars(["time", "lat", "lon"])
-               .rename(latlon="time")
+               .rename(latlon="time", lev="level")
                .assign(time=nav_data_ip.index.to_numpy()))  # replace latlon with time as a dimension/coordinate
 
 # %% select zonal mean closest to flight track from greenhouse gas data
-trace_gas_sel = trace_gas.sel(lat=nav_data_ip.lat.to_numpy(), method="nearest")
+trace_gas_sel = (trace_gas
+                 .sel(lat=nav_data_ip.lat.to_numpy(), method="nearest")
+                 .drop_vars("time")
+                 .rename(lat="time")
+                 .assign(time=nav_data_ip.index.to_numpy())
+                 .assign(level=trace_gas.pressure))
 
 # %% save files to netcdf
 history_str = (f"\n{datetime.today().strftime('%c')}: "
