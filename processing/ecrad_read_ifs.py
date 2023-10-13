@@ -66,7 +66,6 @@ if __name__ == "__main__":
     init_time = args["init"] if "init" in args else "00"
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
     use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
-    ozone_flag = args["ozone"] if "ozone" in args else "sonde"
     grid = f"_{args['grid']}" if "grid" in args else "_O1280"
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -84,7 +83,7 @@ if __name__ == "__main__":
 
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\ngrid: {grid}\nozone: {ozone_flag}\nuse_bahamas: {use_bahamas}")
+             f"\ninit time: {init_time}\ngrid: {grid}\nuse_bahamas: {use_bahamas}")
 
     # %% set paths
     path_ifs_raw = f"{h.get_path('ifs_raw', campaign=campaign)}/{date}"
@@ -341,63 +340,60 @@ if __name__ == "__main__":
                                 "MSL": "mean_sea_level_pressure"}
                                )
 
-    # %% add trace gases
-    if ozone_flag == "sonde":
-        log.info(f"ozone flag set to {ozone_flag}\ninterpolating sonde measurement onto IFS full pressure levels...")
-        try:
-            # read the corresponding ozone file for the flight
-            ozone_file = h.ozone_files[key]
-            # interpolate ozone sonde data on IFS full pressure levels
-            ozone_sonde = reader.read_ozone_sonde(f"{path_ozone}/{ozone_file}")
-            ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
-            # create interpolation function
-            f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate",
-                               bounds_error=False)
-            if "F" in grid:
-                ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
-                # copy interpolated ozone concentration over time, lat and longitude dimension
-                o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-                o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
-                o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
-                # create DataArray
-                o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
-            else:
-                ozone_interp = f_ozone(data_ml.pressure_full.isel(rgrid=0, time=0))
-                # copy interpolated ozone concentration over time and column dimension
-                o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-                o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["rgrid"], axis=2)
-                # create DataArray
-                o3_vmr = xr.DataArray(o3_lat, coords=data_ml.pressure_full.coords, dims=["level", "time", "rgrid"])
+    # %% add trace gases to be picked during input file creation
+    log.info(f"Interpolating ozone sonde measurement onto IFS full pressure levels...")
+    try:
+        # read the corresponding ozone file for the flight
+        ozone_file = h.ozone_files[key]
+        # interpolate ozone sonde data on IFS full pressure levels
+        ozone_sonde = reader.read_ozone_sonde(f"{path_ozone}/{ozone_file}")
+        ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
+        # create interpolation function
+        f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate",
+                           bounds_error=False)
+        if "F" in grid:
+            ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
+            # copy interpolated ozone concentration over time, lat and longitude dimension
+            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
+            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
+            o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
+            # create DataArray
+            o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
+        else:
+            ozone_interp = f_ozone(data_ml.pressure_full.isel(rgrid=0, time=0))
+            # copy interpolated ozone concentration over time and column dimension
+            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
+            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["rgrid"], axis=2)
+            # create DataArray
+            o3_vmr = xr.DataArray(o3_lat, coords=data_ml.pressure_full.coords, dims=["level", "time", "rgrid"])
 
-            o3_vmr = o3_vmr.transpose("time", ...)
-            o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
-            o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
-            o3_vmr.attrs = dict(unit="1", long_name="Ozone volume mass mixing ratio")
-            data_ml["o3_vmr"] = o3_vmr
+        o3_vmr = o3_vmr.transpose("time", ...)
+        o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
+        o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
+        o3_vmr.attrs = dict(unit="1",
+                            long_name="Ozone volume mass mixing ratio",
+                            description="Sonde measurements interpolated to IFS full pressure levels")
+        data_ml["o3_vmr_sonde"] = o3_vmr
 
-        except KeyError:
-            log.info(f"No ozone sonde found for {key}! Using standard value.")
-            data_ml["o3_mmr"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
-                                             dims=["level"],
-                                             attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
+    except KeyError:
+        log.info(f"No ozone sonde found for {key}!")
 
-    else:
-        assert ozone_flag == "default", f"ozone flag set to unrecognized value {ozone_flag}! Check input!"
-        data_ml["o3_mmr"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
+    data_ml["o3_vmr_constant"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
                                          dims=["level"],
                                          attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
+    data_ml["o3_vmr_ifs"] =  28.9644 / 47.9982 * 1e9 * data_ml["o3"]  # convert IFS O3 mass mixing ratio to vmr
+    data_ml.drop_vars("o3")
 
     # constants according to IFS Documentation Part IV Section 2.8.4
-    data_ml["n2o_vmr"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
-    data_ml["cfc11_vmr"] = xr.DataArray(280e-12, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
-    data_ml["cfc12_vmr"] = xr.DataArray(484e-12, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
-    # other constant
-    data_ml["o2_vmr"] = xr.DataArray(0.209488, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
-    # greenhouse gas mixing ratios from CAMS climatology
-    # ch4 = cams_ml["ch4_vmr"]
-    data_ml["ch4_vmr"] = xr.DataArray(1900e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
+    data_ml["n2o_vmr_constant"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
+    data_ml["cfc11_vmr_constant"] = xr.DataArray(280e-12, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
+    data_ml["cfc12_vmr_constant"] = xr.DataArray(484e-12, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
+    # other constants
+    data_ml["o2_vmr"] = xr.DataArray(0.20944, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
+    # global monthly mean concentration from https://gml.noaa.gov/ccgg/trends_ch4/
+    data_ml["ch4_vmr_constant"] = xr.DataArray(1909.54e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
     # monthly mean CO2 from the Keeling curve https://keelingcurve.ucsd.edu/
-    data_ml["co2_vmr"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
+    data_ml["co2_vmr_constant"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
 
     # %% add cloud properties
     data_ml["fractional_std"] = xr.DataArray(np.repeat([1.], n_levels),
