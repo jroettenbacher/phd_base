@@ -32,7 +32,7 @@ from datetime import datetime
 # %% set source and paths
 campaign = "halo-ac3"
 source = "47r1"
-year = "2020"
+climatology_year = "2020"
 date = "20220411"
 
 cams_path = h.get_path("cams_raw", campaign=campaign)
@@ -40,11 +40,13 @@ cams_output_path = h.get_path("cams", campaign=campaign)
 # IFS path for flight track file
 ifs_path = h.get_path("ifs", campaign=campaign)
 if source == "ADS":
-    aerosol_file = f"cams_eac4_global_reanalysis_mm_{year}_pl.nc"
-    trace_gas_file = f"cams_global_ghg_reanalysis_mm_{year}_pl.nc"
+    aerosol_file = f"cams_eac4_global_reanalysis_mm_{climatology_year}_pl.nc"
+    trace_gas_file = f"cams_global_ghg_reanalysis_mm_{climatology_year}_pl.nc"
 elif source == "47r1":
     aerosol_file = "aerosol_cams_3d_climatology_47r1.nc"
     trace_gas_file = "greenhouse_gas_climatology_46r1.nc"
+    scaling_file = "greenhouse_gas_timeseries_CMIP6_SSP370_CFC11equiv_47r1.nc"
+    scaling_ds = xr.open_dataset(f"{cams_path}/{scaling_file}", decode_times=False).isel(time=int(date[0:4]))
 
 # %% read in data
 nav_data_ip = pd.read_csv(f"{ifs_path}/{date}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
@@ -77,6 +79,14 @@ elif source == "47r1":
                  .assign_coords(month=new_time_axis)
                  .interp(month=date_dt)
                  .rename(latitude="lat", month="time"))
+
+    # scale trace house gases so that their annual-mean surface concentrations
+    # match the values appropriate for the current year
+    for var in scaling_ds:
+        scale_factor = (scaling_ds[var] / trace_gas[var].attrs["surface_mean"]).to_numpy()
+        trace_gas[var] = np.multiply(trace_gas[var], scale_factor)  # use numpy function to conserve attributes
+        trace_gas[var].attrs["comment1"] = (f"Scaled to annual-mean surface concentration of "
+                                            f"{date[0:4]} provided in {scaling_file}")
 
 # %% create array of aircraft locations
 points = np.deg2rad(
@@ -120,7 +130,7 @@ except KeyError:
     aerosol_sel.attrs["history"] = history_str
     trace_gas_sel.attrs["history"] = history_str
 
-aerosol_sel.to_netcdf(f"{cams_output_path}/aerosol_mm_climatology_{year}_{source}_{date}.nc",
+aerosol_sel.to_netcdf(f"{cams_output_path}/aerosol_mm_climatology_{climatology_year}_{source}_{date}.nc",
                       format='NETCDF4_CLASSIC')
-trace_gas_sel.to_netcdf(f"{cams_output_path}/trace_gas_mm_climatology_{year}_{source}_{date}.nc",
+trace_gas_sel.to_netcdf(f"{cams_output_path}/trace_gas_mm_climatology_{climatology_year}_{source}_{date}.nc",
                         format='NETCDF4_CLASSIC')
