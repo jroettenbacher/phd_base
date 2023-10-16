@@ -77,8 +77,8 @@ if __name__ == "__main__":
     # %% set paths
     path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
     path_cams = h.get_path("cams", campaign=campaign)
-    trace_gas_file = f"trace_gas_mm_climatology_2020_{trace_gas_source}_20220411.nc"
-    aerosol_file = f"aerosol_mm_climatology_2020_{aerosol_source}_20220411.nc"
+    trace_gas_file = f"trace_gas_mm_climatology_2020_{trace_gas_source}_{date}.nc"
+    aerosol_file = f"aerosol_mm_climatology_2020_{aerosol_source}_{date}.nc"
     path_ecrad = os.path.join(h.get_path("ecrad", campaign=campaign), date, "ecrad_input")
     path_varcloud = h.get_path("varcloud", flight, campaign)
     file_varcloud = [f for f in os.listdir(path_varcloud) if f.endswith(".nc")][0]
