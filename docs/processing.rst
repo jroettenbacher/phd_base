@@ -468,19 +468,20 @@ Workflow with ecRad
 -------------------
 
 | IFS raw output + navigation data from aircraft
-| |rarr| create ecRad input files which correspond to the columns which the aircraft passed during flight
+| |rarr| create ecRad input files which correspond to the columns (+10 surrounding ones) which the aircraft passed during flight
 | |rarr| run ecrad for aircraft track
 
-| SMART measurements during flight + ecRad output files for aircraft track
+| SMART/BACARDI measurements during flight + ecRad output files for aircraft track
 | |rarr| compare upward and downward (spectral/banded) irradiance
 
 #. Download IFS/CAMS data for campaign |rarr| :ref:`processing:IFS/CAMS Download`
 #. Run :ref:`processing:IFS/CAMS Preprocessing` to convert grib to nc files
 #. Decide which flight to work on -> set key in :ref:`processing:ecrad_read_ifs.py` or give it via commandline
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options as you want them to be (see script for details)
+#. Run :ref:`processing:ecrad_cams_preprocessing.py` to prepare CAMS data
 #. Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length |rarr| choose one value which is representative for the period you want to study
 #. Run one of :ref:`processing:ecrad_write_input_files_vx.py`
-#. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each file in ``ecrad_input`` and then runs the following processing steps
+#. Run :ref:`processing:ecrad_execute_IFS.sh` with options which runs ecRad for each matching file in ``ecrad_input`` and then runs the following processing steps
 
     #. Run :ref:`processing:ecrad_merge_radiative_properties.py` to generate one merged radiative properties file from the single files given by the ecRad simulation
     #. Run :ref:`processing:ecrad_merge_files.py` to generate merged input and output files for and from the ecRad simulation
@@ -492,7 +493,7 @@ They can be found in the ``experiments`` folder.
 An overview of which input versions should be run with which namelist versions can be found in the following table.
 The version numbers reflect the process in which experiments were thought of or conducted.
 With version 5 we switched from the interpolated regular lat lon grid (F1280) to the original grid resolution of the IFS which is a octahedral reduced gaussian grid (O1280).
-The namelists mainly differ in the chosen ice optic parameterization (*Fu-IFS*, *Baran2016*, etc.) and whether the 3D parameterizations are turned on or not.
+The namelists mainly differ in the chosen ice optic parameterization (*Fu-IFS*, *Baran2016*, *Yi2013*) and whether the 3D parameterizations are turned on or not.
 The output file names of the simulations only differ in the version string (e.g. *..._v16.nc*) reflecting the namelist version.
 Thus, many namelists have the same settings but only have different experiment names and the difference comes due to the input.
 This repetition was chosen to have a better overview of the different combinations of input version and namelist version.
@@ -522,12 +523,20 @@ These are the download scripts used and run on the ECMWF server:
 
 IFS download script: :py:mod:`processing.halo_ac3_ifs_download_from_ecmwf.sh`
 
-CAMS download script: :py:mod:`processing.halo_ac3_cams_downlaod_from_ecmwf.sh`
+CAMS download script: :py:mod:`processing.halo_ac3_cams_downlaod_from_ecmwf.sh` (deprecated since 13.10.2023)
+
+The CAMS trace gas climatology was implemented in the ecRad input files on 13.10.2023 (see analysis of impact in :ref:`trace-gases`).
+Following the usage in the IFS the files provided at https://confluence.ecmwf.int/display/ECRAD were used in :py:mod:`ecrad_cams_preprocessing.py`.
+
+For the CAMS aerosol climatology another file is available at https://sites.ecmwf.int/data/cams/aerosol_radiation_climatology/.
+
+Another option would be to download the monthly mean CAMS files from the Copernicus Atmospheric Data Store (`ADS <https://ads.atmosphere.copernicus.eu>`_) and use these files.
+The script :py:mod:`processing.download_cams_data.py` downloads the CAMS aerosol and trace gas climatology and saves them to seperate files.
 
 IFS/CAMS Preprocessing
 ^^^^^^^^^^^^^^^^^^^^^^
 
-IFS/CAMS data comes in grib format.
+IFS data comes in grib format.
 To convert it to netcdf and rename the parameters according to the ECMWF codes run
 
 .. code-block:: shell
@@ -539,7 +548,9 @@ Or run the python script :py:mod:`processing.ecrad_preprocessing.py` (currently 
 
 .. automodule:: processing.ecrad_preprocessing
 
-**CAMS files**
+**CAMS files (deprecated since 13.10.2023)**
+
+*This is not needed since there is a monthly mean product available on the ADS!*
 
 We want to get yearly monthly means from the CAMS reanalysis.
 For this we download 3-hourly data and preprocess it on the ECMWF server to avoid downloading a huge amount of data.
@@ -557,6 +568,9 @@ You can move all files into one folder by calling the following command in the C
     mv --target-directory=. 20*/20*.grb
     cdo mergetime 20*.grb cams_ml_halo_ac3.grb
 
+ecrad_cams_preprocessing.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_cams_preprocessing
 
 ecrad_read_ifs.py
 ^^^^^^^^^^^^^^^^^

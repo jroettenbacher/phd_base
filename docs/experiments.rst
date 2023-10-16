@@ -125,6 +125,15 @@ Fixed Albedo Experiment
 .. automodule:: experiments.ecrad_experiment_v13
 
 
+.. _trace-gases:
+
+Trace gas comparison
+--------------------
+
+*Script:* :py:mod:`experiments.ecrad_trace_gases.py`
+
+.. automodule:: experiments.ecrad_trace_gases
+
 ecRad Setups
 ============
 
