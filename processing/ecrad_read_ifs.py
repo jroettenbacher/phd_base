@@ -230,7 +230,7 @@ if __name__ == "__main__":
 
     # %% add cos_sza and open ocean albedo after Taylor et al. 1996 to navdata
     nav_data_ip = nav_data_ip.assign(cos_sza=cos_sza)
-    nav_data_ip = nav_data_ip.assign(open_ocen_albedo_taylor=met.calculate_open_ocean_albedo_taylor(cos_sza))
+    nav_data_ip = nav_data_ip.assign(open_ocean_albedo_taylor=met.calculate_open_ocean_albedo_taylor(cos_sza))
 
     # %% calculate decorrelation length to put into namelist
     decorr_len, b, c = cloud_overlap_decorr_len(nav_data_ip.lat, 1)  # operational scheme 1
