@@ -19,15 +19,15 @@
 
 Can be passed via the command line (except step).
 
-* ozone_flag ('default' or 'sonde')
-* date (yyyymmdd)
+* campaign ('halo-ac3' or 'cirrus-hl')
+* key (e.g. RF17)
 * init_time (00, 12 or yesterday)
 * flight (e.g. 'Flight_20210629a' or 'HALO-AC3_20220412_HALO_RF18')
 * aircraft ('halo')
-* campaign ('cirrus-hl' or 'halo-ac3')
-* step, one can choose the time resolution on which to interpolate the IFS data on (e.g. '1Min')
 * use_bahamas, whether to use BAHAMAS or the SMART INS for navigation data (True/False)
 * grid (O1280 or None), which grid the IFS data is on
+
+* step, one can choose the time resolution on which to interpolate the IFS data on (e.g. '1Min')
 
 **Output:**
 
@@ -61,12 +61,13 @@ if __name__ == "__main__":
 
     # %% read in command line arguments
     args = h.read_command_line_args()
-    key = args["key"] if "key" in args else "RF17"
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
-    init_time = args["init"] if "init" in args else "00"
+    key = args["key"] if "key" in args else "RF17"
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
-    use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
+    init_time = args["init"] if "init" in args else "00"
     grid = f"_{args['grid']}" if "grid" in args else "_O1280"
+    use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
+
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
     else:
@@ -74,6 +75,7 @@ if __name__ == "__main__":
     flight = meta.flight_names[key]
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
+
     # setup logging
     try:
         file = __file__
@@ -86,15 +88,13 @@ if __name__ == "__main__":
              f"\ninit time: {init_time}\ngrid: {grid}\nuse_bahamas: {use_bahamas}")
 
     # %% set paths
-    path_ifs_raw = f"{h.get_path('ifs_raw', campaign=campaign)}/{date}"
-    path_ifs_output = os.path.join(h.get_path("ifs", campaign=campaign), date)
-    path_horidata = h.get_path("horidata", flight, campaign)
-    path_ecrad = os.path.join(h.get_path("ecrad", campaign=campaign), date)
-    path_ozone = h.get_path("ozone", campaign=campaign)
+    ifs_raw_path = f"{h.get_path('ifs_raw', campaign=campaign)}/{date}"
+    ifs_output_path = os.path.join(h.get_path("ifs", campaign=campaign), date)
+    horidata_path = h.get_path("horidata", flight, campaign)
+    ozone_path = h.get_path("ozone", campaign=campaign)
     bahamas_path = h.get_path("bahamas", flight, campaign)
     # create output path
-    h.make_dir(path_ecrad)
-    h.make_dir(path_ifs_output)
+    h.make_dir(ifs_output_path)
 
     # %% read ifs files
     if init_time == "yesterday":
@@ -102,9 +102,9 @@ if __name__ == "__main__":
         init_time = 12
     else:
         ifs_date = date
-    ml_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_ml{grid}.nc"
+    ml_file = f"{ifs_raw_path}/ifs_{ifs_date}_{init_time}_ml{grid}.nc"
     data_ml = xr.open_dataset(ml_file)
-    srf_file = f"{path_ifs_raw}/ifs_{ifs_date}_{init_time}_sfc{grid}.nc"
+    srf_file = f"{ifs_raw_path}/ifs_{ifs_date}_{init_time}_sfc{grid}.nc"
     data_srf = xr.open_dataset(srf_file)
     # hack while only incomplete ml file is available
     # data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
@@ -137,11 +137,11 @@ if __name__ == "__main__":
             nav_data.rename(columns={"IRS_LAT": "lat", "IRS_LON": "lon"}, inplace=True)
             nav_data = nav_data.loc[:, ["lon", "lat"]]
         else:
-            gps_file = [f for f in os.listdir(path_horidata) if "Pos" in f][0]
+            gps_file = [f for f in os.listdir(horidata_path) if "Pos" in f][0]
             log.info(f"Einzulesendes GPS navigation file: {gps_file}")
-            nav_data = reader.read_ins_gps_pos(f"{path_horidata}/{gps_file}")
+            nav_data = reader.read_ins_gps_pos(f"{horidata_path}/{gps_file}")
     else:
-        horidata_file = glob.glob(os.path.join(path_horidata, "Polar5*.nav"))[0]
+        horidata_file = glob.glob(os.path.join(horidata_path, "Polar5*.nav"))[0]
         log.info(f"Einzulesendes navigation data file: {horidata_file}")
         colnames = ["time", "lon", "lat", "alt", "vel", "pitch", "roll", "yaw", "sza", "saa"]
         nav_data = pd.read_csv(horidata_file, sep="\s+", skiprows=3, names=colnames, header=None)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     # %% calculate decorrelation length to put into namelist
     decorr_len, b, c = cloud_overlap_decorr_len(nav_data_ip.lat, 1)  # operational scheme 1
-    decorr_file = f"{path_ifs_output}/{date}_decorrelation_length.csv"
+    decorr_file = f"{ifs_output_path}/{date}_decorrelation_length.csv"
     decorr_len.to_csv(decorr_file)
     log.info(f"Mean decorrelation lenght for whole flight: {decorr_len.mean() * 1000:.2f} m")
     log.info(f"Decorrelation length saved in {decorr_file}")
@@ -346,7 +346,7 @@ if __name__ == "__main__":
         # read the corresponding ozone file for the flight
         ozone_file = h.ozone_files[key]
         # interpolate ozone sonde data on IFS full pressure levels
-        ozone_sonde = reader.read_ozone_sonde(f"{path_ozone}/{ozone_file}")
+        ozone_sonde = reader.read_ozone_sonde(f"{ozone_path}/{ozone_file}")
         ozone_sonde["Press"] = ozone_sonde["Press"] * 100  # convert hPa to Pa
         # create interpolation function
         f_ozone = interp1d(ozone_sonde["Press"], ozone_sonde["o3_vmr"], fill_value="extrapolate",
@@ -418,7 +418,7 @@ if __name__ == "__main__":
     data_ml.attrs["contact"] = f"johannes.roettenbacher@uni-leipzig.de, hanno.mueller@uni-leipzig.de"
 
     # %% write output files
-    filename = f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml{grid}_processed.nc"
+    filename = f"{ifs_output_path}/ifs_{ifs_date}_{init_time}_ml{grid}_processed.nc"
     if not "F" in grid:
         data_ml = data_ml.reset_index(["rgrid", "lat", "lon"])
         data_ml["rgrid"] = np.arange(0, data_ml.lat.shape[0])
@@ -427,7 +427,7 @@ if __name__ == "__main__":
             data_ml[var] = xr.DataArray(data_ml[var].to_numpy(), dims="rgrid")
     data_ml.to_netcdf(filename, format='NETCDF4_CLASSIC')
     log.info(f"Saved {filename}")
-    csv_filename = f"{path_ifs_output}/nav_data_ip_{date}.csv"
+    csv_filename = f"{ifs_output_path}/nav_data_ip_{date}.csv"
     nav_data_ip.to_csv(csv_filename)
     log.info(f"Saved {csv_filename}")
 
