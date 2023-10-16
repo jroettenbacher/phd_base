@@ -3,7 +3,12 @@
 | *author*: Johannes Röttenbacher
 | *created*: 20.06.2023
 
-Download monthly mean CAMS data from the Copernicus Atmosphere store
+Download monthly mean CAMS data from the Copernicus Atmospheric Data Store
+
+**Required User Input:**
+
+- year (2020, 2019)
+
 """
 
 import pylim.helpers as h
