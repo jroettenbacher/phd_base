@@ -7,7 +7,16 @@ Use a processed IFS output file on a O1280 grid and generate one ecRad input fil
 
 **Required User Input:**
 
-* step: at which intervals should the IFS data be interpolated on the aircraft data (default: 1Min from :ref:`processing:ecrad_read_ifs.py`)
+All options can be set in the script or given as command line key=value pairs.
+The first possible option is the default.
+
+* campaign, (default: 'halo-ac3')
+* key, flight key (default: 'RF17')
+* t_interp, interpolate IFS data in time? (default: False)
+* init_time, initalization time of IFS run (00, 12, yesterday)
+* o3_source, which ozone concentration to use? (one of '47r1', 'ifs', 'constant', 'sonde')
+* trace_gas_source, which trace gas concentrations to use? (one of '47r1', 'constant')
+* aerosol_source, which aersol concentrations to use? (one of '47r1', 'ADS')
 
 **Output:**
 
@@ -18,7 +27,6 @@ Use a processed IFS output file on a O1280 grid and generate one ecRad input fil
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
-    import pylim.meteorological_formulas as met
     from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
     import numpy as np
     from sklearn.neighbors import BallTree
@@ -32,16 +40,15 @@ if __name__ == "__main__":
     start = time.time()
 
     # %% read in command line arguments
-    campaign = "halo-ac3"
     version = "v6"
     args = h.read_command_line_args()
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
-    # set interpolate flag
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
+    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
     init_time = args["init"] if "init" in args else "00"
-    o3_source = "47r1"
-    trace_gas_source = "47r1"
-    aerosol_source = "47r1"
+    o3_source = args["o3_source"] if "o3_source" in args else "47r1"
+    trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
+    aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -61,8 +68,10 @@ if __name__ == "__main__":
         file = None
     log = h.setup_logging("./logs", file, key)
     # print options to user
-    log.info(f"Options set: \ncampaign: {campaign}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\nt_interp: {t_interp}")
+    log.info(f"Options set: \ncampaign: {campaign}\nkey: {key}\nflight: {flight}\ndate: {date}\n"
+             f"init time: {init_time}\nt_interp: {t_interp}\nversion: {version}\n"
+             f"O3 source: {o3_source}\nTrace gas source: {trace_gas_source}\n"
+             f"Aerosol source: {aerosol_source}\n")
 
     # %% set paths
     ifs_path = os.path.join(h.get_path("ifs", campaign=campaign), date)
