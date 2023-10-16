@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('../src'))
 # -- Project information -----------------------------------------------------
 
 project = 'Arctic Cirrus'
-copyright = '2021, Johannes Röttenbacher'
+copyright = '2021-, Johannes Röttenbacher'
 author = 'Johannes Röttenbacher'
 
 # The full version, including alpha/beta/rc tags

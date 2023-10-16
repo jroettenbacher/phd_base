@@ -475,8 +475,7 @@ Workflow with ecRad
 | |rarr| compare upward and downward (spectral/banded) irradiance
 
 #. Download IFS/CAMS data for campaign |rarr| :ref:`processing:IFS/CAMS Download`
-#. Run :ref:`processing:IFS/CAMS Preprocessing` to convert grib to nc files
-#. Decide which flight to work on -> set key in :ref:`processing:ecrad_read_ifs.py` or give it via commandline
+#. Run :ref:`processing:IFS Preprocessing` to convert grib to nc files
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options as you want them to be (see script for details)
 #. Run :ref:`processing:ecrad_cams_preprocessing.py` to prepare CAMS data
 #. Update namelist in the ``{yyyymmdd}`` folder with the decorrelation length |rarr| choose one value which is representative for the period you want to study
@@ -533,7 +532,7 @@ For the CAMS aerosol climatology another file is available at https://sites.ecmw
 Another option would be to download the monthly mean CAMS files from the Copernicus Atmospheric Data Store (`ADS <https://ads.atmosphere.copernicus.eu>`_) and use these files.
 The script :py:mod:`processing.download_cams_data.py` downloads the CAMS aerosol and trace gas climatology and saves them to seperate files.
 
-IFS/CAMS Preprocessing
+IFS Preprocessing
 ^^^^^^^^^^^^^^^^^^^^^^
 
 IFS data comes in grib format.
@@ -568,13 +567,13 @@ You can move all files into one folder by calling the following command in the C
     mv --target-directory=. 20*/20*.grb
     cdo mergetime 20*.grb cams_ml_halo_ac3.grb
 
-ecrad_cams_preprocessing.py
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: processing.ecrad_cams_preprocessing
-
 ecrad_read_ifs.py
 ^^^^^^^^^^^^^^^^^
 .. automodule:: processing.ecrad_read_ifs
+
+ecrad_cams_preprocessing.py
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: processing.ecrad_cams_preprocessing
 
 ecrad_write_input_files_vx.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
