@@ -8,9 +8,13 @@ Use the VarCloud retrieval for the below cloud section.
 
 **Required User Input:**
 
-* key, flight key (default: RF17)
+* campaign, (default: 'halo-ac3')
+* key, flight key (default: 'RF17')
 * t_interp, interpolate IFS data in time? (default: False)
-* init_time (init time of IFS data, eg. 00)
+* init_time, initalization time of IFS run (00, 12, yesterday)
+* o3_source, which ozone concentration to use? (one of '47r1', 'ifs', 'constant', 'sonde')
+* trace_gas_source, which trace gas concentrations to use? (one of '47r1', 'constant')
+* aerosol_source, which aersol concentrations to use? (one of '47r1', 'ADS')
 
 **Output:**
 
@@ -38,14 +42,15 @@ if __name__ == "__main__":
     start = time.time()
 
     # %% read in command line arguments
-    campaign = "halo-ac3"
     version = "v7"
     args = h.read_command_line_args()
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
+    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
     init_time = args["init"] if "init" in args else "00"
-    o3_source = "47r1"
-    trace_gas_source = "47r1"
-    aerosol_source = "47r1"
+    o3_source = args["o3_source"] if "o3_source" in args else "47r1"
+    trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
+    aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -65,8 +70,10 @@ if __name__ == "__main__":
         file = None
     log = h.setup_logging("./logs", file, key)
     # print options to user
-    log.info(f"Options set: \ncampaign: {campaign}\nflight: {flight}\ndate: {date}"
-             f"\ninit time: {init_time}\nversion: {version}\n")
+    log.info(f"Options set: \ncampaign: {campaign}\nkey: {key}\nflight: {flight}\ndate: {date}\n"
+             f"init time: {init_time}\nt_interp: {t_interp}\nversion: {version}\n"
+             f"O3 source: {o3_source}\nTrace gas source: {trace_gas_source}\n"
+             f"Aerosol source: {aerosol_source}\n")
 
     # %% set paths
     ifs_path = os.path.join(h.get_path("ifs", campaign=campaign), date)
@@ -94,7 +101,7 @@ if __name__ == "__main__":
                    .swap_dims(time="Time", height="Height")
                    .rename(Time="time"))
     bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{file_bahamas}")
-    # %% read in trace gas and aerosol data
+    # read in trace gas and aerosol data
     trace_gas = xr.open_dataset(f"{cams_path}/{trace_gas_file}")
     aerosol = xr.open_dataset(f"{cams_path}/{aerosol_file}")
 
@@ -224,22 +231,29 @@ if __name__ == "__main__":
         re_ice = varcloud_sel["Varcloud_Cloud_Ice_Effective_Radius"]
         ds["re_ice"] = re_ice.where(~np.isnan(re_ice), 51.9616 * 1e-6)  # replace nan with default value
         ds = apply_liquid_effective_radius(ds)
-        # reset coordinates, drop unused dimension and unused variable
-        ds = ds.reset_coords(["rgrid", "lat", "lon"]).drop_dims("reduced_points").drop_vars("rgrid")
+
+        # turn lat and lon into variables for cleaner output and to avoid later problems when merging data
+        ds = (ds
+              .reset_coords(["lat", "lon"])
+              .drop_dims("reduced_points")
+              .drop_vars("rgrid")
+              )
+
         ds = ds.expand_dims("column", axis=0)
         # remove column dim from dimensionless variables
-        for var in ["time"]:
+        for var in ["n2o_vmr_constant", "cfc11_vmr_constant", "cfc12_vmr_constant", "o2_vmr", "ch4_vmr_constant",
+                    "co2_vmr_constant", "time"]:
             ds[var] = ds[var].isel(column=0)
-        n_column = ds.dims["column"]  # get number of columns
-        ds["column"] = np.arange(n_column)
+        # add ccordinate to column variable
+        ds["column"] = np.arange(ds.dims["column"])
         # overwrite lat lon values, somehow this is necessary
         for var in ["lat", "lon"]:
             ds[var] = xr.DataArray(ds[var].to_numpy(), dims="column")
 
         # add distance to aircraft location
         ds["distance"] = xr.DataArray(np.expand_dims(distances[i], axis=0), dims="column",
-                                              attrs=dict(long_name="distance", units="km",
-                                                         description="Haversine distance to aircraft location"))
+                                      attrs=dict(long_name="distance", units="km",
+                                                 description="Haversine distance to aircraft location"))
 
         ds = ds.transpose("column", ...)  # move column to the first dimension
         ds = ds.astype(np.float32)  # change type from double to float32

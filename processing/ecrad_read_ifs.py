@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-"""Data extraction from IFS along the flight track
+"""
+| *author*: Hanno Müller, Johannes Röttenbacher
+| *created*: 22-09-2022
+
+Data extraction from IFS along the flight track
 
 **TODO:**
 
@@ -34,8 +38,6 @@ Can be passed via the command line (except step).
 * processed IFS file for input to :ref:`processing:ecrad_write_input_files_vx.py`
 * decorrelation length for ecRad namelist file |rarr| manually change that in the namelist file
 
-
-*author*: Hanno Müller, Johannes Röttenbacher
 """
 
 if __name__ == "__main__":
