@@ -26,11 +26,11 @@ copyright = '2021, Johannes Röttenbacher'
 author = 'Johannes Röttenbacher'
 
 # The full version, including alpha/beta/rc tags
-# read in setup.cfg and extract the version number
-with open("../setup.cfg", "r") as f:
+# read in pyproject.toml and extract the version number
+with open("../pyproject.toml", "r") as f:
     for line in f.readlines():
         if line.startswith("version"):
-            version = line[10:-1]
+            version = line[11:-2]
 
 release = version
 

@@ -1,6 +1,46 @@
+# pyproject.toml
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=42", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pylim"
+version = "0.9.0"
+description = "Package and scripts used for my PhD at Leipzig (2021 - 2024)"
+readme = "README.md"
+authors = [{ name = "Johannes Röttenbacher", email = "johannes.roettenbacher@uni-leipzig.de" },
+    { name = "Hanno Müller" },]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+keywords = ["meteorology", "Leipzig", "tools"]
+dependencies = [
+    "pandas",
+    "numpy",
+    "toml",
+    "matplotlib",
+    "scipy",
+    "xarray",
+    "tqdm",
+    "joblib",
+    "pysolar",
+    "geopy",
+    "cmasher",
+    "importlib_resources",
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+
+[project.urls]
+GitHub = "https://github.com/jroettenbacher/phd_base"
+Documentation = "https://jroettenbacher.github.io/phd_base/"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
