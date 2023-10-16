@@ -36,10 +36,22 @@ if __name__ == "__main__":
     from datetime import datetime
 
     # %% set source and paths
-    campaign = "halo-ac3"
-    source = "47r1"
+    args = h.read_command_line_args()
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
+    source = args["source"] if "sourde" in args else "47r1"
+    date = args["date"] if "date" in args else "20220411"
     climatology_year = "2020"
-    date = "20220411"
+
+    # setup logging
+    try:
+        file = __file__
+    except NameError:
+        file = None
+    log = h.setup_logging("./logs", file, f"{date}")
+    log.info(f"The following options have been passed:\n"
+             f"campaign: {campaign}\n"
+             f"source: {source}\n"
+             f"date: {date}\n")
 
     cams_path = h.get_path("cams_raw", campaign=campaign)
     cams_output_path = h.get_path("cams", campaign=campaign)
@@ -53,6 +65,8 @@ if __name__ == "__main__":
         trace_gas_file = "greenhouse_gas_climatology_46r1.nc"
         scaling_file = "greenhouse_gas_timeseries_CMIP6_SSP370_CFC11equiv_47r1.nc"
         scaling_ds = xr.open_dataset(f"{cams_path}/{scaling_file}", decode_times=False).isel(time=int(date[0:4]))
+    else:
+        raise ValueError(f"Unknown source: {source}")
 
     # %% read in data
     nav_data_ip = pd.read_csv(f"{ifs_path}/{date}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
@@ -136,7 +150,11 @@ if __name__ == "__main__":
         aerosol_sel.attrs["history"] = history_str
         trace_gas_sel.attrs["history"] = history_str
 
-    aerosol_sel.to_netcdf(f"{cams_output_path}/aerosol_mm_climatology_{climatology_year}_{source}_{date}.nc",
+    aerosol_outfile = f"aerosol_mm_climatology_{climatology_year}_{source}_{date}.nc"
+    trace_gas_outfile = f"trace_gas_mm_climatology_{climatology_year}_{source}_{date}.nc"
+    aerosol_sel.to_netcdf(f"{cams_output_path}/{aerosol_outfile}",
                           format='NETCDF4_CLASSIC')
-    trace_gas_sel.to_netcdf(f"{cams_output_path}/trace_gas_mm_climatology_{climatology_year}_{source}_{date}.nc",
+    trace_gas_sel.to_netcdf(f"{cams_output_path}/{trace_gas_outfile}",
                             format='NETCDF4_CLASSIC')
+
+    log.info(f"\nSaved {aerosol_outfile}\nand {trace_gas_outfile}\nto {cams_output_path}")
