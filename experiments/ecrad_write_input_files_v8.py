@@ -211,7 +211,7 @@ if __name__ == "__main__":
         ds = apply_liquid_effective_radius(ds)
         ds = ds.expand_dims("column", axis=0)
         # remove column dim from dimensionless variables
-        for var in ["time"]:
+        for var in ["o2_vmr", "time"]:
             ds[var] = ds[var].isel(column=0)
         n_column = ds.dims["column"]  # get number of columns
         ds["column"] = np.arange(n_column)
