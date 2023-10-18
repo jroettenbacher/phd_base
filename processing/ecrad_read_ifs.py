@@ -223,8 +223,8 @@ if __name__ == "__main__":
         lat_idx = np.nonzero(data_srf.lat.to_numpy() == ifs_lat)[0]
         lon_idx = np.nonzero(data_srf.lon.to_numpy() == ifs_lon)[0]
         # get surface pressure and temperature for refraction correction of sza
-        p_surf_nearest = data_srf.SP.sel(time=t_sel, lat=ifs_lat, lon=ifs_lon).to_numpy() / 100  # hPa
-        t_surf_nearest = data_srf.SKT.sel(time=t_sel, lat=ifs_lat, lon=ifs_lon).values - 273.15  # degree Celsius
+        p_surf_nearest = data_srf.sp.sel(time=t_sel, lat=ifs_lat, lon=ifs_lon).to_numpy() / 100  # hPa
+        t_surf_nearest = data_srf.skt.sel(time=t_sel, lat=ifs_lat, lon=ifs_lon).values - 273.15  # degree Celsius
         sza[i] = get_sza(sod / 3600, ypos, xpos, dt_day.year, dt_day.month, dt_day.day, p_surf_nearest, t_surf_nearest)
         cos_sza[i] = np.cos(sza[i] / 180. * np.pi)
         closest_lats.append(lat_idx)
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     #                                         attrs=dict(unit="1", long_name="Longwave surface emissivity"))
 
     # %% set longwave emissivity as described in IFS documentation Part IV Chapter 2.8.5
-    lw_em_shape = data_srf.SKT.shape + (2,)
+    lw_em_shape = data_srf.skt.shape + (2,)
     lw_em_ratio = np.ones(lw_em_shape)
     # The thermal emissivity of the surface outside the 800–1250 cm−1 spectral region is assumed to be 0.99 everywhere
     lw_em_ratio[..., 0] = 0.99
@@ -297,17 +297,17 @@ if __name__ == "__main__":
     open_ocean_albedo = 0.06
     sw_albedo_bands = list()
     for i in range(h.ci_albedo.shape[1]):
-        sw_albedo_bands.append(data_srf.CI * h.ci_albedo[month_idx, i] + (1. - data_srf.CI) * open_ocean_albedo)
+        sw_albedo_bands.append(data_srf.ci * h.ci_albedo[month_idx, i] + (1. - data_srf.ci) * open_ocean_albedo)
 
     sw_albedo = xr.concat(sw_albedo_bands, dim="sw_albedo_band")
     sw_albedo.attrs = dict(unit=1, long_name="Banded short wave albedo")
     sw_albedo = sw_albedo.transpose("time", ...)  # transpose so time is first dimension
     # set sw_albedo to constant 0.2 when over land
     data_ml["sw_albedo"] = sw_albedo
-    data_ml["sw_albedo"] = data_ml["sw_albedo"].where(data_srf.LSM < 0.5, 0.2)
+    data_ml["sw_albedo"] = data_ml["sw_albedo"].where(data_srf.lsm < 0.5, 0.2)
 
     # %% select only relevant variables
-    data_srf = data_srf[["SKT", "U10M", "V10M", "LSM", "CI", "MSL"]]
+    data_srf = data_srf[["skt", "10u", "10v", "lsm", "ci", "msl"]]
     data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])
 
     # %% interpolate temperature on half levels according to IFS Documentation Part IV Section 2.8.1
@@ -324,7 +324,7 @@ if __name__ == "__main__":
         t_k05 = (t_k0 * t_k0_weight) + (t_k1 * t_k1_weight)
         t_hl.append(t_k05)
 
-    t_1375 = data_srf.SKT.expand_dims(half_level=[137.5]).isel(half_level=0)
+    t_1375 = data_srf.skt.expand_dims(half_level=[137.5]).isel(half_level=0)
     t_hl.append(t_1375)  # set surface temperature to skin temperature
     diff_t15_t1 = t_hl[0] - data_ml.t.sel(level=1, drop=True)
     t_05 = (data_ml.t.sel(level=1, drop=True) - diff_t15_t1).assign_coords(half_level=0.5)
@@ -336,10 +336,10 @@ if __name__ == "__main__":
     data_ml = calculate_pressure_height(data_ml)
 
     # %% rename surface variables
-    data_srf = data_srf.rename({"U10M": "u_wind_10m",
-                                "V10M": "v_wind_10m",
-                                "SKT": "skin_temperature",
-                                "MSL": "mean_sea_level_pressure"}
+    data_srf = data_srf.rename({"10u": "u_wind_10m",
+                                "10v": "v_wind_10m",
+                                "skt": "skin_temperature",
+                                "msl": "mean_sea_level_pressure"}
                                )
 
     # %% add trace gases to be picked during input file creation
