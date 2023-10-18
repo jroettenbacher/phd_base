@@ -20,6 +20,8 @@ import os
 import cartopy.crs as ccrs
 import cartopy
 import pandas as pd
+from geopy.distance import distance
+from tqdm import tqdm
 from typing import Union, Tuple
 import logging
 log = logging.getLogger(__name__)
@@ -169,5 +171,29 @@ def preprocess_bahamas(ds: xr.Dataset) -> xr.Dataset:
     """
     ds = ds.swap_dims({"tid": "TIME"})
     ds = ds.rename({"TIME": "time"})
+    return ds
+
+def calculate_distances(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Calculate geodesic distance between each aircraft time step
+
+    Args:
+        ds: BAHAMAS dataset
+
+    Returns: New dataset with geodesic distances
+
+    """
+    loc1 = [(lat, lon) for lat, lon in
+            zip(ds.IRS_LAT[:-1].to_numpy(), ds.IRS_LON[:-1].to_numpy())]
+    loc2 = [(lat, lon) for lat, lon in
+            zip(ds.IRS_LAT[1:].to_numpy(), ds.IRS_LON[1:].to_numpy())]
+    distances = [distance(p1, p2).m for p1, p2 in
+                 zip(tqdm(loc1, desc="Geodesic distance"), loc2)]
+    distances.insert(0, 0)  # add zero as the first value to keep same length of values
+    ds["distance"] = xr.DataArray(distances, dims="time",
+                                  attrs=dict(units="m", long_name="geodesic distance",
+                                             description="Distance between the previous and this point.\n"
+                                                         "Does not work for locations in different altitudes!"))
+
     return ds
 
