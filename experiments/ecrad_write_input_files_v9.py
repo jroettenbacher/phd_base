@@ -128,15 +128,15 @@ if __name__ == "__main__":
         n_rgrid = len(ds.rgrid)
         cos_sza = np.full(n_rgrid, fill_value=nav_data_ip.cos_sza[i])
         ds["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
-                                                            dims=["rgrid"],
-                                                            attrs=dict(unit="1",
-                                                                       long_name="Cosine of the solar zenith angle"))
+                                                    dims=["rgrid"],
+                                                    attrs=dict(unit="1",
+                                                               long_name="Cosine of the solar zenith angle"))
 
         # add sw_albedo_direct to account for direct reflection of solar incoming radiation above ocean
         sw_albedo_bands = list()
         for ii in range(h.ci_albedo.shape[1]):
-            sw_albedo_bands.append(ds.CI * h.ci_albedo[3, ii]
-                                   + (1. - ds.CI) * nav_data_ip.open_ocean_albedo_taylor[i])
+            sw_albedo_bands.append(ds.ci * h.ci_albedo[3, ii]
+                                   + (1. - ds.ci) * nav_data_ip.open_ocean_albedo_taylor[i])
 
         sw_albedo_direct = xr.concat(sw_albedo_bands, dim="sw_albedo_band")
         sw_albedo_direct.attrs = dict(unit=1, long_name="Banded direct short wave albedo")
@@ -199,8 +199,8 @@ if __name__ == "__main__":
             ds[var] = ds[var].expand_dims(dim={"column": np.arange(n_rgrid)})
         # add distance to aircraft location for each point
         ds["distance"] = xr.DataArray(distances[i, :], dims="column",
-                                              attrs=dict(long_name="distance", units="km",
-                                                         description="Haversine distance to aircraft location"))
+                                      attrs=dict(long_name="distance", units="km",
+                                                 description="Haversine distance to aircraft location"))
         ds = ds.transpose("column", ...)  # move column to the first dimension
         ds = ds.astype(np.float32)  # change type from double to float32
 

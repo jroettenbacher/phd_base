@@ -160,8 +160,8 @@ if __name__ == "__main__":
         sw_albedo_bands = list()
         open_ocean_albedo_taylor = met.calculate_open_ocean_albedo_taylor(cos_sza)
         for ii in range(h.ci_albedo.shape[1]):
-            sw_albedo_bands.append(ds.CI * h.ci_albedo[3, ii]
-                                   + (1. - ds.CI) * open_ocean_albedo_taylor)
+            sw_albedo_bands.append(ds.ci * h.ci_albedo[3, ii]
+                                   + (1. - ds.ci) * open_ocean_albedo_taylor)
 
         sw_albedo_direct = xr.concat(sw_albedo_bands, dim="sw_albedo_band")
         sw_albedo_direct.attrs = dict(unit=1, long_name="Banded direct short wave albedo")
