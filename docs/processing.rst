@@ -540,7 +540,7 @@ To convert it to netcdf and rename the parameters according to the ECMWF codes r
 
 .. code-block:: shell
 
-   cdo -t ecmwf -f nc copy infile.grb outfile.nc
+   cdo --eccodes -f nc copy infile.grb outfile.nc
 
 on each file.
 Or run the python script :py:mod:`processing.ecrad_preprocessing.py` (currently only working for IFS files):
