@@ -110,8 +110,14 @@ if __name__ == "__main__":
     if "press_height_hl" not in ds:
         ds = ecrad.calculate_pressure_height(ds)
 
+    if "column" in ds.dims:
+        # add some statistics
+        ds["flux_dn_sw_std"] = ds["flux_dn_sw"].std(dim="column")
+
     # calculate transmissivity and reflectivity
     ds["transmissivity_sw"] = ds["flux_dn_sw"] / ds["flux_dn_sw_clear"]
+    ds["transmissivity_sw_toa"] = ds["flux_dn_sw"] / ds["flux_dn_sw_clear"].isel(half_level=0)
+    ds["transmissivity_sw_above_cloud"] = ds["flux_dn_sw"] / ds["flux_dn_sw_clear"].isel(half_level=73)
     ds["reflectivity_sw"] = ds["flux_up_sw"] / ds["flux_dn_sw"]
     ds["spectral_transmissivity_sw"] = ds["spectral_flux_dn_sw"] / ds["spectral_flux_dn_sw_clear"]
     ds["spectral_reflectivity_sw"] = ds["spectral_flux_up_sw"] / ds["spectral_flux_dn_sw"]
@@ -120,6 +126,10 @@ if __name__ == "__main__":
     ds["reflectivity_lw"] = ds["flux_up_lw"] / ds["flux_dn_lw"]
     ds["spectral_transmissivity_lw"] = ds["spectral_flux_dn_lw"] / ds["spectral_flux_dn_lw_clear"]
     ds["spectral_reflectivity_lw"] = ds["spectral_flux_up_lw"] / ds["spectral_flux_dn_lw"]
+
+    # normalize by solar zenith angle
+    for var in ["flux_dn_sw", "flux_dn_direct_sw", "transmissivity_sw_above_cloud", "transmissivity_sw_toa"]:
+        ds[f"{var}_norm"] = ds[var] / ds["cos_solar_zenith_angle"]
 
     # calculate cloud radiative effect
     ds["cre_sw"] = (ds.flux_dn_sw - ds.flux_up_sw) - (ds.flux_dn_sw_clear - ds.flux_up_sw_clear)  # solar
@@ -142,6 +152,8 @@ if __name__ == "__main__":
     iwp = (factor * ds.ciwc * un("kg/kg")).metpy.convert_units("kg/m^2")
     ds["iwp"] = iwp.metpy.dequantify().where(iwp != np.inf, np.nan)
     ds["iwp"].attrs = {"units": "kg m^-2", "long_name": "Ice water path"}
+    ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
+    ds["tiwp"].attrs = {"units": "kg m^-2", "long_name": "Total ice water path"}
 
     # calculate density
     pressure = ds["pressure_full"] * un.Pa
@@ -209,6 +221,27 @@ if __name__ == "__main__":
     ds["heating_rate_lw"] = heating_rate.metpy.convert_units("K/day")
     # net heating rate
     ds["heating_rate_net"] = ds.heating_rate_sw + ds.heating_rate_lw
+
+    # try to get model level of fligth altitude if possible
+    try:
+        bahamas_path = h.get_path("bahamas", flight=flight, campaign=campaign)
+        bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc"
+        bahamas_ds = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
+        bahamas_ds = bahamas_ds.sel(time=ds.time, method="nearest")
+
+        if "column" in ds.dims:
+            ds["aircraft_level"] = ecrad.get_model_level_of_altitude(bahamas_ds.IRS_ALT,
+                                                                     ds.sel(column=0),
+                                                                     "half_level")
+        else:
+            ds["aircraft_level"] = ecrad.get_model_level_of_altitude(bahamas_ds.IRS_ALT,
+                                                                     ds,
+                                                                     "half_level")
+
+    except NameError as e:
+        log.info(e)
+    except FileNotFoundError as e:
+        log.info(e)
 
     # %% save to netCDF
     ds.to_netcdf(outfile, format="NETCDF4_CLASSIC")
