@@ -82,3 +82,19 @@ def fdw_attitude_correction(fdw, roll, pitch, yaw, sza, saa, fdir, r_off: float 
 
     return fdw_cor, factor
 
+
+def preprocess_bacardi(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Preprocess the BACARDI Ql files to give them a proper time axis.
+
+    Args:
+        ds: BACARDI QL dataset
+
+    Returns: Data set with a proper time axis
+
+    """
+    ds = ds.swap_dims({"tid": "TIME"})
+    ds = ds.rename({"TIME": "time"})
+    file_date = ds.encoding["source"][-19:-11]
+    ds["time"] = pd.to_datetime(ds.time, unit="ms", origin=file_date)
+    return ds
