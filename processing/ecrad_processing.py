@@ -49,11 +49,28 @@ if __name__ == "__main__":
     # %% read in command line arguments or set defaults
     args = h.read_command_line_args()
     date = args["date"] if "date" in args else None
-    if date is None:
-        raise ValueError("'date' needs to be given!")
+    key = args["key"] if "key" in args else None
+    if date is None and key is None:
+        raise ValueError("One of 'date' or 'key' needs to be given!")
     iv = args["iv"] if "iv" in args else "v1"
     ov = args["ov"] if "ov" in args else "v1"
-    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
+    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign=campaign)
+
+    if campaign == "halo-ac3":
+        import pylim.halo_ac3 as meta
+
+        if key is not None:
+            flight = meta.flight_names[key]
+            date = flight[9:17]
+    elif campaign == "cirrus-hl":
+        import pylim.cirrus_hl as meta
+
+        if key is not None:
+            flight = key
+            date = flight[7:15]
+    else:
+        raise ValueError(f"No metadata defined for campaign = {campaign}!")
 
     # %% setup logging
     try:
@@ -62,10 +79,12 @@ if __name__ == "__main__":
         file = None
     log = h.setup_logging("./logs", file, f"input{iv}_output{ov}_{date}")
     log.info(f"The following options have been passed:\n"
+             f"campaign: {campaign}\n"
+             f"key: {key}\n"
+             f"date: {date} (defined via key if possible)\n"
              f"iv: {iv}\n"
              f"ov: {ov}\n"
-             f"base_dir: {base_dir}\n"
-             f"date: {date}\n")
+             f"base_dir: {base_dir}\n")
 
     # create input path according to given base_dir and date
     inpath = os.path.join(base_dir, date)
@@ -119,7 +138,7 @@ if __name__ == "__main__":
 
     # calculate IWP
     da = ds.pressure_hl.diff(dim="half_level").rename(half_level="level").assign_coords(level=ds.level.to_numpy())
-    factor = da * un.Pa  / (g * ds.cloud_fraction)
+    factor = da * un.Pa / (g * ds.cloud_fraction)
     iwp = (factor * ds.ciwc * un("kg/kg")).metpy.convert_units("kg/m^2")
     ds["iwp"] = iwp.metpy.dequantify().where(iwp != np.inf, np.nan)
     ds["iwp"].attrs = {"units": "kg m^-2", "long_name": "Ice water path"}
