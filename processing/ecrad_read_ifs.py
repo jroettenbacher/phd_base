@@ -306,8 +306,7 @@ if __name__ == "__main__":
     data_ml["sw_albedo"] = sw_albedo
     data_ml["sw_albedo"] = data_ml["sw_albedo"].where(data_srf.lsm < 0.5, 0.2)
 
-    # %% select only relevant variables
-    data_srf = data_srf[["skt", "10u", "10v", "lsm", "ci", "msl"]]
+    # %% drop unnecessary variables
     data_ml = data_ml.drop_vars(["lnsp", "hyam", "hybm", "hyai", "hybi"])
 
     # %% interpolate temperature on half levels according to IFS Documentation Part IV Section 2.8.1
