@@ -2015,7 +2015,7 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
-# %% plot PDF of normalized solar downward irradiance below cloud - varcloud all ice optics
+# %% plot PDF of transmissivity (above cloud simulation) below cloud  - varcloud all ice optics
 plt.rc("font", size=7)
 label = [["a)", "b)", "c)"], ["d)", "e)", "f)"]]
 text_locx = [0.04, 0.65]
@@ -2137,11 +2137,21 @@ data_crs = ccrs.Geodetic()
 
 # %% plot IFS cloud fraction lidar/mask comparison with below cloud track and histograms of cloud base and ceiling
 plt.rc("font", size=6.5)
-_, axs = plt.subplots(2, 1, figsize=(16 * h.cm, 9 * h.cm))
+fig = plt.figure(figsize=(18 * h.cm, 9 * h.cm), layout="constrained")
+gs = gridspec.GridSpec(2, 3, figure=fig)
+axs = list()
+# cloud fraction plus lidar mask
+axs.append(fig.add_subplot(gs[0, :-1]))
+axs.append(fig.add_subplot(gs[1, :-1]))
+# histograms of iwc
+axs.append(fig.add_subplot(gs[0, -1]))
+axs.append(fig.add_subplot(gs[1, -1]))
 for i, key in enumerate(keys):
     ax = axs[i]
     ds = ecrad_dicts[key]["v15"].sel(time=slices[key]["above"])
-    ifs_plot = ds["cloud_fraction"]
+    ifs_plot = ds[["cloud_fraction", "iwc"]]
+    ifs_cth = ds.ceil / 1000
+    # ifs_cbh = ds.cbh / 1000
     # add new z axis mean pressure altitude
     if "half_level" in ifs_plot.dims:
         new_z = ds["press_height_hl"].mean(dim="time") / 1000
@@ -2164,29 +2174,46 @@ for i, key in enumerate(keys):
         ifs_plot_new_z.append(tmp_plot)
 
     ifs_plot = xr.concat(ifs_plot_new_z, dim="time").sortby("height").sel(height=slice(0, 12))
-    ifs_plot = ifs_plot.where(ifs_plot > 0)
+    ifs_plot = ifs_plot.where(ifs_plot.cloud_fraction > 0)
     halo_plot = varcloud_ds[key].sel(time=slices[key]["case"]).Varcloud_Input_Mask
     halo_plot = halo_plot.assign_coords(height=halo_plot.height / 1000).sortby("height")
     time_extend = pd.to_timedelta((ifs_plot.time[-1] - ifs_plot.time[0]).to_numpy())
 
     # plot IFS cloud cover prediction and Radar lidar mask
-    ifs_plot.plot(x="time", cmap=cm.sapphire, cbar_kwargs=dict(label=f"IFS {h.cbarlabels['cloud_fraction']}"), ax=ax)
+    pcm = ifs_plot.cloud_fraction.plot(x="time", cmap=cm.sapphire, ax=ax, add_colorbar=False)
     halo_plot.plot.contour(x="time", levels=[0.9], colors=cbc[5], ax=ax)
     ax.plot([], color=cbc[5], label="Radar & Lidar Mask", lw=1)
+    # ax.plot(ifs_cth.time, ifs_cth, label="IFS cloud top", c=cbc[2])
+    # ax.plot(ifs_cbh.time, ifs_cbh, label="IFS cloud base", c=cbc[3])
     ax.legend()
     h.set_xticks_and_xlabels(ax, time_extend)
     ax.set(xlabel="Time (UTC)", ylabel="Height (km)")
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=0, ha="center")
 
-    axs[0].set_xlabel("")
-    axs[0].text(0.03, 0.88, "a)", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-    axs[1].text(0.03, 0.88, "b)", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-    plt.tight_layout()
+    # plot IWC histograms over height
+    ax = axs[2 + i]
+    binsize = 0.5  # km
+    bins = np.arange(0, 12, binsize)
+    iwc_df = ifs_plot.iwc.to_dataframe().dropna()
+    sns.histplot(iwc_df, y="height", stat="density", bins=bins, ax=ax)
+    ax.set(ylabel="")
+    ax.margins(y=0)
 
-    figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask.png"
-    plt.savefig(figname, dpi=300)
-    plt.show()
-    plt.close()
+# place colorbar for both flights
+fig.colorbar(pcm, ax=axs[:2], label=f"IFS {h.cbarlabels['cloud_fraction']}", pad=0.001)
+axs[0].set_xlabel("")
+axs[2].set_xlabel("")
+axs[3].set_xlabel("Ice water content density")
+axs[0].text(0.03, 0.88, "a)", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[1].text(0.03, 0.88, "b)", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[2].text(0.03, 0.88, "c)", transform=axs[2].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[3].text(0.03, 0.88, "d)", transform=axs[3].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+# plt.tight_layout()
+
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask_hists.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
 
 # %% testing
 cover = np.arange(60, 100, 5) / 100
