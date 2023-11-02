@@ -15,9 +15,9 @@ import importlib_resources as pkg_resources
 
 log = logging.getLogger(__name__)
 
-version_names = dict(v15="Fu-IFS", v16="Fu-IFS VarCloud", v17="Fu-IFS VarCloud", v18="Baran2016", v19="Yi",
+version_names = dict(v15="Fu-IFS", v16="Fu-IFS VarCloud", v17="Fu-IFS VarCloud", v18="Baran2016", v19="Yi2013",
                      v20="Baran2016 VarCloud", v21="Baran2016 VarCloud",
-                     v22="Fu-IFS 3D", v28="Yi VarCloud", v29="Yi VarCloud")
+                     v22="Fu-IFS 3D", v28="Yi2013 VarCloud", v29="Yi2013 VarCloud")
 
 # which ice optic parameterization is used by which namelist version
 ice_optic_parameterizations = dict(

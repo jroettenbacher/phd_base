@@ -300,7 +300,7 @@ for key in keys:
 
 # %% calculate statstics from ecRad
 ecrad_stats = list()
-ecrad_vars = ["reflectivity_sw", "flux_up_sw", "flux_dn_direct_sw", "flux_dn_sw"]
+ecrad_vars = ["reflectivity_sw", "flux_up_sw", "flux_dn_direct_sw", "flux_dn_sw", "transmissivity_sw_above_cloud"]
 for version in ["v15", "v17", "v18", "v19", "v21", "v29"]:
     v_name = ecrad.version_names[version]
     for key in keys:
@@ -340,6 +340,13 @@ for key in keys:
         selection = (df["variable"] == var) & (df["key"] == key) & (df["section"] == "above")
         v_mean = df[["source", "mean"]][selection]
         print(f"{key}: Mean {var} above cloud:\n{v_mean}")
+
+# %% print mean solar transmissivity for below cloud section
+for key in keys:
+    for var in ["transmissivity_above_cloud", "transmissivity_sw_above_cloud"]:
+        selection = (df["variable"] == var) & (df["key"] == key) & (df["section"] == "below")
+        v_mean = df[["source", "mean"]][selection]
+        print(f"{key}: Mean {var} below cloud:\n{v_mean}")
 
 # %% print mean flux_dn_sw for above/below cloud section
 for key in keys:
@@ -1954,6 +1961,8 @@ plt.close()
 # %% plot PDF of transmissivity (above cloud simulation) below cloud - all ice optics
 plt.rc("font", size=7)
 label = [["a)", "b)", "c)"], ["d)", "e)", "f)"]]
+ylims = [(0, 36), (0, 36)]
+legend_loc = [3, 1]
 sf = 1
 norm = ""
 binsize = 0.01 * sf
@@ -1985,18 +1994,21 @@ for i, key in enumerate(keys):
         a.plot([], ls="--", color="k", label="Mean")  # label for means
         # textbox
         hist = np.histogram(ecrad_plot, density=True, bins=bins)
-        w = wasserstein_distance(bacardi_hist[0], hist[0]) * sf
-        a.set(ylabel="")
+        # w = wasserstein_distance(bacardi_hist[0], hist[0]) * sf
+        a.set(ylabel="",
+              ylim=ylims[i],
+              xlim=(0.45, 1)
+              )
         handles, labels = a.get_legend_handles_labels()
         order = [1, 2, 0]
         handles = [handles[idx] for idx in order]
         labels = [labels[idx] for idx in order]
-        a.legend(handles, labels, loc=1)
+        a.legend(handles, labels, loc=legend_loc[i])
         a.text(
             0.04,
             0.95,
             f"{l[ii]} {key}\n"
-            f"$W$ = {w:.1f}\n"
+            # f"$W$ = {w:.1f}\n"
             f"n = {len(ecrad_plot):.0f}",
             ha="left",
             va="top",
@@ -2018,43 +2030,54 @@ plt.close()
 # %% plot PDF of transmissivity (above cloud simulation) below cloud  - varcloud all ice optics
 plt.rc("font", size=7)
 label = [["a)", "b)", "c)"], ["d)", "e)", "f)"]]
-text_locx = [0.04, 0.65]
-text_locy = [0.7, 0.5]
-binsize = 10
+ylims = [(0, 36), (0, 36)]
+legend_loc = [3, 1]
+sf = 1
+norm = ""
+binsize = 0.01 * sf
+xlabel = "Transmissivity" if norm == "" else "Normalized Transmissivity"
 _, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm))
 for i, key in enumerate(keys):
     ax = axs[i]
     l = label[i]
-    ts_s, ts_e = ecrad_dicts[key]["v16"].time[[0, -1]]
-    bacardi_sel = bacardi_ds[key].sel(time=slice(ts_s, ts_e))
-    bacardi_plot = bacardi_sel["F_down_solar_diff_norm"].resample(time="1s").mean()
-    bins = np.arange(np.round(bacardi_plot.min() - 10),
-                     np.round(bacardi_plot.max() + 10),
+    bacardi_sel = bacardi_ds[key].sel(time=slices[key]["below"])
+    bacardi_plot = bacardi_sel[f"transmissivity_above_cloud{norm}"].resample(time="1Min").mean() * sf
+    bins = np.arange(np.round(bacardi_plot.min() - binsize, 2),
+                     np.round(bacardi_plot.max() + binsize, 2),
                      binsize)
     # BACARDI histogram
     bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
-    x_loc = text_locx[i]
-    y_loc = text_locy[i]
     for ii, v in enumerate(["v16", "v20", "v28"]):
         a = ax[ii]
-        ecrad_ds = ecrad_dicts[key][v]
-        altitude = bacardi_sel.alt.sel(time=ecrad_ds.time)
+        ecrad_ds = ecrad_dicts[key][v].sel(time=slices[key]["below"])
         height_sel = ecrad_ds["aircraft_level"]
-        ecrad_plot = ecrad_ds.flux_dn_sw_norm.isel(half_level=height_sel)
+        ecrad_plot = ecrad_ds[f"transmissivity_sw_above_cloud{norm}"].isel(half_level=height_sel) * sf
 
         # actual plotting
-        sns.histplot(bacardi_plot, label="BACARDI", ax=a, stat="density", kde=True, bins=bins)
+        sns.histplot(bacardi_plot, label="BACARDI", ax=a, stat="density", kde=False, bins=bins)
         sns.histplot(ecrad_plot, label=ecrad.version_names[v], stat="density",
-                     kde=True, bins=bins, ax=a, color=cbc[ii + 1])
+                     kde=False, bins=bins, ax=a, color=cbc[ii + 1])
+        # add mean
+        a.axvline(bacardi_plot.mean(), color=cbc[0], lw=3, ls="--", ymax=0.75)
+        a.axvline(ecrad_plot.mean(), color=cbc[ii + 1], lw=3, ls="--", ymax=0.75)
+        a.plot([], ls="--", color="k", label="Mean")  # label for means
+        # textbox
         hist = np.histogram(ecrad_plot, density=True, bins=bins)
-        h_distance = h.hellinger_distance(bacardi_hist[0], hist[0])
-        a.set(ylabel="")
-        a.legend(loc=2)
+        # w = wasserstein_distance(bacardi_hist[0], hist[0]) * sf
+        a.set(ylabel="",
+              ylim=ylims[i],
+              xlim=(0.45, 1)
+              )
+        handles, labels = a.get_legend_handles_labels()
+        order = [1, 2, 0]
+        handles = [handles[idx] for idx in order]
+        labels = [labels[idx] for idx in order]
+        a.legend(handles, labels, loc=legend_loc[i])
         a.text(
-            x_loc,
-            y_loc,
+            0.04,
+            0.95,
             f"{l[ii]} {key}\n"
-            f"$H$ = {h_distance:.3f}\n"
+            # f"$W$ = {w:.1f}\n"
             f"n = {len(ecrad_plot):.0f}",
             ha="left",
             va="top",
@@ -2064,7 +2087,7 @@ for i, key in enumerate(keys):
         a.grid()
 
     ax[0].set(ylabel="Density")
-    ax[1].set(xlabel="Normalized solar downward irradiance (W$\,$m$^{-2}$)")
+    ax[1].set(xlabel=xlabel)
 
 plt.tight_layout()
 
