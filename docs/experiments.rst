@@ -57,6 +57,7 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v27.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
 * ``IFS_namelist_jr_20220411_v28.nam``: for RF17 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** (input version **v7**)
 * ``IFS_namelist_jr_20220411_v29.nam``: for RF17 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* v15.1, 18.1, 19.1, 22.1, 24.1: same as vxx but with low clouds filtered
 
 
 |haloac3| **2022-04-12**
@@ -79,6 +80,7 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220412_v27.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
 * ``IFS_namelist_jr_20220412_v28.nam``: for RF18 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** (input version **v7**)
 * ``IFS_namelist_jr_20220412_v29.nam``: for RF18 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* v15.1, 18.1, 19.1, 22.1, 24.1: same as vxx but with low clouds filtered
 
 Overlap decorrelation length experiment
 ---------------------------------------

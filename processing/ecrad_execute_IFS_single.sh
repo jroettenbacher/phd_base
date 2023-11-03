@@ -2,7 +2,7 @@
 
 cwd=$(pwd)
 date="20220411"
-version="v1"
+version="v15.1"
 if [[ ${cwd} =~ /home/jroettenbacher/.* ]]; then
 	data_basedir="/mnt/e/HALO-AC3"
 	ecrad_basedir="/usr/local"
@@ -21,7 +21,7 @@ cd "${inpath}" || exit 1
 ecrad="${ecrad_basedir}/src/ecrad-1.5.0/bin/ecrad"
 namelist="../IFS_namelist_jr_${date}_${version}.nam"  # personal namelist
 # namelist="/projekt_agmwend/home_rad/jroettenbacher/ecrad_practical/config.nam"  # ecrad practical namelist
-filename="ecrad_input_standard_28500.0_sod_v1.nc" # new input (read_ifs.py)
+filename="ecrad_input_standard_28500.0_sod_v6.1.nc" # new input (read_ifs.py)
 # file="/projekt_agmwend/data/ACLOUD/01_ifs_ecrad/along_track_data/Flight_05_20170525/ecrad/ecrad_input_standard_32478.9_sod_inp.nc"
 # file="${inpath}/ecrad_input_standard_28647.2_sod_inp.nc" # Kevin's input
 # file=${inpath}/era5slice.nc  # input from ecRad tutorial

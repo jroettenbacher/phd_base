@@ -508,6 +508,7 @@ Input version   Namelist version                Short description
 5.1             13.1                            Set albedo to 0.99
 5.2             13.2                            Set albedo to BACARDI measurement below cloud
 6               15, 18, 19, 22, 24              Along track data from O1280 IFS output (used instead of v1)
+6.1             15.1, 18.1, 19.1, 22.1, 24.1    Along track data from O1280 IFS output (used instead of v1) filtered for low clouds
 7               16, 20, 26, 27, 28              As v3 but with O1280 IFS output
 8               17, 21, 23, 25, 29              As v2 but with O1280 IFS output
 9               14                              Turn on aerosol and use CAMS data for it

@@ -40,7 +40,6 @@ if __name__ == "__main__":
     start = time.time()
 
     # %% read in command line arguments
-    version = "v6"
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
@@ -49,6 +48,8 @@ if __name__ == "__main__":
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
+    filter_low_clouds = strtobool(args["filter_low_clouds"]) if "filter_low_clouds" in args else True
+    version = "v6" if not filter_low_clouds else "v6.1"
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -71,7 +72,9 @@ if __name__ == "__main__":
     log.info(f"Options set: \ncampaign: {campaign}\nkey: {key}\nflight: {flight}\ndate: {date}\n"
              f"init time: {init_time}\nt_interp: {t_interp}\nversion: {version}\n"
              f"O3 source: {o3_source}\nTrace gas source: {trace_gas_source}\n"
-             f"Aerosol source: {aerosol_source}\n")
+             f"Aerosol source: {aerosol_source}\n"
+             f"Filter low level clouds: {filter_low_clouds}\n"
+             )
 
     # %% set paths
     ifs_path = os.path.join(h.get_path("ifs", campaign=campaign), date)
@@ -107,6 +110,14 @@ if __name__ == "__main__":
     closest_latlons = ifs_lat_lon[idxs]
     # a sphere with radius 1 is assumed so multiplying by Earth's radius gives the distance in km
     distances = dist * 6371
+
+    # %% filter low clouds according to ECMWF low cloud criterion (pressure higher than 0.8 * surface pressure)
+    if filter_low_clouds:
+        cloud_data = data_ml[["q_liquid", "q_ice", "cloud_fraction", "clwc", "ciwc", "crwc", "cswc"]]
+        pressure_filter = data_ml.pressure_full.sel(level=137) * 0.8
+        low_cloud_filter = data_ml.pressure_full < pressure_filter  # False for low clouds
+        cloud_data = cloud_data.where(low_cloud_filter, 0)  # replace where False with 0
+        data_ml.update(cloud_data)
 
     # %% loop through time steps and write one file per time step
     idx = len(nav_data_ip)
