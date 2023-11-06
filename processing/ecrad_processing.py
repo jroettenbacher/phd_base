@@ -149,9 +149,11 @@ if __name__ == "__main__":
     # calculate IWP
     da = ds.pressure_hl.diff(dim="half_level").rename(half_level="level").assign_coords(level=ds.level.to_numpy())
     factor = da * un.Pa / (g * ds.cloud_fraction)
-    iwp = (factor * ds.ciwc * un("kg/kg")).metpy.convert_units("kg/m^2")
+    iwp = (factor * ds.q_ice * un("kg/kg")).metpy.convert_units("kg/m^2")
     ds["iwp"] = iwp.metpy.dequantify().where(iwp != np.inf, np.nan)
-    ds["iwp"].attrs = {"units": "kg m^-2", "long_name": "Ice water path"}
+    ds["iwp"].attrs = {"units": "kg m^-2",
+                       "long_name": "Ice water path",
+                       "description": "Ice water path derived from q_ice"}
     ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
     ds["tiwp"].attrs = {"units": "kg m^-2", "long_name": "Total ice water path"}
 
@@ -164,7 +166,11 @@ if __name__ == "__main__":
 
     # convert kg/kg to kg/m³
     ds["iwc"] = ds["q_ice"] * un("kg/kg") * ds["air_density"]
-    ds["iwc"].attrs = {"units": "kg m^-3", "long_name": "Ice water content"}
+    ds["iwc"].attrs = {"units": "kg m^-3",
+                       "long_name": "Ice water content",
+                       "description": "Ice water content derived from q_ice"}
+
+    #TODO: calculate relative humidity over water and over ice
 
     # calculate bulk optical properties
     if ov in ecrad.ice_optic_parameterizations["fu"]:
@@ -222,7 +228,7 @@ if __name__ == "__main__":
     # net heating rate
     ds["heating_rate_net"] = ds.heating_rate_sw + ds.heating_rate_lw
 
-    # try to get model level of fligth altitude if possible
+    # try to get model level of flight altitude if possible
     try:
         bahamas_path = h.get_path("bahamas", flight=flight, campaign=campaign)
         bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc"
