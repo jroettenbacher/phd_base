@@ -125,7 +125,7 @@ plt.rcdefaults()
 h.set_cb_friendly_colors()
 
 # %% read in and select closest column ecrad data
-ecrad_versions = ["v15", "v16", "v17", "v18", "v19", "v20"]
+ecrad_versions = ["v15", "v15.1", "v16", "v17", "v18", "v19", "v20"]
 ecrad_dict = dict()
 
 for k in ecrad_versions:
@@ -513,21 +513,29 @@ print(f"Mean solar transmissivity\n"
 
 # %% plot PDF of IWC retrieved and predicted
 time_sel = sel_time
-plot_v1 = (ecrad_dict["v15"].iwc.sel(time=time_sel).to_numpy() * 1e6).flatten()
-plot_v8 = (ecrad_dict["v17"].iwc.sel(time=time_sel).to_numpy() * 1e6).flatten()
+plot_v1 = (ecrad_dict["v15.1"].iwc
+           .where(ecrad_dict["v15.1"].cloud_fraction > 0)
+           .where(ecrad_dict["v15.1"].cloud_fraction == 0, ecrad_dict["v15.1"].iwc / ecrad_dict["v15.1"].cloud_fraction)
+           .sel(time=time_sel)
+           .to_numpy() * 1e6).flatten()
+plot_v1 = plot_v1[~np.isnan(plot_v1)]
+plot_v8 = (ecrad_dict["v16"].iwc.to_numpy() * 1e6).flatten()
+plot_v8 = plot_v8[~np.isnan(plot_v8)]
 binsize = 0.25
 bins = np.arange(0, 5.1, binsize)
 plt.rc("font", size=19)
 _, ax = plt.subplots(figsize=(22 * h.cm, 13 * h.cm))
 ax.hist(plot_v8, bins=bins, label="VarCloud", histtype="step", lw=4, color=cbc[1], density=True)
-ax.hist(plot_v1, bins=bins, label="IFS", histtype="step", lw=4, color=cbc[3], density=True)
+ax.hist(plot_v1, bins=bins, label="IFS", histtype="step", lw=4, color=cbc[5], density=True)
 ax.legend()
-ax.text(0.6, 0.63, f"Binsize: {binsize}$\,$" + "mg$\,$m$^{-3}$", transform=ax.transAxes,
+ax.text(0.05, 0.85, f"Binsize: {binsize}$\,$" + "mg$\,$m$^{-3}$", transform=ax.transAxes,
         bbox=dict(boxstyle="round", fc="white"))
 ax.grid()
-ax.set(xlabel=r"Ice water content (mg$\,$m$^{-3}$)", ylabel="Probability density function")
+ax.set(xlabel=r"Ice water content (mg$\,$m$^{-3}$)",
+       ylabel="Probability density function",
+       ylim=(0, 0.75))
 plt.tight_layout()
-figname = f"{plot_path}/{flight}_ecrad_v15_v17_iwc_pdf.png"
+figname = f"{plot_path}/{flight}_ecrad_v15_v17_iwc_pdf_v3.png"
 plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
@@ -535,20 +543,21 @@ plt.close()
 # %% plot PDF of re_ice retrieved and predicted
 time_sel = sel_time
 plot_v1 = (ecrad_dict["v15"].re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
-plot_v8 = (ecrad_dict["v17"].re_ice.sel(time=time_sel).to_numpy() * 1e6).flatten()
+plot_v8 = (ecrad_dict["v16"].re_ice.to_numpy() * 1e6).flatten()
 binsize = 2
 bins = np.arange(10, 71, binsize)
 plt.rc("font", size=19)
 _, ax = plt.subplots(figsize=(22 * h.cm, 13 * h.cm))
 ax.hist(plot_v8, bins=bins, label="VarCloud", histtype="step", lw=4, color=cbc[1], density=True)
-ax.hist(plot_v1, bins=bins, label="IFS", histtype="step", lw=4, color=cbc[3], density=True)
+ax.hist(plot_v1, bins=bins, label="IFS", histtype="step", lw=4, color=cbc[5], density=True)
 ax.legend()
 ax.text(0.7, 0.63, f"Binsize: {binsize}$\,$" + "$\mu$m", transform=ax.transAxes,
         bbox=dict(boxstyle="round", fc="white"))
 ax.grid()
-ax.set(xlabel=r"Ice effective radius ($\mu$m)", ylabel="Probability density function")
+ax.set(xlabel=r"Ice effective radius ($\mu$m)",
+       ylabel="Probability density function")
 plt.tight_layout()
-figname = f"{plot_path}/{flight}_ecrad_v15_v17_re_ice_pdf.png"
+figname = f"{plot_path}/{flight}_ecrad_v15_v17_re_ice_pdf_v3.png"
 plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
