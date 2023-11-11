@@ -22,9 +22,9 @@ version_names = dict(v15="Fu-IFS", v16="Fu-IFS VarCloud", v17="Fu-IFS VarCloud",
 # which ice optic parameterization is used by which namelist version
 ice_optic_parameterizations = dict(
     fu=["v1", "v5", "v8", "v10", "v11", "v12", "v13", "v13.1", "v13.2", "v14", "v15", "v15.1", "v16",
-        "v17", "v22", "v22.1", "v23", "v26"],
-    baran2016=["v6", "v7", "v9", "v18", "v18.1", "v20", "v21", "v24", "v24.1", "v25", "v27"],
-    yi=["v4", "v19", "v19.1", "v28", "v29"])
+        "v16.1", "v17", "v22", "v22.1", "v23", "v26"],
+    baran2016=["v6", "v7", "v9", "v18", "v18.1", "v20", "v20.1", "v21", "v24", "v24.1", "v25", "v27"],
+    yi=["v4", "v19", "v19.1", "v28", "v28.1", "v29"])
 
 
 def ice_effective_radius(PPRESSURE, PTEMPERATURE, PCLOUD_FRAC, PQ_ICE, PQ_SNOW, PLAT):
