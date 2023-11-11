@@ -5,12 +5,13 @@ python="/home/jroettenbacher/.conda/envs/phd_base/bin/python"
 
 # standard options
 date_var=20220411
-version="v1"
-input_version="v1"
+key="RF17"
+version="v15"
+input_version="v6"
 reg_file="ecrad_input_*_sod_${input_version}.nc"
 
 # read in command line args to overwrite standard options
-while getopts ":i:d:tv:" opt; do
+while getopts ":i:k:d:v:t" opt; do
   case ${opt} in
   d )
     date_var="${OPTARG}"
@@ -29,8 +30,12 @@ while getopts ":i:d:tv:" opt; do
     version="${OPTARG}"
     echo Version selected: "${version}"
   ;;
+  k )
+      key="${OPTARG}"
+      echo Key set: "${key}"
+  ;;
   ?)
-    echo "script usage: $(basename \$0) [-i v1] [-d yyyymmdd] [-t] [-v v1]" >&2
+    echo "script usage: $(basename $0) [-i v6] [-d yyyymmdd] [-k RF17] [-t] [-v v15]" >&2
     exit 1
   esac
 done
@@ -103,4 +108,4 @@ echo "> Merging output files..."
 ${python} ecrad_merge_files.py date="${date_var}" io_flag=output version="${version}"
 
 echo "> Merging merged input and output file..."
-${python} ecrad_processing.py date="${date_var}" ov="${version}" iv="${input_version}"
+${python} ecrad_processing.py date="${date_var}" key="${key}" ov="${version}" iv="${input_version}"
