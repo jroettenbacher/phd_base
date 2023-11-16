@@ -1,2 +1,6 @@
 /data
 docs/_*
+.ipynb*
+__pycache__*
+/logs/*
+*/logs/*
