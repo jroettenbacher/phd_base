@@ -4,6 +4,9 @@ Setup
 Get it running locally on your machine
 --------------------------------------
 
+.. warning::
+    `pylim <https://radiation-lim.github.io/LIM-pylim/>`_ is now a stand alone package and can be installed from `GitHub <https://github.com/radiation-lim/LIM-pylim>`_. This section is outdated with respect to pylim.
+
 For now (November 2021) the easiest way to use this is to fork this project and install pylim in your python environment.
 If you want to work with the analysis and quicklook scripts you can just work in the cloned repository and add your files as you wish.
 A possible structure could look like this::

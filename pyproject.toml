@@ -42,5 +42,5 @@ GitHub = "https://github.com/jroettenbacher/phd_base"
 Documentation = "https://jroettenbacher.github.io/phd_base/"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = []
 

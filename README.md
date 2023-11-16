@@ -5,10 +5,11 @@
 Here I code all the stuff I need for my PhD on Arctic cirrus. 
 It includes processing for measurement data gathered by the HALO aircraft.
 During the first year a new python package was created which provides useful functions used in the processing and analysis of the data.
-The package is called `pylim` and can be found in `src`.
+The package is called `pylim` and can be found on [GitHub](https://github.com/radiation-lim/LIM-pylim).
 Further there are folders for different purposes:
 
 * `analysis`: case studies or general campaign analysis to answer scientific questions
+* `experiments`: scripts for ecRad/libRadtran experiments
 * `processing`: scripts to generate error/bias corrected, calibrated and shareable/publishable files from raw files
 * `quicklooks`: quicklooks of measurements (raw and calibrated) and of calibrations
 
