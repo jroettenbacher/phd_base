@@ -33,6 +33,10 @@ helpers
 --------------
 .. automodule:: pylim.helpers
    :members:
+   :exclude-members: cb_color_cycles
+
+   .. autodata:: cb_color_cycles
+      :annotation:
 
 libradtran
 -----------------

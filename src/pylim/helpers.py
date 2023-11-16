@@ -124,6 +124,24 @@ bacardi_labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestria
                       CRE_solar=r"CRE$_{solar}$", CRE_terrestrial=r"CRE$_{terrestrial}$",
                       CRE_total=r"CRE$_{total}$")
 
+cb_color_cycles = dict(
+    cartocolor=["#88CCEE", "#CC6677", "#DDCC77", "#332288", "#AA4499", "#44AA99", "#999933",
+                "#882255", "#661100", "#6699CC", "#117733", "#888888"],
+    # orange, skyblue, bluishgreen, yellow, blue, vermillion, reddishpurple, gray, black
+    okabe_ito=["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
+               "#CC79A7", "#999999", "#000000"],
+    petroff_6=["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"],
+    petroff_8=["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff", "#656364"],
+    petroff_10=["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300",
+                "#b9ac70", "#717581", "#92dadd"])
+"""
+Colorblind friendly color cycles from the `rcartocolor <https://github.com/Nowosad/rcartocolor>`_ package,
+the Okabe-Ito palette :cite:p:`zotero-1251` and the survey from :cite:t:`petroff2021`
+
+.. image:: ./figures/cb_color_cycles.png
+    :alt: Image of the colors
+"""
+
 
 def get_path(key: str, flight: str = None, campaign: str = "cirrus-hl", instrument: str = None) -> str:
     """
@@ -359,18 +377,12 @@ def set_cb_friendly_colors(name: str = "cartocolor"):
     Returns: Modifies the standard pyplot color cycle
 
     """
-    cb_color_cycle = dict()
-    cb_color_cycle["cartocolor"] = ["#88CCEE", "#CC6677", "#DDCC77", "#332288", "#AA4499", "#44AA99", "#999933",
-                                    "#882255", "#661100", "#6699CC", "#117733", "#888888"]
-    # orange, skyblue, bluishgreen, yellow, blue, vermillion, reddishpurple, gray, black
-    cb_color_cycle["okabe_ito"] = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
-                                   "#CC79A7", "#999999", "#000000"]
-    cb_color_cycle["petroff_6"] = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
-    cb_color_cycle["petroff_8"] = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff",
-                                   "#656364"]
-    cb_color_cycle["petroff_10"] = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300",
-                                    "#b9ac70", "#717581", "#92dadd"]
-    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=cb_color_cycle[name])
+    try:
+        new_color_cycle = cb_color_cycles[name]
+    except KeyError:
+        raise KeyError(f"No color cycle with name '{name}' found! "
+                       f"Use one of {cb_color_cycles.keys()}")
+    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=new_color_cycle)
 
 
 def get_cb_friendly_colors(name: str = "cartocolor") -> list:
@@ -384,20 +396,8 @@ def get_cb_friendly_colors(name: str = "cartocolor") -> list:
 
     """
 
-    cb_color_cycle = dict()
-    cb_color_cycle["cartocolor"] = ["#88CCEE", "#CC6677", "#DDCC77", "#332288", "#AA4499", "#44AA99", "#999933",
-                                    "#882255",
-                                    "#661100", "#6699CC", "#117733", "#888888"]
-    # orange, skyblue, bluishgreen, yellow, blue, vermillion, reddishpurple, gray, black
-    cb_color_cycle["okabe_ito"] = ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
-                                   "#CC79A7", "#999999", "#000000"]
-    cb_color_cycle["petroff_6"] = ["#5790fc", "#f89c20", "#e42536", "#964a8b", "#9c9ca1", "#7a21dd"]
-    cb_color_cycle["petroff_8"] = ["#1845fb", "#ff5e02", "#c91f16", "#c849a9", "#adad7d", "#86c8dd", "#578dff",
-                                   "#656364"]
-    cb_color_cycle["petroff_10"] = ["#3f90da", "#ffa90e", "#bd1f01", "#94a4a2", "#832db6", "#a96b59", "#e76300",
-                                    "#b9ac70", "#717581", "#92dadd"]
-
-    return cb_color_cycle[name]
+    return cb_color_cycles.get(name, f"No color cycle with name '{name}' found! "
+                                     f"Use one of {cb_color_cycles.keys()}")
 
 
 def nested_dict_values_iterator(dict_obj: dict):
