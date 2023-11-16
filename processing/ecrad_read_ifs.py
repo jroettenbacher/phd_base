@@ -293,13 +293,10 @@ if __name__ == "__main__":
                                             attrs=dict(unit="1", long_name="Longwave surface emissivity"))
 
     # %% calculate shortwave albedo according to sea ice concentration and shortwave band albedo climatology for sea ice
-    month_idx = dt_day.month - 1
     open_ocean_albedo = 0.06
-    sw_albedo_bands = list()
-    for i in range(h.ci_albedo.shape[1]):
-        sw_albedo_bands.append(data_srf.ci * h.ci_albedo[month_idx, i] + (1. - data_srf.ci) * open_ocean_albedo)
+    ci_albedo = h.ci_albedo_da.interp(time=dt_day)  # interpolate sea ice albedo to date
 
-    sw_albedo = xr.concat(sw_albedo_bands, dim="sw_albedo_band")
+    sw_albedo = data_srf.ci * ci_albedo + (1. - data_srf.ci) * open_ocean_albedo
     sw_albedo.attrs = dict(unit=1, long_name="Banded short wave albedo")
     sw_albedo = sw_albedo.transpose("time", ...)  # transpose so time is first dimension
     # set sw_albedo to constant 0.2 when over land
@@ -380,8 +377,8 @@ if __name__ == "__main__":
         log.info(f"No ozone sonde found for {key}!")
 
     data_ml["o3_vmr_constant"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
-                                         dims=["level"],
-                                         attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
+                                              dims=["level"],
+                                              attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
     data_ml["o3_vmr_ifs"] =  28.9644 / 47.9982 * 1e9 * data_ml["o3"]  # convert IFS O3 mass mixing ratio to vmr
     data_ml.drop_vars("o3")
 
@@ -404,6 +401,7 @@ if __name__ == "__main__":
     #                                                    dims=["column", "level"])
     # sum up cloud ice and cloud snow water content according to IFS documentation Part IV Section 2.8.2 (ii)
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
+    #TODO: Add metadata to q_ice and q_liquid
     # sum up cloud liquid and cloud rain water content
     data_ml["q_liquid"] = data_ml.clwc + data_ml.crwc
 

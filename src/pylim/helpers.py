@@ -9,6 +9,8 @@ import sys
 from itertools import groupby
 import toml
 import numpy as np
+import xarray as xr
+import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import colors
@@ -54,6 +56,18 @@ ci_albedo[:, 4] = (0.250, 0.250, 0.250, 0.250,
 ci_albedo[:, 5] = (0.025, 0.025, 0.025, 0.025,
                    0.025, 0.030, 0.036, 0.036,
                    0.025, 0.025, 0.025, 0.025)
+
+# create a DataArray from the sea ice albedo parameterization
+ci_albedo_da = xr.DataArray(
+    data=ci_albedo,
+    dims=["time", "sw_albedo_band"],
+    name="ci_albedo",
+    coords=dict(
+        sw_albedo_band=np.arange(1, 7),
+        time=pd.date_range("2022-01-15",
+                           periods=12,
+                           freq=pd.offsets.DateOffset(months=1))),
+    attrs=dict(band_bounds=f"{ci_bands}"))
 
 # ozone sonde stations
 ozone_files = dict(Flight_20210629a="sc210624.b11",
