@@ -10,3 +10,6 @@
 [submodule "ac3airborne-intake"]
 	path = ac3airborne-intake
 	url = https://github.com/igmk/ac3airborne-intake.git
+[submodule "LIM-pylim"]
+	path = LIM-pylim
+	url = https://github.com/radiation-lim/LIM-pylim
