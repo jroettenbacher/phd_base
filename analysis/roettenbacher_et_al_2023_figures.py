@@ -580,10 +580,12 @@ plt.show()
 plt.close()
 
 # %% plot BACARDI six panel plot with above and below cloud measurements and transmissivity - solar
-plt.rc("font", size=7.5)
+plt.rc("font", size=8)
 xlims = [(0, 240), (0, 320)]
 ylim_transmissivity = (0.45, 1)
-ylim_irradiance = [(100, 270), (80, 250)]
+ylim_irradiance = [(100, 279), (80, 260)]
+label_xy = (0.03, 0.9)
+box_xy = (0.98, 0.9)
 _, axs = plt.subplots(3, 2, figsize=(17 * h.cm, 15 * h.cm))
 
 # upper left panel - RF17 BACARDI F above cloud
@@ -599,7 +601,7 @@ for var in ["F_down_solar", "F_up_solar"]:
     ax.plot(plot_ds.cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
 ax.legend(loc=4, fontsize=9)
 ax.grid()
-ax.text(0.03, 0.1, "(a)\nAbove cloud",
+ax.text(box_xy[0], box_xy[1], "Above cloud", ha="right",
         transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
 ax.set(title="RF 17 - 11 April 2022",
        ylabel=f"Solar irradiance ({h.plot_units['flux_dn_sw']})",
@@ -618,7 +620,7 @@ cum_distance = np.flip(plot_ds["distance"].cumsum().to_numpy() / 1000)
 for var in ["F_down_solar", "F_up_solar"]:
     ax.plot(cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
 ax.grid()
-ax.text(0.03, 0.1, "(c)\nBelow cloud",
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
         transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
 ax.set(ylabel=f"Solar irradiance ({h.plot_units['flux_dn_sw']})",
        ylim=ylim_irradiance[1],
@@ -629,7 +631,7 @@ ax = axs[2, 0]
 # ax.axhline(y=1, color="k")
 ax.plot(cum_distance, plot_ds["transmissivity_above_cloud"], label="Solar transmissivity", color=cbc[3])
 ax.grid()
-ax.text(0.03, 0.1, "(e)\nBelow cloud",
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
         transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
 ax.set(ylabel="Solar transmissivity",
        xlabel="Distance (km)",
@@ -648,7 +650,8 @@ plot_ds["cum_distance"] = plot_ds["distance"].cumsum() / 1000
 for var in ["F_down_solar", "F_up_solar"]:
     ax.plot(plot_ds.cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
 ax.grid()
-ax.text(0.03, 0.8, "(b)\nAbove cloud", transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.text(box_xy[0], box_xy[1], "Above cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
 ax.set(title="RF 18 - 12 April 2022",
        ylim=ylim_irradiance[0],
        xlim=xlims[1])
@@ -665,7 +668,8 @@ cum_distance = np.flip(plot_ds["distance"].cumsum().to_numpy() / 1000)
 for var in ["F_down_solar", "F_up_solar"]:
     ax.plot(cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
 ax.grid()
-ax.text(0.03, 0.8, "(d)\nBelow cloud", transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
 ax.set(ylim=ylim_irradiance[1],
        xlim=xlims[1])
 
@@ -674,10 +678,17 @@ ax = axs[2, 1]
 # ax.axhline(y=1, color="k")
 ax.plot(cum_distance, plot_ds["transmissivity_above_cloud"], label="Solar transmissivity", color=cbc[3])
 ax.grid()
-ax.text(0.03, 0.8, "(f)\nBelow cloud", transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+# ax.text(label_xy[0], label_xy[1], "(f)", transform=ax.transAxes)
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
 ax.set(xlabel="Distance (km)",
        ylim=ylim_transmissivity,
        xlim=xlims[1])
+
+# set a-f labels
+for ax, label in zip(axs.flatten(), ["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"]):
+    ax.text(label_xy[0], label_xy[1], label, transform=ax.transAxes, fontsize=8)
+
 
 plt.tight_layout()
 figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_BACARDI_case_studies_6panel.png"
@@ -758,8 +769,8 @@ for i, key in enumerate(keys):
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=0, ha="center")
 
 axs[0].set_xlabel("")
-axs[0].text(0.03, 0.88, "a)", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-axs[1].text(0.03, 0.88, "b)", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[0].text(0.01, 0.88, "a)", transform=axs[0].transAxes)
+axs[1].text(0.01, 0.88, "b)", transform=axs[1].transAxes)
 plt.tight_layout()
 
 figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask.png"
@@ -809,8 +820,7 @@ pressure_levels = np.arange(900, 1125, 5)
 press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
 cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
                    linestyles='solid', alpha=1, transform=data_crs)
-# cp.clabel(fontsize=2, inline=1, inline_spacing=1, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
-cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add seaice edge
 ci_levels = [0.8]
@@ -881,7 +891,7 @@ for i, ds in enumerate(ds_dict.values()):
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
     cross = ax.plot(x, y, "x", color="orangered", markersize=3, label="Dropsonde", transform=data_crs,
                     zorder=450)
-    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=4, transform=data_crs, zorder=500,
+    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=5, transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
 # plot trajectories 12 April in second row first column
@@ -902,8 +912,7 @@ pressure_levels = np.arange(900, 1125, 5)
 press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
 cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
                    linestyles='solid', alpha=1, transform=data_crs)
-# cp.clabel(fontsize=2, inline=1, inline_spacing=1, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
-cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add seaice edge
 ci_levels = [0.8]
@@ -976,7 +985,7 @@ for i in [1, -5, -4, -2, -1]:
     ds = list(ds_dict.values())[i]
     launch_time = pd.to_datetime(ds.launch_time.to_numpy())
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=4, transform=data_crs, zorder=500,
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=5, transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
 # make legend for flight track and dropsondes
