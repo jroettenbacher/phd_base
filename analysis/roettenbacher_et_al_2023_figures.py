@@ -689,9 +689,8 @@ ax.set(xlabel="Distance (km)",
 for ax, label in zip(axs.flatten(), ["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"]):
     ax.text(label_xy[0], label_xy[1], label, transform=ax.transAxes, fontsize=8)
 
-
 plt.tight_layout()
-figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_BACARDI_case_studies_6panel.png"
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_BACARDI_case_studies_6panel.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
@@ -1005,7 +1004,7 @@ cbar = fig.colorbar(line, pad=0.01, ax=ax,
 cbar.set_label(label=plt_sett['label'])
 
 figname = f"{plot_path}/HALO-AC3_RF17_RF18_fligh_track_trajectories_plot_overview.png"
-plt.savefig(figname, dpi=300, bbox_inches='tight')
+plt.savefig(figname, dpi=600, bbox_inches='tight')
 plt.show()
 plt.close()
 
@@ -1204,7 +1203,7 @@ below_cloud_altitude = dict()
 for i, key in enumerate(keys):
     below_cloud_altitude[key] = bahamas_ds[key].IRS_ALT.sel(time=slices[key]["below"]).mean(dim="time") / 1000
     print(f"{key}: Mean below cloud altitude of HALO: {below_cloud_altitude[key]:.1f} km")
-    ifs_plot = ecrad_dicts[key]["v15"].sel(time=slices[key]["case"])
+    ifs_plot = ecrad_dicts[key]["v15.1"].sel(time=slices[key]["case"])
     # add relative humidity over ice
     rh = relative_humidity_from_specific_humidity(ifs_plot.pressure_full * u.Pa, ifs_plot.t * u.K, ifs_plot.q * u("kg/kg"))
     rh_ice = met.relative_humidity_water_to_relative_humidity_ice(rh * 100, ifs_plot.t - 273.15)
@@ -1267,10 +1266,12 @@ for i, key in enumerate(keys):
           )
 # %% plot temperature and humidity profiles from IFS and from dropsonde
 plt.rc("font", size=7)
-_, axs = plt.subplots(1, 4, figsize=(18 * h.cm, 10 * h.cm))
+_, axs = plt.subplots(1, 4, figsize=(18 * h.cm, 10 * h.cm), layout="constrained")
 for i, key in enumerate(keys):
     ax = axs[i * 2]
-    ifs_plot = ecrad_dicts[key]["v15"].sel(time=slices[key]["case"])
+    ifs_plot = ecrad_dicts[key]["v15.1"].sel(time=slices[key]["case"])
+    # dirty bug fix since the altitude of the dropsonde files for RF 17 and RF 18 are in meter and kilometer, respectively
+    sf = 1 if key == "RF17" else 1000
 
     # Air temperature
     for t in ifs_plot.time:
@@ -1281,7 +1282,7 @@ for i, key in enumerate(keys):
     for k in times:
         ds = ds_plot[k]
         ds = ds.where(~np.isnan(ds.tdry), drop=True)
-        ax.plot(ds.tdry, ds.alt / 1000, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
+        ax.plot(ds.tdry, ds.alt / sf, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
     ax.set(xlim=(-60, -10), ylim=(0, 12), xlabel="Air temperature (°C)", title=f"{key}")
     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=10))
     ax.plot([], color="grey", label="IFS profiles")
@@ -1290,7 +1291,7 @@ for i, key in enumerate(keys):
 
     # RH
     ax = axs[i * 2 + 1]
-    ifs_plot = ecrad_dicts[key]["v15"].sel(time=slices[key]["case"])
+    ifs_plot = ecrad_dicts[key]["v15.1"].sel(time=slices[key]["case"])
     for t in ifs_plot.time:
         ifs_p = ifs_plot.sel(time=t)
         rh = relative_humidity_from_specific_humidity(ifs_p.pressure_full * u.Pa, ifs_p.t * u.K, ifs_p.q * u("kg/kg"))
@@ -1302,7 +1303,7 @@ for i, key in enumerate(keys):
         ds = ds_plot[k]
         ds = ds.where(~np.isnan(ds.rh), drop=True)
         ax.plot(met.relative_humidity_water_to_relative_humidity_ice(ds.rh, ds.tdry),
-                ds.alt / 1000, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
+                ds.alt / sf, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
     ax.set(xlim=(0, 130), ylim=(0, 12), xlabel="Relative humidity over ice (%)", title=f"{key}")
     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=25))
     ax.plot([], color="grey", label="IFS profiles")
@@ -1311,15 +1312,13 @@ for i, key in enumerate(keys):
     ax.grid()
 
 axs[0].set_ylabel("Altitude (km)")
-axs[0].text(0.05, 0.95, "a)", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-axs[1].text(0.05, 0.95, "b)", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-axs[2].text(0.05, 0.95, "c)", transform=axs[2].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-axs[3].text(0.05, 0.95, "d)", transform=axs[3].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[0].text(0.02, 0.95, "(a)", transform=axs[0].transAxes)
+axs[1].text(0.02, 0.95, "(b)", transform=axs[1].transAxes)
+axs[2].text(0.02, 0.95, "(c)", transform=axs[2].transAxes)
+axs[3].text(0.02, 0.95, "(d)", transform=axs[3].transAxes)
 
-plt.tight_layout()
-
-figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_ifs_dropsonde_t_rh.png"
-plt.savefig(figname, dpi=300)
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_ifs_dropsonde_t_rh.pdf"
+plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
 
