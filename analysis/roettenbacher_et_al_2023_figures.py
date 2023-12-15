@@ -1324,9 +1324,9 @@ plt.close()
 
 # %% plot scatter plot of above cloud measurements and simulations
 plt.rc("font", size=7)
-label = ["a)", "b)"]
+label = ["(a)", "(b)"]
 for v in ["v15.1", "v18.1", "v19.1"]:
-    _, axs = plt.subplots(1, 2, figsize=(16 * h.cm, 9 * h.cm))
+    _, axs = plt.subplots(1, 2, figsize=(16 * h.cm, 8 * h.cm))
     for i, key in enumerate(keys):
         ax = axs[i]
         above_sel = (bahamas_ds[key].IRS_ALT > 11000).resample(time="1Min").first()
@@ -1364,7 +1364,7 @@ for v in ["v15.1", "v18.1", "v19.1"]:
 
     plt.tight_layout()
 
-    figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_f_down_solar_above_cloud_all_{v}.png"
+    figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_f_down_solar_above_cloud_all_{v}.pdf"
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
@@ -2596,7 +2596,7 @@ plt.show()
 plt.close()
 
 # %% plot PDF of IWC for 10 surrounding grid points
-plt.rc("font", size=7)
+plt.rc("font", size=8)
 legend_labels = ["11 UTC", "12 UTC"]
 text_labels = ["(a)", "(b)"]
 binsizes = dict(iwc=0.25, reice=4)
@@ -2669,7 +2669,7 @@ for i, key in enumerate(keys):
 
 axs[0].set(ylabel="Probability density function")
 
-figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_variability.png"
+figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_variability.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
