@@ -2451,9 +2451,6 @@ for i, key in enumerate(keys):
     bahamas_plot.plot(x="time", lw=2, color=cbc[-2], label="HALO altitude", ax=ax)
     ax.axvline(x=pd.to_datetime(f"{bahamas_plot.time.dt.date[0]:%Y-%m-%d} 11:30"),
                label="New IFS timestep", lw=2, ls="--")
-    # ax.plot(ifs_cth.time, ifs_cth, label="IFS cloud top", c=cbc[2])
-    # ax.plot(ifs_cbh.time, ifs_cbh, label="IFS cloud base", c=cbc[3])
-    ax.legend()
     h.set_xticks_and_xlabels(ax, time_extend)
     ax.set(xlabel="Time (UTC)", ylabel="Height (km)")
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=0, ha="center")
@@ -2469,6 +2466,7 @@ for i, key in enumerate(keys):
 
 # place colorbar for both flights
 fig.colorbar(pcm, ax=axs[:2], label=f"IFS {h.cbarlabels['cloud_fraction']}", pad=0.001)
+axs[0].legend()
 axs[0].set_xlabel("")
 axs[2].set_xlabel("")
 axs[3].set_xlabel("Ice water content density")
@@ -2476,9 +2474,8 @@ axs[0].text(0.03, 0.88, "(a) RF 17", transform=axs[0].transAxes, bbox=dict(boxst
 axs[1].text(0.03, 0.88, "(c) RF 18", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
 axs[2].text(0.03, 0.88, "(b) RF 17", transform=axs[2].transAxes, bbox=dict(boxstyle="Round", fc="white"))
 axs[3].text(0.03, 0.88, "(d) RF 18", transform=axs[3].transAxes, bbox=dict(boxstyle="Round", fc="white"))
-# plt.tight_layout()
 
-figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask_hists.png"
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask_hists.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
