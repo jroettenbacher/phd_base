@@ -27,7 +27,6 @@ import cmasher as cm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -778,22 +777,25 @@ plt_sett = {
     'ylim': [-72, 0],
     'cmap_sel': cmap,
     'cmap_ticks': np.arange(-72, 0.1, 12),
-    'shrink': 0.74
+    'shrink': 1
 }
 data_crs = ccrs.PlateCarree()
 map_crs = ccrs.NorthPolarStereo()
 
-plt.rc("font", size=6)
-fig = plt.figure(figsize=(18 * h.cm, 8 * h.cm))
-gs = gridspec.GridSpec(1, 2)
+plt.rc("font", size=8)
+fig, axs = plt.subplots(1, 2,
+                        figsize=(17 * h.cm, 9 * h.cm),
+                        subplot_kw={"projection": map_crs},
+                        layout="constrained")
 
 # plot trajectory map 11 April in first row and first column
-ax = fig.add_subplot(gs[0, 0], projection=map_crs)
+ax = axs[0]
 ax.coastlines(alpha=0.5)
-xlim = (-2000000, 2000000)
-ylim = (-2500000, 500000)
-ax.set(title="(a) RF 17",
-       xlim=xlim, ylim=ylim)
+xlim = (-1200000, 1200000)
+ylim = (-2500000, 50000)
+ax.set(title="(a) RF 17")
+# ax.set_extent([-30, 40, 65, 90], crs=map_crs)
+ax.set_extent([xlim[0], xlim[1], ylim[0], ylim[1]], crs=map_crs)
 gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
                   linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
 gl.xlocator = mticker.FixedLocator(np.arange(-180, 180, 20))
@@ -860,9 +862,6 @@ for k in range(traj_single_len + 1):
         lc.set_linewidth(1)
     line = ax.add_collection(lc)
 
-plt.colorbar(line, ax=ax, pad=0.01, shrink=plt_sett["shrink"],
-             ticks=plt_sett['cmap_ticks']).set_label(label=plt_sett['label'], size=6)
-
 # plot flight track - 11 April
 ins = bahamas_ds["RF17"]
 track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
@@ -885,27 +884,11 @@ for i, ds in enumerate(ds_dict.values()):
     ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=4, transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
-# make legend for flight track and dropsondes - 11 April
-handles = [plt.plot([], ls="-", color="k")[0],  # flight track
-           cross[0],  # dropsondes
-           plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
-           plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
-           Patch(facecolor="royalblue")]  # cloud cover
-labels = ["HALO flight track", "Dropsonde", "Sea ice edge", "Mean sea level\npressure (hPa)",
-          "High cloud cover\nat 12:00 UTC"]
-ax.legend(handles=handles, labels=labels, framealpha=1, loc=2, title="(a) RF 17", alignment="left")
-
-# add map inset of case study area
-# axins = inset_axes(ax, width="20%", height="40%", axes_class=cartopy.mpl.geoaxes.GeoAxes,
-#                    axes_kwargs=dict(projection=map_crs))
-# axins.scatter(ins_hl.IRS_LON[::10], ins_hl.IRS_LAT[::10], c=cbc[3], alpha=1, marker=".", s=1, zorder=400,
-#               transform=ccrs.PlateCarree(), linestyle="solid")
-
 # plot trajectories 12 April in second row first column
-ax = fig.add_subplot(gs[0, 1], projection=map_crs)
+ax = axs[1]
 ax.coastlines(alpha=0.5)
-ax.set_xlim((-2000000, 2000000))
-ax.set_ylim((-2700000, 500000))
+ax.set(title="(b) RF 18")
+ax.set_extent([xlim[0], xlim[1], ylim[0], ylim[1]], crs=map_crs)
 gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
                   linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
 gl.top_labels = False
@@ -971,9 +954,6 @@ for k in range(traj_single_len + 1):
         lc.set_linewidth(1)
     line = ax.add_collection(lc)
 
-plt.colorbar(line, ax=ax, pad=0.01, shrink=plt_sett["shrink"],
-             ticks=plt_sett["cmap_ticks"]).set_label(label=plt_sett['label'], size=6)
-
 # plot flight track - 12 April
 ins = bahamas_ds["RF18"]
 track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
@@ -999,18 +979,212 @@ for i in [1, -5, -4, -2, -1]:
     ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=4, transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
-# make legend for flight track and dropsondes - 12 April
+# make legend for flight track and dropsondes
+labels = ["HALO flight track", "Dropsonde", "Sea ice edge", "Mean sea level pressure (hPa)",
+          "High cloud cover at 12:00 UTC"]
 handles = [plt.plot([], ls="-", color="k")[0],  # flight track
            cross[0],  # dropsondes
            plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
            plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
            Patch(facecolor="royalblue")]  # cloud cover
-labels = ["HALO flight track", "Dropsonde", "Sea ice edge", "Mean sea level\npressure (hPa)",
-          "High cloud cover\nat 12:00 UTC"]
-ax.legend(handles=handles, labels=labels, framealpha=1, loc=2, title="(b) RF 18", alignment="left")
+fig.legend(handles=handles, labels=labels, framealpha=1, ncols=3,
+           loc="outside lower center")
 
-plt.tight_layout()
+cbar = fig.colorbar(line, pad=0.01, ax=ax,
+                    shrink=plt_sett["shrink"],
+                    ticks=plt_sett["cmap_ticks"])
+cbar.set_label(label=plt_sett['label'])
+
 figname = f"{plot_path}/HALO-AC3_RF17_RF18_fligh_track_trajectories_plot_overview.png"
+plt.savefig(figname, dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# %% plot zoom of flight track RF 17
+data_crs = ccrs.PlateCarree()
+map_crs = ccrs.NorthPolarStereo()
+
+plt.rc("font", size=5)
+fig, ax = plt.subplots(figsize=(2.5 * h.cm, 2.5 * h.cm),
+                        subplot_kw={"projection": map_crs},
+                        layout="constrained")
+
+# plot trajectory map 11 April in first row and first column
+ax.set_extent([-28, 28, 85, 90], crs=data_crs)
+# ax.set_ylim(ylim)
+gl = ax.gridlines(crs=data_crs, draw_labels=False, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+
+# Plot the surface pressure - 11 April
+ifs = ifs_ds["RF17"].sel(time="2022-04-11 12:00")
+pressure_levels = np.arange(900, 1125, 5)
+press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
+cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
+                   linestyles='solid', alpha=1, transform=data_crs)
+# cp.clabel(fontsize=2, inline=1, inline_spacing=1, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+
+# add high cloud cover
+ifs_cc = ifs.cloud_fraction.where(ifs.pressure_full < 60000, drop=True).sum(dim="level")
+ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=24, transform=data_crs, cmap="Blues", alpha=1)
+
+# plot trajectories - 11 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220411_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to upper char
+for j in range(len(header)):
+    header[j] = header[j].upper()
+
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+var_index = header.index("TIME")
+
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett['cmap_sel'], norm=plt_sett['norm'],
+                        alpha=1, transform=data_crs)
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
+
+# plot flight track - 11 April
+ins = bahamas_ds["RF17"]
+track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
+ax.scatter(track_lons[::20], track_lats[::20], c="k", alpha=1, marker=".", s=3, zorder=400,
+           label='HALO flight track', transform=data_crs, linestyle="solid")
+
+# highlight case study region
+ins_hl = ins.sel(time=slices["RF17"]["above"])
+ax.scatter(ins_hl.IRS_LON[::10], ins_hl.IRS_LAT[::10], c=cbc[3], alpha=1, marker=".", s=1, zorder=400,
+           transform=data_crs, linestyle="solid")
+
+# plot dropsonde locations - 11 April
+ds_dict = dropsonde_ds["RF17"]
+for i, ds in enumerate([ds_dict["104205"], ds_dict["110137"]]):
+    ds["alt"] = ds.alt / 1000  # convert altitude to km
+    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
+                    zorder=450)
+    ax.text(x-.5, y+.2, f"{launch_time:%H:%M}", c="k", transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
+
+
+figname = f"{plot_path}/HALO-AC3_RF17_fligh_track_trajectories_plot_overview_zoom.png"
+plt.savefig(figname, dpi=300, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# %% plot zoom map RF 18
+plt.rc("font", size=5)
+fig, ax = plt.subplots(figsize=(2 * h.cm, 2.5 * h.cm),
+                        subplot_kw={"projection": map_crs},
+                        layout="constrained")
+
+# plot trajectories 12 April in second row first column
+ax.coastlines(alpha=0.5)
+ax.set_extent([-20, 22, 87, 90], crs=data_crs)
+gl = ax.gridlines(crs=data_crs, draw_labels=False, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+
+# Plot the surface pressure - 12 April
+ifs = ifs_ds["RF18"].sel(time="2022-04-12 12:00")
+pressure_levels = np.arange(900, 1125, 5)
+press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
+cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
+                   linestyles='solid', alpha=1, transform=data_crs)
+# cp.clabel(fontsize=2, inline=1, inline_spacing=1, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+
+# add high cloud cover
+ifs_cc = ifs.cloud_fraction.where(ifs.pressure_full < 60000, drop=True).sum(dim="level")
+ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=24, transform=data_crs, cmap="Blues", alpha=1)
+
+# plot trajectories - 12 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220412_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to lower char.
+for j in range(len(header)):
+    header[j] = header[j].upper()  # convert to lower
+
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett['cmap_sel'], norm=plt_sett['norm'],
+                        alpha=1, transform=ccrs.PlateCarree())
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
+
+# plot flight track - 12 April
+ins = bahamas_ds["RF18"]
+track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
+ax.scatter(track_lons[::10], track_lats[::10], c="k", alpha=1, marker=".", s=3, zorder=400,
+           label='HALO flight track', transform=data_crs, linestyle="solid")
+
+# highlight case study region
+ins_hl = ins.sel(time=slices["RF18"]["above"])
+ax.scatter(ins_hl.IRS_LON[::20], ins_hl.IRS_LAT[::20], c=cbc[3], alpha=1, marker=".", s=2, zorder=400,
+           transform=data_crs, linestyle="solid")
+
+# plot dropsonde locations - 12 April
+ds_dict = dropsonde_ds["RF18"]
+for i in [-7, -6, -5, -4, -2]:
+    ds = list(ds_dict.values())[i]
+    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+    lon, lat = ds.lon.dropna(dim="time"), ds.lat.dropna(dim="time")
+    x, y = lon[0].to_numpy(), lat[0].to_numpy()
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
+                    zorder=450)
+    ax.text(x, y+.1, f"{launch_time:%H:%M}", color="k", transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
+
+figname = f"{plot_path}/HALO-AC3_RF18_fligh_track_trajectories_plot_overview_zoom.png"
 plt.savefig(figname, dpi=300, bbox_inches='tight')
 plt.show()
 plt.close()
@@ -2542,3 +2716,5 @@ for key in keys:
           f"Mean: {bacardi_bb_albedo.mean():.3f}\n"
           f"Max: {bacardi_bb_albedo.max():.3f}\n"
           f"Min: {bacardi_bb_albedo.min():.3f}")
+
+# %% testing
