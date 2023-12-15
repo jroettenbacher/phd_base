@@ -2185,15 +2185,15 @@ plt.close()
 
 # %% plot PDF of transmissivity (above cloud simulation) below cloud - all ice optics
 transmissivity_stats = list()
-plt.rc("font", size=7)
-label = [["a)", "b)", "c)"], ["d)", "e)", "f)"]]
+plt.rc("font", size=7.5)
+label = [["(a)", "(b)", "(c)"], ["(d)", "(e)", "(f)"]]
 ylims = [(0, 36), (0, 36)]
 legend_loc = [3, 1]
 sf = 1
 norm = ""
 binsize = 0.01 * sf
 xlabel = "Solar Transmissivity" if norm == "" else "Normalized Transmissivity"
-_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm))
+_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm), layout="constrained")
 for i, key in enumerate(keys):
     ax = axs[i]
     l = label[i]
@@ -2207,8 +2207,9 @@ for i, key in enumerate(keys):
     transmissivity_stats.append((key, "BACARDI", "Mean", bacardi_plot.mean().to_numpy()))
     transmissivity_stats.append((key, "BACARDI", "Median", bacardi_plot.median().to_numpy()))
 
-    for ii, v in enumerate(["v15.1", "v18.1", "v19.1"]):
+    for ii, v in enumerate(["v15.1", "v19.1", "v18.1"]):
         v_name = ecrad.version_names[v[:3]]
+        v_name = f"{v_name}2013" if v_name == "Yi" else v_name
         a = ax[ii]
         ecrad_ds = ecrad_dicts[key][v].sel(time=slices[key]["below"])
         height_sel = ecrad_ds["aircraft_level"]
@@ -2236,27 +2237,24 @@ for i, key in enumerate(keys):
         order = [1, 2, 0]
         handles = [handles[idx] for idx in order]
         labels = [labels[idx] for idx in order]
-        a.legend(handles, labels, loc=legend_loc[i])
+        if key == "RF17":
+            a.legend(handles, labels, loc=legend_loc[i])
         a.text(
-            0.04,
+            0.02,
             0.95,
-            f"{l[ii]} {key}\n"
-            # f"$W$ = {w:.1f}\n"
-            f"n = {len(ecrad_plot):.0f}",
+            f"{l[ii]}",
             ha="left",
             va="top",
             transform=a.transAxes,
-            bbox=dict(fc="white", ec="black", alpha=0.9, boxstyle="round"),
         )
         a.grid()
 
     ax[0].set(ylabel="Density")
-    ax[1].set(xlabel=xlabel)
+    ax[1].set(title=f"{key.replace('1', ' 1')} (n = {len(ecrad_plot):.0f})")
+    if key == "RF18":
+        ax[1].set(xlabel=xlabel)
 
-
-plt.tight_layout()
-
-figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_transmissivity_above_cloud{norm}_PDF_below_cloud_ice_optics.png"
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_transmissivity_above_cloud{norm}_PDF_below_cloud_ice_optics.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
