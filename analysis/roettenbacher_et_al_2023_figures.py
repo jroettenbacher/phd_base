@@ -2244,15 +2244,15 @@ plt.show()
 plt.close()
 
 # %% plot PDF of transmissivity (above cloud simulation) below cloud  - varcloud all ice optics
-plt.rc("font", size=7)
-label = [["a)", "b)", "c)"], ["d)", "e)", "f)"]]
+plt.rc("font", size=7.5)
+label = [["(a)", "(b)", "(c)"], ["(d)", "(e)", "(f)"]]
 ylims = [(0, 36), (0, 36)]
 legend_loc = [6, 1]
 sf = 1
 norm = ""
 binsize = 0.01 * sf
 xlabel = "Solar Transmissivity" if norm == "" else "Normalized Transmissivity"
-_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm))
+_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm), layout="constrained")
 for i, key in enumerate(keys):
     ax = axs[i]
     l = label[i]
@@ -2261,8 +2261,9 @@ for i, key in enumerate(keys):
     bins = np.arange(0.5, 1.0, binsize)
     # BACARDI histogram
     bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
-    for ii, v in enumerate(["v16", "v20", "v28"]):
+    for ii, v in enumerate(["v16", "v28", "v20"]):
         v_name = ecrad.version_names[v]
+        v_name = f"Yi2013 VarCloud" if "Yi" in v_name else v_name
         a = ax[ii]
         ecrad_ds = ecrad_dicts[key][v].sel(time=slices[key]["below"])
         height_sel = ecrad_ds["aircraft_level"]
@@ -2291,26 +2292,24 @@ for i, key in enumerate(keys):
         order = [1, 2, 0]
         handles = [handles[idx] for idx in order]
         labels = [labels[idx] for idx in order]
-        a.legend(handles, labels, loc=legend_loc[i])
+        if key == "RF17":
+            a.legend(handles, labels, loc=legend_loc[i])
         a.text(
-            0.04,
+            0.02,
             0.95,
-            f"{l[ii]} {key}\n"
-            # f"$W$ = {w:.1f}\n"
-            f"n = {len(ecrad_plot):.0f}",
+            f"{l[ii]}",
             ha="left",
             va="top",
-            transform=a.transAxes,
-            bbox=dict(fc="white", ec="black", alpha=0.8, boxstyle="round"),
+            transform=a.transAxes
         )
         a.grid()
 
     ax[0].set(ylabel="Density")
-    ax[1].set(xlabel=xlabel)
+    ax[1].set(title=f"{key.replace('1', ' 1')} (n = {len(ecrad_plot):.0f})")
+    if key == "RF18":
+        ax[1].set(xlabel=xlabel)
 
-plt.tight_layout()
-
-figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_f_down_solar_norm_PDF_below_cloud_ice_optics_varcloud.png"
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_f_down_solar_norm_PDF_below_cloud_ice_optics_varcloud.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
