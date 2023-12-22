@@ -874,13 +874,13 @@ for k in range(traj_single_len + 1):
 # plot flight track - 11 April
 ins = bahamas_ds["RF17"]
 track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
-ax.scatter(track_lons[::10], track_lats[::10], c="k", alpha=1, marker=".", s=1, zorder=400,
-           label='HALO flight track', transform=data_crs, linestyle="solid")
+ax.plot(track_lons[::1000], track_lats[::1000], c="k",
+        zorder=400, transform=data_crs)
 
 # highlight case study region
 ins_hl = ins.sel(time=slices["RF17"]["above"])
-ax.scatter(ins_hl.IRS_LON[::10], ins_hl.IRS_LAT[::10], c=cbc[3], alpha=1, marker=".", s=1, zorder=400,
-           transform=ccrs.PlateCarree(), linestyle="solid")
+ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
+        zorder=400, transform=ccrs.PlateCarree())
 
 # plot dropsonde locations - 11 April
 ds_dict = dropsonde_ds["RF17"]
@@ -888,9 +888,9 @@ for i, ds in enumerate(ds_dict.values()):
     ds["alt"] = ds.alt / 1000  # convert altitude to km
     launch_time = pd.to_datetime(ds.launch_time.to_numpy())
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=3, label="Dropsonde", transform=data_crs,
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
                     zorder=450)
-    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=5, transform=data_crs, zorder=500,
+    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=6, transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
 # plot trajectories 12 April in second row first column
@@ -965,32 +965,34 @@ for k in range(traj_single_len + 1):
 # plot flight track - 12 April
 ins = bahamas_ds["RF18"]
 track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
-ax.scatter(track_lons[::10], track_lats[::10], c="k", alpha=1, marker=".", s=1, zorder=400,
-           label='HALO flight track', transform=ccrs.PlateCarree(), linestyle="solid")
+ax.plot(track_lons[::1000], track_lats[::1000], c="k",
+        zorder=400, transform=ccrs.PlateCarree())
 
 # highlight case study region
 ins_hl = ins.sel(time=slices["RF18"]["above"])
-ax.scatter(ins_hl.IRS_LON[::10], ins_hl.IRS_LAT[::10], c=cbc[3], alpha=1, marker=".", s=1, zorder=400,
-           transform=ccrs.PlateCarree(), linestyle="solid")
+ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
+        zorder=400, transform=ccrs.PlateCarree())
 
 # plot dropsonde locations - 12 April
 ds_dict = dropsonde_ds["RF18"]
 for ds in ds_dict.values():
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=3, label="Dropsonde", transform=data_crs,
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
                     zorder=450)
 # add time to only a selected range of dropsondes
 for i in [1, -5, -4, -2, -1]:
     ds = list(ds_dict.values())[i]
     launch_time = pd.to_datetime(ds.launch_time.to_numpy())
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=5, transform=data_crs, zorder=500,
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=6, transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
 # make legend for flight track and dropsondes
-labels = ["HALO flight track", "Dropsonde", "Sea ice edge", "Mean sea level pressure (hPa)",
-          "High cloud cover at 12:00 UTC"]
+labels = ["HALO flight track", "Case study section",
+          "Dropsonde", "Sea ice edge",
+          "Sea level pressure (hPa)", "High cloud cover at 12:00 UTC"]
 handles = [plt.plot([], ls="-", color="k")[0],  # flight track
+           plt.plot([], ls="-", color=cbc[1])[0],  # case study section
            cross[0],  # dropsondes
            plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
            plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
@@ -1008,7 +1010,7 @@ plt.savefig(figname, dpi=600, bbox_inches='tight')
 plt.show()
 plt.close()
 
-# %% plot zoom of flight track RF 17
+# %% plot zoom of case study region RF 17
 data_crs = ccrs.PlateCarree()
 map_crs = ccrs.NorthPolarStereo()
 
@@ -1105,7 +1107,7 @@ plt.savefig(figname, dpi=300, bbox_inches='tight')
 plt.show()
 plt.close()
 
-# %% plot zoom map RF 18
+# %% plot zoom of case study region RF 18
 plt.rc("font", size=5)
 fig, ax = plt.subplots(figsize=(2 * h.cm, 2.5 * h.cm),
                         subplot_kw={"projection": map_crs},
@@ -1172,13 +1174,13 @@ for k in range(traj_single_len + 1):
 # plot flight track - 12 April
 ins = bahamas_ds["RF18"]
 track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
-ax.scatter(track_lons[::10], track_lats[::10], c="k", alpha=1, marker=".", s=3, zorder=400,
-           label='HALO flight track', transform=data_crs, linestyle="solid")
+ax.plot(track_lons[::1000], track_lats[::1000], c="k",
+        zorder=400, transform=data_crs)
 
 # highlight case study region
 ins_hl = ins.sel(time=slices["RF18"]["above"])
-ax.scatter(ins_hl.IRS_LON[::20], ins_hl.IRS_LAT[::20], c=cbc[3], alpha=1, marker=".", s=2, zorder=400,
-           transform=data_crs, linestyle="solid")
+ax.plot(ins_hl.IRS_LON[::20], ins_hl.IRS_LAT[::20], c=cbc[1],
+        zorder=400, transform=data_crs)
 
 # plot dropsonde locations - 12 April
 ds_dict = dropsonde_ds["RF18"]
@@ -1193,7 +1195,7 @@ for i in [-7, -6, -5, -4, -2]:
             path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
 
 figname = f"{plot_path}/HALO-AC3_RF18_fligh_track_trajectories_plot_overview_zoom.png"
-plt.savefig(figname, dpi=300, bbox_inches='tight')
+plt.savefig(figname, dpi=600, bbox_inches='tight')
 plt.show()
 plt.close()
 
@@ -1271,7 +1273,7 @@ for i, key in enumerate(keys):
     ax = axs[i * 2]
     ifs_plot = ecrad_dicts[key]["v15.1"].sel(time=slices[key]["case"])
     # dirty bug fix since the altitude of the dropsonde files for RF 17 and RF 18 are in meter and kilometer, respectively
-    sf = 1 if key == "RF17" else 1000
+    sf = 1000 if key == "RF17" else 1000
 
     # Air temperature
     for t in ifs_plot.time:
