@@ -723,12 +723,13 @@ plt.show()
 plt.close()
 
 # %% plot IFS cloud fraction lidar/mask comparison
-plt.rc("font", size=6.5)
-_, axs = plt.subplots(2, 1, figsize=(16 * h.cm, 9 * h.cm))
+plt.rc("font", size=7)
+fig, axs = plt.subplots(2, 1, figsize=(16 * h.cm, 9 * h.cm), layout="constrained")
 for i, key in enumerate(keys):
     ax = axs[i]
     ds = ecrad_dicts[key]["v15"].sel(time=slices[key]["case"])
-    ifs_plot = ds["cloud_fraction"]
+    ifs_plot = ds[["cloud_fraction", "iwc"]]
+    bahamas_plot = bahamas_ds[key].IRS_ALT.sel(time=slices[key]["case"]) / 1000
     # add new z axis mean pressure altitude
     if "half_level" in ifs_plot.dims:
         new_z = ds["press_height_hl"].mean(dim="time") / 1000
@@ -751,28 +752,30 @@ for i, key in enumerate(keys):
         ifs_plot_new_z.append(tmp_plot)
 
     ifs_plot = xr.concat(ifs_plot_new_z, dim="time").sortby("height").sel(height=slice(0, 12))
-    ifs_plot = ifs_plot.where(ifs_plot > 0)
+    ifs_plot = ifs_plot.where(ifs_plot.cloud_fraction > 0)
     halo_plot = varcloud_ds[key].sel(time=slices[key]["case"]).Varcloud_Input_Mask
     halo_plot = halo_plot.assign_coords(height=halo_plot.height / 1000).sortby("height")
     time_extend = pd.to_timedelta((ifs_plot.time[-1] - ifs_plot.time[0]).to_numpy())
 
     # plot IFS cloud cover prediction and Radar lidar mask
-    ifs_plot.plot(x="time", cmap=cm.sapphire, cbar_kwargs=dict(label=f"IFS {h.cbarlabels['cloud_fraction']}"), ax=ax)
+    pcm = ifs_plot.cloud_fraction.plot(x="time", cmap=cm.sapphire, ax=ax, add_colorbar=False)
     halo_plot.plot.contour(x="time", levels=[0.9], colors=cbc[1], ax=ax, linewidths=2)
-    bahamas_plot = bahamas_ds[key].IRS_ALT.sel(time=slices[key]["case"]) / 1000
-    bahamas_plot.plot(x="time", ax=ax, label="HALO altitude", color=cbc[-2], lw=2)
     ax.plot([], color=cbc[1], label="Radar & Lidar Mask", lw=2)
-    ax.legend()
+    bahamas_plot.plot(x="time", lw=2, color=cbc[-2], label="HALO altitude", ax=ax)
+    ax.axvline(x=pd.to_datetime(f"{bahamas_plot.time.dt.date[0]:%Y-%m-%d} 11:30"),
+               label="New IFS timestep", lw=2, ls="--")
     h.set_xticks_and_xlabels(ax, time_extend)
     ax.set(xlabel="Time (UTC)", ylabel="Height (km)")
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=0, ha="center")
 
+# place colorbar for both flights
+fig.colorbar(pcm, ax=axs[:2], label=f"IFS {h.cbarlabels['cloud_fraction']}", pad=0.001)
+axs[0].legend()
 axs[0].set_xlabel("")
-axs[0].text(0.01, 0.88, "a)", transform=axs[0].transAxes)
-axs[1].text(0.01, 0.88, "b)", transform=axs[1].transAxes)
-plt.tight_layout()
+axs[0].text(0.03, 0.88, "(a) RF 17", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
+axs[1].text(0.03, 0.88, "(b) RF 18", transform=axs[1].transAxes, bbox=dict(boxstyle="Round", fc="white"))
 
-figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask.png"
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_cloud_fraction_radar_lidar_mask.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
