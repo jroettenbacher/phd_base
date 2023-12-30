@@ -2235,7 +2235,7 @@ for i, key in enumerate(keys):
         )
         a.grid()
 
-    ax[0].set(ylabel="Density")
+    ax[0].set(ylabel="Probability density function")
     ax[1].set(title=f"{key.replace('1', ' 1')} (n = {len(ecrad_plot):.0f})")
     if key == "RF18":
         ax[1].set(xlabel=xlabel)
@@ -2306,7 +2306,7 @@ for i, key in enumerate(keys):
         )
         a.grid()
 
-    ax[0].set(ylabel="Density")
+    ax[0].set(ylabel="Probability density function")
     ax[1].set(title=f"{key.replace('1', ' 1')} (n = {len(ecrad_plot):.0f})")
     if key == "RF18":
         ax[1].set(xlabel=xlabel)
