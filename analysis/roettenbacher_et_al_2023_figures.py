@@ -78,6 +78,7 @@ for key in keys:
     ecrad_path = f"{h.get_path('ecrad', flight, campaign)}/{date}"
     varcloud_path = h.get_path("varcloud", flight, campaign)
     dropsonde_path = h.get_path("dropsondes", flight, campaign)
+    dropsonde_path = f"{dropsonde_path}/Level_1" if key == "RF17" else f"{dropsonde_path}/Level_2"
 
     # filenames
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc"
@@ -86,7 +87,7 @@ for key in keys:
     libradtran_bb_thermal_si = f"HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_si_{date}_{key}.nc"
     ifs_file = f"ifs_{date}_00_ml_O1280_processed.nc"
     varcloud_file = [f for f in os.listdir(varcloud_path) if f.endswith(".nc")][0]
-    dropsonde_files = [f for f in os.listdir(dropsonde_path) if f.endswith("QC.nc")]
+    dropsonde_files = [f for f in os.listdir(dropsonde_path) if f.endswith(".nc")]
 
     # read in aircraft data
     bahamas_ds[key] = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
@@ -98,8 +99,11 @@ for key in keys:
     # read in dropsonde data
     dropsondes = dict()
     for file in dropsonde_files:
-        k = file[-11:-5]
+        k = file[-11:-5] if key == "RF17" else file[27:35].replace("_", "")
         dropsondes[k] = xr.open_dataset(f"{dropsonde_path}/{file}")
+        if key == "RF18":
+            dropsondes[k]["ta"] = dropsondes[k].ta - 273.15
+            dropsondes[k]["rh"] = dropsondes[k].rh * 100
     dropsonde_ds[key] = dropsondes
 
     # read in ifs data
@@ -1216,7 +1220,7 @@ for i, key in enumerate(keys):
 
     ds_plot = dropsonde_ds[key].copy()
 
-    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823"]
+    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823", "111442", "112014", "112524"]
     # calculate time switch for comaprison with IFS
     date = "20220411" if key == "RF17" else "20220412"
     times_dt = pd.to_datetime([date + t for t in times], format="%Y%m%d%H%M%S")
@@ -1270,28 +1274,31 @@ for i, key in enumerate(keys):
           f" {np.abs(ds2_diff.rh_ice).max().to_numpy():.2f} %"
           )
 # %% plot temperature and humidity profiles from IFS and from dropsonde
+below_cloud_altitude = dict()
+h.set_cb_friendly_colors("petroff_8")
 plt.rc("font", size=7)
 _, axs = plt.subplots(1, 4, figsize=(18 * h.cm, 10 * h.cm), layout="constrained")
 for i, key in enumerate(keys):
+    below_cloud_altitude[key] = bahamas_ds[key].IRS_ALT.sel(time=slices[key]["below"]).mean(dim="time") / 1000
     ax = axs[i * 2]
     ifs_plot = ecrad_dicts[key]["v15.1"].sel(time=slices[key]["case"])
-    # dirty bug fix since the altitude of the dropsonde files for RF 17 and RF 18 are in meter and kilometer, respectively
-    sf = 1000 if key == "RF17" else 1000
+    sf = 1000
 
     # Air temperature
     for t in ifs_plot.time:
         ifs_p = ifs_plot.sel(time=t)
         ax.plot(ifs_p.temperature_hl - 273.15, ifs_p.press_height_hl / 1000, color="grey", lw=0.5)
     ds_plot = dropsonde_ds[key]
-    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823"]
+    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823", "111442", "112014", "112524"]
     for k in times:
         ds = ds_plot[k]
-        ds = ds.where(~np.isnan(ds.tdry), drop=True)
-        ax.plot(ds.tdry, ds.alt / sf, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
+        var = "tdry" if key == "RF17" else "ta"
+        ds = ds.where(~np.isnan(ds[var]), drop=True)
+        ax.plot(ds[var], ds.gpsalt / sf, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
     ax.set(xlim=(-60, -10), ylim=(0, 12), xlabel="Air temperature (°C)", title=f"{key}")
     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=10))
     ax.plot([], color="grey", label="IFS profiles")
-    ax.axhline(below_cloud_altitude[key], c="k", label="Below cloud\n altitude")
+    ax.axhline(below_cloud_altitude[key], c="k")
     ax.grid()
 
     # RH
@@ -1303,16 +1310,16 @@ for i, key in enumerate(keys):
         rh_ice = met.relative_humidity_water_to_relative_humidity_ice(rh * 100, ifs_p.t - 273.15)
         ax.plot(rh_ice, ifs_p.press_height_full / 1000, color="grey", lw=0.5)
     ds_plot = dropsonde_ds[key]
-    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823"]
+    times = ["104205", "110137"] if key == "RF17" else ["110321", "110823", "111442", "112014", "112524"]
     for k in times:
         ds = ds_plot[k]
         ds = ds.where(~np.isnan(ds.rh), drop=True)
-        ax.plot(met.relative_humidity_water_to_relative_humidity_ice(ds.rh, ds.tdry),
-                ds.alt / sf, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
+        ax.plot(met.relative_humidity_water_to_relative_humidity_ice(ds.rh, ds[var]),
+                ds.gpsalt / sf, label=f"DS {k[:2]}:{k[2:4]} UTC", lw=2)
     ax.set(xlim=(0, 130), ylim=(0, 12), xlabel="Relative humidity over ice (%)", title=f"{key}")
     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=25))
     ax.plot([], color="grey", label="IFS profiles")
-    ax.axhline(below_cloud_altitude[key], c="k", label="Below cloud\n altitude")
+    ax.axhline(below_cloud_altitude[key], c="k")
     ax.legend()
     ax.grid()
 
@@ -1326,6 +1333,7 @@ figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_ifs_dropsonde_t_rh.pdf"
 plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
+h.set_cb_friendly_colors("petroff_6")
 
 # %% plot scatter plot of above cloud measurements and simulations
 plt.rc("font", size=7)
@@ -2653,6 +2661,79 @@ for i, key in enumerate(keys):
 axs[0].set(ylabel="Probability density function")
 
 figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_variability.pdf"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot PDF of IWC for 11 and 12 UTC
+plt.rc("font", size=8)
+legend_labels = ["11 UTC", "12 UTC"]
+text_labels = ["(a)", "(b)"]
+binsizes = dict(iwc=1, reice=4)
+_, axs = plt.subplots(1, 2, figsize=(17 * h.cm, 10 * h.cm))
+ylims = {"iwc": (0, 0.3), "reice": (0, 0.095)}
+stats = list()
+for i, key in enumerate(keys):
+    ax = axs[i]
+    plot_ds = ecrad_orgs[key]
+    sel_time = slices[key]["case"]
+    date = "2022-04-11" if key == "RF17" else "2022-04-12"
+    binsize = binsizes["iwc"]
+    bins = np.arange(0, 20.1, binsize)
+    for ii, v in enumerate(["v15.1"]):
+        iwc, cc = plot_ds[v].iwc.sel(time=sel_time), plot_ds[v].cloud_fraction.sel(time=sel_time)
+        iwc_plot = iwc.where(cc > 0).where(cc == 0, iwc / cc)
+        iwc_plot = iwc_plot.sel(column=0)
+
+        # 11 UTC
+        pds = (iwc_plot
+               .where(iwc_plot.time < pd.to_datetime(f"{date} 11:30"))
+               .to_numpy()).flatten() * 1e6
+        pds = pds[~np.isnan(pds)]
+        mad = median_abs_deviation(pds)
+        median = np.median(pds)
+        stats.append((key, "11UTC", "MAD", mad))
+        stats.append((key, "11UTC", "Median", median))
+        ax.hist(
+            pds,
+            bins=bins,
+            label=legend_labels[0] + f" (n={len(pds)})",
+            color=cbc[0],
+            histtype="step",
+            density=True,
+            lw=2,
+        )
+        # 12 UTC
+        pds = (iwc_plot
+               .where(iwc_plot.time > pd.to_datetime(f"{date} 11:30"))
+               .to_numpy()).flatten() * 1e6
+        pds = pds[~np.isnan(pds)]
+        stats.append((key, "12UTC", "MAD", median_abs_deviation(pds)))
+        stats.append((key, "12UTC", "Median", np.median(pds)))
+        ax.hist(
+            pds,
+            bins=bins,
+            label=legend_labels[1] + f" (n={len(pds)})",
+            color=cbc[1],
+            histtype="step",
+            density=True,
+            lw=2,
+        )
+    ax.legend()
+    ax.grid()
+    ax.text(0.03, 0.93,
+            f"{text_labels[i]} {key.replace('1', ' 1')}",
+            transform=ax.transAxes,
+            bbox=dict(boxstyle="Round", fc="white"),
+            )
+    ax.set(title="",
+           ylabel="",
+           xlabel=f"Ice water content ({h.plot_units['iwc']})",
+           ylim=ylims["iwc"])
+
+axs[0].set(ylabel="Probability density function")
+
+figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_change_11_to_12UTC.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
