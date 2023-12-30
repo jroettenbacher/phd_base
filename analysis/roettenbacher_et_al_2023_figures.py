@@ -1548,17 +1548,17 @@ plt.close()
 # %% plot PDF of IWC and re_ice
 plt.rc("font", size=8)
 legend_labels = ["VarCloud", "IFS"]
-binsizes = dict(iwc=0.5, reice=4)
+binsizes = dict(iwc=1, reice=4)
+binedges = dict(iwc=20, reice=100)
 text_loc_x = 0.05
 text_loc_y = 0.9
 _, axs = plt.subplots(2, 2, figsize=(17 * h.cm, 10 * h.cm), layout="constrained")
-ylims = {"iwc": (0, 0.75), "reice": (0, 0.095)}
+ylims = {"iwc": (0, 0.3), "reice": (0, 0.095)}
 # upper left panel - RF17 IWC
 ax = axs[0, 0]
 plot_ds = ecrad_dicts["RF17"]
 sel_time = slice(pd.to_datetime("2022-04-11 10:49"), pd.to_datetime("2022-04-11 11:04"))
-binsize = binsizes["iwc"]
-bins = np.arange(0, 5.1, binsize)
+bins = np.arange(0, binedges["iwc"], binsizes["iwc"])
 for i, v in enumerate(["v16", "v15.1"]):
     if v == "v16":
         pds = plot_ds[v].iwc
@@ -1580,15 +1580,14 @@ for i, v in enumerate(["v16", "v15.1"]):
 ax.legend()
 ax.grid()
 ax.text(text_loc_x, text_loc_y, "(a)", transform=ax.transAxes)
-ax.set(title=f"RF 17 - 11 April 2022 {sel_time.start:%H:%M} - {sel_time.stop:%H:%M} UTC",
+ax.set(title=f"RF 17 - above cloud",
        ylabel=f"Probability density function",
        xlabel=f"Ice water content ({h.plot_units['iwc']})",
        ylim=ylims["iwc"])
 
 # lower left panel - RF17 re_ice
 ax = axs[1, 0]
-binsize = binsizes["reice"]
-bins = np.arange(0, 100, binsize)
+bins = np.arange(0, binedges["reice"], binsizes["reice"])
 for i, v in enumerate(["v16", "v15.1"]):
     if v == "v16":
         pds = plot_ds[v].re_ice.to_numpy().flatten() * 1e6
@@ -1615,8 +1614,7 @@ ax.set(ylabel="Probability density function",
 ax = axs[0, 1]
 plot_ds = ecrad_dicts["RF18"]
 sel_time = slice(pd.to_datetime("2022-04-12 11:04"), pd.to_datetime("2022-04-12 11:24"))
-binsize = binsizes["iwc"]
-bins = np.arange(0, 5.1, binsize)
+bins = np.arange(0, binedges["iwc"], binsizes["iwc"])
 for i, v in enumerate(["v16", "v15.1"]):
     if v == "v16":
         pds = plot_ds[v].iwc
@@ -1638,15 +1636,14 @@ for i, v in enumerate(["v16", "v15.1"]):
 ax.legend()
 ax.grid()
 ax.text(text_loc_x, text_loc_y, "(b)", transform=ax.transAxes)
-ax.set(title=f"RF 18 - 12 April 2022 {sel_time.start:%H:%M} - {sel_time.stop:%H:%M} UTC",
+ax.set(title=f"RF 18 - above cloud",
        ylabel=f"",
        xlabel=f"Ice water content ({h.plot_units['iwc']})",
        ylim=ylims["iwc"])
 
 # lower right panel - RF18 re_ice
 ax = axs[1, 1]
-binsize = binsizes["reice"]
-bins = np.arange(0, 100, binsize)
+bins = np.arange(0, binedges["reice"], binsizes["reice"])
 for i, v in enumerate(["v16", "v15.1"]):
     if v == "v16":
         pds = plot_ds[v].re_ice.to_numpy().flatten() * 1e6
@@ -2581,7 +2578,7 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
-# %% plot PDF of IWC for 10 surrounding grid points
+# %% plot PDF of IWC difference for 10 surrounding grid points
 plt.rc("font", size=8)
 legend_labels = ["11 UTC", "12 UTC"]
 text_labels = ["(a)", "(b)"]
