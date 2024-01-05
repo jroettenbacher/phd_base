@@ -778,7 +778,7 @@ for i, key in enumerate(keys):
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=0, ha="center")
 
 # place colorbar for both flights
-fig.colorbar(pcm, ax=axs[:2], label=f"IFS {h.cbarlabels['cloud_fraction']}", pad=0.001)
+fig.colorbar(pcm, ax=axs[:2], label=f"IFS {h.cbarlabels['cloud_fraction'].lower()}", pad=0.001)
 axs[0].legend()
 axs[0].set_xlabel("")
 axs[0].text(0.03, 0.88, "(a) RF 17", transform=axs[0].transAxes, bbox=dict(boxstyle="Round", fc="white"))
