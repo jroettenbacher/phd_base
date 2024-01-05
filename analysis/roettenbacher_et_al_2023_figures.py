@@ -42,13 +42,12 @@ from tqdm import tqdm
 
 h.set_cb_friendly_colors("petroff_6")
 cbc = h.get_cb_friendly_colors("petroff_6")
-
 # %% set paths
 campaign = "halo-ac3"
 plot_path = "C:/Users/Johannes/Documents/Doktor/manuscripts/_arctic_cirrus/figures"
 trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude"
 keys = ["RF17", "RF18"]
-ecrad_versions = ["v15", "v15.1", "v16", "v17", "v18", "v18.1", "v19", "v19.1", "v20", "v21", "v28", "v29",
+ecrad_versions = ["v13.2", "v15", "v15.1", "v16", "v17", "v18", "v18.1", "v19", "v19.1", "v20", "v21", "v28", "v29",
                   "v30.1", "v31.1", "v32.1", "v33", "v34", "v35"]
 
 # %% read in data
@@ -307,7 +306,7 @@ for key in keys:
 # %% calculate statistics from ecRad
 ecrad_stats = list()
 ecrad_vars = ["reflectivity_sw", "flux_up_sw", "flux_dn_direct_sw", "flux_dn_sw", "transmissivity_sw_above_cloud"]
-for version in ["v15.1", "v17", "v18.1", "v19.1", "v21", "v29", "v30.1", "v31.1", "v32.1"]:
+for version in ["v13.2", "v15.1", "v16", "v18.1", "v19.1", "v20", "v28", "v30.1", "v31.1", "v32.1"]:
     v_name = ecrad.version_names[version[0:3]]
     for key in keys:
         bds = bacardi_ds[key]
@@ -317,13 +316,19 @@ for version in ["v15.1", "v17", "v18.1", "v19.1", "v21", "v29", "v30.1", "v31.1"
             for section in ["above", "below"]:
                 time_sel = slices[key][section]
                 eds = ecrad_ds[evar].sel(time=time_sel)
-                ecrad_min = np.min(eds).to_numpy()
-                ecrad_max = np.max(eds).to_numpy()
-                ecrad_spread = ecrad_max - ecrad_min
-                ecrad_mean = eds.mean().to_numpy()
-                ecrad_std = eds.std().to_numpy()
-                ecrad_stats.append(
-                    (version, v_name, key, evar, section, ecrad_min, ecrad_max, ecrad_spread, ecrad_mean, ecrad_std))
+                try:
+                    ecrad_min = np.min(eds).to_numpy()
+                    ecrad_max = np.max(eds).to_numpy()
+                    ecrad_spread = ecrad_max - ecrad_min
+                    ecrad_mean = eds.mean().to_numpy()
+                    ecrad_std = eds.std().to_numpy()
+                    ecrad_stats.append(
+                        (version, v_name, key, evar, section, ecrad_min, ecrad_max, ecrad_spread, ecrad_mean, ecrad_std)
+                    )
+                except ValueError:
+                    ecrad_stats.append(
+                        (version, v_name, key, evar, section, np.nan, np.nan, np.nan, np.nan, np.nan)
+                    )
 
 # %% convert statistics to dataframe
 columns = ["version", "source", "key", "variable", "section", "min", "max", "spread", "mean", "std"]
@@ -351,19 +356,19 @@ for key in keys:
 for key in keys:
     for var in ["transmissivity_above_cloud", "transmissivity_sw_above_cloud"]:
         selection = (df["variable"] == var) & (df["key"] == key) & (df["section"] == "below")
-        v_mean = df[["version", "source", "mean"]][selection]
+        v_mean = df[["version", "source", "mean", "std"]][selection]
         print(f"{key}: Mean {var} below cloud:\n{v_mean}")
 
 # %% print mean flux_dn_sw for above/below cloud section
 for key in keys:
     for var in ["flux_dn_sw", "F_down_solar_diff", "transmissivity_above_cloud"]:
         selection = (df["variable"] == var) & (df["key"] == key) & (df["section"] == "below")
-        v_mean = df[["source", "mean"]][selection]
-        v_std = df[["source", "std"]][selection]
+        v_mean = df[["version", "source", "mean"]][selection]
+        v_std = df[["version", "source", "std"]][selection]
         print(f"{key}: Mean {var} below cloud:\n{v_mean}")
         print(f"{key}: Standard deviation of {var} for below cloud:\n{v_std}")
         selection = (df["variable"] == var) & (df["key"] == key) & (df["section"] == "above")
-        v_mean = df[["source", "mean"]][selection]
+        v_mean = df[["version", "source", "mean"]][selection]
         print(f"{key}: Mean {var} above cloud:\n{v_mean}")
 
 # %% plot re_ice iwc t combinations
@@ -1612,6 +1617,7 @@ for i, v in enumerate(["v16", "v15.1"]):
         density=True,
         lw=2,
     )
+    print(f"RF17 Mean reice {v}: {pds.mean():.2f}")
 ax.grid()
 ax.text(text_loc_x, text_loc_y, "(c)", transform=ax.transAxes)
 ax.set(ylabel="Probability density function",
@@ -1667,6 +1673,7 @@ for i, v in enumerate(["v16", "v15.1"]):
         density=True,
         lw=2,
     )
+    print(f"RF18 Mean reice {v}: {pds.mean():.2f}")
 ax.grid()
 ax.text(text_loc_x, text_loc_y, "(d)", transform=ax.transAxes)
 ax.set(ylabel="",
