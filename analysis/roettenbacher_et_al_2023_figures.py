@@ -2672,7 +2672,83 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
-# %% plot PDF of IWC for 11 and 12 UTC
+# %% plot PDF of IWC for 11 and 12 UTC for each column
+plt.rc("font", size=8)
+legend_labels = ["11 UTC", "12 UTC"]
+text_labels = ["(a)", "(b)"]
+binsizes = dict(iwc=1, reice=4)
+ylims = {"iwc": (0, 0.3), "reice": (0, 0.095)}
+stats = list()
+for c in range(0, 10):
+    _, axs = plt.subplots(1, 2, figsize=(17 * h.cm, 10 * h.cm))
+    for i, key in enumerate(keys):
+        ax = axs[i]
+        plot_ds = ecrad_orgs[key]
+        sel_time = slices[key]["case"]
+        date = "2022-04-11" if key == "RF17" else "2022-04-12"
+        binsize = binsizes["iwc"]
+        bins = np.arange(0, 20.1, binsize)
+        v = "v15.1"
+        iwc, cc = plot_ds[v].iwc.sel(time=sel_time), plot_ds[v].cloud_fraction.sel(time=sel_time)
+        iwc_plot = iwc.where(cc > 0).where(cc == 0, iwc / cc)
+        iwc_plot = iwc_plot.sel(column=c)
+
+        # 11 UTC
+        pds = (iwc_plot
+               .where(iwc_plot.time < pd.to_datetime(f"{date} 11:30"))
+               .to_numpy()).flatten() * 1e6
+        pds = pds[~np.isnan(pds)]
+        mad = median_abs_deviation(pds)
+        median = np.median(pds)
+        stats.append((key, c, "11UTC", "MAD", mad))
+        stats.append((key, c, "11UTC", "Median", median))
+        ax.hist(
+            pds,
+            bins=bins,
+            label=legend_labels[0] + f" (n={len(pds)})",
+            color=cbc[0],
+            histtype="step",
+            density=True,
+            lw=2,
+        )
+
+        # 12 UTC
+        pds = (iwc_plot
+               .where(iwc_plot.time > pd.to_datetime(f"{date} 11:30"))
+               .to_numpy()).flatten() * 1e6
+        pds = pds[~np.isnan(pds)]
+        stats.append((key, c, "12UTC", "MAD", median_abs_deviation(pds)))
+        stats.append((key, c, "12UTC", "Median", np.median(pds)))
+        ax.hist(
+            pds,
+            bins=bins,
+            label=legend_labels[1] + f" (n={len(pds)})",
+            color=cbc[1],
+            histtype="step",
+            density=True,
+            lw=2,
+        )
+
+        ax.legend()
+        ax.grid()
+        ax.text(0.03, 0.93,
+                f"{text_labels[i]} {key.replace('1', ' 1')}",
+                transform=ax.transAxes,
+                bbox=dict(boxstyle="Round", fc="white"),
+                )
+        ax.set(title="",
+               ylabel="",
+               xlabel=f"Ice water content ({h.plot_units['iwc']})",
+               ylim=ylims["iwc"])
+
+    axs[0].set(ylabel="Probability density function")
+
+    figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_change_11_to_12UTC_column{c}.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% plot PDF of IWC for 11 and 12 UTC with error bars
 plt.rc("font", size=8)
 legend_labels = ["11 UTC", "12 UTC"]
 text_labels = ["(a)", "(b)"]
@@ -2687,45 +2763,79 @@ for i, key in enumerate(keys):
     date = "2022-04-11" if key == "RF17" else "2022-04-12"
     binsize = binsizes["iwc"]
     bins = np.arange(0, 20.1, binsize)
-    for ii, v in enumerate(["v15.1"]):
-        iwc, cc = plot_ds[v].iwc.sel(time=sel_time), plot_ds[v].cloud_fraction.sel(time=sel_time)
-        iwc_plot = iwc.where(cc > 0).where(cc == 0, iwc / cc)
-        iwc_plot = iwc_plot.sel(column=0)
+    v = "v15.1"
+    iwc, cc = plot_ds[v].iwc.sel(time=sel_time), plot_ds[v].cloud_fraction.sel(time=sel_time)
+    iwc_plot = iwc.where(cc > 0).where(cc == 0, iwc / cc)
+    iwc_plot0 = iwc_plot.sel(column=0)
 
-        # 11 UTC
-        pds = (iwc_plot
+    # 11 UTC
+    pds = (iwc_plot0
+           .where(iwc_plot0.time < pd.to_datetime(f"{date} 11:30"))
+           .to_numpy()).flatten() * 1e6
+    pds = pds[~np.isnan(pds)]
+    y, binedges = np.histogram(pds, bins=bins, density=True)
+    bincenters = 0.5 * (binedges[1:] + binedges[:-1])
+    # get max and min counts from all 9 surrounding grid cells
+    hists = list()
+    for c in iwc_plot.column[1:]:
+        tmp = (iwc_plot
+               .sel(column=c)
                .where(iwc_plot.time < pd.to_datetime(f"{date} 11:30"))
                .to_numpy()).flatten() * 1e6
-        pds = pds[~np.isnan(pds)]
-        mad = median_abs_deviation(pds)
-        median = np.median(pds)
-        stats.append((key, "11UTC", "MAD", mad))
-        stats.append((key, "11UTC", "Median", median))
-        ax.hist(
-            pds,
-            bins=bins,
-            label=legend_labels[0] + f" (n={len(pds)})",
-            color=cbc[0],
-            histtype="step",
-            density=True,
-            lw=2,
-        )
-        # 12 UTC
-        pds = (iwc_plot
+        tmp = tmp[~np.isnan(tmp)]
+        y, _ = np.histogram(tmp, bins=bins, density=True)
+        hists.append(y)
+
+    stacked_hists = np.vstack(hists)
+    min_counts = np.min(stacked_hists, axis=0)
+    max_counts = np.max(stacked_hists, axis=0)
+    yerror = np.stack((y - min_counts, np.abs(y - max_counts)))
+
+    ax.errorbar(
+        bincenters,
+        y,
+        yerr=yerror,
+        label=legend_labels[0] + f" (n={len(pds)})",
+        color=cbc[0],
+        drawstyle="steps-mid",
+        lw=2,
+        capsize=2
+    )
+
+    # 12 UTC
+    pds = (iwc_plot0
+           .where(iwc_plot0.time > pd.to_datetime(f"{date} 11:30"))
+           .to_numpy()).flatten() * 1e6
+    pds = pds[~np.isnan(pds)]
+    y, binedges = np.histogram(pds, bins=bins, density=True)
+    bincenters = 0.5 * (binedges[1:] + binedges[:-1])
+    # get max and min counts from all 9 surrounding grid cells
+    hists = list()
+    for c in iwc_plot.column[1:]:
+        tmp = (iwc_plot
+               .sel(column=c)
                .where(iwc_plot.time > pd.to_datetime(f"{date} 11:30"))
                .to_numpy()).flatten() * 1e6
-        pds = pds[~np.isnan(pds)]
-        stats.append((key, "12UTC", "MAD", median_abs_deviation(pds)))
-        stats.append((key, "12UTC", "Median", np.median(pds)))
-        ax.hist(
-            pds,
-            bins=bins,
-            label=legend_labels[1] + f" (n={len(pds)})",
-            color=cbc[1],
-            histtype="step",
-            density=True,
-            lw=2,
-        )
+        tmp = tmp[~np.isnan(tmp)]
+        y, _ = np.histogram(tmp, bins=bins, density=True)
+        hists.append(y)
+
+    stacked_hists = np.vstack(hists)
+    min_counts = np.min(stacked_hists, axis=0)
+    max_counts = np.max(stacked_hists, axis=0)
+    yerror = np.stack((y - min_counts, np.abs(y - max_counts)))
+
+    ax.errorbar(
+        bincenters,
+        y,
+        yerr=yerror,
+        label=legend_labels[1] + f" (n={len(pds)})",
+        color=cbc[1],
+        drawstyle="steps-mid",
+        lw=2,
+        capsize=2
+    )
+
     ax.legend()
     ax.grid()
     ax.text(0.03, 0.93,
@@ -2740,14 +2850,16 @@ for i, key in enumerate(keys):
 
 axs[0].set(ylabel="Probability density function")
 
-figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_change_11_to_12UTC.png"
+figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_change_uncertainty_11_to_12UTC.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
 # %% print statistics of IWC comparison
-iwc_df = pd.DataFrame(stats)
+iwc_df = pd.DataFrame(stats, columns=["Flight", "Column", "Time", "Statistic", "Value"])
 print(iwc_df)
+iwc_df.to_csv(f"{plot_path}/IFS_IWC_statistics.csv")
+
 # %% plot sea ice fraction along fligh track for case study period
 key = "RF18"
 plot_ds = ecrad_dicts[key]["v15.1"].ci.sel(time=slices[key]["case"])
