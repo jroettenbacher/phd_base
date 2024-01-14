@@ -27,7 +27,7 @@ if __name__ == "__main__":
     import pylim.helpers as h
     import pylim.solar_position as sp
     import pylim.meteorological_formulas as met
-    from pylim.ecrad import apply_liquid_effective_radius
+    from pylim.ecrad import apply_liquid_effective_radius, apply_ice_effective_radius
     from pylim import reader
     from metpy.calc import density, mixing_ratio_from_specific_humidity
     from metpy.units import units
@@ -43,7 +43,6 @@ if __name__ == "__main__":
     start = time.time()
 
     # %% read in command line arguments
-    version = "v7"
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
@@ -52,6 +51,8 @@ if __name__ == "__main__":
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
+    use_varcloud_reice = strtobool(args["use_varcloud_reice"]) if "use_varcloud_reice" in args else True
+    version = "v7" if use_varcloud_reice else "v7.1"
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -72,7 +73,8 @@ if __name__ == "__main__":
     log = h.setup_logging("./logs", file, key)
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\nkey: {key}\nflight: {flight}\ndate: {date}\n"
-             f"init time: {init_time}\nt_interp: {t_interp}\nversion: {version}\n"
+             f"init time: {init_time}\nt_interp: {t_interp}\n"
+             f"use VarCloud re_ice: {use_varcloud_reice}\nversion: {version}\n"
              f"O3 source: {o3_source}\nTrace gas source: {trace_gas_source}\n"
              f"Aerosol source: {aerosol_source}\n")
 
@@ -166,6 +168,19 @@ if __name__ == "__main__":
         # overwrite ice water content
         ds["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
 
+        if use_varcloud_reice:
+            # assign effective radius
+            re_ice = varcloud_sel["Varcloud_Cloud_Ice_Effective_Radius"]
+            ds["re_ice"] = re_ice.where(~np.isnan(re_ice), 51.9616 * 1e-6)  # replace nan with default value
+        else:
+            # overwrite ciwc and cswc as these variables are used in the calculation of re_ice
+            ds["ciwc"] = ds["q_ice"]
+            ds["cswc"] = xr.full_like(ds.cswc, 0)  # set cloud snow water content to 0
+            # calculate re_ice from VarCloud IWC
+            ds = apply_ice_effective_radius(ds)
+
+        ds = apply_liquid_effective_radius(ds)
+
         # add cos_sza for the grid point using model data for the thermodynamics and aircraft data for the location
         sod = t.hour * 3600 + t.minute * 60 + t.second
         p_surf_nearest = ds.pressure_hl.isel(half_level=137).to_numpy() / 100  # hPa
@@ -228,11 +243,6 @@ if __name__ == "__main__":
                        .reset_coords("time", drop=True))
         ds["aerosol_mmr"] = aerosol_mmr
 
-        # assign effective radius
-        re_ice = varcloud_sel["Varcloud_Cloud_Ice_Effective_Radius"]
-        ds["re_ice"] = re_ice.where(~np.isnan(re_ice), 51.9616 * 1e-6)  # replace nan with default value
-        ds = apply_liquid_effective_radius(ds)
-
         # turn lat and lon into variables for cleaner output and to avoid later problems when merging data
         ds = (ds
               .reset_coords(["lat", "lon"])
@@ -260,7 +270,7 @@ if __name__ == "__main__":
         ds = ds.astype(np.float32)  # change type from double to float32
 
         ds.to_netcdf(
-            path=f"{ecrad_path}/ecrad_input_standard_{sod:7.1f}_sod_v7.nc",
+            path=f"{ecrad_path}/ecrad_input_standard_{sod:7.1f}_sod_{version}.nc",
             format='NETCDF4_CLASSIC')
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
