@@ -44,6 +44,7 @@ if __name__ == "__main__":
     from metpy.constants import Cp_d, g
     import os
     import time
+    import re
 
     start = time.time()
     # %% read in command line arguments or set defaults
@@ -173,16 +174,17 @@ if __name__ == "__main__":
     #TODO: calculate relative humidity over water and over ice
 
     # calculate bulk optical properties
-    if ov in ecrad.ice_optic_parameterizations["fu"]:
+    ov_short = re.sub(r"\.[0-9]", "", ov)  # remove the .x
+    if ov_short in ecrad.ice_optic_parameterizations["fu"]:
         ice_optics = ecrad.calc_ice_optics_fu_sw(ds.iwp, ds.re_ice)
-    elif ov == "v2":
+    elif ov_short == "v2":
         ice_optics = ecrad.calc_ice_optics_baran2017("sw", ds.iwp, ds.q_ice, ds.t)
-    elif ov in ecrad.ice_optic_parameterizations["yi"]:
+    elif ov_short in ecrad.ice_optic_parameterizations["yi"]:
         ice_optics = ecrad.calc_ice_optics_yi("sw", ds.iwp, ds.re_ice)
-    elif ov in ecrad.ice_optic_parameterizations["baran2016"]:
+    elif ov_short in ecrad.ice_optic_parameterizations["baran2016"]:
         ice_optics = ecrad.calc_ice_optics_baran2016("sw", ds.iwp, ds.q_ice, ds.t)
     else:
-        raise ValueError(f"No parameterization for {ov} defined!")
+        raise ValueError(f"No parameterization for {ov_short} defined!")
 
     ds["od"] = ice_optics[0]
     ds["scat_od"] = ice_optics[1]
