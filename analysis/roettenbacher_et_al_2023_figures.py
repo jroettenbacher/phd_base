@@ -162,38 +162,10 @@ for key in keys:
 
     for k in ecrad_versions:
         ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{k}.nc")
-
-        if "column" in ds.dims:
-            b_ds = bacardi_res.expand_dims(dict(column=np.arange(0, len(ds.column)))).copy()
-            ecrad_ds = ds.isel(half_level=ds["aircraft_level"], column=slice(0, 10))
-            ds["flux_dn_sw_diff"] = ecrad_ds.flux_dn_sw - b_ds.F_down_solar
-            ds["spread"] = xr.DataArray(
-                np.array(
-                    [
-                        ds["flux_dn_sw_diff"].min(dim="column").to_numpy(),
-                        ds["flux_dn_sw_diff"].max(dim="column").to_numpy(),
-                    ]
-                ),
-                coords=dict(x=[0, 1], time=ecrad_ds.time),
-            )
-            ds["flux_dn_sw_std"] = ds["flux_dn_sw"].std(dim="column")
-
-            ecrad_org[k] = ds.copy(deep=True)
-            if k == "v1":
-                ds = ds.sel(column=16,
-                            drop=True)  # select center column which corresponds to grid cell closest to aircraft
-            else:
-                # other versions have their nearest points selected via
-                # kdTree, thus the first column should be the closest
-                ds = ds.sel(column=0, drop=True)
-
-        ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
-        ds["transmissivity_sw_toa"] = ds["flux_dn_sw"] / ds["flux_dn_sw_clear"].isel(half_level=0)
-        ds["transmissivity_sw_above_cloud"] = ds["flux_dn_sw"] / ds["flux_dn_sw_clear"].isel(half_level=73)
-        for var in ["flux_dn_sw", "flux_dn_direct_sw", "transmissivity_sw_above_cloud", "transmissivity_sw_toa"]:
-            ds[f"{var}_norm"] = ds[var] / ds["cos_solar_zenith_angle"]
-
-        ecrad_dict[k] = ds.copy()
+        ecrad_org[k] = ds.copy(deep=True)
+        # select only center column for direct comparisons
+        ds = ds.sel(column=0, drop=True) if "column" in ds.dims else ds
+        ecrad_dict[k] = ds.copy(deep=True)
 
     ecrad_dicts[key] = ecrad_dict
     ecrad_orgs[key] = ecrad_org
