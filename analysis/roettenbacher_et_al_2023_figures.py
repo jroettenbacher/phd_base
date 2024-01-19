@@ -21,7 +21,6 @@ import pylim.meteorological_formulas as met
 from pylim import ecrad
 import ac3airborne
 from ac3airborne.tools import flightphase
-import cartopy
 import cartopy.crs as ccrs
 import cmasher as cm
 import matplotlib as mpl
@@ -37,11 +36,12 @@ from matplotlib.collections import LineCollection
 from matplotlib.patches import Patch
 from metpy.calc import relative_humidity_from_specific_humidity
 from metpy.units import units as u
-from scipy.stats import wasserstein_distance, median_abs_deviation
+from scipy.stats import median_abs_deviation
 from tqdm import tqdm
 
 h.set_cb_friendly_colors("petroff_6")
 cbc = h.get_cb_friendly_colors("petroff_6")
+
 # %% set paths
 campaign = "halo-ac3"
 plot_path = "C:/Users/Johannes/Documents/Doktor/manuscripts/_arctic_cirrus/figures"
@@ -199,7 +199,7 @@ for key in keys:
     ecrad_orgs[key] = ecrad_org
 
     # interpolate standard ecRad simulation onto BACARDI time
-    bacardi["ecrad_fdw"] = ecrad_dict["v15"].flux_dn_sw_clear.interp(time=bacardi.time,
+    bacardi["ecrad_fdw"] = ecrad_dict["v15.1"].flux_dn_sw_clear.interp(time=bacardi.time,
                                                                      kwargs={"fill_value": "extrapolate"})
     # calculate transmissivity using ecRad at TOA and above cloud
     bacardi["transmissivity_TOA"] = bacardi["F_down_solar"] / bacardi["ecrad_fdw"].isel(half_level=0)
