@@ -13,11 +13,9 @@ Plots for third PhD Talk
 # %% import modules
 import pylim.helpers as h
 import pylim.halo_ac3 as meta
-import pylim.meteorological_formulas as met
 from pylim import ecrad
 import ac3airborne
 from ac3airborne.tools import flightphase
-import cartopy
 import cartopy.crs as ccrs
 import cmasher as cm
 import matplotlib as mpl
@@ -28,12 +26,7 @@ import pandas as pd
 import seaborn as sns
 import xarray as xr
 import os
-from matplotlib import gridspec, patheffects
-from matplotlib.collections import LineCollection
-from matplotlib.patches import Patch
-from metpy.calc import relative_humidity_from_specific_humidity
-from metpy.units import units as u
-from scipy.stats import median_abs_deviation
+from matplotlib import patheffects
 from sklearn.neighbors import BallTree
 from tqdm import tqdm
 
