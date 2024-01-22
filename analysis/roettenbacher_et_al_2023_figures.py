@@ -37,6 +37,7 @@ from matplotlib.patches import Patch
 from metpy.calc import relative_humidity_from_specific_humidity
 from metpy.units import units as u
 from scipy.stats import median_abs_deviation
+from sklearn.neighbors import BallTree
 from tqdm import tqdm
 
 h.set_cb_friendly_colors("petroff_6")
@@ -62,9 +63,10 @@ ecrad_versions = ["v13.2", "v15", "v15.1", "v16", "v17", "v18", "v18.1", "v19", 
     slices,
     ecrad_orgs,
     ifs_ds,
+    ifs_ds_sel,
     dropsonde_ds,
     albedo_dfs
-) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
+) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
 
 for key in keys:
     flight = meta.flight_names[key]
@@ -106,7 +108,15 @@ for key in keys:
     dropsonde_ds[key] = dropsondes
 
     # read in ifs data
-    ifs_ds[key] = xr.open_dataset(f"{ifs_path}/{ifs_file}")
+    ifs = xr.open_dataset(f"{ifs_path}/{ifs_file}")
+    ifs = ifs.set_index(rgrid=["lat", "lon"])
+    # filter low clouds according to ECMWF low cloud criterion (pressure higher than 0.8 * surface pressure)
+    cloud_data = ifs[["q_liquid", "q_ice", "cloud_fraction", "clwc", "ciwc", "crwc", "cswc"]]
+    pressure_filter = ifs.pressure_full.sel(level=137) * 0.8
+    low_cloud_filter = ifs.pressure_full < pressure_filter  # False for low clouds
+    cloud_data = cloud_data.where(low_cloud_filter, 0)  # replace where False with 0
+    ifs.update(cloud_data)
+    ifs_ds[key] = ifs.copy(deep=True)
 
     # read in varcloud data
     varcloud = xr.open_dataset(f"{varcloud_path}/{varcloud_file}")
@@ -205,6 +215,21 @@ for key in keys:
     above_clouds[key] = above_cloud
     below_clouds[key] = below_cloud
     slices[key] = dict(case=case_slice, above=above_slice, below=below_slice)
+
+    # get IFS data for the case study area
+    ifs_lat_lon = np.column_stack((ifs.lat, ifs.lon))
+    ifs_tree = BallTree(np.deg2rad(ifs_lat_lon), metric="haversine")
+    # generate an array with lat, lon values from the flight position
+    bahamas_sel = bahamas_ds[key].sel(time=slices[key]["above"])
+    points = np.deg2rad(np.column_stack((bahamas_sel.IRS_LAT.to_numpy(), bahamas_sel.IRS_LON.to_numpy())))
+    _, idxs = ifs_tree.query(points, k=10)  # query the tree
+    closest_latlons = ifs_lat_lon[idxs]
+    # remove duplicates
+    closest_latlons = np.unique(closest_latlons
+                                .reshape(closest_latlons.shape[0] * closest_latlons.shape[1], 2),
+                                axis=0)
+    latlon_sel = [(x, y) for x, y in closest_latlons]
+    ifs_ds_sel[key] = ifs.sel(rgrid=latlon_sel)
 
 # %% print time between above and below cloud section
 print(f"Time between above and below cloud section")
@@ -2898,6 +2923,84 @@ axs[0].set(ylabel="Probability density function")
 
 figname = f"{plot_path}/HALO_AC3_RF17_RF18_IFS_IWC_change_all_columns_11_to_12UTC.pdf"
 plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot PDF of IWC from IFS above cloud for 11 and 12 UTC
+plt.rc("font", size=9)
+legend_labels = ["11 UTC", "12 UTC"]
+binsizes = dict(iwc=1, reice=4)
+_, axs = plt.subplots(1, 2, figsize=(17 * h.cm, 10 * h.cm), layout="constrained")
+ylims = {"iwc": (0, 0.22), "reice": (0, 0.095)}
+# left panel - RF17 IWC
+ax = axs[0]
+binsize = binsizes["iwc"]
+bins = np.arange(0, 20.1, binsize)
+iwc_ifs_ls = list()
+for t in ["2022-04-11 11:00", "2022-04-11 12:00"]:
+    iwc_ifs, cc = ifs_ds_sel["RF17"].q_ice.sel(time=t), ifs_ds_sel["RF17"].cloud_fraction.sel(time=t)
+    iwc_ifs_ls.append(iwc_ifs.where(cc > 0).where(cc == 0, iwc_ifs / cc))
+
+for i, pds in enumerate(iwc_ifs_ls):
+    pds = pds.to_numpy().flatten() * 1e6
+    pds = pds[~np.isnan(pds)]
+    ax.hist(
+        pds,
+        bins=bins,
+        label=legend_labels[i],
+        color=cbc[i],
+        histtype="step",
+        density=True,
+        lw=2,
+    )
+    print(f"{legend_labels[i]} n={len(pds)}")
+ax.grid()
+ax.set(ylabel=f"Probability density function",
+       xlabel=f"Ice water content ({h.plot_units['iwc']})",
+       ylim=ylims["iwc"],
+       xticks=range(0, 21, 5),
+       title="")
+ax.text(0.03, 0.93,
+        f"(a) RF 17",
+        transform=ax.transAxes,
+        bbox=dict(boxstyle="Round", fc="white"),
+        )
+
+# right panel - RF18 IWC
+ax = axs[1]
+iwc_ifs_ls = list()
+for t in ["2022-04-12 11:00", "2022-04-12 12:00"]:
+    iwc_ifs, cc = ifs_ds_sel["RF18"].q_ice.sel(time=t), ifs_ds_sel["RF18"].cloud_fraction.sel(time=t)
+    iwc_ifs_ls.append(iwc_ifs.where(cc > 0).where(cc == 0, iwc_ifs / cc))
+
+for i, pds in enumerate(iwc_ifs_ls):
+    pds = pds.to_numpy().flatten() * 1e6
+    pds = pds[~np.isnan(pds)]
+    ax.hist(
+        pds,
+        bins=bins,
+        label=legend_labels[i],
+        color=cbc[i],
+        histtype="step",
+        density=True,
+        lw=2,
+    )
+    print(f"{legend_labels[i]} n={len(pds)}")
+ax.legend()
+ax.grid()
+ax.set(ylabel=f"",
+       xlabel=f"Ice water content ({h.plot_units['iwc']})",
+       ylim=ylims["iwc"],
+       xticks=range(0, 21, 5),
+       title="")
+ax.text(0.03, 0.93,
+        f"(b) RF 18",
+        transform=ax.transAxes,
+        bbox=dict(boxstyle="Round", fc="white"),
+        )
+
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_iwc_11_vs_12_pdf_case_studies.pdf"
+plt.savefig(figname, dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()
 
