@@ -96,6 +96,13 @@ if __name__ == "__main__":
     # a sphere with radius 1 is assumed so multiplying by Earth's radius gives the distance in km
     distances = dist * 6371
 
+    # %% filter low clouds according to ECMWF low cloud criterion (pressure higher than 0.8 * surface pressure)
+    cloud_data = data_ml[["q_liquid", "q_ice", "cloud_fraction", "clwc", "ciwc", "crwc", "cswc"]]
+    pressure_filter = data_ml.pressure_full.sel(level=137) * 0.8
+    low_cloud_filter = data_ml.pressure_full < pressure_filter  # False for low clouds
+    cloud_data = cloud_data.where(low_cloud_filter, 0)  # replace where False with 0
+    data_ml.update(cloud_data)
+
     # %% loop through time steps and write one file per time step
     for i in tqdm(range(idx), desc="Time loop"):
         # select the 10 nearest grid points around closest grid point
