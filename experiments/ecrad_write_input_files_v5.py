@@ -163,7 +163,7 @@ if __name__ == "__main__":
             ds[var] = xr.DataArray(ds[var].to_numpy(), dims="rgrid")
         ds = ds.rename(rgrid="column")  # rename rgrid to column for ecrad
         # some variables now need to have the dimension column as well
-        variables = ["fractional_std"]
+        variables = ["fractional_std"] + tg_vars
         for var in variables:
             ds[var] = ds[var].expand_dims(dim={"column": np.arange(n_rgrid)})
         # add distance to aircraft location for each point
