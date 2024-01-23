@@ -2953,7 +2953,7 @@ for i, pds in enumerate(iwc_ifs_ls):
         density=True,
         lw=2,
     )
-    print(f"{legend_labels[i]} n={len(pds)}")
+    print(f"RF 17/n{legend_labels[i]}: n={len(pds)}, mean={np.mean(pds):.2f}, median={np.median(pds):.2f}")
 ax.grid()
 ax.set(ylabel=f"Probability density function",
        xlabel=f"Ice water content ({h.plot_units['iwc']})",
@@ -2985,7 +2985,7 @@ for i, pds in enumerate(iwc_ifs_ls):
         density=True,
         lw=2,
     )
-    print(f"{legend_labels[i]} n={len(pds)}")
+    print(f"RF 18/n{legend_labels[i]}: n={len(pds)}, mean={np.mean(pds):.2f}, median={np.median(pds):.2f}")
 ax.legend()
 ax.grid()
 ax.set(ylabel=f"",
@@ -3001,6 +3001,103 @@ ax.text(0.03, 0.93,
 
 figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_iwc_11_vs_12_pdf_case_studies.pdf"
 plt.savefig(figname, dpi=300, bbox_inches="tight")
+plt.show()
+plt.close()
+
+# %% plot box plots of IWC from IFS above cloud for 11 and 12 UTC
+plt.rc("font", size=9)
+legend_labels = ["11 UTC", "12 UTC"]
+binsizes = dict(iwc=1, reice=4)
+_, axs = plt.subplots(1, 2, figsize=(17 * h.cm, 10 * h.cm), layout="constrained")
+ylims = (0, 50)
+# left panel - RF17 IWC
+ax = axs[0]
+binsize = binsizes["iwc"]
+bins = np.arange(0, 20.1, binsize)
+iwc_ifs_ls = list()
+for t in ["2022-04-11 11:00", "2022-04-11 12:00"]:
+    iwc_ifs, cc = ifs_ds_sel["RF17"].q_ice.sel(time=t), ifs_ds_sel["RF17"].cloud_fraction.sel(time=t)
+    iwc_ifs = (iwc_ifs
+               .where(cc > 0)
+               .where(cc == 0, iwc_ifs / cc)
+               .to_numpy().flatten() * 1e6)
+    iwc_ifs_ls.append(iwc_ifs[~np.isnan(iwc_ifs)])
+
+for i, pds in enumerate(iwc_ifs_ls):
+    ax.boxplot(pds,
+               positions=[i + 1],
+               notch=True,
+               patch_artist=True,
+               boxprops={"facecolor": cbc[i]},
+               medianprops={"color": cbc[2]})
+ax.grid()
+ax.set(ylabel=f"Ice water content ({h.plot_units['iwc']})",
+       xlabel=f"IFS time step",
+       ylim=ylims,
+       title="")
+ax.text(0.03, 0.93,
+        f"(a) RF 17",
+        transform=ax.transAxes,
+        bbox=dict(boxstyle="Round", fc="white"),
+        )
+
+# right panel - RF18 IWC
+ax = axs[1]
+iwc_ifs_ls = list()
+for t in ["2022-04-12 11:00", "2022-04-12 12:00"]:
+    iwc_ifs, cc = ifs_ds_sel["RF18"].q_ice.sel(time=t), ifs_ds_sel["RF18"].cloud_fraction.sel(time=t)
+    iwc_ifs = (iwc_ifs
+               .where(cc > 0)
+               .where(cc == 0, iwc_ifs / cc)
+               .to_numpy().flatten() * 1e6)
+    iwc_ifs_ls.append(iwc_ifs[~np.isnan(iwc_ifs)])
+
+for i, pds in enumerate(iwc_ifs_ls):
+    ax.violinplot(pds,
+               positions=[i + 1],)
+               # notch=True,
+               # patch_artist=True,
+               # boxprops={"facecolor": cbc[i]},
+               # medianprops={"color": cbc[2]})
+ax.grid()
+ax.set(ylabel=f"Ice water content ({h.plot_units['iwc']})",
+       xlabel=f"IFS time step",
+       # xticklabels=legend_labels,
+       ylim=ylims,
+       title="")
+ax.text(0.03, 0.93,
+        f"(b) RF 18",
+        transform=ax.transAxes,
+        bbox=dict(boxstyle="Round", fc="white"),
+        )
+
+figname = f"{plot_path}/HALO-AC3_HALO_RF17_RF18_IFS_iwc_11_vs_12_box_plot_case_studies.pdf"
+plt.savefig(figname, dpi=300, bbox_inches="tight")
+plt.show()
+plt.close()
+
+# %% vizualise gridpoints from IFS selected for case study areas
+key = "RF18"
+extents = dict(RF17=[-15, 20, 85.5, 89], RF18=[-25, 17, 87.75, 89.85])
+ds = ifs_ds_sel[key]
+ds1 = bahamas_ds[key]
+# plot points along flight track
+data_crs = ccrs.PlateCarree()
+plot_crs = ccrs.NorthPolarStereo()
+plot_ds = ds.sel(time=slices[key]["above"])
+plot_ds1 = ds1.sel(time=slices[key]["case"])
+_, ax = plt.subplots(figsize=h.figsize_equal, subplot_kw=dict(projection=plot_crs))
+ax.set_extent(extents[key], crs=data_crs)
+ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+ax.plot(plot_ds1.IRS_LON, plot_ds1.IRS_LAT, c="k", transform=data_crs, label="Flight track")
+ax.scatter(plot_ds.lon, plot_ds.lat, s=10, c=cbc[0], transform=data_crs,
+           label=f"IFS grid points n={len(plot_ds.lon)}")
+plot_ds_single = plot_ds1.sel(time=slices[key]["above"].stop, method="nearest")
+ax.scatter(plot_ds_single.IRS_LON, plot_ds_single.IRS_LAT, marker="*", s=50, c=cbc[1], label="Start of descent",
+           transform=data_crs)
+ax.legend()
+figname = f"{plot_path}/{key}_case_study_gridpoints.png"
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
