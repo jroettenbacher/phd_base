@@ -26,6 +26,7 @@ import cmasher as cm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -49,7 +50,7 @@ plot_path = "C:/Users/Johannes/Documents/Doktor/manuscripts/_arctic_cirrus/figur
 trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude"
 keys = ["RF17", "RF18"]
 ecrad_versions = ["v13.2", "v15", "v15.1", "v16", "v17", "v18", "v18.1", "v19", "v19.1", "v20", "v21", "v28", "v29",
-                  "v30.1", "v31.1", "v32.1", "v33", "v34", "v35"]
+                  "v30.1", "v31.1", "v32.1", "v33", "v34", "v35", "v36", "v37", "v38"]
 
 # %% read in data
 (
@@ -835,9 +836,24 @@ ci_levels = [0.8]
 cci = ax.tricontour(ifs.lon, ifs.lat, ifs.ci, ci_levels, transform=data_crs, linestyles="--", colors="#332288",
                     linewidths=1)
 
-# add high cloud cover
-ifs_cc = ifs.cloud_fraction.where(ifs.pressure_full < 60000, drop=True).sum(dim="level")
-ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=24, transform=data_crs, cmap="Blues", alpha=1)
+# add high cloud cover according to IFS
+ifs_cc = ifs.hcc
+hcc = ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=np.arange(0.2, 1.01, 0.1), transform=data_crs,
+                     cmap="Blues", alpha=0.5)
+# ax.tricontour(ifs.lon, ifs.lat, ifs_cc, levels=[0.2], linestyles=":", colors="blue", transform=data_crs,
+#               alpha=1, linewidths=0.5)
+
+# add colorbar
+axins1 = inset_axes(
+    ax,
+    width="3%",  # width: 50% of parent_bbox width
+    height="25%",  # height: 5%
+    loc="upper left",
+)
+plt.colorbar(hcc, cax=axins1, orientation="vertical", ticks=[0.2, 0.4, 0.6, 0.8, 1])
+axins1.yaxis.set_ticks_position("right")
+axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=6,
+                      path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot trajectories - 11 April
 header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
@@ -899,8 +915,8 @@ for i, ds in enumerate(ds_dict.values()):
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
     cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
                     zorder=450)
-    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=6, transform=data_crs, zorder=500,
-            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
+    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=7, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot trajectories 12 April in second row first column
 ax = axs[1]
@@ -924,12 +940,27 @@ cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, u
 
 # add seaice edge
 ci_levels = [0.8]
-cci = ax.tricontour(ifs.lon, ifs.lat, ifs.CI, ci_levels, transform=data_crs, linestyles="--", colors="#332288",
+cci = ax.tricontour(ifs.lon, ifs.lat, ifs.ci, ci_levels, transform=data_crs, linestyles="--", colors="#332288",
                     linewidths=1)
 
-# add high cloud cover
-ifs_cc = ifs.cloud_fraction.where(ifs.pressure_full < 60000, drop=True).sum(dim="level")
-ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=24, transform=data_crs, cmap="Blues", alpha=1)
+# add high cloud cover according to IFS
+ifs_cc = ifs.hcc
+hcc = ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=np.arange(0.2, 1.01, 0.1), transform=data_crs,
+                     cmap="Blues", alpha=0.5)
+# ax.tricontour(ifs.lon, ifs.lat, ifs_cc, levels=[0.2], linestyles=":", colors="blue", transform=data_crs,
+#               alpha=1, linewidths=0.5)
+
+# add colorbar
+axins1 = inset_axes(
+    ax,
+    width="3%",  # width: 50% of parent_bbox width
+    height="25%",  # height: 5%
+    loc="upper left",
+)
+cb = plt.colorbar(hcc, cax=axins1, orientation="vertical", ticks=[0.2, 0.4, 0.6, 0.8, 1])
+axins1.yaxis.set_ticks_position("right")
+axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=6,
+                      path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot trajectories - 12 April
 header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
@@ -984,28 +1015,27 @@ ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
 
 # plot dropsonde locations - 12 April
 ds_dict = dropsonde_ds["RF18"]
-for ds in ds_dict.values():
+for i, ds in enumerate(ds_dict.values()):
+    launch_time = pd.to_datetime(ds.time[0].to_numpy())
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
-                    zorder=450)
-# add time to only a selected range of dropsondes
-for i in [1, -5, -4, -2, -1]:
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, transform=data_crs, zorder=450)
+for i in [-4]:
     ds = list(ds_dict.values())[i]
-    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=6, transform=data_crs, zorder=500,
-            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=7, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # make legend for flight track and dropsondes
 labels = ["HALO flight track", "Case study section",
           "Dropsonde", "Sea ice edge",
-          "Sea level pressure (hPa)", "High cloud cover at 12:00 UTC"]
+          "Mean sea level pressure (hPa)", "High cloud cover at 12:00 UTC"]
 handles = [plt.plot([], ls="-", color="k")[0],  # flight track
            plt.plot([], ls="-", color=cbc[1])[0],  # case study section
            cross[0],  # dropsondes
            plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
            plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
-           Patch(facecolor="royalblue")]  # cloud cover
+           Patch(facecolor="royalblue", alpha=0.5)]  # cloud cover
 fig.legend(handles=handles, labels=labels, framealpha=1, ncols=3,
            loc="outside lower center")
 
@@ -1015,7 +1045,7 @@ cbar = fig.colorbar(line, pad=0.01, ax=ax,
 cbar.set_label(label=plt_sett['label'])
 
 figname = f"{plot_path}/HALO-AC3_RF17_RF18_fligh_track_trajectories_plot_overview.png"
-plt.savefig(figname, dpi=600, bbox_inches='tight')
+plt.savefig(figname, dpi=600)
 plt.show()
 plt.close()
 
@@ -1138,8 +1168,9 @@ cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', 
 cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add high cloud cover
-ifs_cc = ifs.cloud_fraction.where(ifs.pressure_full < 60000, drop=True).sum(dim="level")
-ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=24, transform=data_crs, cmap="Blues", alpha=1)
+ifs_cc = ifs.hcc
+hcc = ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=np.arange(0.2, 1.01, 0.1), transform=data_crs,
+                     cmap="Blues", alpha=0.5)
 
 # plot trajectories - 12 April
 header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
@@ -1193,15 +1224,15 @@ ax.plot(ins_hl.IRS_LON[::20], ins_hl.IRS_LAT[::20], c=cbc[1],
 
 # plot dropsonde locations - 12 April
 ds_dict = dropsonde_ds["RF18"]
-for i in [-7, -6, -5, -4, -2]:
+for i in [0, -3, -6, 6, 3]:
     ds = list(ds_dict.values())[i]
-    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
-    lon, lat = ds.lon.dropna(dim="time"), ds.lat.dropna(dim="time")
-    x, y = lon[0].to_numpy(), lat[0].to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
-                    zorder=450)
-    ax.text(x, y+.1, f"{launch_time:%H:%M}", color="k", transform=data_crs, zorder=500,
-            path_effects=[patheffects.withStroke(linewidth=0.25, foreground="white")])
+    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, transform=data_crs, zorder=450)
+    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=6, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 figname = f"{plot_path}/HALO-AC3_RF18_fligh_track_trajectories_plot_overview_zoom.png"
 plt.savefig(figname, dpi=600, bbox_inches='tight')
