@@ -181,6 +181,14 @@ Trace gas comparison
 
 .. automodule:: experiments.ecrad_trace_gases
 
+Inhomogeneity test (fractional_std)
+-----------------------------------
+
+*Script:* :py:mod:`experiments.ecrad_experiment_v36.py`
+
+.. automodule:: experiments.ecrad_experiment_v36
+
+
 ecRad Setups
 ============
 
