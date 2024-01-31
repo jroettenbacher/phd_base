@@ -22,7 +22,7 @@ The corresponding spectral surface albedo as used in the IFS can be seen in :num
 
 .. _surface-albedo-cs:
 
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v15.png
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v15.1.png
 
     Short wave albedo along track above and below cloud for all six spectral bands after :cite:t:`Ebert1992`.
 
@@ -30,20 +30,20 @@ At first, we look at the difference in solar upward and downward irradiance betw
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track.png
 
-    Difference in solar upward irradiance between v15 and v13.
+    Difference in solar upward irradiance between v15.1 and v13.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track.png
 
-    Difference in solar downward irradiance between v15 and v13.
+    Difference in solar downward irradiance between v15.1 and v13.
 
 We can see an unsurprising substantial difference in upward irradiance which then propagates to a smaller but still relevant difference in downward irradiance.
 This is especially pronounced for the thicker section of the cirrus at around 11:15 UTC.
 
 Looking at this from a more statistical point of view we can see the bias between simulation and measurement increase by about :math:`10\,Wm^{-2}`.
 
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v15.png
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v15.1.png
 
-    Scatterplot of along track difference between ecRad and BACARDI for v15.
+    Scatterplot of along track difference between ecRad and BACARDI for v15.1.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v13.png
 
@@ -57,7 +57,7 @@ For this we can take a look at the histogramm of differences and some statistics
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist.png
 
-    Histogram of differences between v15 and v13.
+    Histogram of differences between v15.1 and v13.
 
 We see that a lot of values are rather small.
 They correspond to the area above the cloud where only the atmosphere causes some minor scattering.
@@ -71,7 +71,7 @@ See the script for details.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff1_flux_dn_sw_along_track.png
 
-    Difference in solar downward irradiance between v15 and v13.1 (albedo = 0.99).
+    Difference in solar downward irradiance between v15.1 and v13.1 (albedo = 0.99).
 
 By scaling the albedo to an unrealistic value of 0.99 we get a maximum of :math:`0.7\\,Wm^{-2}` difference in solar downward irradiance.
 Comparing the spectral albedo of each experiment in :numref:`spectral-albedo-all-experiments` we can also see, that the standard albedo for the scene is already high.
@@ -88,9 +88,9 @@ Looking at the difference in solar downward irradiance we can see that it is sti
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff2_flux_dn_sw_along_track.png
 
-    Difference in solar downward irradiance between v15 and v13.2 (albedo from BACARDI).
+    Difference in solar downward irradiance between v15.1 and v13.2 (albedo from BACARDI).
 
-The comparison with the measurements also show a worse match compared to v15.
+The comparison with the measurements also show a worse match compared to v15.1.
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v13.2.png
 
@@ -114,8 +114,8 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import cmasher as cmr
 
-    cbc = h.get_cb_friendly_colors()
-    h.set_cb_friendly_colors()
+    cbc = h.get_cb_friendly_colors("petroff_6")
+    h.set_cb_friendly_colors("petroff_6")
     plt.rc("font", size=12)
 
 # %% set paths
@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 # %% read in ecrad data
     ecrad_dict = dict()
-    for v in ["v15", "v13", "v13.1", "v13.2"]:
+    for v in ["v15.1", "v13", "v13.1", "v13.2"]:
         # use center column data
         ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{v}.nc").isel(column=0)
         # select above and below cloud time
@@ -182,23 +182,6 @@ if __name__ == "__main__":
 
         ecrad_dict[k] = ds.copy()
 
-# %% get height level of actual flight altitude in ecRad model, this determines only the index of the level
-    aircraft_height_da, height_level_da = dict(), dict()
-    for v in ["v15", "v13", "v13.1", "v13.2"]:
-        ds = ecrad_dict[v]
-        bahamas_tmp = ins.sel(time=ds.time, method="nearest")
-        ecrad_timesteps = len(ds.time)
-        aircraft_height_level = np.zeros(ecrad_timesteps)
-
-        for i in tqdm(range(ecrad_timesteps)):
-            aircraft_height_level[i] = h.arg_nearest(ds["pressure_hl"][i, :].values, bahamas_tmp.PS[i].values * 100)
-
-        aircraft_height_level = aircraft_height_level.astype(int)
-        height_level_da[v] = xr.DataArray(aircraft_height_level, dims=["time"], coords={"time": ds.time})
-        aircraft_height = ds["pressure_hl"].isel(half_level=height_level_da[v])
-        aircraft_height_da[v] = xr.DataArray(aircraft_height, dims=["time"], coords={"time": ds.time},
-                                             name="aircraft_height", attrs={"unit": "Pa"})
-
 # %% prepare metadata for comparing ecRad and BACARDI
     titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
               "Terrestrial Upward Irradiance"]
@@ -208,7 +191,7 @@ if __name__ == "__main__":
 
 # %% set plotting options
     var = "flux_dn_sw"
-    v = "diff1"
+    v = "diff2"
     band = None
 
 # %% prepare data set for plotting
@@ -223,7 +206,7 @@ if __name__ == "__main__":
     cb_ticks = dict()
     vmaxs = dict()
     vmins = dict(iwp=0)
-    xlabels = dict(v15="v15", v13="v13", diff="Difference v15 - v13")
+    xlabels = {"v15.1": "v15.1", "v13": "v13", "diff": "Difference v15.1 - v13"}
 
     # set kwargs
     alpha = alphas[var] if var in alphas else 1
@@ -251,17 +234,17 @@ if __name__ == "__main__":
     if v == "diff":
         # calculate difference between simulations
         ds = ecrad_dict["v13"]
-        ecrad_ds_diff = ecrad_dict["v15"][var] - ds[var]
+        ecrad_ds_diff = ecrad_dict["v15.1"][var] - ds[var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     elif v == "diff1":
         # calculate difference between simulations
         ds = ecrad_dict["v13.1"]
-        ecrad_ds_diff = ecrad_dict["v15"][var] - ds[var]
+        ecrad_ds_diff = ecrad_dict["v15.1"][var] - ds[var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     elif v == "diff2":
         # calculate difference between simulations
         ds = ecrad_dict["v13.2"]
-        ecrad_ds_diff = ecrad_dict["v15"][var] - ds[var]
+        ecrad_ds_diff = ecrad_dict["v15.1"][var] - ds[var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     else:
         ds = ecrad_dict[v]
@@ -331,7 +314,7 @@ if __name__ == "__main__":
     plt.close()
 
 # %% plot histogram
-    xlabels = dict(diff="difference v15 - v13", diff1="difference v15 - v13.1", diff2="difference v15 - v13.2")
+    xlabels = dict(diff="difference v15.1 - v13", diff1="difference v15.1 - v13.1", diff2="difference v15.1 - v13.2")
     xlabel = xlabels[v] if v in xlabels else v
     flat_array = ecrad_plot.to_numpy().flatten()
     mean = np.mean(flat_array)
@@ -355,10 +338,10 @@ if __name__ == "__main__":
 
 # %% plot timeseries
     var = "sw_albedo"
-    v = "v15"
+    v = "v15.1"
     band = None
     if v == "diff":
-        ecrad_plot = ecrad_dict["v15"][var] - ecrad_dict["v13"][var]
+        ecrad_plot = ecrad_dict["v15.1"][var] - ecrad_dict["v13"][var]
     else:
         ecrad_plot = ecrad_dict[v][var]
 
@@ -380,7 +363,7 @@ if __name__ == "__main__":
 
 # %% plot albedo spectrum from below cloud
     _, ax = plt.subplots(figsize=h.figsize_wide)
-    for v in ["v15", "v13", "v13.1", "v13.2"]:
+    for v in ["v15.1", "v13", "v13.1", "v13.2"]:
         ds_plot = ecrad_dict[v]["sw_albedo"].sel(time="2022-04-11 11:00", method="nearest")
         ax.plot(ds_plot.to_numpy(), lw=3, label=v, marker="X", ms=12)
     ax.grid()
@@ -398,9 +381,9 @@ if __name__ == "__main__":
 # %% plot scatterplot of below cloud measurements
     v = "v13.2"
     bacardi_plot = bacardi_ds.sel(time=below_slice)
-    ecrad_plot = ecrad_dict[v].isel(half_level=height_level_da[v]).sel(time=below_slice)
+    ecrad_plot = ecrad_dict[v].isel(half_level=ecrad_dict[v].aircraft_level).sel(time=below_slice)
     plt.rc("font", size=12)
-    lims = {"v15": [(120, 240), (80, 130), (95, 170), (210, 220)], "v13": [(110, 240), (80, 150), (0, 200), (210, 220)],
+    lims = {"v15.1": [(120, 240), (80, 130), (95, 170), (210, 220)], "v13": [(110, 240), (80, 150), (0, 200), (210, 220)],
             "v13.2": [(110, 240), (80, 150), (0, 200), (210, 220)]}
     lims = lims[v]
     for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
@@ -433,8 +416,8 @@ if __name__ == "__main__":
         plt.close()
 # %% prepare data for box plot
     values = list()
-    for v in ["v15", "v13", "v13.1", "v13.2"]:
-        values.append(ecrad_dict[v].flux_dn_sw.isel(half_level=height_level_da[v]).sel(time=below_slice).to_numpy())
+    for v in ["v15.1", "v13", "v13.1", "v13.2"]:
+        values.append(ecrad_dict[v].flux_dn_sw.isel(half_level=ecrad_dict[v].aircraft_level).sel(time=below_slice).to_numpy())
 
     df = pd.DataFrame({"IFS": values[0], "Open Ocean": values[1],
                        "Maximum": values[2], "Measured":values[3]})
@@ -451,3 +434,5 @@ if __name__ == "__main__":
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
+
+# %% plot comparison of transmissivity
