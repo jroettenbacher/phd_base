@@ -27,13 +27,35 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 
 * vxx.1: uses input version vx.1 instead of vx
 * v6.1: with low clouds filtered
-* v7.1: instead of using the VarCloud retrieved re_ice use Sun & Rikus to calculate it
+* v7.1: instead of using the VarCloud retrieved re_ice use Sun & Rikus to calculate it from the VarCloud IWC
+
+.. csv-table:: ecRad version overview
+   :file: files/ecrad_version_overview.csv
+   :header-rows: 1
+
+=============   ==========================================  =================
+Input version   Namelist version                            Short description
+=============   ==========================================  =================
+1               1, 2, 3.1, 3.2, 4, 5, 6, 7, 12              Original along track data from F1280 IFS output
+2               8, 9                                        Use VarCloud retrieval as iwc and |re-ice| input along flight track
+3               10                                          Use VarCloud retrieval for below cloud simulation
+4               11                                          Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc
+5               13                                          Set albedo to open ocean (0.06)
+5.1             13.1                                        Set albedo to 0.99
+5.2             13.2                                        Set albedo to BACARDI measurement below cloud
+6               15, 18, 19, 22, 24                          Along track data from O1280 IFS output (used instead of v1)
+6.1             15.1, 18.1, 19.1, 22.1, 24.1, 30, 31, 32    Along track data from O1280 IFS output (used instead of v1) filtered for low clouds
+7               16, 20, 26, 27, 28, 33, 34, 35, 36, 37, 38  As v3 but with O1280 IFS output
+7.1             16.1, 20.1, 26.1, 27.1, 28.1                As v3 but with O1280 IFS output using re_ice from Sun & Rikus
+8               17, 21, 23, 25, 29                          As v2 but with O1280 IFS output
+9               14                                          Turn on aerosol and use CAMS data for it
+=============   ==========================================  =================
 
 * ``IFS_namelist_jr_20220411_v1.nam``: for RF17 with **Fu-IFS** ice model
 * ``IFS_namelist_jr_20220411_v2.nam``: for RF17 with **Baran2017** ice model (deprecated)
 * ``IFS_namelist_jr_20220411_v3.1.nam``: for RF17 with Fu-IFS ice model and `overlap_decorr_length = 1028 m`
 * ``IFS_namelist_jr_20220411_v3.2.nam``: for RF17 with Fu-IFS ice model and `overlap_decorr_length = 450 m`
-* ``IFS_namelist_jr_20220411_v4.nam``: for RF17 with **Yi** ice model
+* ``IFS_namelist_jr_20220411_v4.nam``: for RF17 with **Yi2013** ice model
 * ``IFS_namelist_jr_20220411_v5.nam``: for RF17 with **Fu-IFS** ice model and **3D** parameterizations enabled
 * ``IFS_namelist_jr_20220411_v6.nam``: for RF17 with **Baran2016** ice model and **3D** parameterizations enabled
 * ``IFS_namelist_jr_20220411_v7.nam``: for RF17 with **Baran2016** ice model
@@ -50,7 +72,7 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v16.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
 * ``IFS_namelist_jr_20220411_v17.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
 * ``IFS_namelist_jr_20220411_v18.nam``: for RF17 with **Baran2016** ice model using O1280 IFS data (input version **v6**)
-* ``IFS_namelist_jr_20220411_v19.nam``: for RF17 with **Yi** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220411_v19.nam``: for RF17 with **Yi2013** ice model using O1280 IFS data (input version **v6**)
 * ``IFS_namelist_jr_20220411_v20.nam``: for RF17 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
 * ``IFS_namelist_jr_20220411_v21.nam``: for RF17 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
 * ``IFS_namelist_jr_20220411_v22.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **3D** parameterizations enabled (input version **v6**)
@@ -59,14 +81,17 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220411_v25.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input and **3D** parameterizations enabled (input version **v8**)
 * ``IFS_namelist_jr_20220411_v26.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
 * ``IFS_namelist_jr_20220411_v27.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
-* ``IFS_namelist_jr_20220411_v28.nam``: for RF17 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** (input version **v7**)
-* ``IFS_namelist_jr_20220411_v29.nam``: for RF17 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* ``IFS_namelist_jr_20220411_v28.nam``: for RF17 with **Yi2013** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** (input version **v7**)
+* ``IFS_namelist_jr_20220411_v29.nam``: for RF17 with **Yi2013** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
 * ``IFS_namelist_jr_20220411_v30.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
-* ``IFS_namelist_jr_20220411_v31.nam``: for RF17 with **Yi** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
+* ``IFS_namelist_jr_20220411_v31.nam``: for RF17 with **Yi2013** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
 * ``IFS_namelist_jr_20220411_v32.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
 * ``IFS_namelist_jr_20220411_v33.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
-* ``IFS_namelist_jr_20220411_v34.nam``: for RF17 with **Yi** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
+* ``IFS_namelist_jr_20220411_v34.nam``: for RF17 with **Yi2013** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
 * ``IFS_namelist_jr_20220411_v35.nam``: for RF17 with **Baran2016** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
+* ``IFS_namelist_jr_20220411_v36.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
+* ``IFS_namelist_jr_20220411_v37.nam``: for RF17 with **Yi2013** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
+* ``IFS_namelist_jr_20220411_v38.nam``: for RF17 with **Baran2016** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
 
 |haloac3| **2022-04-12**
 
@@ -81,7 +106,7 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220412_v16.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
 * ``IFS_namelist_jr_20220412_v17.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
 * ``IFS_namelist_jr_20220412_v18.nam``: for RF18 with **Baran2016** ice model using O1280 IFS data (input version **v6**)
-* ``IFS_namelist_jr_20220412_v19.nam``: for RF18 with **Yi** ice model using O1280 IFS data (input version **v6**)
+* ``IFS_namelist_jr_20220412_v19.nam``: for RF18 with **Yi2013** ice model using O1280 IFS data (input version **v6**)
 * ``IFS_namelist_jr_20220412_v20.nam``: for RF18 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input for the **below cloud** section (input version **v7**)
 * ``IFS_namelist_jr_20220412_v21.nam``: for RF18 with **Baran2016** ice model using O1280 IFS data and the **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
 * ``IFS_namelist_jr_20220412_v22.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **3D** parameterizations enabled (input version **v6**)
@@ -90,14 +115,17 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
 * ``IFS_namelist_jr_20220412_v25.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input and **3D** parameterizations enabled (input version **v8**)
 * ``IFS_namelist_jr_20220412_v26.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
 * ``IFS_namelist_jr_20220412_v27.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** and **3D** parameterizations enabled (input version **v7**)
-* ``IFS_namelist_jr_20220412_v28.nam``: for RF18 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** (input version **v7**)
-* ``IFS_namelist_jr_20220412_v29.nam``: for RF18 with **Yi** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
-* ``IFS_namelist_jr_20220412_v30.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
-* ``IFS_namelist_jr_20220412_v31.nam``: for RF17 with **Yi** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
-* ``IFS_namelist_jr_20220412_v32.nam``: for RF17 with **Baran2016** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
-* ``IFS_namelist_jr_20220412_v33.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
-* ``IFS_namelist_jr_20220412_v34.nam``: for RF17 with **Yi** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
-* ``IFS_namelist_jr_20220412_v35.nam``: for RF17 with **Baran2016** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
+* ``IFS_namelist_jr_20220412_v28.nam``: for RF18 with **Yi2013** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input **below cloud** (input version **v7**)
+* ``IFS_namelist_jr_20220412_v29.nam``: for RF18 with **Yi2013** ice model using O1280 IFS and **varcloud** retrieval for ciwc and re_ice input (input version **v8**)
+* ``IFS_namelist_jr_20220412_v30.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
+* ``IFS_namelist_jr_20220412_v31.nam``: for RF18 with **Yi2013** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
+* ``IFS_namelist_jr_20220412_v32.nam``: for RF18 with **Baran2016** ice model using O1280 IFS and **aerosols** turned on (input version **v6.1**)
+* ``IFS_namelist_jr_20220412_v33.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
+* ``IFS_namelist_jr_20220412_v34.nam``: for RF18 with **Yi2013** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
+* ``IFS_namelist_jr_20220412_v35.nam``: for RF18 with **Baran2016** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input and **aerosols** turned on (input version **v7**)
+* ``IFS_namelist_jr_20220412_v36.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
+* ``IFS_namelist_jr_20220412_v37.nam``: for RF18 with **Yi2013** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
+* ``IFS_namelist_jr_20220412_v38.nam``: for RF18 with **Baran2016** ice model using O1280 IFS, **varcloud** retrieval for ciwc and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
 
 Overlap decorrelation length experiment
 ---------------------------------------
@@ -166,10 +194,10 @@ Setup ala Hanno
 Standard IFS setup for |haloac3|
 --------------------------------
 
-* namelists: ``IFS_namelist_jr_20220411_v1.nam``
-* manually entered decorrelation length
+* namelists: ``IFS_namelist_jr_20220411_v15.nam``, ...
+* manually entered mean decorrelation length for case study region
 * solar constant given
-* ozone data from ozone sonde
+* ozone data from trace gas climatology
 * aerosol disabled
 
 
