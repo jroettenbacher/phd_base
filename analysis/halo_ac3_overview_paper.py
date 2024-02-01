@@ -68,6 +68,24 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
+# %% plot BACARDI data for two panel plot with VELOX
+cbc = h.get_cb_friendly_colors("petroff_6")
+plt.rc("font", size=8)
+bacardi_plot = bacardi_ds.sel(time=slice(pd.to_datetime("2022-03-21 11:13:45"), pd.to_datetime("2022-03-21 11:18:45")))
+_, ax = plt.subplots(figsize=(16*h.cm, 5*h.cm))
+ax.plot(bacardi_plot.time, bacardi_plot.net_solar,
+        label="$F_{\mathrm{net, solar}}$", color=cbc[-1])
+ax.plot(bacardi_plot.time, bacardi_plot.net_terrestrial,
+        label="$F_{\mathrm{net, terrestrial}}$", color=cbc[1])
+h.set_xticks_and_xlabels(ax, pd.to_timedelta(4, "Minutes"))
+ax.set(xlabel="Time (UTC)", ylabel="Irradiance (W$\,$m$^{-2}$)")
+ax.grid()
+ax.legend()
+figname = f"{plot_path}/HALO-AC3_{date}_HALO_{key}_BACARDI.png"
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
 # %% export BACARDI data
 bacardi_ds_export = bacardi_ds.sel(time=slice(pd.to_datetime("2022-03-21 11:10"), pd.to_datetime("2022-03-21 11:20")))
 bacardi_ds_export = bacardi_ds_export.to_pandas()
