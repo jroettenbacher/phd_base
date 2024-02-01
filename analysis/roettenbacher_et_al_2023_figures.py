@@ -1597,7 +1597,7 @@ _, axs = plt.subplots(2, 2, figsize=(17 * h.cm, 10 * h.cm), layout="constrained"
 ylims = {"iwc": (0, 0.3), "reice": (0, 0.095)}
 # upper left panel - RF17 IWC
 ax = axs[0, 0]
-plot_ds = ecrad_dicts["RF17"]
+plot_ds = ecrad_orgs["RF17"]
 # sel_time = slice(pd.to_datetime("2022-04-11 10:49"), pd.to_datetime("2022-04-11 11:04"))
 sel_time = slices["RF17"]["below"]
 bins = np.arange(0, binedges["iwc"], binsizes["iwc"])
@@ -1655,7 +1655,7 @@ ax.set(ylabel="Probability density function",
 
 # upper right panel - RF18 IWC
 ax = axs[0, 1]
-plot_ds = ecrad_dicts["RF18"]
+plot_ds = ecrad_orgs["RF18"]
 # sel_time = slice(pd.to_datetime("2022-04-12 11:04"), pd.to_datetime("2022-04-12 11:24"))
 sel_time = slices["RF18"]["below"]
 bins = np.arange(0, binedges["iwc"], binsizes["iwc"])
@@ -2312,9 +2312,8 @@ for i, key in enumerate(keys):
     bins = np.arange(0.5, 1.0, binsize)
     # BACARDI histogram
     bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
-    for ii, v in enumerate(["v16", "v28", "v20"]):
-        v_name = ecrad.version_names[v]
-        v_name = f"Yi2013 VarCloud" if "Yi" in v_name else v_name
+    for ii, v in enumerate(["v36", "v37", "v38"]):
+        v_name = ecrad.get_version_name(v)
         a = ax[ii]
         ecrad_ds = ecrad_dicts[key][v].sel(time=slices[key]["below"])
         height_sel = ecrad_ds["aircraft_level"]
@@ -3182,4 +3181,145 @@ for key in keys:
           f"Max: {bacardi_bb_albedo.max():.3f}\n"
           f"Min: {bacardi_bb_albedo.min():.3f}")
 
-# %% testing
+# %% plot optical depth along track above cloud from IFS and VarCloud using IWC and reff
+od_list = list()
+for key in keys:
+    plt.rc("font", size=12)
+    _, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
+    v = "v15.1"
+    v_name = ecrad.get_version_name(v[:3])
+    ds = ecrad_orgs[key][v].sel(time=slices[key]["above"])
+    col_flag = "column" in ds.dims
+    b_ext = met.calculate_extinction_coefficient_solar(ds.iwc, ds.re_ice)
+    # replace vertical coordinate by pressure height to be able to integrate over altitude
+    new_z_coord = ds.press_height_full.mean(dim="time")
+    new_z_coord = new_z_coord.mean(dim="column").to_numpy() if col_flag else new_z_coord.to_numpy()
+    b_ext = b_ext.assign_coords(level=new_z_coord)
+    b_ext = b_ext.sortby("level")  # sort vertical coordinate in ascending order
+    # replace nan with 0 for integration
+    b_ext = b_ext.where(~np.isnan(b_ext), 0)
+    od = b_ext.integrate("level").mean(dim="column")
+    ax.plot(od.time, od, label=v_name)
+    od_list.append((key, v, "Mean", np.mean(od.to_numpy())))
+    od_list.append((key, v, "Median", np.median(od.to_numpy())))
+    od_list.append((key, v, "Std", np.std(od.to_numpy())))
+
+    # plot VarCloud data in original resolution
+    ds = varcloud_ds[key].sel(time=slices[key]["above"])
+    b_ext = met.calculate_extinction_coefficient_solar(ds.iwc, ds.re_ice)
+    b_ext = b_ext.sortby("height")  # sort vertical coordinate in ascending order
+    # replace nan with 0 for integration
+    b_ext = b_ext.where(~np.isnan(b_ext), 0)
+    od = b_ext.integrate("height")
+    ax.plot(od.time, od, label="VarCloud")
+    od_list.append((key, "VarCloud", "Mean", np.mean(od.to_numpy())))
+    od_list.append((key, "VarCloud", "Median", np.median(od.to_numpy())))
+    od_list.append((key, "VarCloud", "Std", np.std(od.to_numpy())))
+
+    h.set_xticks_and_xlabels(ax, pd.Timedelta(30, "Min"))
+    ax.set(title=f"{key} - Optical depth from IWC and ice effective radius above cloud section",
+           xlabel="Time (UTC)",
+           ylabel="Optical depth")
+    ax.grid()
+    ax.legend()
+    figname = f"{plot_path}/{key}_optical_depth_IFS_vs_VarCloud.png"
+    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+# %% print optical depth statistics
+od_df = pd.DataFrame(od_list, columns=["key", "source", "stat", "optical_depth"])
+print(od_df)
+
+# %% plot transmisivity calculated via Beer-Lambert from optical depth
+t_list = list()
+for key in keys:
+    plt.rc("font", size=12)
+    _, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
+    v = "v15.1"
+    v_name = ecrad.get_version_name(v[:3])
+    ds = ecrad_orgs[key][v].sel(time=slices[key]["above"])
+    b_ext = met.calculate_extinction_coefficient_solar(ds.iwc, ds.re_ice)
+    # replace vertical coordinate by pressure height to be able to integrate over altitude
+    new_z_coord = ds.press_height_full.mean(dim="time")
+    new_z_coord = new_z_coord.mean(dim="column").to_numpy()
+    b_ext = b_ext.assign_coords(level=new_z_coord)
+    b_ext = b_ext.sortby("level")  # sort vertical coordinate in ascending order
+    # replace nan with 0 for integration
+    b_ext = b_ext.where(~np.isnan(b_ext), 0)
+    od = b_ext.integrate("level").mean(dim="column")
+    t = np.exp(-od) * ds.cos_solar_zenith_angle.sel(column=0)
+    ax.plot(t.time, t, label=v_name)
+    t_list.append((key, v, "Mean", np.mean(t.to_numpy())))
+    t_list.append((key, v, "Median", np.median(t.to_numpy())))
+    t_list.append((key, v, "Std", np.std(t.to_numpy())))
+
+    # plot VarCloud data in original resolution
+    ds = varcloud_ds[key].sel(time=slices[key]["above"])
+    cos_sza = np.cos(
+        np.deg2rad(
+            bacardi_ds[key].sza
+            .sel(time=ds.time, method="nearest")
+            .to_numpy()))
+    b_ext = met.calculate_extinction_coefficient_solar(ds.iwc, ds.re_ice)
+    b_ext = b_ext.sortby("height")  # sort vertical coordinate in ascending order
+    # replace nan with 0 for integration
+    b_ext = b_ext.where(~np.isnan(b_ext), 0)
+    od = b_ext.integrate("height")
+    t = np.exp(-od) * cos_sza
+    ax.plot(t.time, t, label="VarCloud")
+    t_list.append((key, "VarCloud", "Mean", np.mean(t.to_numpy())))
+    t_list.append((key, "VarCloud", "Median", np.median(t.to_numpy())))
+    t_list.append((key, "VarCloud", "Std", np.std(t.to_numpy())))
+
+    h.set_xticks_and_xlabels(ax, pd.Timedelta(30, "Min"))
+    ax.set(title=f"{key} - Transmissivity from IWC and ice effective radius above cloud section",
+           xlabel="Time (UTC)",
+           ylabel="Transmissivity")
+    ax.grid()
+    ax.legend()
+    figname = f"{plot_path}/{key}_transmissivity_IFS_vs_VarCloud.png"
+    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+# %% print optical depth statistics
+t_df = pd.DataFrame(t_list, columns=["key", "source", "stat", "transmissivity"])
+print(t_df)
+
+# %% plot ice water path along track from IFS and VarCloud
+key = "RF18"
+plt.rc("font", size=12)
+_, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
+v = "v15.1"
+ds = ecrad_orgs[key][v].sel(time=slices[key]["above"])
+iwp = ds.iwc
+# replace vertical coordinate by pressure height to be able to integrate over altitude
+new_z_coord = ds.press_height_full.mean(dim=["time", "column"])
+iwp = iwp.assign_coords(level=new_z_coord)
+iwp = iwp.sortby("level")  # sort vertical coordinate in ascending order
+# replace nan with 0 for integration
+iwp = iwp.where(~np.isnan(iwp), 0)
+iwp = iwp.integrate("level").mean(dim="column")
+ax.plot(iwp.time, iwp * 1000, label="IFS")
+
+# plot VarCloud data in original resolution
+ds = varcloud_ds[key].sel(time=slices[key]["above"])
+iwp = ds.iwc
+iwp = iwp.sortby("height")  # sort vertical coordinate in ascending order
+# replace nan with 0 for integration
+iwp = iwp.where(~np.isnan(iwp), 0)
+iwp = iwp.integrate("height")
+ax.plot(iwp.time, iwp * 1000, label="VarCloud")
+
+h.set_xticks_and_xlabels(ax, pd.Timedelta(30, "Min"))
+ax.set(title=f"{key} - IWP above cloud section",
+       xlabel="Time (UTC)",
+       ylabel="IWP (g$\,$m$^{-2}$)")
+ax.grid()
+ax.legend()
+plt.show()
+plt.close()
+
+# %% new functions
+
