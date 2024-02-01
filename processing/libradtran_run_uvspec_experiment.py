@@ -74,7 +74,7 @@ if __name__ == "__main__":
             file = __file__
         except NameError:
             file = None
-        log = h.setup_logging("./logs", file, flight_key)
+        log = h.setup_logging("../experiments/logs", file, flight_key)
         log.info(f"Options Given:\n"
                  f"campaign: {campaign}\n"
                  f"flight: {flight}\n"
