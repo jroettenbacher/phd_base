@@ -149,6 +149,11 @@ if __name__ == "__main__":
             for var in tg_vars:
                 ds[var] = ds[f"{var}_{trace_gas_source}"]
 
+        # add direct sw albedo after Taylor et. al 1996
+        sw_albedo_direct = np.repeat(nav_data_ip.open_ocean_albedo_taylor[i],
+                                     len(ds.sw_albedo_band))
+        ds["sw_albedo_direct"] = xr.DataArray(sw_albedo_direct, dims="sw_albedo_band")
+
         # calculate effective radius for all levels
         ds = apply_ice_effective_radius(ds)
         ds = apply_liquid_effective_radius(ds)
@@ -164,7 +169,7 @@ if __name__ == "__main__":
             ds[var] = xr.DataArray(ds[var].to_numpy(), dims="rgrid")
         ds = ds.rename(rgrid="column")  # rename rgrid to column for ecrad
         # some variables now need to have the dimension column as well
-        variables = ["fractional_std"] + tg_vars
+        variables = ["fractional_std", "sw_albedo_direct"] + tg_vars
         for var in variables:
             ds[var] = ds[var].expand_dims(dim={"column": np.arange(n_rgrid)})
         # add distance to aircraft location for each point
