@@ -11,8 +11,8 @@ Set the albedo during the whole flight to open ocean (diffuse: 0.06, direct: Tay
 * ``IFS_namelist_jr_20220411_v15.1.nam:``: for RF17 with Fu-IFS ice model using O1280 IFS data (input version v6.1) (**reference simulation**)
 
 **Problem statement:** A clear offset can be observed in the solar downward irradiance below the cloud between ecRad and BACARDI with ecRad showing lower values than BACARDI.
-One idea is that multiple scattering from the sea ice surface to the cloud and back down plays a role here.
-By setting the albedo to open ocean (0.06) we can eliminate this multiple backscattering between cloud and surface.
+One idea is that multiple scattering from the sea ice surface to the cloud and back down plays is a process not captured by the model.
+By setting the albedo to open ocean we can eliminate this multiple backscattering between cloud and surface.
 Comparing this experiment with the standard experiment can show us the potential impact of multiple scattering.
 We also run an experiment where we scale the albedo to 0.99 to see how much more downward irradiance we can observe that way.
 
@@ -64,7 +64,7 @@ See the script for details.
 
     Difference in solar downward irradiance between v15.1 and v13.1 (albedo = 0.99).
 
-By scaling the albedo to an unrealistic value of 0.99 we get a maximum of :math:`0.7\\,Wm^{-2}` difference in solar downward irradiance.
+By scaling the albedo to an unrealistic value of 0.99 we get a maximum of :math:`0.45\\,Wm^{-2}` difference in solar downward irradiance.
 Comparing the spectral albedo of each experiment in :numref:`spectral-albedo-all-experiments` we can also see, that the standard albedo for the scene is already high.
 So increasing it does not seem to be a sensible idea.
 
@@ -74,19 +74,20 @@ So increasing it does not seem to be a sensible idea.
 
     Spectral albedo for all four experiments at one timestep below cloud.
 
-However, what happens if we use the measured albedo from BACARDI for the below cloud simulation which is lower than the one in the IFS but not as low as 0.06?
-Looking at the difference in solar downward irradiance we can see that it is still a positive difference meaning the predicted downward irradiance is still smaller compared to the IFS run.
+However, what happens if we use the measured broadband albedo from BACARDI for the below cloud simulation which is lower than the one in the IFS but not as low as for open ocean?
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff2_flux_dn_sw_along_track.png
 
     Difference in solar downward irradiance between v15.1 and v13.2 (albedo from BACARDI).
 
-The comparison with the measurements also show a worse match compared to v15.1.
+Looking at the difference in solar downward irradiance we can see that it is still a positive difference meaning the predicted downward irradiance is still smaller compared to the IFS run.
+The comparison with the measurements also shows a worse match compared to v15.1.
 
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v13.2.png
+.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_flux_dn_sw_below_cloud_boxplot.png
 
 
 From all this we can conclude that **the albedo does not seem to be the major problem** in this scene.
+Or at least, we cannot tweak it in any reasonable way to improve the simulations.
 
 """
 
@@ -120,9 +121,11 @@ if __name__ == "__main__":
     h.make_dir(plot_path)
     ecrad_path = f"{h.get_path('ecrad', campaign=campaign)}/{date}"
     bacardi_path = h.get_path("bacardi", flight, campaign)
-    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR_1Min.nc"
+    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR.nc"
     bahamas_path = h.get_path("bahamas", flight, campaign)
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_1Min.nc"
+    data_path = h.get_path('plot', flight, campaign)
+    stats_file = "statistics.csv"
 
 # %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
@@ -160,18 +163,12 @@ if __name__ == "__main__":
         ds = xr.open_dataset(f"{ecrad_path}/ecrad_merged_inout_{date}_{v}.nc").isel(column=0)
         # select above and below cloud time
         ds = ds.sel(time=case_slice)
+        ds = ds.assign_coords({"sw_albedo_band": range(1, 7)})
         ecrad_dict[v] = ds.copy()
 
-# %% modify data sets
-    for k in ecrad_dict:
-        ds = ecrad_dict[k].copy()
-        # add coordinate values
-        ds = ds.assign_coords({"sw_albedo_band": range(1, 7)})
-
-        # replace inf with nan in ice water path
-        ds["iwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan)
-
-        ecrad_dict[k] = ds.copy()
+# %% read in statistics
+    stats_df = pd.read_csv(f"{data_path}/{stats_file}")
+    # select only relevant versions
 
 # %% prepare metadata for comparing ecRad and BACARDI
     titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
@@ -217,7 +214,7 @@ if __name__ == "__main__":
         vmax, vmin = None, None
 
     if "diff" in v:
-        cmap = cmr.fusion
+        cmap = cmr.fusion_r
         norm = colors.TwoSlopeNorm(vcenter=0)
 
     # prepare ecrad dataset for plotting
@@ -280,7 +277,7 @@ if __name__ == "__main__":
     time_extend = pd.to_timedelta((ecrad_plot.time[-1] - ecrad_plot.time[0]).to_numpy())
 
 # %% plot 2D IFS variables along flight track
-    _, ax = plt.subplots(figsize=h.figsize_wide)
+    _, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
     # ecrad 2D field
     ecrad_plot.plot(x="time", y="height", cmap=cmap, ax=ax, robust=robust, vmin=vmin, vmax=vmax, alpha=alpha, norm=norm,
                     cbar_kwargs={"pad": 0.04, "label": f"{h.cbarlabels[var]} ({h.plot_units[var]})",
@@ -296,11 +293,9 @@ if __name__ == "__main__":
     ax.set_ylabel("Altitude (km)")
     ax.set_xlabel("Time (UTC)")
     h.set_xticks_and_xlabels(ax, time_extend)
-    plt.tight_layout()
-    figname = f"{plot_path}/{flight}_ecrad_{v}_{var}{band_str}_along_track.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
-    figname = f"{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_along_track.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    figname = f"{flight}_ecrad_{v}_{var}{band_str}_along_track.png"
+    plt.savefig(f"{plot_path}/{figname}", dpi=300)
+    plt.savefig(f"{fig_path}/{figname}", dpi=300)
     plt.show()
     plt.close()
 
@@ -310,7 +305,7 @@ if __name__ == "__main__":
     flat_array = ecrad_plot.to_numpy().flatten()
     mean = np.mean(flat_array)
     median = np.median(flat_array)
-    _, ax = plt.subplots(figsize=h.figsize_wide)
+    _, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
     hist = ax.hist(flat_array, bins=20)
     ax.set(xlabel=f"{h.cbarlabels[var]} {xlabel} ({h.plot_units[var]})",
            ylabel="Number of occurrence")
@@ -319,11 +314,9 @@ if __name__ == "__main__":
     ax.text(0.75, 0.9, f"Mean: {mean:.2f}" + "W$\,$m$^{-2}$" + f"\nMedian: {median:.2f}" + "W$\,$m$^{-2}$",
             ha='left', va='top', transform=ax.transAxes,
             bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
-    plt.tight_layout()
-    figname = f"{plot_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
-    figname = f"{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    figname = f"{flight}_ecrad_{v}_{var}{band_str}_hist.png"
+    plt.savefig(f"{fig_path}/{figname}", dpi=300)
+    plt.savefig(f"{plot_path}/{figname}", dpi=300)
     plt.show()
     plt.close()
 
@@ -369,61 +362,67 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-# %% plot scatterplot of below cloud measurements
-    v = "v13.2"
-    bacardi_plot = bacardi_ds.sel(time=below_slice)
-    ecrad_plot = ecrad_dict[v].isel(half_level=ecrad_dict[v].aircraft_level).sel(time=below_slice)
-    plt.rc("font", size=12)
-    lims = {"v15.1": [(120, 240), (80, 130), (95, 170), (210, 220)], "v13": [(110, 240), (80, 150), (0, 200), (210, 220)],
-            "v13.2": [(110, 240), (80, 150), (0, 200), (210, 220)]}
-    lims = lims[v]
-    for (i, x), y in zip(enumerate(bacardi_vars), ecrad_vars):
-        rmse = np.sqrt(np.mean((ecrad_plot[y] - bacardi_plot[x]) ** 2))
-        bias = np.mean((ecrad_plot[y] - bacardi_plot[x]))
-        _, ax = plt.subplots(figsize=h.figsize_equal)
-        ax.scatter(bacardi_plot[x], ecrad_plot[y], c=cbc[3])
-        ax.axline((0, 0), slope=1, color="k", lw=2, transform=ax.transAxes)
-        ax.set_ylim(lims[i])
-        ax.set_xlim(lims[i])
-        ticks = ax.get_yticks() if i == 0 else ax.get_xticks()
-        ax.set_yticks(ticks)
-        ax.set_xticks(ticks)
-        ax.set_aspect('equal')
-        ax.set_xlabel("BACARDI irradiance (W$\,$m$^{-2}$)")
-        ax.set_ylabel("ecRad irradiance (W$\,$m$^{-2}$)")
-        ax.set_title(f"{titles[i]}\nbelow cloud")
-        ax.grid()
-        ax.text(0.025, 0.95, f"# points: {sum(~np.isnan(bacardi_plot[x])):.0f}\n"
-                             f"RMSE: {rmse.values:.2f}" + " W$\,$m$^{-2}$\n"
-                                                          f"Bias: {bias.to_numpy():.2f}" + " W$\,$m$^{-2}$",
-                ha='left', va='top', transform=ax.transAxes,
-                bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'))
-        plt.tight_layout()
-        figname = f"{plot_path}/{flight}_{names[i]}_bacardi_vs_ecrad_scatter_below_cloud_{v}.png"
-        plt.savefig(figname, bbox_inches="tight", dpi=300)
-        figname = f"{fig_path}/{flight}_{names[i]}_bacardi_vs_ecrad_scatter_below_cloud_{v}.png"
-        plt.savefig(figname, bbox_inches="tight", dpi=300)
-        plt.show()
-        plt.close()
 # %% prepare data for box plot
     values = list()
     for v in ["v15.1", "v13", "v13.1", "v13.2"]:
-        values.append(ecrad_dict[v].flux_dn_sw.isel(half_level=ecrad_dict[v].aircraft_level).sel(time=below_slice).to_numpy())
+        values.append(ecrad_dict[v].flux_dn_sw
+                      .isel(half_level=ecrad_dict[v].aircraft_level)
+                      .sel(time=below_slice)
+                      .to_numpy())
 
-    df = pd.DataFrame({"IFS": values[0], "Open Ocean": values[1],
-                       "Maximum": values[2], "Measured":values[3]})
-    df.to_csv(f"C:/Users/Johannes/Documents/Doktor/manuscripts/2023_arctic_cirrus/figures/{flight}_boxplot_data.csv",
+    df1 = pd.DataFrame({"IFS (v15.1)": values[0], "Open Ocean (v13)": values[1],
+                        "Maximum (v13.1)": values[2], "Measured (v13.2)": values[3]})
+    df2 = (bacardi_ds["F_down_solar_diff"]
+           .sel(time=below_slice)
+           .dropna("time")
+           .to_pandas()
+           .reset_index(drop=True))
+    df2 = pd.DataFrame(df2)
+    df2.columns = ["BACARDI"]
+    df1["label"] = "ecRad"
+    df2["label"] = "BACARDI"
+
+    df1.to_csv(f"C:/Users/Johannes/Documents/Doktor/manuscripts/_arctic_cirrus/figures/{flight}_boxplot_data.csv",
               index=False)
 
+    df = pd.concat([df2, df1])
+
 # %% plot boxplots of solar downward irradiance below cloud for each experiment
-    plt.rc("font", size=7)
-    _, ax = plt.subplots(figsize=(8*h.cm, 8*h.cm))
+    plt.rc("font", size=12)
+    _, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
     sns.boxplot(df, notch=True, ax=ax)
     ax.set_ylabel("Solar downward irradiance (W$\,$m$^{-2}$)")
-    plt.tight_layout()
-    figname = f"{plot_path}/{flight}_ecrad_flux_dn_sw_below_cloud_boxplot.png"
-    plt.savefig(figname, dpi=300)
+    ax.grid()
+    figname = f"{flight}_ecrad_flux_dn_sw_below_cloud_boxplot.png"
+    plt.savefig(f"{plot_path}/{figname}", dpi=300)
+    plt.savefig(f"{fig_path}/{figname}", dpi=300)
     plt.show()
     plt.close()
 
-# %% plot comparison of transmissivity
+# %% plot PDF of below cloud variables
+    var = "F_down_solar_diff"
+    ecrad_var = "flux_dn_sw"
+    v = "v15.1"
+    bacardi_plot = bacardi_ds[var].sel(time=below_slice)
+    ecrad_plot = (ecrad_dict[v][ecrad_var]
+                  .isel(half_level=ecrad_dict[v].aircraft_level)
+                  .sel(time=below_slice))
+    binsize = 10
+    bins = np.arange(np.round(bacardi_plot.min() - 10),
+                     np.round(bacardi_plot.max() + 10),
+                     binsize)
+    plt.rc("font", size=12)
+    _, ax = plt.subplots(figsize=h.figsize_wide, layout="constrained")
+
+    sns.histplot(bacardi_plot, label="BACARDI", stat="density", bins=bins,
+                 element="step", ax=ax,)
+    sns.histplot(ecrad_plot.to_numpy().flatten(), label=f"ecRad {v}",
+                 stat="density", element="step", bins=bins, ax=ax)
+
+    ax.grid()
+    ax.legend()
+    ax.set(xlabel=f"{h.cbarlabels[ecrad_var]} ({h.plot_units[ecrad_var]})")
+    figname = f"{fig_path}/{flight}_{ecrad_var}_bacardi_vs_ecrad_{v}.png"
+    # plt.savefig(figname, bbox_inches="tight", dpi=300)
+    plt.show()
+    plt.close()

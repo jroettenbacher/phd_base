@@ -159,6 +159,8 @@ Ice Mass Mixing Ratio Experiment
 Fixed Albedo Experiment
 -----------------------
 
+**Input files for ecRad**
+
 *Script:* :py:mod:`experiments.ecrad_write_input_files_v5.py`
 
 .. automodule:: experiments.ecrad_write_input_files_v5
@@ -166,6 +168,12 @@ Fixed Albedo Experiment
 *Script:* :py:mod:`experiments.ecrad_write_input_files_v5_1.py`
 
 .. automodule:: experiments.ecrad_write_input_files_v5_1
+
+*Script:* :py:mod:`experiments.ecrad_write_input_files_v5_2.py`
+
+.. automodule:: experiments.ecrad_write_input_files_v5_2
+
+**Analysis**
 
 *Script:* :py:mod:`experiments.ecrad_experiment_v13.py`
 
@@ -187,6 +195,14 @@ Inhomogeneity test (fractional_std)
 *Script:* :py:mod:`experiments.ecrad_experiment_v36.py`
 
 .. automodule:: experiments.ecrad_experiment_v36
+
+
+Direct sea ice albdeo
+---------------------
+
+*Script:* :py:mod:`experiments.ecrad_new_direct_sea_ice_albedo.py`
+
+.. automodule:: experiments.ecrad_new_direct_sea_ice_albedo
 
 
 ecRad Setups
