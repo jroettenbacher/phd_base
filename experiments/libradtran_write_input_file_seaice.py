@@ -27,7 +27,7 @@ New options can be manually added to the dictionary.
 The options are linked to the page in the manual where they are described in more detail.
 Set options to "None" if you don't want to use them.
 
-Furthermore, an albedo file is generated for the solar simulation using the sea ice albedo parameterization from :cite:t:`Ebert1992` and the open ocean albedo parameterization from :cite:t:`Taylor1996`.
+Furthermore, an albedo file is generated for the solar simulation using the sea ice albedo parameterization from :cite:t:`ebert1993` and the open ocean albedo parameterization from :cite:t:`taylor1996`.
 To allow simulations in the thermal infrared region an additional albedo band between 2501 and 4500 nm is added.
 The sea ice albedo is set to 0 in this band.
 

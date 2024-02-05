@@ -48,7 +48,7 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex'
 ]
-bibtex_bibfiles = ['remsens.bib']
+bibtex_bibfiles = ['references.bib']
 bibtex_reference_style = 'author_year'
 autosectionlabel_prefix_document = True
 numfig = True  # autonumerate Figures and tables

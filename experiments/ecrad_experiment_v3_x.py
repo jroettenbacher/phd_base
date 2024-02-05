@@ -5,7 +5,7 @@
 It should be avoided to create a new namelist for each time step of the along track simulation.
 
 Here the influence of the overlap decorrelation length on the RF17 case study of single layer Arctic cirrus is investigated.
-Two simulations are performed using the maximum and minimum calculated overlap decorrelation length after :cite:t:`Shonk2010` along the flight path.
+Two simulations are performed using the maximum and minimum calculated overlap decorrelation length after :cite:t:`shonk2010` along the flight path.
 See `/projekt_agmwend/data/HALO-AC3/09_IFS_ECMWF/20220411/20220411_decorrelation_length.csv` for values in km.
 Input file from dropsonde location at 11:01 UTC: `ecrad_input_standard_39660.0_sod_v1.nc`
 

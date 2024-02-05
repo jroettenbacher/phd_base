@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 05-09-2023
 
-Replace sw_albedo calculated according to :cite:t:`Ebert1992` with the BACARDI measured albedo for the below cloud section.
+Scale the BACARDI measured broadband albedo for the below cloud section with the sw_albedo calculated according to :cite:t:`ebert1993`.
 
 **Required User Input:**
 

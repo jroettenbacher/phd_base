@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 15-04-2023
 
-Replace sw_albedo calculated according to :cite:t:`Ebert1992` with open ocean albedo (0.06) for the whole flight.
+Replace sw_albedo calculated according to :cite:t:`ebert1993` with open ocean albedo (0.06) for the whole flight.
 
 **Required User Input:**
 
@@ -88,7 +88,8 @@ if __name__ == "__main__":
     nav_data_ip = pd.read_csv(f"{path_ifs_output}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
     data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_O1280_processed.nc")
     data_ml = data_ml.set_index(rgrid=["lat", "lon"])
-    # set sw_albedo to 0.06
+
+    # %% set diffuse albedo to open ocean
     data_ml["sw_albedo"] = xr.full_like(data_ml["sw_albedo"], 0.06)
 
     # %% select lat and lon closest to flightpath

@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 15-04-2023
 
-Replace sw_albedo calculated according to :cite:t:`Ebert1992` with a maximum albedo (0.99) for the whole flight and scale all bands according to the differences in the original sw_albedo.
+Replace sw_albedo calculated according to :cite:t:`ebert1993` with a maximum albedo (0.99) for the whole flight and scale all bands according to the differences in the original sw_albedo.
 
 **Required User Input:**
 
@@ -88,7 +88,8 @@ if __name__ == "__main__":
     nav_data_ip = pd.read_csv(f"{path_ifs_output}/nav_data_ip_{date}.csv", index_col="time", parse_dates=True)
     data_ml = xr.open_dataset(f"{path_ifs_output}/ifs_{ifs_date}_{init_time}_ml_O1280_processed.nc")
     data_ml = data_ml.set_index(rgrid=["lat", "lon"])
-    # scale sw_albedo to 0.99
+
+    # %% scale sw_albedo to 0.99
     sw_albedo = xr.full_like(data_ml["sw_albedo"], 0.99)
     sw_albedo_band_1 = data_ml["sw_albedo"].isel(sw_albedo_band=0)
     diffs = (sw_albedo_band_1 - data_ml["sw_albedo"].isel(sw_albedo_band=slice(1, 6))) / sw_albedo_band_1

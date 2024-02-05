@@ -3,11 +3,12 @@
 | *author:* Johannes Röttenbacher
 | *created:* 15-04-2023
 
-Set the albedo during the whole flight to 0.06 (open ocean) or scale it to 0.99 (maximum albedo) and analyze the impact on the offset between simulation and measurement during the below cloud section in RF17.
+Set the albedo during the whole flight to open ocean (diffuse: 0.06, direct: Taylor et al. 1996) or scale it to 0.99 (maximum albedo) and analyze the impact on the offset between simulation and measurement during the below cloud section of RF17.
 
 * ``IFS_namelist_jr_20220411_v13.nam``: for flight RF17 with Fu-IFS ice model setting albedo to open ocean (input version v5)
 * ``IFS_namelist_jr_20220411_v13.1.nam``: for flight RF17 with Fu-IFS ice model setting albedo to 0.99 (input version v5.1)
 * ``IFS_namelist_jr_20220411_v13.2.nam``: for flight RF17 with Fu-IFS ice model setting albedo BACARDI measurement from below cloud section (input version v5.2)
+* ``IFS_namelist_jr_20220411_v15.1.nam:``: for RF17 with Fu-IFS ice model using O1280 IFS data (input version v6.1) (**reference simulation**)
 
 **Problem statement:** A clear offset can be observed in the solar downward irradiance below the cloud between ecRad and BACARDI with ecRad showing lower values than BACARDI.
 One idea is that multiple scattering from the sea ice surface to the cloud and back down plays a role here.
@@ -24,9 +25,9 @@ The corresponding spectral surface albedo as used in the IFS can be seen in :num
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v15.1.png
 
-    Short wave albedo along track above and below cloud for all six spectral bands after :cite:t:`Ebert1992`.
+    Short wave albedo along track above and below cloud for all six spectral bands after :cite:t:`ebert1993`.
 
-At first, we look at the difference in solar upward and downward irradiance between v15 (IFS albedo after :cite:t:`Ebert1992`) and v13 (ocean albedo 0.06).
+At first, we look at the difference in solar upward and downward irradiance between v15.1 (IFS albedo after :cite:t:`ebert1993`) and v13 (ocean albedo).
 
 .. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track.png
 
@@ -38,16 +39,6 @@ At first, we look at the difference in solar upward and downward irradiance betw
 
 We can see an unsurprising substantial difference in upward irradiance which then propagates to a smaller but still relevant difference in downward irradiance.
 This is especially pronounced for the thicker section of the cirrus at around 11:15 UTC.
-
-Looking at this from a more statistical point of view we can see the bias between simulation and measurement increase by about :math:`10\,Wm^{-2}`.
-
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v15.1.png
-
-    Scatterplot of along track difference between ecRad and BACARDI for v15.1.
-
-.. figure:: figures/experiment_v13/HALO-AC3_20220411_HALO_RF17_Fdw_solar_bacardi_vs_ecrad_scatter_below_cloud_v13.png
-
-    Scatterplot of along track difference between ecRad and BACARDI for v13.
 
 An interesting side note: Although the surface albedo is now set to an open ocean value the emissivity and skin temperature are still the same.
 Thus, there is only a minor change in the terrestrial upward irradiance.
