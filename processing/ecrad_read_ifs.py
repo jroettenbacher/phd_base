@@ -66,24 +66,29 @@ if __name__ == "__main__":
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
-    init_time = args["init"] if "init" in args else "00"
+    init_time = f'_{args["init"]}' if "init" in args else "_00"
     grid = f"_{args['grid']}" if "grid" in args else "_O1280"
     use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
+    type = f'_{args["type"]}' if type in args else ''
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
+
+        flight = meta.flight_names[key]
+        date = flight[9:17]
     else:
         import pylim.cirrus_hl as meta
-    flight = meta.flight_names[key]
-    date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
+
+        flight = key
+        number = meta.flight_numbers[key]
+        date = flight[7:15]
+        type = '_an'
+        init_time = ''
+
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
 
     # setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, key)
+    log = h.setup_logging("./logs", __file__, key)
 
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
@@ -104,9 +109,9 @@ if __name__ == "__main__":
         init_time = 12
     else:
         ifs_date = date
-    ml_file = f"{ifs_raw_path}/ifs_{ifs_date}_{init_time}_ml{grid}.nc"
+    ml_file = f"{ifs_raw_path}/ifs{type}_{ifs_date}{init_time}_ml{grid}.nc"
     data_ml = xr.open_dataset(ml_file)
-    srf_file = f"{ifs_raw_path}/ifs_{ifs_date}_{init_time}_sfc{grid}.nc"
+    srf_file = f"{ifs_raw_path}/ifs{type}_{ifs_date}{init_time}_sfc{grid}.nc"
     data_srf = xr.open_dataset(srf_file)
     # hack while only incomplete ml file is available
     # data_srf = data_srf.sel(lat=slice(data_ml.lat.max(), data_ml.lat.min()))
@@ -133,7 +138,10 @@ if __name__ == "__main__":
 
     if aircraft == "halo":
         if use_bahamas:
-            bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
+            if campaign == 'halo-ac3':
+                bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
+            else:
+                bahamas_file = f"CIRRUSHL_{number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc"
             nav_data = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
             nav_data = nav_data.to_dataframe()
             nav_data.rename(columns={"IRS_LAT": "lat", "IRS_LON": "lon"}, inplace=True)
@@ -294,7 +302,7 @@ if __name__ == "__main__":
 
     # %% calculate shortwave albedo according to sea ice concentration and shortwave band albedo climatology for sea ice
     open_ocean_albedo = 0.06
-    ci_albedo = h.ci_albedo_da.interp(time=dt_day)  # interpolate sea ice albedo to date
+    ci_albedo = h.ci_albedo_da.interp(time=f'2022-{dt_day.month:02}-{dt_day.day:02}')  # interpolate sea ice albedo to date
 
     sw_albedo = data_srf.ci * ci_albedo + (1. - data_srf.ci) * open_ocean_albedo
     sw_albedo.attrs = dict(unit=1, long_name="Banded short wave albedo")
@@ -352,16 +360,16 @@ if __name__ == "__main__":
         if "F" in grid:
             ozone_interp = f_ozone(data_ml.pressure_full.isel(lat=0, lon=0, time=0))
             # copy interpolated ozone concentration over time, lat and longitude dimension
-            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["lat"], axis=2)
-            o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.dims["lon"], axis=3)
+            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.sizes["time"], axis=1)
+            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.sizes["lat"], axis=2)
+            o3_lon = np.concatenate([o3_lat[..., None]] * data_ml.sizes["lon"], axis=3)
             # create DataArray
             o3_vmr = xr.DataArray(o3_lon, coords=data_ml.pressure_full.coords, dims=["level", "time", "lat", "lon"])
         else:
             ozone_interp = f_ozone(data_ml.pressure_full.isel(rgrid=0, time=0))
             # copy interpolated ozone concentration over time and column dimension
-            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.dims["time"], axis=1)
-            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.dims["rgrid"], axis=2)
+            o3_t = np.concatenate([ozone_interp[..., None]] * data_ml.sizes["time"], axis=1)
+            o3_lat = np.concatenate([o3_t[..., None]] * data_ml.sizes["rgrid"], axis=2)
             # create DataArray
             o3_vmr = xr.DataArray(o3_lat, coords=data_ml.pressure_full.coords, dims=["level", "time", "rgrid"])
 
@@ -417,8 +425,8 @@ if __name__ == "__main__":
     data_ml.attrs["contact"] = f"johannes.roettenbacher@uni-leipzig.de, hanno.mueller@uni-leipzig.de"
 
     # %% write output files
-    filename = f"{ifs_output_path}/ifs_{ifs_date}_{init_time}_ml{grid}_processed.nc"
-    if not "F" in grid:
+    filename = f"{ifs_output_path}/ifs_{ifs_date}{init_time}_ml{grid}_processed.nc"
+    if "F" not in grid:
         data_ml = data_ml.reset_index(["rgrid", "lat", "lon"])
         data_ml["rgrid"] = np.arange(0, data_ml.lat.shape[0])
         data_ml = data_ml.reset_coords(["lat", "lon"])
