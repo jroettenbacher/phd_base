@@ -82,7 +82,6 @@ if __name__ == "__main__":
         number = meta.flight_numbers[key]
         date = flight[7:15]
         type = '_an'
-        init_time = ''
 
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
 
