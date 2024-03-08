@@ -27,6 +27,7 @@ The first possible option is the default.
 if __name__ == "__main__":
     # %% module import
     import pylim.helpers as h
+    import pylim.meteorological_formulas as met
     from pylim.ecrad import apply_ice_effective_radius, apply_liquid_effective_radius
     import numpy as np
     from sklearn.neighbors import BallTree
@@ -119,6 +120,14 @@ if __name__ == "__main__":
         cloud_data = cloud_data.where(low_cloud_filter, 0)  # replace where False with 0
         data_ml.update(cloud_data)
 
+    # %% calculate sw_albedo_direct to account for direct reflection of solar incoming radiation above ocean and sea ice
+    ci_albedo_direct = met.calculate_direct_sea_ice_albedo_ebert(nav_data_ip.cos_sza.to_xarray())
+    # create xr.DataArray with open ocean albedo after Taylor et al. 1996 for all spectral bands
+    open_ocean_albedo_taylor = (nav_data_ip.open_ocean_albedo_taylor
+                                .to_xarray()
+                                .expand_dims(sw_albedo_band=len(ci_albedo_direct))
+                                )
+
     # %% loop through time steps and write one file per time step
     idx = len(nav_data_ip)
     dt_nav_data = nav_data_ip.index.to_pydatetime()
@@ -142,13 +151,9 @@ if __name__ == "__main__":
                                                     attrs=dict(unit="1",
                                                                long_name="Cosine of the solar zenith angle"))
 
-        # add sw_albedo_direct to account for direct reflection of solar incoming radiation above ocean
-        sw_albedo_bands = list()
-        for ii in range(h.ci_albedo.shape[1]):
-            sw_albedo_bands.append(ds.ci * h.ci_albedo[3, ii]
-                                   + (1. - ds.ci) * nav_data_ip.open_ocean_albedo_taylor[i])
-
-        sw_albedo_direct = xr.concat(sw_albedo_bands, dim="sw_albedo_band")
+        # add sw_albedo_direct
+        sw_albedo_direct = (ds.ci * ci_albedo_direct.isel(time=i)
+                            + (1. - ds.ci) * open_ocean_albedo_taylor.isel(time=i))
         sw_albedo_direct.attrs = dict(unit=1, long_name="Banded direct short wave albedo")
         ds["sw_albedo_direct"] = sw_albedo_direct
 
