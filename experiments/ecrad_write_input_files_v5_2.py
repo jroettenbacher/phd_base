@@ -34,7 +34,6 @@ if __name__ == "__main__":
     from datetime import datetime
     from tqdm import tqdm
     import time
-    from distutils.util import strtobool
 
     start = time.time()
     # %% read in command line arguments
@@ -43,7 +42,7 @@ if __name__ == "__main__":
     args = h.read_command_line_args()
     key = args["key"] if "key" in args else "RF17"
     # set interpolate flag
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
+    t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
     init_time = args["init"] if "init" in args else "00"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
 

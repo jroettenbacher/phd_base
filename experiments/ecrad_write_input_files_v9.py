@@ -36,7 +36,6 @@ if __name__ == "__main__":
     from datetime import datetime
     from tqdm import tqdm
     import time
-    from distutils.util import strtobool
 
     start = time.time()
     # %% read in command line arguments
@@ -44,7 +43,7 @@ if __name__ == "__main__":
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
+    t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False
     init_time = args["init"] if "init" in args else "00"
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"

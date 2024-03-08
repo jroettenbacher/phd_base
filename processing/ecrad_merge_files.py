@@ -167,7 +167,6 @@ if __name__ == "__main__":
     # %% import modules
     import pylim.helpers as h
     import xarray as xr
-    from distutils.util import strtobool
     import os
     import time
     import glob
@@ -184,9 +183,9 @@ if __name__ == "__main__":
         raise ValueError("'date' needs to be given!")
     version = args["version"] if "version" in args else "v1"
     i_version = args["i_version"] if "i_version" in args else "v1"
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
+    t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
-    merge_io = strtobool(args["merge_io"]) if "merge_io" in args else False
+    merge_io = h.strtobool(args["merge_io"]) if "merge_io" in args else False
     # setup logging
     try:
         file = __file__

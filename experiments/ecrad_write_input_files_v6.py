@@ -35,7 +35,6 @@ if __name__ == "__main__":
     import os
     import pandas as pd
     import time
-    from distutils.util import strtobool
     from tqdm import tqdm
 
     start = time.time()
@@ -44,12 +43,12 @@ if __name__ == "__main__":
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False
+    t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False
     init_time = args["init"] if "init" in args else "00"
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
-    filter_low_clouds = strtobool(args["filter_low_clouds"]) if "filter_low_clouds" in args else True
+    filter_low_clouds = h.strtobool(args["filter_low_clouds"]) if "filter_low_clouds" in args else True
     version = "v6" if not filter_low_clouds else "v6.1"
 
     if campaign == "halo-ac3":

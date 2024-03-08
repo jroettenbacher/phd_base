@@ -57,7 +57,6 @@ if __name__ == "__main__":
     import time
     from scipy.interpolate import interp1d
     from sklearn.neighbors import BallTree
-    from distutils.util import strtobool
 
     start = time.time()
 
@@ -68,7 +67,7 @@ if __name__ == "__main__":
     aircraft = args["aircraft"] if "aircraft" in args else "halo"
     init_time = f'_{args["init"]}' if "init" in args else "_00"
     grid = f"_{args['grid']}" if "grid" in args else "_O1280"
-    use_bahamas = strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
+    use_bahamas = h.strtobool(args["use_bahamas"]) if "use_bahamas" in args else True
     type = f'_{args["type"]}' if type in args else ''
 
     if campaign == "halo-ac3":

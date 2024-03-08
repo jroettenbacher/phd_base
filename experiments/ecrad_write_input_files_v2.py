@@ -34,7 +34,6 @@ if __name__ == "__main__":
     from datetime import datetime
     from tqdm import tqdm
     import time
-    from distutils.util import strtobool
 
     start = time.time()
     # %% read in command line arguments
@@ -43,7 +42,7 @@ if __name__ == "__main__":
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     key = args["key"] if "key" in args else "RF17"
     # set interpolate flag
-    t_interp = strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
+    t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False  # interpolate between timesteps?
     init_time = args["init"] if "init" in args else "00"
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
