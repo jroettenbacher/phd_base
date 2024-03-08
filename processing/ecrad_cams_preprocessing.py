@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # %% set source and paths
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
-    source = args["source"] if "sourde" in args else "47r1"
+    source = args["source"] if "source" in args else "47r1"
     date = args["date"] if "date" in args else "20220411"
     climatology_year = "2020"
 
