@@ -100,7 +100,7 @@ if __name__ == "__main__":
             dsi_ml_out = ds_sel.sel(time=dt_nav_data[i], method="nearest")  # select closest time step
             ending = ""
 
-        cos_sza = np.full((len(lat_circle), len(lon_circle)), fill_value=nav_data_ip.cos_sza[i])
+        cos_sza = np.full((len(lat_circle), len(lon_circle)), fill_value=nav_data_ip.cos_sza.iloc[i])
         dsi_ml_out["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
                                                             dims=["lat", "lon"],
                                                             attrs=dict(unit="1",
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         dsi_ml_out = dsi_ml_out.astype(np.float32)  # change type from double to float32
 
         dsi_ml_out.to_netcdf(
-            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds[i]:7.1f}_sod{ending}_{version}.nc",
+            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}_{version}.nc",
             format='NETCDF4_CLASSIC')
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")

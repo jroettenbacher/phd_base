@@ -121,7 +121,7 @@ if __name__ == "__main__":
             ending = ""
 
         n_rgrid = len(ds.rgrid)
-        cos_sza = np.full(n_rgrid, fill_value=nav_data_ip.cos_sza[i])
+        cos_sza = np.full(n_rgrid, fill_value=nav_data_ip.cos_sza.iloc[i])
         ds["cos_solar_zenith_angle"] = xr.DataArray(cos_sza,
                                                     dims=["rgrid"],
                                                     attrs=dict(unit="1",
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         ds = ds.astype(np.float32)  # change type from double to float32
 
         ds.to_netcdf(
-            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds[i]:7.1f}_sod{ending}_{version}.nc",
+            path=f"{path_ecrad}/ecrad_input_standard_{nav_data_ip.seconds.iloc[i]:7.1f}_sod{ending}_{version}.nc",
             format='NETCDF4_CLASSIC')
 
     log.info(f"Done with date {date}: {pd.to_timedelta((time.time() - start), unit='second')} (hr:min:sec)")
