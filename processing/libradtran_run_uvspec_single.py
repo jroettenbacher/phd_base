@@ -42,11 +42,7 @@ if __name__ == "__main__":
     error_log = input_file.replace(".inp", ".log")
 
 # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, key)
+    log = h.setup_logging('./logs', __file__, key)
     log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nfile: {input_file}\nwavelength: {wavelength}\n"
              f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
 # %% call uvspec for one file
