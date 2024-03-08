@@ -4,6 +4,7 @@ ecrad="/projekt_agmwend/Modelle/ECMWF_ECRAD/src/ecrad-1.5.0/bin/ecrad"
 python="/home/jroettenbacher/.conda/envs/phd_base/bin/python"
 
 # standard options
+campaign="halo-ac3"
 date_var=20220411
 key="RF17"
 version="v15"
@@ -11,8 +12,12 @@ input_version="v6"
 reg_file="ecrad_input_*_sod_${input_version}.nc"
 
 # read in command line args to overwrite standard options
-while getopts ":i:k:d:v:t" opt; do
+while getopts ":c:i:k:d:v:t" opt; do
   case ${opt} in
+  c )
+      campaign="${OPTARG}"
+      echo Campaign given: "${campaign}"
+  ;;
   d )
     date_var="${OPTARG}"
     echo Date given: "${date_var}"
@@ -42,9 +47,15 @@ done
 shift $((OPTIND -1))
 
 #reg_file=${reg_file/.nc/_${version}.nc}
-inpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_input"
-outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/ecrad_output"
-rad_prop_outpath="/projekt_agmwend/data/HALO-AC3/08_ecrad/${date_var}/radiative_properties_${version}"
+if [ "${campaign}" == "cirrus-hl" ]; then
+    basepath="/projekt_agmwend/data/Cirrus_HL/07_ecrad"
+else
+    basepath="/projekt_agmwend/data/HALO-AC3/08_ecrad"
+fi
+
+inpath="${basepath}/${date_var}/ecrad_input"
+outpath="${basepath}/${date_var}/ecrad_output"
+rad_prop_outpath="${basepath}/${date_var}/radiative_properties_${version}"
 mkdir -p "${outpath}"
 mkdir -p "${rad_prop_outpath}"
 
