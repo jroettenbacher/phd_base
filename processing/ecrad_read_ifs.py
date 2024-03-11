@@ -79,7 +79,6 @@ if __name__ == "__main__":
         import pylim.cirrus_hl as meta
 
         flight = key
-        number = meta.flight_numbers[key]
         date = flight[7:15]
         type = '_an'
 
@@ -139,6 +138,7 @@ if __name__ == "__main__":
             if campaign == 'halo-ac3':
                 bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
             else:
+                number = meta.flight_numbers[key]
                 bahamas_file = f"CIRRUSHL_{number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc"
             nav_data = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
             nav_data = nav_data.to_dataframe()
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         horidata_file = glob.glob(os.path.join(horidata_path, "Polar5*.nav"))[0]
         log.info(f"Einzulesendes navigation data file: {horidata_file}")
         colnames = ["time", "lon", "lat", "alt", "vel", "pitch", "roll", "yaw", "sza", "saa"]
-        nav_data = pd.read_csv(horidata_file, sep="\s+", skiprows=3, names=colnames, header=None)
+        nav_data = pd.read_csv(horidata_file, sep="\\s+", skiprows=3, names=colnames, header=None)
         nav_data["seconds"] = nav_data.time * 3600  # convert time to seconds of day
 
     # %% select every step row of nav_data to interpolate IFS data on
@@ -407,7 +407,7 @@ if __name__ == "__main__":
     #                                                    dims=["column", "level"])
     # sum up cloud ice and cloud snow water content according to IFS documentation Part IV Section 2.8.2 (ii)
     data_ml["q_ice"] = data_ml.ciwc + data_ml.cswc
-    #TODO: Add metadata to q_ice and q_liquid
+    # TODO: Add metadata to q_ice and q_liquid
     # sum up cloud liquid and cloud rain water content
     data_ml["q_liquid"] = data_ml.clwc + data_ml.crwc
 
