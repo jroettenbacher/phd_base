@@ -164,15 +164,12 @@ if __name__ == "__main__":
     date = args["date"] if "date" in args else None
     if date is None:
         raise ValueError("'date' needs to be given!")
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     version = args["version"] if "version" in args else "v1"
-    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
+    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign=campaign)
 
     # setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, f"{date}_{version}")
+    log = h.setup_logging("./logs", __file__, f"{date}_{version}")
     log.info(f"The following options have been passed:\n"
              f"date: {date}\n"
              f"version: {version}\n"

@@ -37,6 +37,7 @@ if __name__ == "__main__":
     # %% import modules
     import pylim.helpers as h
     from pylim import ecrad
+    from pylim import reader
     import xarray as xr
     import numpy as np
     from metpy.units import units as un
@@ -74,11 +75,7 @@ if __name__ == "__main__":
         raise ValueError(f"No metadata defined for campaign = {campaign}!")
 
     # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, f"input{iv}_output{ov}_{date}")
+    log = h.setup_logging("./logs", __file__, f"input{iv}_output{ov}_{date}")
     log.info(f"The following options have been passed:\n"
              f"campaign: {campaign}\n"
              f"key: {key}\n"
@@ -233,8 +230,12 @@ if __name__ == "__main__":
     # try to get model level of flight altitude if possible
     try:
         bahamas_path = h.get_path("bahamas", flight=flight, campaign=campaign)
-        bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc"
-        bahamas_ds = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
+        if campaign == 'halo-ac3':
+            bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
+        else:
+            number = meta.flight_numbers[flight]
+            bahamas_file = f"CIRRUSHL_{number}_{flight[7:]}_ADLR_BAHAMAS_v1.nc"
+        bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
         bahamas_ds = bahamas_ds.sel(time=ds.time, method="nearest")
 
         if "column" in ds.dims:

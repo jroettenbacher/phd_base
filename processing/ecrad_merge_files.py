@@ -181,17 +181,14 @@ if __name__ == "__main__":
     date = args["date"] if "date" in args else None
     if date is None:
         raise ValueError("'date' needs to be given!")
+    campaign = args["campaign"] if "campaign" in args else "halo-ac3"
     version = args["version"] if "version" in args else "v1"
     i_version = args["i_version"] if "i_version" in args else "v1"
     t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False
-    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign="halo-ac3")
+    base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign=campaign)
     merge_io = h.strtobool(args["merge_io"]) if "merge_io" in args else False
     # setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, f"{io_flag}_tinp-{t_interp}_{date}")
+    log = h.setup_logging("./logs", __file__, f"{io_flag}_tinp-{t_interp}_{date}")
     log.info(f"The following options have been passed:\nio_flag: {io_flag}\nt_interp: {t_interp}\nversion: {version}\n"
              f"i_version: {i_version}\nbase_dir: {base_dir}\ndate: {date}\nmerge_io: {merge_io}")
     # create input path according to given base_dir and date
