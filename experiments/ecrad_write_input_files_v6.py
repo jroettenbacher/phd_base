@@ -147,8 +147,11 @@ if __name__ == "__main__":
                                                                long_name="Cosine of the solar zenith angle"))
 
         # add sw_albedo_direct
-        sw_albedo_direct = (ds.ci * ci_albedo_direct.isel(time=i)
-                            + (1. - ds.ci) * open_ocean_albedo_taylor.isel(time=i))
+        if any(np.isnan(ds.ci)):
+            sw_albedo_direct = xr.full_like(ds.ci, 0.2)  # constant direct surface albedo for land areas
+        else:
+            sw_albedo_direct = (ds.ci * ci_albedo_direct.isel(time=i)
+                                + (1. - ds.ci) * open_ocean_albedo_taylor.isel(time=i))
         sw_albedo_direct.attrs = dict(unit=1, long_name="Banded direct short wave albedo")
         ds["sw_albedo_direct"] = sw_albedo_direct
 
