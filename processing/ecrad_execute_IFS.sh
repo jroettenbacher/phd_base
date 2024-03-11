@@ -110,13 +110,13 @@ done
 echo "> Done with ecRad simulations."
 cd "/projekt_agmwend/home_rad/jroettenbacher/phd_base/processing" || exit 1  # cd to working directory
 echo "> Merging radiative_properties files..."
-${python} ecrad_merge_radiative_properties.py date="${date_var}" version="${version}"
+${python} ecrad_merge_radiative_properties.py date="${date_var}" version="${version}" campaign="${campaign}"
 
 echo "> Merging input files..."
-${python} ecrad_merge_files.py date="${date_var}" io_flag=input version="${input_version}"
+${python} ecrad_merge_files.py date="${date_var}" io_flag=input version="${input_version}" campaign="${campaign}"
 
 echo "> Merging output files..."
-${python} ecrad_merge_files.py date="${date_var}" io_flag=output version="${version}"
+${python} ecrad_merge_files.py date="${date_var}" io_flag=output version="${version}" campaign="${campaign}"
 
 echo "> Merging merged input and output file..."
-${python} ecrad_processing.py date="${date_var}" key="${key}" ov="${version}" iv="${input_version}"
+${python} ecrad_processing.py date="${date_var}" key="${key}" ov="${version}" iv="${input_version}" campaign="${campaign}"
