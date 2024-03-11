@@ -102,7 +102,7 @@ if __name__ == "__main__":
     ds["band_lw"] = range(1, 17)
     ds["re_ice"] = ds.re_ice.where(ds.re_ice != 5.19616e-05, np.nan)
     ds["re_liquid"] = ds.re_liquid.where(ds.re_liquid != 4.e-06, np.nan)
-    for var in ["ciwc", "cswc", "q_ice"]:
+    for var in ["ciwc", "cswc", "q_ice", "q_liquid"]:
         ds[var] = ds[var].where(ds[var] != 0, np.nan)
 
     if "press_height_hl" not in ds:
@@ -144,8 +144,11 @@ if __name__ == "__main__":
     # spectral cre net
     ds["spectral_cre_total"] = ds.spectral_cre_sw + ds.spectral_cre_lw
 
-    # calculate IWP
-    da = ds.pressure_hl.diff(dim="half_level").rename(half_level="level").assign_coords(level=ds.level.to_numpy())
+    # calculate IWP and LWP
+    da = (ds.pressure_hl
+          .diff(dim="half_level")
+          .rename(half_level="level")
+          .assign_coords(level=ds.level.to_numpy()))
     factor = da * un.Pa / (g * ds.cloud_fraction)
     iwp = (factor * ds.q_ice * un("kg/kg")).metpy.convert_units("kg/m^2")
     ds["iwp"] = iwp.metpy.dequantify().where(iwp != np.inf, np.nan)
@@ -154,6 +157,14 @@ if __name__ == "__main__":
                        "description": "Ice water path derived from q_ice"}
     ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
     ds["tiwp"].attrs = {"units": "kg m^-2", "long_name": "Total ice water path"}
+
+    lwp = (factor * ds.q_liquid * un("kg/kg")).metpy.convert_units("kg/m^2")
+    ds["lwp"] = lwp.metpy.dequantify().where(lwp != np.inf, np.nan)
+    ds["lwp"].attrs = {"units": "kg m^-2",
+                       "long_name": "Ice water path",
+                       "description": "Ice water path derived from q_ice"}
+    ds["tlwp"] = ds.lwp.where(ds.lwp != np.inf, np.nan).sum(dim="level")
+    ds["tlwp"].attrs = {"units": "kg m^-2", "long_name": "Total liquid water path"}
 
     # calculate density
     pressure = ds["pressure_full"] * un.Pa
