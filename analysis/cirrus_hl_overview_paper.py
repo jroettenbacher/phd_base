@@ -15,6 +15,7 @@ import pylim.helpers as h
 from pylim import reader
 from pylim import meteorological_formulas as met
 import numpy as np
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import xarray as xr
@@ -47,6 +48,7 @@ bahamas_file = 'CIRRUSHL_F05_20210629a_ADLR_BAHAMAS_v1.nc'
 ecrad_input_file = f'ecrad_merged_inout_{date}_{version}_mean.nc'
 overlap_decorr_file = f'{date}_decorrelation_length.csv'
 g_file = 'CIRRUS-HL_RF05_BAMS_asymmetry.txt'
+phips_image = 'PHIPS_images/BAMS_collage.png'
 start_dt = pd.Timestamp(2021, 6, 29, 9, 30)
 end_dt = pd.Timestamp(2021, 6, 29, 12, 30)
 
@@ -57,6 +59,7 @@ bahamas = reader.read_bahamas(f'{bahamas_path}/{bahamas_file}')
 ecrad_input = xr.open_dataset(f'{ecrad_path}/{ecrad_input_file}')
 g = pd.read_csv(f'{plot_path}/{g_file}', parse_dates=[0, 1])
 oldl = pd.read_csv(f'{ifs_path}/{overlap_decorr_file}', index_col='time', parse_dates=True)
+phips = mpimg.imread(f'{plot_path}/{phips_image}')
 
 # %% select only relevant times
 time_sel = slice(start_dt, end_dt)
@@ -384,29 +387,55 @@ for var in ['clwc', 'ciwc', 'clwp', 'ciwp', 'iwp', 'lwp', 'cloud_fraction']:
 
 # %% plot four panel figure for overview paper
 plt.rcdefaults()
-plt.rc('font', size=8)
+plt.rc('font', size=7)
 h.set_cb_friendly_colors('petroff_8')
 cloud_filter = ecrad_plot['cloud_fraction'] > 0
-fig, axs = plt.subplot_mosaic([['upper left', 'upper right'],
-                               ['middle left', 'right'],
-                               ['lower left', 'right']],
-                              gridspec_kw=dict(height_ratios=[1, .5, .5]),
-                              figsize=h.figsize_wide,
-                              layout='constrained')
+vmax = 200
+fig = plt.figure(figsize=(16 * h.cm, 9 * h.cm))
+
+axs = fig.subplot_mosaic([['upper left'],
+                          ['middle left'],
+                          ['lower left']],
+                         height_ratios=[1, 0.5, 0.5],
+                         gridspec_kw={
+                             'top': 1,
+                             'bottom': 0,
+                             'left': 0,
+                             'right': 0.5,
+                             'wspace': 0.1,
+                             'hspace': 0.1
+                         })
 # upper left panel - IFS IWC and LWC forecast
 ax = axs['upper left']
 cbar = cmr.get_sub_cmap(cmr.flamingo_r, 0.1, 1)
-(ecrad_plot['clwc']
- .where(cloud_filter)
- .plot(x='time', y='height', cmap=cbar, alpha=0.8,
-       ax=ax, robust=True, vmin=0.001,
-       cbar_kwargs={'label': r'Liquid water content (mg$\,$kg$^{-1}$)'}))
+clwc = (ecrad_plot['clwc']
+        .where(cloud_filter)
+        .plot(x='time', y='height', cmap=cbar, alpha=0.8,
+              ax=ax, robust=True, vmin=0.001, vmax=vmax,
+              cbar_kwargs={'label': r'Liquid water content (mg$\,$kg$^{-1}$)',
+                           'pad': 0.05,
+                           'orientation': 'horizontal',
+                           'location': 'top',
+                           'aspect': 35,
+                           }))
+clwc.colorbar.ax.xaxis.labelpad = 2
+
 cbar = cmr.get_sub_cmap(cmr.freeze_r, 0.1, 1)
-(ecrad_plot['ciwc']
- .where(cloud_filter)
- .plot(x='time', y='height', cmap=cbar, alpha=0.8,
-       ax=ax, robust=True, vmin=0.001,
-       cbar_kwargs={'label': r'Ice water content (mg$\,$kg$^{-1}$)'}))
+ciwc = (ecrad_plot['ciwc']
+        .where(cloud_filter)
+        .plot(x='time', y='height', cmap=cbar, alpha=0.8,
+              ax=ax, robust=True, vmin=0.001, vmax=vmax,
+              cbar_kwargs={'label': r'Ice water content (mg$\,$kg$^{-1}$)',
+                           'pad': 0.02,
+                           'orientation': 'horizontal',
+                           'location': 'top',
+                           'aspect': 35,
+                           }))
+ciwc.colorbar.ax.xaxis.labelpad = 0
+ciwc.colorbar.ax.set_xticklabels('')
+ciwc.colorbar.ax.tick_params(direction='in')
+
+# aircraft altitude
 aircraft_height_plot = aircraft_height_da / 1000
 aircraft_height_plot.plot(x='time', label='HALO altitude', c='k', ax=ax)
 for i, (st, et) in enumerate(zip(start_dts[:-1], end_dts[:-1])):
@@ -420,46 +449,30 @@ for i, (st, et) in enumerate(zip(start_dts[:-1], end_dts[:-1])):
     ax.text(section_dt, section_alt, f'{i + 1}', va='bottom')
 ax.legend(loc='upper left')
 h.set_xticks_and_xlabels(ax, pd.Timedelta(3, 'hours'))
-fig.text(0.085, 0.99, '(a)')
+fig.text(0.01, 1, '(a)')
 ax.set(xlabel='',
+       xticklabels=[],
        ylabel='Height (km)')
 ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
 
-# upper right panel - SMART spectral albedo for all sections
-ax = axs['upper right']
-sections = dict()
-for i, (st, et) in enumerate(zip(start_dts, end_dts)):
-    sections[f'mean_spectra_{i}'] = albedo.sel(time=slice(st, et)).mean(dim='time')
-
-# SMART albedo
-for section, label in zip(sections, labels):
-    sections[section].plot(ax=ax, label=label[-1], linewidth=1)
-
-ax.grid()
-ax.legend(loc='upper right', ncol=4, title='Section')
-fig.text(0.65, 0.99, '(b)')
-ax.set(xlabel='Wavelength (nm)',
-       ylabel='Albedo',
-       ylim=(0, 1))
-
 # middle left panel - IWP and LWP
 ax = axs['middle left']
-iwp = ((ecrad_input['ciwp'] * 1e3)
+iwp = ((ecrad_input['ciwp'])
        .where((~np.isnan(ecrad_input['ciwp']))
               & (ecrad_input['ciwp'].level > height_level_da)
               & (~np.isinf(ecrad_input['ciwp']))
               & (ecrad_input['cloud_fraction'] > 0), 0)
        .integrate(coord='level'))
-iwp.plot(x='time', ax=ax, label='IWP')
+iwp.plot(x='time', ax=ax, label='IWP', zorder=2)
 
-lwp = ((ecrad_input['clwp'] * 1e3)
+lwp = ((ecrad_input['clwp'])
        .where((~np.isnan(ecrad_input['clwp']))
               & (ecrad_input['clwp'].level > height_level_da)
               & (~np.isinf(ecrad_input['clwp']))
               & (ecrad_input['cloud_fraction'] > 0), 0)
        .integrate(coord='level'))
 color = cmr.take_cmap_colors(cmr.flamingo_r, 1, cmap_range=(0.4, 0.5))
-lwp.plot(x='time', ax=ax, label='LWP', c=color[0])
+lwp.plot(x='time', ax=ax, label='LWP', c=color[0], zorder=1)
 
 # plot mean per section
 for i, (st, et) in enumerate(zip(start_dts[:-1], end_dts[:-1])):
@@ -471,29 +484,32 @@ for i, (st, et) in enumerate(zip(start_dts[:-1], end_dts[:-1])):
     section_lwp = (lwp
                    .sel(time=slice(st, et))
                    .mean(dim='time'))
-    ax.plot(section_dt, section_iwp, c=cbc[0], ls='', marker='.')
-    ax.plot(section_dt, section_lwp, c=color[0], ls='', marker='.')
+    ax.plot(section_dt, section_iwp, c='black', ls='',
+            marker='.', markersize=6, mfc=cbc[0], zorder=4)
+    ax.plot(section_dt, section_lwp, c='black', ls='',
+            marker='.', markersize=6, mfc=color[0], zorder=3)
 
-ax.plot([], ls='', marker='.', label="Section mean", c='k')
+ax.plot([], ls='', marker='.', markersize=4, label="Section mean", c='k')
 ax.margins(0, 0.05)
 h.set_xticks_and_xlabels(ax, pd.Timedelta(3, 'hours'))
-fig.text(0.085, 0.522, '(c)')
+box_props = dict(boxstyle='round', ec='white', fc='white', alpha=0.95)
+ax.text(0.02, 0.86, '(b)', transform=ax.transAxes, bbox=box_props)
 ax.set(xlabel='',
        xticklabels=[],
-       ylabel='Ice/Liquid water\n path (g$\\,$m$^{-2}$)')
+       ylabel='Ice/Liquid water\n path (kg$\\,$m$^{-2}$)')
 ax.grid()
-ax.legend()
+ax.legend(loc='center left')
 
 # lower left panel - asymmetry parameter
 ax = axs['lower left']
-ax.errorbar('PlotTime', 'g', yerr='g_std', data=g,
-            ls='', fmt='.', capsize=3, label='Measurement')
+ax.errorbar('PlotTime', 'g', yerr='g_std', data=g, markersize=4,
+            ls='', fmt='.', capsize=2, label='Measurement')
 ax.axhline(0.85, ls='--', label="Cloud droplet", c='k')
 ax.margins(0)
 h.set_xticks_and_xlabels(ax, pd.Timedelta(3, 'hours'))
 ax.grid()
 ax.legend(loc='lower left', ncols=2)
-fig.text(0.085, 0.28, '(d)')
+ax.text(0.02, 0.86, '(c)', transform=ax.transAxes, bbox=box_props)
 ax.set(xlabel='Time (UTC)',
        ylabel='Asymmetry\n parameter $g$',
        xlim=(start_dt, end_dt),
@@ -501,12 +517,58 @@ ax.set(xlabel='Time (UTC)',
        yticks=[0.5, 0.6, 0.7, 0.8, 0.9]
        )
 
-# lower right panel - PHIPS images
-ax = axs['right']
-ax.axis('off')
-fig.text(0.45, 0.522, '(e)')
+axs = fig.subplot_mosaic([['upper right']],
+                         gridspec_kw={
+                             'top': 1,
+                             'bottom': 0.58,
+                             'left': 0.57,
+                             'right': 1,
+                             'wspace': 0.1,
+                             'hspace': 0.3
+                         }
+                         )
+# upper right panel - SMART spectral albedo for all sections
+ax = axs['upper right']
+sections = dict()
+for i, (st, et) in enumerate(zip(start_dts, end_dts)):
+    sections[f'mean_spectra_{i}'] = albedo.sel(time=slice(st, et)).mean(dim='time')
 
-plt.savefig(f'{plot_path}/Fig_arctic_cloud.png', dpi=300, bbox_inches='tight')
-plt.show()
+# SMART albedo
+for section, label in zip(sections, labels):
+    sections[section].plot(ax=ax, label=label[-1], linewidth=1)
+
+ax.grid()
+ax.legend(loc='upper right', ncol=4, title='Section', fontsize=6)
+ax.text(0.01, 0.93, '(d)', transform=ax.transAxes)
+ax.set(xlabel='Wavelength (nm)',
+       ylabel='Albedo',
+       ylim=(0, 1))
+
+axs = fig.subplot_mosaic([['lower right']],
+                         gridspec_kw={
+                             'top': 0.45,
+                             'bottom': 0,
+                             'left': 0.51,
+                             'right': 1,
+                             'wspace': 0.1,
+                             'hspace': 0.3
+                         }
+                         )
+# lower right panel - PHIPS images
+ax = axs['lower right']
+ax.imshow(phips)
+box_props = dict(boxstyle='round', fc='white')
+ax.text(0.015, 0.935, 'Section 2', bbox=box_props, transform=ax.transAxes, size=6)
+ax.text(0.517, 0.935, 'Section 3', bbox=box_props, transform=ax.transAxes, size=6)
+ax.text(0.015, 0.43, 'Section 4', bbox=box_props, transform=ax.transAxes, size=6)
+ax.text(0.517, 0.43, 'Section 5', bbox=box_props, transform=ax.transAxes, size=6)
+ax.axis('off')
+ax.set_aspect('auto', adjustable='box')
+fig.text(0.52, 0.47, '(e)')
+
+plt.savefig(f'{plot_path}/Fig_arctic_cloud.pdf', dpi=300, bbox_inches='tight')
+# plt.show()
 plt.close()
+
+# %% testing
 
