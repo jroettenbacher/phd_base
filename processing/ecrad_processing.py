@@ -129,6 +129,11 @@ if __name__ == "__main__":
     for var in ["flux_dn_sw", "flux_dn_direct_sw", "transmissivity_sw_above_cloud", "transmissivity_sw_toa"]:
         ds[f"{var}_norm"] = ds[var] / ds["cos_solar_zenith_angle"]
 
+    # calculate net fluxes
+    ds["flux_net_sw"] = ds["flux_dn_sw"] - ds["flux_up_sw"]
+    ds["flux_net_lw"] = ds["flux_dn_lw"] - ds["flux_up_lw"]
+    ds["spectral_flux_net_sw"] = ds["spectral_flux_dn_sw"] - ds["spectral_flux_up_sw"]
+    ds["spectral_flux_net_lw"] = ds["spectral_flux_dn_lw"] - ds["spectral_flux_up_lw"]
     # calculate cloud radiative effect
     ds["cre_sw"] = (ds.flux_dn_sw - ds.flux_up_sw) - (ds.flux_dn_sw_clear - ds.flux_up_sw_clear)  # solar
     # spectral cre
