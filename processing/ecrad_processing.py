@@ -102,7 +102,7 @@ if __name__ == "__main__":
     ds["band_lw"] = range(1, 17)
     ds["re_ice"] = ds.re_ice.where(ds.re_ice != 5.19616e-05, np.nan)
     ds["re_liquid"] = ds.re_liquid.where(ds.re_liquid != 4.e-06, np.nan)
-    for var in ["ciwc", "cswc", "q_ice", "q_liquid"]:
+    for var in ["ciwc", "cswc", "clwc", "crwc", "q_ice", "q_liquid"]:
         ds[var] = ds[var].where(ds[var] != 0, np.nan)
 
     if "press_height_hl" not in ds:
@@ -156,15 +156,34 @@ if __name__ == "__main__":
                        "long_name": "Ice water path",
                        "description": "Ice water path derived from q_ice"}
     ds["tiwp"] = ds.iwp.where(ds.iwp != np.inf, np.nan).sum(dim="level")
-    ds["tiwp"].attrs = {"units": "kg m^-2", "long_name": "Total ice water path"}
+    ds["tiwp"].attrs = {"units": "kg m^-2", "long_name": "Total ice water path",
+                        "description": "Total ice water path derived from q_ice"}
+
+    ciwp = (factor * ds.ciwc * un("kg/kg")).metpy.convert_units("kg/m^2")
+    ds["ciwp"] = ciwp.metpy.dequantify().where(ciwp != np.inf, np.nan)
+    ds["ciwp"].attrs = {"units": "kg m^-2",
+                        "long_name": "Cloud ice water path",
+                        "description": "Cloud ice water path derived from ciwc"}
+    ds["tciwp"] = ds.ciwp.where(ds.ciwp != np.inf, np.nan).sum(dim="level")
+    ds["tciwp"].attrs = {"units": "kg m^-2", "long_name": "Total cloud ice water path",
+                         "description": "Total cloud ice water path derived from ciwc"}
 
     lwp = (factor * ds.q_liquid * un("kg/kg")).metpy.convert_units("kg/m^2")
     ds["lwp"] = lwp.metpy.dequantify().where(lwp != np.inf, np.nan)
     ds["lwp"].attrs = {"units": "kg m^-2",
-                       "long_name": "Ice water path",
-                       "description": "Ice water path derived from q_ice"}
+                       "long_name": "Liquid water path",
+                       "description": "Liquid water path derived from q_liquid"}
     ds["tlwp"] = ds.lwp.where(ds.lwp != np.inf, np.nan).sum(dim="level")
     ds["tlwp"].attrs = {"units": "kg m^-2", "long_name": "Total liquid water path"}
+
+    clwp = (factor * ds.clwc * un("kg/kg")).metpy.convert_units("kg/m^2")
+    ds["clwp"] = clwp.metpy.dequantify().where(clwp != np.inf, np.nan)
+    ds["clwp"].attrs = {"units": "kg m^-2",
+                        "long_name": "Cloud liquid water path",
+                        "description": "Cloud liquid water path derived from clwc"}
+    ds["tclwp"] = ds.clwp.where(ds.clwp != np.inf, np.nan).sum(dim="level")
+    ds["tclwp"].attrs = {"units": "kg m^-2", "long_name": "Total cloud liquid water path",
+                         "description": "Total cloud liquid water path derived from clwc"}
 
     # calculate density
     pressure = ds["pressure_full"] * un.Pa
@@ -179,7 +198,7 @@ if __name__ == "__main__":
                        "long_name": "Ice water content",
                        "description": "Ice water content derived from q_ice"}
 
-    #TODO: calculate relative humidity over water and over ice
+    # TODO: calculate relative humidity over water and over ice
 
     # calculate bulk optical properties
     ov_short = re.sub(r"\.[0-9]", "", ov)  # remove the .x
