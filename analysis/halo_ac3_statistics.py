@@ -99,8 +99,10 @@ for key in keys:
     ecrad_orgs[key] = ecrad_org
 
     # interpolate standard ecRad simulation onto BACARDI time
-    bacardi['ecrad_fdw'] = ecrad_dict['v15.1'].flux_dn_sw_clear.interp(time=bacardi.time,
-                                                                     kwargs={'fill_value': 'extrapolate'})
+    bacardi['ecrad_fdw'] = (ecrad_dict['v15.1']
+                            .flux_dn_sw_clear
+                            .interp(time=bacardi.time,
+                                    kwargs={'fill_value': 'extrapolate'}))
     # calculate transmissivity using ecRad at TOA and above cloud
     bacardi['transmissivity_TOA'] = bacardi['F_down_solar'] / bacardi['ecrad_fdw'].isel(half_level=0)
     bacardi['transmissivity_above_cloud'] = bacardi['F_down_solar'] / bacardi['ecrad_fdw'].isel(half_level=73)
@@ -183,6 +185,7 @@ ecrad_stats = list()
 ecrad_vars = ['flux_up_lw', 'flux_dn_lw', 'flux_up_lw_clear', 'flux_dn_lw_clear',
               'flux_up_sw', 'flux_dn_sw', 'flux_up_sw_clear', 'flux_dn_sw_clear',
               'flux_dn_direct_sw_clear',
+              'flux_net_sw', 'flux_net_lw',
               'transmissivity_sw_toa', 'transmissivity_sw_above_cloud',
               'reflectivity_sw', 'reflectivity_lw',
               'cre_sw', 'cre_lw', 'cre_total']
