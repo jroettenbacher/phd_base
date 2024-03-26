@@ -5,7 +5,7 @@
 
 Select closest points of CAMS global reanalysis and global greenhouse gas reanalysis data to flight track.
 Read in CAMS from different sources (ADS, Copernicus Knowledge Base (47r1)).
-The Copernicus Atmospheric Data Store provides the monthly means of trace gase concentrations and aersol concentrations.
+The Copernicus Atmospheric Data Store provides the monthly means of trace gase concentrations and aerosol concentrations.
 They are the basis for the files available via the Copernicus Knowledge Base.
 However, these files have been processed a bit before their use in the IFS.
 See :ref:`processing:IFS/CAMS Download` for more details and the links to the files.
@@ -43,11 +43,7 @@ if __name__ == "__main__":
     climatology_year = "2020"
 
     # setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, f"{date}")
+    log = h.setup_logging("./logs", __file__, f"{date}")
     log.info(f"The following options have been passed:\n"
              f"campaign: {campaign}\n"
              f"source: {source}\n"
@@ -117,7 +113,7 @@ if __name__ == "__main__":
     aerosol_latlon = aerosol.stack(latlon=["lat", "lon"])  # combine lat and lon into one dimension
     # make an array with all lat lon combinations
     aerosol_lat_lon = np.array([np.array(element) for element in aerosol_latlon["latlon"].to_numpy()])
-    # build the look up tree
+    # build the look-up tree
     aerosol_tree = BallTree(np.deg2rad(aerosol_lat_lon), metric="haversine")
     # query the tree for the closest CAMS grid points to the flight track
     dist, idx = aerosol_tree.query(points, k=1)
