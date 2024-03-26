@@ -16,7 +16,7 @@ The first possible option is the default.
 * init_time, initalization time of IFS run (00, 12, yesterday)
 * o3_source, which ozone concentration to use? (one of '47r1', 'ifs', 'constant', 'sonde')
 * trace_gas_source, which trace gas concentrations to use? (one of '47r1', 'constant')
-* aerosol_source, which aersol concentrations to use? (one of '47r1', 'ADS')
+* aerosol_source, which aerosol concentrations to use? (one of '47r1', 'ADS')
 
 **Output:**
 
