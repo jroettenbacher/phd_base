@@ -276,7 +276,7 @@ if __name__ == "__main__":
                     "co2_vmr_constant", "time"]:
             ds[var] = ds[var].isel(column=0)
         # add ccordinate to column variable
-        ds["column"] = np.arange(ds.dims["column"])
+        ds["column"] = np.arange(ds.sizes["column"])
         # overwrite lat lon values, somehow this is necessary
         for var in ["lat", "lon"]:
             ds[var] = xr.DataArray(ds[var].to_numpy(), dims="column")
