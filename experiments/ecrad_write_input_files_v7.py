@@ -116,15 +116,15 @@ if __name__ == "__main__":
         raise KeyError(f"No below cloud section available for flight {flight}")
 
     # %% reindex varcloud data to round second resolution
-    start_time_str = str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy())
-    end_time_str = str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy())
+    start_time_str = str(varcloud_ds.time[0].dt.strftime("%Y-%m-%dT%H:%M:%S").to_numpy())
+    end_time_str = str(varcloud_ds.time[-1].dt.strftime("%Y-%m-%dT%H:%M:%S").to_numpy())
     new_index = pd.date_range(start_time_str, end_time_str, freq="1s")
     varcloud_ds = varcloud_ds.reindex(time=new_index, method="bfill")
 
     # %% replace time index of varcloud data with a time index that has as many values as sim_time is long
     varcloud_ds = varcloud_ds.sel(time=sel_time)  # select the above cloud time
-    new_index = pd.date_range(str(varcloud_ds.time[0].astype('datetime64[s]').to_numpy()),
-                              str(varcloud_ds.time[-1].astype('datetime64[s]').to_numpy()),
+    new_index = pd.date_range(str(varcloud_ds.time[0].dt.strftime("%Y-%m-%dT%H:%M:%S").to_numpy()),
+                              str(varcloud_ds.time[-1].dt.strftime("%Y-%m-%dT%H:%M:%S").to_numpy()),
                               periods=len(sim_time))
     # this "stretches" the varcloud data over the time range of the simulation
     varcloud_ds = varcloud_ds.reindex(time=new_index, method="nearest")
