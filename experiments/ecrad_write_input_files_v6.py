@@ -38,6 +38,7 @@ if __name__ == "__main__":
     from tqdm import tqdm
 
     start = time.time()
+    g = 9.80665  # acceleration due to gravity [m s-2]
 
     # %% read in command line arguments
     args = h.read_command_line_args()
@@ -175,21 +176,44 @@ if __name__ == "__main__":
         if o3_source != "47r1":
             ds["o3_vmr"] = ds[f"o3_vmr_{o3_source}"]
 
-        # interpolate aerosol dataset to ifs full pressure levels
+        # calculate pressure difference between each level,
+        # use half level pressure as the full level pressure corresponds to the pressure at the center of the layer
+        delta_p = np.diff(ds['pressure_hl'].isel(rgrid=0))
+        # calculate layer mass
+        layer_mass = delta_p / g
+        # interpolate aerosol dataset to ifs full pressure levels,
         # and turn it into a data array with one new dimension: aer_type
-        aerosol_mmr = (aerosol
-                       .isel(time=i)
-                       .assign(level=(aerosol
-                                      .isel(time=i)["full_level_pressure"]
-                                      .to_numpy()))
-                       .interp(level=new_pressure,
-                               kwargs={"fill_value": 0})
-                       .drop_vars(["half_level_pressure", "full_level_pressure",
-                                   "half_level_delta_pressure"])
-                       .to_array(dim="aer_type")
-                       .assign_coords(aer_type=np.arange(1, 12),
-                                      level=ds.level)
-                       .reset_coords("time", drop=True))
+        aerosol_kgm2 = (aerosol
+                        .isel(time=i)
+                        .assign(level=(aerosol
+                                       .isel(time=i)["full_level_pressure"]
+                                       .to_numpy()))
+                        .interp(level=new_pressure,
+                                kwargs={"fill_value": 0})
+                        .drop_vars(["half_level_pressure", "full_level_pressure",
+                                    "half_level_delta_pressure"])
+                        .to_array(dim="aer_type")
+                        .assign_coords(aer_type=np.arange(1, 12),
+                                       level=ds.level)
+                        .reset_coords("time", drop=True))
+        # convert layer integrated mass to mass mixing ratio
+        aerosol_mmr = aerosol_kgm2 / layer_mass
+        aerosol_mmr.attrs = dict(units="kg kg-1",
+                                 long_name="Aerosol mass mixing ratio",
+                                 short_name="aerosol_mmr",
+                                 comment="Aerosol MMR converted from layer-integrated mass for 11 species.\n"
+                                         "1: Sea salt, bin 1, 0.03-0.5 micron, OPAC\n"
+                                         "2: Sea salt, bin 2, 0.50-5.0 micron, OPAC\n"
+                                         "3: Sea salt, bin 3, 5.0-20.0 micron, OPAC\n"
+                                         "4: Desert dust, bin 1, 0.03-0.55 micron, (SW) Dubovik et al. 2002 (LW) Fouquart et al. 1987\n"
+                                         "5: Desert dust, bin 2, 0.55-0.90 micron, (SW) Dubovik et al. 2002 (LW) Fouquart et al. 1987\n"
+                                         "6: Desert dust, bin 3, 0.90-20.0 micron, (SW) Dubovik et al. 2002 (LW) Fouquart et al. 1987\n"
+                                         "7: Hydrophilic organic matter, OPAC\n"
+                                         "8: Hydrophobic organic matter, OPAC (hydrophilic at RH=20%)\n"
+                                         "9: Black carbon, OPAC\n"
+                                         "10: Black carbon, OPAC\n"
+                                         "11: Stratospheric sulfate (hydrophilic ammonium sulfate at RH 20%-30%",
+                                 )
         ds["aerosol_mmr"] = aerosol_mmr
 
         # calculate effective radius for all levels
