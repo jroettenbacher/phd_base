@@ -474,7 +474,7 @@ Workflow with ecRad
 | SMART/BACARDI measurements during flight + ecRad output files for aircraft track
 | |rarr| compare upward and downward (spectral/banded) irradiance
 
-#. Download IFS/CAMS data for campaign |rarr| :ref:`processing:IFS/CAMS Download`
+#. Download IFS(/CAMS) data for campaign |rarr| :ref:`processing:IFS/CAMS Download`
 #. Run :ref:`processing:IFS Preprocessing` to convert grib to nc files
 #. Run :ref:`processing:ecrad_read_ifs.py` with the options as you want them to be (see script for details)
 #. Run :ref:`processing:ecrad_cams_preprocessing.py` to prepare CAMS data
@@ -530,6 +530,17 @@ The CAMS trace gas climatology was implemented in the ecRad input files on 13.10
 Following the usage in the IFS the files provided at https://confluence.ecmwf.int/display/ECRAD were used in :py:mod:`ecrad_cams_preprocessing.py`.
 
 For the CAMS aerosol climatology another file is available at https://sites.ecmwf.int/data/cams/aerosol_radiation_climatology/.
+The climatology consists of monthly means on a 3°x3° grid with 60 levels and gives the aerosol concentration as a layer integrated mass (:math:`m_{\text{int}}`) in :math:`\text{kg}\,\text{m}^{-2}`.
+The file also gives the pressure at the base of each layer and the pressure difference between the top and the base of each layer:
+
+.. math:: \Delta p = p(n+1) - p(n), n = (1, ..., 60).
+
+The pressure can be used to interpolate the data to the 137 full pressure levels of the IFS.
+Further, the aerosol mass mixing ratio in :math:`\text{kg}\,\text{kg}^{-1}` can be calculated by dividing the layer integrated mass by the total layer integrated mass:
+
+.. math:: \text{MMR} = \frac{m_{\text{int}}}{m_{\text{layer}}} = \frac{m_{\text{int}}}{\Delta p / g},
+
+with :math:`\Delta p` being the pressure difference between the model half levels and :math:`g = 9.80665\,\text{m}\,\text{s}^{-2}` the gravitational acceleration.
 
 Another option would be to download the monthly mean CAMS files from the Copernicus Atmospheric Data Store (`ADS <https://ads.atmosphere.copernicus.eu>`_) and use these files.
 The script :py:mod:`processing.download_cams_data.py` downloads the CAMS aerosol and trace gas climatology and saves them to seperate files.
@@ -547,11 +558,17 @@ To convert it to netcdf and rename the parameters according to the ECMWF codes r
 on each file.
 Or run the python script :py:mod:`processing.ecrad_preprocessing.py` (currently only working for IFS files):
 
+ecrad_preprocessing.py
+^^^^^^^^^^^^^^^^^^^^^^
+
 .. automodule:: processing.ecrad_preprocessing
 
 **CAMS files (deprecated since 13.10.2023)**
 
-*This is not needed since there is a monthly mean product available on the ADS!*
+.. warning::
+
+    Deprecated since 13.10.2023
+    This is not needed since there is a monthly mean product available on the ADS!
 
 We want to get yearly monthly means from the CAMS reanalysis.
 For this we download 3-hourly data and preprocess it on the ECMWF server to avoid downloading a huge amount of data.
