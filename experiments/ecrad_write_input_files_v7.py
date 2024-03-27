@@ -231,9 +231,9 @@ if __name__ == "__main__":
         # interpolate aerosol dataset to ifs full pressure levels,
         # and turn it into a data array with one new dimension: aer_type
         aerosol_kgm2 = (aerosol
-                        .isel(time=i)
+                        .sel(time=t, method="nearest")
                         .assign(level=(aerosol
-                                       .isel(time=i)["full_level_pressure"]
+                                       .sel(time=t, method="nearest")["full_level_pressure"]
                                        .to_numpy()))
                         .interp(level=new_pressure,
                                 kwargs={"fill_value": 0})
