@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processing &mdash; Arctic Cirrus 0.9.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1bc1ca25"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quicklooks" href="quicklooks.html" />
+    <link rel="prev" title="Setup" href="setup.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arctic Cirrus
+          </a>
+              <div class="version">
+                0.9.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">PhD Base Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html#license">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#smart">SMART</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#campaign-scripts">Campaign Scripts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_write_dark_current_corrected_file">smart_write_dark_current_corrected_file.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_merge_minutely_files">smart_merge_minutely_files.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_calibrate_measurement">smart_calibrate_measurement.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_write_ncfile">smart_write_ncfile.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_process_transfer_calib">smart_process_transfer_calib.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_calib_transfer">smart_calib_transfer.py</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#postprocessing-scripts">Postprocessing Scripts</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_calib_lab_ASP06">smart_calib_lab_ASP06.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_calib_lab_ASP07">smart_calib_lab_ASP07.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_calib_lab_ASP06_halo_ac3">smart_calib_lab_ASP06_halo_ac3.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_process_lab_calib_cirrus_hl">smart_process_lab_calib_cirrus_hl.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_process_transfer_calib_cirrus_hl">smart_process_transfer_calib_cirrus_hl.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.smart_process_lab_calib_halo_ac3">smart_process_lab_calib_halo_ac3.py</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#final-calibration">Final calibration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.cirrus_hl_smart_calibration">cirrus_hl_smart_calibration.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.halo_ac3_smart_calibration">halo_ac3_smart_calibration.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bacardi">BACARDI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#radiosonde-data">Radiosonde data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#prepare-radiosonde-jr-pro">00_prepare_radiosonde_jr.pro</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#libradtran-simulation">libRadtran simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bacardi-postprocessing">BACARDI postprocessing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#solar-downward">Solar downward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#solar-upward">Solar upward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#terrestrial-downward">Terrestrial downward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#terretrial-upward">Terretrial upward</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#process-bacardi-v20210928-pro">00_process_bacardi_V20210928.pro</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bahamas">BAHAMAS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#libradtran">libRadtran</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#libradtran-simulations-along-flight-path">libRadtran simulations along flight path</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.libradtran_write_input_file">libradtran_write_input_file.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.libradtran_run_uvspec">libradtran_run_uvspec.py</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#bacardi-processing">BACARDI processing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dirdiff-bbr-cirrus-hl-server-jr-pro">01_dirdiff_BBR_Cirrus_HL_Server_jr.pro</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dirdiff-bbr-cirrus-hl-server-ter-pro">03_dirdiff_BBR_Cirrus_HL_Server_ter.pro</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.libradtran_write_input_file_bacardi">libradtran_write_input_file_bacardi.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.libradtran_run_uvspec_bacardi">libradtran_run_uvspec_bacardi.py</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smart-processing">SMART processing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.libradtran_write_input_file_smart">libradtran_write_input_file_smart.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ecrad">ecRad</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#general-notes-on-setting-up-ecrad">General Notes on setting up ecRad</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#workflow-with-ecrad">Workflow with ecRad</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ifs-cams-download">IFS/CAMS Download</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ifs-preprocessing">IFS Preprocessing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_preprocessing">ecrad_preprocessing.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_read_ifs">ecrad_read_ifs.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_cams_preprocessing">ecrad_cams_preprocessing.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_write_input_files">ecrad_write_input_files_vx.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ecrad-execute-ifs-sh">ecrad_execute_IFS.sh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ecrad-execute-ifs-single-sh">ecrad_execute_IFS_single.sh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_merge_radiative_properties">ecrad_merge_radiative_properties.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_merge_files">ecrad_merge_files.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-processing.ecrad_processing">ecrad_processing.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#gopro-time-lapse-quicklooks">GoPro Time Lapse quicklooks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.gopro_copy_files_to_disk">gopro_copy_files_to_disk.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.gopro_add_timestamp_to_picture">gopro_add_timestamp_to_picture.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.gopro_write_timestamps">gopro_write_timestamps.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.gopro_plot_maps">gopro_plot_maps.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.gopro_add_map_to_picture">gopro_add_map_to_picture.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gopro-make-video-from-pictures-sh">gopro_make_video_from_pictures.sh</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#other">Other</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.halo_calculate_attitude_correction">halo_calculate_attitude_correction.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-processing.ifs_calculate_along_track_stats">ifs_calculate_along_track_stats.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Processing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/processing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="processing">
+<h1>Processing<a class="headerlink" href="#processing" title="Permalink to this heading"></a></h1>
+<p>With data processing one usually refers to the process of converting the raw measurement files as delivered by the instrument PC into error/bias corrected, calibrated and distributable/publishable files.
+For this work the netCDF standard is defined as the preferred output format.</p>
+<p>Each instrument has different requirements before, after and during the campaign.
+In general these scripts are <strong>not</strong> meant for analysing the data to answer specific science questions or for producing quicklooks.
+This is handled by the scripts in the folders <a class="reference internal" href="analysis.html#analysis"><span class="std std-ref">Analysis</span></a> and <a class="reference internal" href="quicklooks.html#quicklooks"><span class="std std-ref">Quicklooks</span></a>.</p>
+<section id="smart">
+<h2>SMART<a class="headerlink" href="#smart" title="Permalink to this heading"></a></h2>
+<p>SMART has to be calibrated in the lab and in the field so there are processing routines for both cases.
+Some scripts are designated for postprocessing specific campaign data as sometimes the normal processing does not cover all possible cases which occur during a campaign.
+In general scripts can be divided into <a class="reference internal" href="#campaign-scripts"><span class="std std-ref">Campaign Scripts</span></a> and <a class="reference internal" href="#postprocessing-scripts"><span class="std std-ref">Postprocessing Scripts</span></a>.
+The campaign scripts work under the assumption that everything worked as intended and are used in the field to quickly genrate calibrated data for quicklooks.
+The postprocessing scripts are campaign specific and try to correct for all eventualities and problems that occurred during the campaign.</p>
+<p><strong>Folder Structure</strong></p>
+<p>SMART data is organized by flight.
+Each flight folder has one <code class="docutils literal notranslate"><span class="pre">SMART</span></code> folder with the following subfolders:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data_calibrated</span></code>: dark current corrected and calibrated measurement files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">data_cor</span></code>: dark current corrected measurement files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">raw</span></code>: raw measurement files</p></li>
+</ul>
+<p>Each campaign also has a calibration folder.
+In the calibration folder each calibration is saved in its own folder.
+Each calibration is used to generate one calibration file, which is corrected for dark current and saved in the top level calibration folder.</p>
+<p>A few more folders needed are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">raw_only</span></code>: raw measurement files as written by ASP06/07, do not work on those files, but copy them into <code class="docutils literal notranslate"><span class="pre">raw</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lamp_F1587</span></code>: calibration lamp file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">panel_34816</span></code>: reflectance panel file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pixel_wl</span></code>: pixel to wavelength files for each spectrometer</p></li>
+</ul>
+<p><strong>Workflow</strong></p>
+<p>There are two workflows:</p>
+<ol class="arabic simple">
+<li><p>Calibration files</p></li>
+<li><p>Measurement files</p></li>
+</ol>
+<p>Both workflows start with the correction of the dark current.
+After the raw files are copied from ASP06/07 into <code class="docutils literal notranslate"><span class="pre">raw_only</span></code> and <code class="docutils literal notranslate"><span class="pre">raw</span></code> the minutely files are corrected for the dark current and saved with the new ending <code class="docutils literal notranslate"><span class="pre">*_cor.dat</span></code> in <code class="docutils literal notranslate"><span class="pre">data_cor</span></code>.
+Then the minutely files are merged to one file per folder and channel.</p>
+<p><strong>Calibration files</strong></p>
+<p>Use <a class="reference internal" href="#module-processing.smart_process_transfer_calib"><span class="std std-ref">smart_process_transfer_calib.py</span></a> or <a class="reference internal" href="#module-processing.smart_process_lab_calib_cirrus_hl"><span class="std std-ref">smart_process_lab_calib_cirrus_hl.py</span></a> to correct the calibration files for the dark current and merge the minutely files.
+Then run <a class="reference internal" href="#module-processing.smart_calib_lab_ASP06"><span class="std std-ref">smart_calib_lab_ASP06.py</span></a> or <a class="reference internal" href="#module-processing.smart_calib_lab_ASP07"><span class="std std-ref">smart_calib_lab_ASP07.py</span></a> for the lab calibrations or <a class="reference internal" href="#module-processing.smart_calib_transfer"><span class="std std-ref">smart_calib_transfer.py</span></a> for the transfer calibration.
+Each script returns a file in the <code class="docutils literal notranslate"><span class="pre">calib</span></code> folder with the calibration factors.</p>
+<p><strong>Measurement files</strong></p>
+<p>Use <a class="reference internal" href="#module-processing.smart_write_dark_current_corrected_file"><span class="std std-ref">smart_write_dark_current_corrected_file.py</span></a> to correct one flight for the dark current.
+Merge the resulting minutely files with <a class="reference internal" href="#module-processing.smart_merge_minutely_files"><span class="std std-ref">smart_merge_minutely_files.py</span></a>.
+Finally, calibrate the measurement with <a class="reference internal" href="#module-processing.smart_calibrate_measurement"><span class="std std-ref">smart_calibrate_measurement.py</span></a>.
+The resulting calibrated files are saved in the <code class="docutils literal notranslate"><span class="pre">data_calibrated</span></code> folder.
+As a final step the calibrated files can then be converted to netCDF with <a class="reference internal" href="#module-processing.smart_write_ncfile"><span class="std std-ref">smart_write_ncfile.py</span></a>.</p>
+<section id="campaign-scripts">
+<h3>Campaign Scripts<a class="headerlink" href="#campaign-scripts" title="Permalink to this heading"></a></h3>
+<p><strong>Measurement files</strong></p>
+<section id="module-processing.smart_write_dark_current_corrected_file">
+<span id="smart-write-dark-current-corrected-file-py"></span><h4>smart_write_dark_current_corrected_file.py<a class="headerlink" href="#module-processing.smart_write_dark_current_corrected_file" title="Permalink to this heading"></a></h4>
+<p>Script to correct all SMART measurements from one flight for the dark current and save them to new files</p>
+<p>Set the input and output paths in <code class="docutils literal notranslate"><span class="pre">config.toml</span></code>.</p>
+<p><strong>Required User Input</strong>: campaign and flight(s)</p>
+<p><strong>Output</strong>: dark current corrected smart measurements</p>
+<p>You can uncomment some lines to change the behavior of the script.</p>
+<ul class="simple">
+<li><p>run for all flights of a campaign</p></li>
+<li><p>run for one file</p></li>
+<li><p>correct a selection of files in a for loop and skip uncorrectable files</p></li>
+</ul>
+<p>The default behavior is to run for one flight and execute everything in parallel.
+This is the campaign mode.</p>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.smart_merge_minutely_files">
+<span id="smart-merge-minutely-files-py"></span><h4>smart_merge_minutely_files.py<a class="headerlink" href="#module-processing.smart_merge_minutely_files" title="Permalink to this heading"></a></h4>
+<p>Script to merge minutely dark current corrected measurement files into one file per channel and folder.</p>
+<p><strong>Required User Input:</strong> campaign and flight</p>
+<p><strong>Output:</strong> one file with all dark current corrected measurements for one channel</p>
+<p>ASP06 and ASP07 were configured to write minutely files.
+This script</p>
+<ul class="simple">
+<li><p>merges the minutely files into one file,</p></li>
+<li><p>deletes the minutely files,</p></li>
+<li><p>saves the merged files with the first found filename.</p></li>
+</ul>
+<p>By uncommenting some lines you can switch between single flight (campaign mode) and multi flight mode.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.smart_calibrate_measurement">
+<span id="smart-calibrate-measurement-py"></span><h4>smart_calibrate_measurement.py<a class="headerlink" href="#module-processing.smart_calibrate_measurement" title="Permalink to this heading"></a></h4>
+<p>Calibrate measurement files with the transfer calibration</p>
+<p>Reads in dark current corrected measurement file and corresponding transfer calibration to calibrate measurement files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight folder</p></li>
+<li><p>integration time of ASP06 and ASP07 measurements (check raw measurement files to get integration times)</p></li>
+<li><p>whether to normalize measurements or not (use normalized calibration factor, necessary if no calibration with the same integration time was made)</p></li>
+</ul>
+<p><strong>Output:</strong> Calibrated SMART measurement files in .dat format</p>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.smart_write_ncfile">
+<span id="smart-write-ncfile-py"></span><h4>smart_write_ncfile.py<a class="headerlink" href="#module-processing.smart_write_ncfile" title="Permalink to this heading"></a></h4>
+<p>Given a SMART input file write a well documented quicklook netCDF file.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>date</p></li>
+<li><p>flightkey</p></li>
+<li><p>property and channel (Fdw/Fup and SWIR/VNIR)</p></li>
+<li><p>uncomment import of metadata information depending on campaign</p></li>
+</ul>
+<p><strong>Output:</strong> Calibrated and documented netCDF file</p>
+<p>Two options:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>One spectrometer = one file</p></li>
+<li><p>One flight = one file</p></li>
+</ol>
+</div></blockquote>
+<p>Option 2 might result in a huge file but would be easier to distribute.
+With option 1 one could still merge all single files quite easily with xarray.
+Go with option 1 for now.</p>
+<p>The netCDF file could be writen as a standard output from smart_calibrate_measurement.py or as a separate step in this script.
+Stick with this script for now.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+<p><strong>Calibration files</strong></p>
+</section>
+<section id="module-processing.smart_process_transfer_calib">
+<span id="smart-process-transfer-calib-py"></span><h4>smart_process_transfer_calib.py<a class="headerlink" href="#module-processing.smart_process_transfer_calib" title="Permalink to this heading"></a></h4>
+<p>Script to correct SMART transfer calibration measurement for dark current and save it to a new file and merge the
+minutely files</p>
+<p><strong>Required User Input</strong>: transfer calibration folder and campaign</p>
+<p><strong>Output</strong>: dark current corrected and merged smart measurements</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.smart_calib_transfer">
+<span id="smart-calib-transfer-py"></span><h4>smart_calib_transfer.py<a class="headerlink" href="#module-processing.smart_calib_transfer" title="Permalink to this heading"></a></h4>
+<p>Script to calculate field calibration factor and save a file for each PC and channel</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>transfer calibration folder → should be found in calib folder</p></li>
+<li><p>laboratory calibration date to relate transfer calibration to</p></li>
+<li><p>integration time of transfer calibration (T_int) in ms</p></li>
+<li><p>whether to normalize the measurement by the integration time or not</p></li>
+</ul>
+<p><strong>Output:</strong> transfer calibration file with field calibration factor <code class="docutils literal notranslate"><span class="pre">c_field</span></code> (unit: <span class="math notranslate nohighlight">\(W\,m^{-2}\, count^{-1}\)</span>)</p>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>set user defined variables and list field calibration files and lab calibration files</p></li>
+<li><p>for each field cali file:</p>
+<ol class="arabic simple">
+<li><p>read field file and corresponding lab calibration file</p></li>
+<li><p>calculate field calibration factor and the relation between lab and field counts of the ulli sphere</p></li>
+<li><p>plot transfer calib measurements and save the plot</p></li>
+<li><p>save transfer calibration file in calib folder</p></li>
+</ol>
+</li>
+</ol>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+</section>
+<section id="postprocessing-scripts">
+<h3>Postprocessing Scripts<a class="headerlink" href="#postprocessing-scripts" title="Permalink to this heading"></a></h3>
+<section id="module-processing.smart_calib_lab_ASP06">
+<span id="smart-calib-lab-asp06-py"></span><h4>smart_calib_lab_ASP06.py<a class="headerlink" href="#module-processing.smart_calib_lab_ASP06" title="Permalink to this heading"></a></h4>
+<p>Calculates the lab calibration factor for ASP06</p>
+<p>Creates a lab calibration file with the irradiance measurements from the lamp and the calibrated Ulli transfer measurements.
+Needs to be run once for each spectrometer (SWIR, VNIR).</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>channel which to run (SWIR or VNIR)</p></li>
+<li><p>folder pair (spectrometer pair) (0 or 1)</p></li>
+<li><p>folder of lab calibration → should be found in calib folder</p></li>
+<li><p>whether to normalize the measurement by the integration time or not</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>plot of counts and irradiance of lamp lab calibration</p></li>
+<li><p>plot of Ulli transfer measurement from laboratory</p></li>
+<li><p>dat file with all data from the calibration and the calibration factor for each wavelength <code class="docutils literal notranslate"><span class="pre">c_lab</span></code> (unit: <span class="math notranslate nohighlight">\(W\,m^{-2}\, count^{-1}\)</span>)</p></li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>read in 1000W lamp file, plot it and save to data file</p></li>
+<li><p>set channel to work with</p></li>
+<li><p>set which folder pair to work with</p></li>
+<li><p>read in calibration lamp measurements</p></li>
+<li><p>read in pixel to wavelength mapping and interpolate lamp output onto pixel/wavelength of spectrometer</p></li>
+<li><p>plot lamp measurements</p></li>
+<li><p>read in ulli sphere measurements</p></li>
+<li><p>plot ulli measurements</p></li>
+<li><p>write dat file with all information</p></li>
+</ol>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.smart_calib_lab_ASP07">
+<span id="smart-calib-lab-asp07-py"></span><h4>smart_calib_lab_ASP07.py<a class="headerlink" href="#module-processing.smart_calib_lab_ASP07" title="Permalink to this heading"></a></h4>
+<p>Calculates the lab calibration factor for ASP07</p>
+<p>Creates a lab calibration file with the radiance measurements from the reflectance panel and the calibrated Ulli transfer measurements.
+Needs to be run once for each spectrometer (SWIR and VNIR).</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>channel which to run (SWIR or VNIR)</p></li>
+<li><p>folder pair (spectrometer pair) (0 or 1)</p></li>
+<li><p>folder of lab calibration → should be found in calib folder</p></li>
+<li><p>whether to normalize the measurement by the integration time or not</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>plot of counts and radiance of lamp laboratory calibration</p></li>
+<li><p>plot of Ulli transfer measurement from laboratory</p></li>
+<li><p>dat file with all data from the calibration and calibration factor for each wavelength <code class="docutils literal notranslate"><span class="pre">c_lab</span></code> (unit: <span class="math notranslate nohighlight">\(W\,sr^{-1}\,m^{-2}\, count^{-1}\)</span>)</p></li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>read in 1000W lamp file and reflectance panel file</p></li>
+<li><p>set channel to work with</p></li>
+<li><p>read in calibration lamp measurements</p></li>
+<li><p>interpolate lamp output onto pixel/wavelength of spectrometer</p></li>
+<li><p>plot lamp measurements</p></li>
+<li><p>read in ulli sphere measurements</p></li>
+<li><p>plot ulli measurements</p></li>
+<li><p>write dat file with all information</p></li>
+</ol>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.smart_calib_lab_ASP06_halo_ac3">
+<span id="smart-calib-lab-asp06-halo-ac3-py"></span><h4>smart_calib_lab_ASP06_halo_ac3.py<a class="headerlink" href="#module-processing.smart_calib_lab_ASP06_halo_ac3" title="Permalink to this heading"></a></h4>
+<p>Script to read in calibration files and calculate calibration factors for lab calibration of ASP06</p>
+<ol class="arabic simple">
+<li><p>set property to work with (SWIR, VNIR), direction = Fdw (uses setup names from CIRRUS-HL)</p></li>
+<li><p>read in 1000W lamp file</p></li>
+<li><p>read in calibration lamp measurements</p></li>
+<li><p>read in dark current measurements</p></li>
+<li><p>read in pixel to wavelength mapping and interpolate lamp output onto pixel/wavelength of spectrometer</p></li>
+<li><p>plot lamp measurements</p></li>
+<li><p>read in ulli sphere measurements</p></li>
+<li><p>plot ulli measurements</p></li>
+<li><p>write dat file with all information</p></li>
+</ol>
+<p>The smart lookup from CIRRUS-HL is used because the filenames were not changed before the calibration.
+See <a class="reference internal" href="#module-processing.smart_process_lab_calib_halo_ac3"><span class="std std-ref">smart_process_lab_calib_halo_ac3.py</span></a> for details.</p>
+<p>Due to changes of the setup the lookup from CIRRUS-HL is identical with the lookup from HALO-(AC)<sup>3</sup>.</p>
+<p>author: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.smart_process_lab_calib_cirrus_hl">
+<span id="smart-process-lab-calib-cirrus-hl-py"></span><h4>smart_process_lab_calib_cirrus_hl.py<a class="headerlink" href="#module-processing.smart_process_lab_calib_cirrus_hl" title="Permalink to this heading"></a></h4>
+<p>Correct the lab calibration files for the dark current and merge the minutely files</p>
+<p>For the calibration after the campaign the bug in the LabView software was not fixed yet (see <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.smart_process_transfer_calib_cirrus_hl.py</span></code>).
+Thus, the first SWIR measurement file for each calibration is deleted. This avoids the problem of a faulty dark current
+measurement at the beginning of the SWIR file.</p>
+<p><strong>author</strong>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.smart_process_transfer_calib_cirrus_hl">
+<span id="smart-process-transfer-calib-cirrus-hl-py"></span><h4>smart_process_transfer_calib_cirrus_hl.py<a class="headerlink" href="#module-processing.smart_process_transfer_calib_cirrus_hl" title="Permalink to this heading"></a></h4>
+<p>Script to correct SMART SWIR transfer calibration measurement from the CIRRUS-HL campaign for dark current and save it to a new file and merge the minutely files</p>
+<p><strong>Input</strong>: raw SMART transfer calibration measurements</p>
+<p><strong>Output</strong>: dark current corrected and merged SMART measurements</p>
+<p>This script needs to be run <strong>after</strong> <a class="reference internal" href="#module-processing.smart_process_transfer_calib"><span class="std std-ref">smart_process_transfer_calib.py</span></a> and <strong>before</strong> <a class="reference internal" href="#module-processing.smart_calib_transfer"><span class="std std-ref">smart_calib_transfer.py</span></a>.</p>
+<p>During the campaign the LabView program controlling the shutter on the SWIR spectrometers of ASP06 somehow decided to change the way it works.
+Usually every SWIR measurement would start with four dark current measurements (=shutter closed).
+That way one can use the first measurements to correct the file for the dark current.
+That behaviour changed starting with the transfer calibration on the 22. July 2021.
+Now the shutter flag was still set to 0 (=closed) for the first four measurements but the shutter was not actually closed.
+However, once the second file would be written after one minute of measurements the shutter would actually close.
+Thus, only the first measurement file was affected by this behaviour and this is therefore only a problem for the transfer calibrations, where one would only record one file for each spectrometer.
+This weird behaviour was detected during the laboratory calibration of ASP06 for HALO-(AC)<sup>3</sup> and is now accounted for in the LabView program.</p>
+<p>The result of this is that the field calibration factors for the ASP06 SWIR spectrometers are wrong starting on the 22. July 2021.
+For the calculation of the final field calibration factors the laboratory calibration which was done after the campaign is used.</p>
+<figure class="align-default" id="id3">
+<img alt="_images/SMART_calib_factors_Fdw_SWIR.png" src="_images/SMART_calib_factors_Fdw_SWIR.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">Evolution of the field calibration factor for ASP06 Fdw SWIR channel.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id4">
+<img alt="_images/SMART_calib_factors_Fup_SWIR.png" src="_images/SMART_calib_factors_Fup_SWIR.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">Evolution of the field calibration factor for ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id4" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>In order to fix this wrong correction of the dark current in the SWIR files the dark current measurements, which were routinely done during the transfer calibrations, can be used.
+Instead of using the first four measurements the mean of the dark current measurement is used to correct the transfer calibration measurements for the dark current.</p>
+<p>After calculating the new field calibration factors with the newly corrected SWIR measurements for all dates after the 22. July it was discovered that the 29. June and the 11. July also show a significantly different field calibration factor for Fup SWIR.</p>
+<figure class="align-default" id="id5">
+<img alt="_images/SMART_calib_factors_Fup_SWIR_new.png" src="_images/SMART_calib_factors_Fup_SWIR_new.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">Evolution of the field calibration factor after new correction of the dark current for 22. - 30. July for ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Transfer Calib Fup SWIR 29. June</strong></p>
+<p>Looking at the raw measurement from the calibration on 29. June shows that there was a dark current measurement at the beginning, however it seems that the shutter only opened slowly.
+Usually a jump in the counts should be happening, here only a steady increase in the counts is happening.</p>
+<figure class="align-default" id="id6">
+<img alt="_images/SMART_transfer_calib_raw_Fup_SWIR_20210629.png" src="_images/SMART_transfer_calib_raw_Fup_SWIR_20210629.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 4 </span><span class="caption-text">All wavelengths from the transfer calib measurement of ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Using this information the part where the counts gradually increase is cut out from the dark current corrected file before the field calibration factor is calculated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.smart_calib_transfer.py</span></code> .
+However, this also does not seem to yield a reasonable field calibration factor from that transfer calibration.
+The most reasonable explanation seems to be that the SWIR spectrometer was unstable during the calibration.
+<strong>In that case it is best to discard this transfer calibration and use another one for the 29. June 2021.</strong></p>
+<p><strong>Transfer Calib Fup SWIR 11. July</strong></p>
+<figure class="align-default" id="id7">
+<img alt="_images/SMART_transfer_calib_raw_Fup_SWIR_20210711.png" src="_images/SMART_transfer_calib_raw_Fup_SWIR_20210711.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 5 </span><span class="caption-text">All wavelengths from the transfer calib measurement of ASP06 Fup SWIR channel.</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The first row of the file (2021_07_11_14_19.Fup_SWIR.dat) is deleted as its timestamp lies 12 seconds before the next measurement (see the raw file).
+Looking at the plot after that first correction was made still shows some weird behaviour.
+At first the counts decrease during the dark current measurement, then they jump up to a plateau where they increase slightly for a few measurements and then jump down again and slowly decrease until stable conditions are reached roughly at the minute mark (14:20 UTC).
+Some wavelengths even decrease back to the level of the dark current measurement, hinting at the possibility that the shutter was not working perfectly.</p>
+<p>Looking at the corresponding dark current measurement file shows, that the dark current dropped significantly after the first couple of measurements.
+Thus, to correct the transfer calibration measurement of Fup SWIR only the dark current measurements <strong>before</strong> the drop in counts at 14:21:03.78 UTC are used to calculate the mean dark current and then correct the calibration measurement by that.
+The corresponding rows are deleted in the dark current measurement file (everything before 14:21:03.78).</p>
+<p>After the dark current correction the rows exhibiting the described weird behaviour are then deleted (everything before before 14:19:50.6).</p>
+<p><strong>Transfer Calib Fup SWIR 16. July</strong></p>
+<figure class="align-default" id="id8">
+<img alt="_images/SMART_calib_factors_after_Fup_SWIR_new2.png" src="_images/SMART_calib_factors_after_Fup_SWIR_new2.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 6 </span><span class="caption-text">Evolution of the field calibration factor for ASP06 Fup SWIR channel after the corrections.</span><a class="headerlink" href="#id8" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>After correcting the 11. July the 16. July also shows up as a rather high calibration factor.
+Looking into the dark current corrected data reveals that the first pixels show only negative values, hinting at a bad dark current measurement at the beginning of the file.
+<strong>Thus, the transfer calibration from the 16. July is also discarded.</strong></p>
+<p>Quicklooks generated from the final calibrated files show that the SWIR data is way out of bounds which can be traced back to a very high calibration factor starting on the 21.07.21.
+Thus, for flights after that date the transfer calibration from 20.07.2021 is used for calibration.</p>
+<p>The finally used transfer calibrations can be found in the <code class="code docutils literal notranslate"><span class="pre">transfer_calibs</span></code> dictionary in <a class="reference external" href="https://github.com/jroettenbacher/phd_base/blob/0604f52c525b8db555486e8328e4fa6595d02485/src/pylim/cirrus_hl.py#L26">cirrus_hl.py</a> .</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.smart_process_lab_calib_halo_ac3">
+<span id="smart-process-lab-calib-halo-ac3-py"></span><h4>smart_process_lab_calib_halo_ac3.py<a class="headerlink" href="#module-processing.smart_process_lab_calib_halo_ac3" title="Permalink to this heading"></a></h4>
+<p>Correct the lab calibration files for the dark current and merge the minutely files</p>
+<p>The calibration was still done with the naming convention of CIRRUS-HL.
+There are two calibrations available before the campaign both use the VN11 inlet (ASP02) and the optical fiber 22b.</p>
+<p><strong>Attention:</strong> There was a mixup between VN11 and VN05.
+Actually VN05 has a nicer cosine response and thus VN05 is used for HALO-(AC)<sup>3</sup>.
+However, the calibration was done with VN11 and was repeated after the campaign with VN05.</p>
+<p>One calibration was done with VN11 attached to J3 and J4 on ASP06 and the other with VN11 attached to J5 and J6.
+For HALO-AC3 J3 and J4 were the channels used, because it was written like this in the Einbauanweisung.
+Thus, only the Fdw measurements are of interest.
+The Fup measurements are kept for completeness.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="final-calibration">
+<h3>Final calibration<a class="headerlink" href="#final-calibration" title="Permalink to this heading"></a></h3>
+<p>These scripts are used for the final calibration of the measurement data.
+They are designed to take care of everything necessary given the correct input files.</p>
+<section id="module-processing.cirrus_hl_smart_calibration">
+<span id="cirrus-hl-smart-calibration-py"></span><h4>cirrus_hl_smart_calibration.py<a class="headerlink" href="#module-processing.cirrus_hl_smart_calibration" title="Permalink to this heading"></a></h4>
+<p>Complete calibration of the SMART files for the CIRRUS-HL campaign</p>
+<p>The dark current corrected SMART measurement files are calibrated and filtered.</p>
+<ul class="simple">
+<li><p>read in dark current corrected files</p></li>
+<li><p>calibrate with matching transfer calibration</p></li>
+<li><p>correct measurement for cosine dependence of inlet</p></li>
+<li><p>add some metadata such as sza and saa</p></li>
+<li><p>add stabilization flag for Fdw</p></li>
+<li><p>add SMART IMS data</p></li>
+<li><p>write to netcdf file (VNIR and SWIR seperate)</p></li>
+<li><p>merge VNIR and SWIR data</p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.halo_ac3_smart_calibration">
+<span id="halo-ac3-smart-calibration-py"></span><h4>halo_ac3_smart_calibration.py<a class="headerlink" href="#module-processing.halo_ac3_smart_calibration" title="Permalink to this heading"></a></h4>
+<p>Complete calibration of the SMART files for the HALO-(AC)<sup>3</sup> campaign</p>
+<p>The dark current corrected SMART measurement files are calibrated, corrected and filtered.</p>
+<p><strong>Steps:</strong></p>
+<ul class="simple">
+<li><p>read in dark current corrected files</p></li>
+<li><p>calibrate with matching transfer calibration</p></li>
+<li><p>correct measurement for cosine dependence of inlet</p></li>
+<li><p>add some metadata such as sza and saa</p></li>
+<li><p>add stabilization flag for Fdw</p></li>
+<li><p>add SMART IMS data</p></li>
+<li><p>write to netcdf file (VNIR and SWIR seperate)</p></li>
+<li><p>merge VNIR and SWIR data</p></li>
+<li><p>correct attitude for RF18</p></li>
+<li><p>add clearsky simulated Fdw</p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+<section id="bacardi">
+<h2>BACARDI<a class="headerlink" href="#bacardi" title="Permalink to this heading"></a></h2>
+<p>BACARDI is a broadband radiometer mounted on the bottom and top of HALO.
+The data is initially processed by DLR and then Anna Luebke used the scripts provided by André Ehrlich and written by Kevin Wolf to process the data further.
+During the processing libRadtran simulations of cloud free conditions are done along the flight track of HALO.
+For details on the BACARDI post processing see <a class="reference internal" href="#bacardi-postprocessing"><span class="std std-ref">BACARDI postprocessing</span></a>.</p>
+<p><strong>Workflow</strong></p>
+<ul class="simple">
+<li><p>download and process the radiosonde data (needs to be done once for each station)</p></li>
+<li><p>run libRadtran simulation as explained in <a class="reference internal" href="#bacardi-processing"><span class="std std-ref">BACARDI processing</span></a> for the whole flight</p></li>
+<li><p>run <a class="reference internal" href="#bacardi-postprocessing"><span class="std std-ref">BACARDI postprocessing</span></a></p></li>
+</ul>
+<section id="radiosonde-data">
+<h3>Radiosonde data<a class="headerlink" href="#radiosonde-data" title="Permalink to this heading"></a></h3>
+<p>In order to simulate the clear sky broadband irradiance along the flight path and calculate the direct and diffuse fraction radiosonde data is used as input for libRadtran.
+The data is downloaded from the <a class="reference external" href="http://weather.uwyo.edu/upperair/sounding.html">University Wyoming website</a> by copying the HTML site into a text file.
+Data can only be downloaded in monthly chunks.
+Then an IDL script from Kevin Wolf is used to extract the necessary data for libRadTran.
+It can be found here: <code class="docutils literal notranslate"><span class="pre">/projekt_agmwend/data/Cirrus_HL/00_Tools/02_Soundings/00_prepare_radiosonde_jr.pro</span></code></p>
+<section id="prepare-radiosonde-jr-pro">
+<h4>00_prepare_radiosonde_jr.pro<a class="headerlink" href="#prepare-radiosonde-jr-pro" title="Permalink to this heading"></a></h4>
+<p><strong>TODO:</strong></p>
+<ul class="simple">
+<li><p>[ ] Check what radiosonde input is necessary for libRadtran. Simple interpolation yields negative relative humidity at lowest levels. (case: 21.7.21)</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>station name and number (select station closest to flight path)</p></li>
+<li><p>quicklook flag</p></li>
+<li><p>month</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>monthly radiosonde file</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>daily radiosonde file (12UTC and 00UTC) for libRadtran</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span><span class="w"> </span>/projekt_agmwend/data/Cirrus_HL/00_Tools/02_soundings
+<span class="c1"># start idl</span>
+idl
+<span class="c1"># run script</span>
+idl&gt;<span class="w"> </span>.r<span class="w"> </span>00_prepare_radiosonde_jr
+</pre></div>
+</div>
+</section>
+</section>
+<section id="libradtran-simulation">
+<h3>libRadtran simulation<a class="headerlink" href="#libradtran-simulation" title="Permalink to this heading"></a></h3>
+<p>Run libRadtran simulation for solar and terrestrial wavelengths along flight track with specified radiosonde data as input.
+This is then used in the BACARDI processing.
+See the section on <a class="reference internal" href="#bacardi-processing"><span class="std std-ref">BACARDI processing</span></a> for details.</p>
+</section>
+<section id="bacardi-postprocessing">
+<h3>BACARDI postprocessing<a class="headerlink" href="#bacardi-postprocessing" title="Permalink to this heading"></a></h3>
+<p>Some values are filtered out during the postprocessing.
+We set an aircraft attitude limit in the processing routine, and if the attitude exceeds this threshold, then the data is filtered out.
+For example, this would be the case during sharp turns.
+The threshold also takes the attitude correction factor into account.
+For CIRRUS-HL, if this factor is below 0.25, then we filter out data where the roll or pitch exceeds 8°.
+If this factor is above 0.25, then we begin filtering at 5°.
+For EUREC4A, the limits were not as strict because the SZAs were usually higher.
+Since this is not the case for the Arctic, something stricter was needed.
+For more details on other corrections see the <a class="reference internal" href="#process-bacardi-v20210928-pro"><span class="std std-ref">processing script</span></a>. From the processing script:</p>
+<section id="solar-downward">
+<h4>Solar downward<a class="headerlink" href="#solar-downward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CMP22 sensors (tau_pyrano=1.20, fcut_pyrano=0.6, rm_length_pyrano=0.5)</p></li>
+<li><p>attitude correction (roll_offset=+0.3, pitch_offset=+2.55)</p></li>
+</ol>
+</section>
+<section id="solar-upward">
+<h4>Solar upward<a class="headerlink" href="#solar-upward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CMP22 sensors (tau_pyrano=1.20, fcut_pyrano=0.6, rm_length_pyrano=0.5)</p></li>
+</ol>
+</section>
+<section id="terrestrial-downward">
+<h4>Terrestrial downward<a class="headerlink" href="#terrestrial-downward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CGR4 sensors (tau_pyrano=2.00, fcut_pyrano=0.5, rm_length_pyrano=2.0)</p></li>
+</ol>
+</section>
+<section id="terretrial-upward">
+<h4>Terretrial upward<a class="headerlink" href="#terretrial-upward" title="Permalink to this heading"></a></h4>
+<ol class="arabic simple">
+<li><p>smooth sensor temperature sensor for electronic noise to avoid implications in temperature dependent corrections. - running mean dt=100 sec</p></li>
+<li><p>correct thermophile signal with Temperature dependence of sensor sensitivity (Kipp&amp;Zonen calibration)</p></li>
+<li><p>correct thermal offset due to fast changing temperatures (DLR paramterization using the derivate of the sensor temperature)</p></li>
+<li><p>apply inertness correction of CGR4 sensors (tau_pyrano=2.00, fcut_pyrano=0.5, rm_length_pyrano=2.0)</p></li>
+</ol>
+</section>
+<section id="process-bacardi-v20210928-pro">
+<h4>00_process_bacardi_V20210928.pro<a class="headerlink" href="#process-bacardi-v20210928-pro" title="Permalink to this heading"></a></h4>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>Flight date</p></li>
+<li><p>Flight number (Fxx)</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>BACARDI quicklook data from DLR (e.g. <code class="docutils literal notranslate"><span class="pre">QL-CIRRUS-HL_F15_20210715_ADLR_BACARDI_v1.nc</span></code>)</p></li>
+<li><p>simulated broadband downward irradiance from libRadtran</p></li>
+<li><p>direct diffuse fraction from libRadtran</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>corrected BACARDI measurement and libRadtran simulations in netCDF file</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span><span class="w"> </span>/projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+<span class="c1"># start IDL</span>
+idl
+<span class="c1"># run script</span>
+idl&gt;<span class="w"> </span>.r<span class="w"> </span>00_process_bacardi_V20210903.pro
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="bahamas">
+<h2>BAHAMAS<a class="headerlink" href="#bahamas" title="Permalink to this heading"></a></h2>
+<p>BAHAMAS records meteorological and location data during the flight.
+It is mostly used for map plots and information about general flight conditions such as outside temperature, pressure, altitude, speed and so on.
+It is processed by DLR and there are quicklook files provided during campaign and quality controlled files after the campaign.</p>
+</section>
+<section id="libradtran">
+<h2>libRadtran<a class="headerlink" href="#libradtran" title="Permalink to this heading"></a></h2>
+<p><a class="reference external" href="https://doi.org/10.5194/gmd-9-1647-2016">libRadtran</a> is a radiative transfer model which can model spectral radiative fluxes.</p>
+<section id="libradtran-simulations-along-flight-path">
+<h3>libRadtran simulations along flight path<a class="headerlink" href="#libradtran-simulations-along-flight-path" title="Permalink to this heading"></a></h3>
+<p>The following scripts use the BAHAMAS data to create libRadtran input files to simulate fluxes along the flightpath.
+The two scripts are meant to allow for flexible settings of the simulation.</p>
+<p>BACARDI versions of these scripts are available which replace the old IDL scripts.
+They are to be used as part of the BACARDI processing.
+Before publishing BACARDI data, the state of the libRadtran input settings should be saved!</p>
+<p>SMART versions of the scripts are also available which run a standard SMART setup for campaign purposes.</p>
+<p><strong>TODO:</strong></p>
+<ul>
+<li><p>[ ] use specific total column ozone concentrations from OMI</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>can be downloaded here: <a class="reference external" href="https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura">https://disc.gsfc.nasa.gov/datasets/OMTO3G_003/summary?keywords=aura</a></p></li>
+<li><p>you need an Earth Data account and <a class="reference external" href="https://disc.gsfc.nasa.gov/earthdata-login">add the application to your profile</a></p></li>
+<li><p>checkout the <a class="reference external" href="https://disc.gsfc.nasa.gov/data-access#windows_wget">instructions for command line download</a></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>[x] change atmosphere file according to location -&gt; uvspec does this automatically when lat, lon and time are supplied</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>[x] CIRRUS-HL: use midlatitude summer (afglms.dat) or subarctic summer (afglss.dat)</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>[x] use ocean or land albedo according to land sea mask</p></li>
+<li><p>[x] include solar zenith angle filter</p></li>
+<li><p>[ ] use altitude (ground height above sea level) from a surface map, when over land → adjust zout definition accordingly</p></li>
+<li><p>[ ] use self-made surface_type_map for simulations in the Arctic</p></li>
+<li><p>[ ] use sur_temperature for thermal infrared calculations (input from VELOX)</p></li>
+<li><p>BACARDI</p></li>
+<li><p>[ ] use surface_type_map for BACARDI simulations</p></li>
+<li><p>[ ] use surface temperature according to ERA5 reanalysis for BACARDI simulations</p></li>
+</ul>
+<section id="module-processing.libradtran_write_input_file">
+<span id="libradtran-write-input-file-py"></span><h4>libradtran_write_input_file.py<a class="headerlink" href="#module-processing.libradtran_write_input_file" title="Permalink to this heading"></a></h4>
+<p>Create an input files along flight track for libRadtran</p>
+<p>Here one can set all options needed in the libRadtran input file.
+Given the flight and time step, one input file will then be created for every time step with the fitting lat and lon values along the flight track.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight (e.g. ‘Flight_202170715a’ or ‘HALO-AC3_20220225_HALO_RF01’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>use_dropsonde flag (only available for HALO-(AC)<sup>3</sup>)</p></li>
+<li><p>integrate flag</p></li>
+<li><p>input_path, this is where the files will be saved to</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to “None” if you don’t want to use them.
+Variables which start with “_” are for internal use only and will not be used as an option for the input file.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.libradtran_run_uvspec">
+<span id="libradtran-run-uvspec-py"></span><h4>libradtran_run_uvspec.py<a class="headerlink" href="#module-processing.libradtran_run_uvspec" title="Permalink to this heading"></a></h4>
+<p>Run libRadtran simulation (uvspec) for a flight</p>
+<p>Given the flight and the path to the uvspec executable, this script calls <code class="docutils literal notranslate"><span class="pre">uvspec</span></code> for each input file and writes a log and output file.
+It does so in parallel, checking how many CPUs are available.
+After that the output files are merged into one data frame and information from the input file is added to write one netCDF file.</p>
+<p>The script can be run for one flight or for all flights.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight (e.g. “Flight_20210715a” or “HALO-AC3_20220225_HALO_RF01”)</p></li>
+<li><p>path to uvspec executable</p></li>
+<li><p>wavelength, defines the input folder name which is defined in <a class="reference internal" href="#module-processing.libradtran_write_input_file"><span class="std std-ref">libradtran_write_input_file.py</span></a></p></li>
+<li><p>name of netCDF file (optional)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>out and log file for each simulation</p></li>
+<li><p>log file for script</p></li>
+<li><p>netCDF file with simulation in- and output</p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="bacardi-processing">
+<h3>BACARDI processing<a class="headerlink" href="#bacardi-processing" title="Permalink to this heading"></a></h3>
+<p>The following two scripts were used in order to prepare the BACARDI processing.
+They are superseded by the new python versions of these scripts.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#module-processing.libradtran_write_input_file_bacardi"><span class="std std-ref">libradtran_write_input_file_bacardi.py</span></a></p></li>
+<li><p><a class="reference internal" href="#module-processing.libradtran_run_uvspec_bacardi"><span class="std std-ref">libradtran_run_uvspec_bacardi.py</span></a></p></li>
+</ul>
+<section id="dirdiff-bbr-cirrus-hl-server-jr-pro">
+<h4>01_dirdiff_BBR_Cirrus_HL_Server_jr.pro<a class="headerlink" href="#dirdiff-bbr-cirrus-hl-server-jr-pro" title="Permalink to this heading"></a></h4>
+<p><strong>Current settings:</strong></p>
+<ul class="simple">
+<li><p>Albedo from Taylor et al. 1996</p></li>
+<li><p>atmosphere file: afglt.dat -&gt; tropical atmosphere</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>Flight date</p></li>
+<li><p>sonde date (mmdd)</p></li>
+<li><p>sounding station (stationname_stationnumber)</p></li>
+<li><p>time interval for modelling (time_step)</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span><span class="w"> </span>/projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+<span class="c1"># start IDL</span>
+idl
+<span class="c1"># start logging to a file</span>
+idl&gt;<span class="w"> </span>journal,<span class="w"> </span><span class="s1">&#39;filename.log&#39;</span>
+<span class="c1"># run script</span>
+idl&gt;<span class="w"> </span>.r<span class="w"> </span>01_dirdiff_BBR_Cirrus_HL_Server_jr.pro
+<span class="c1"># stop logging</span>
+idl&gt;<span class="w"> </span>journal
+</pre></div>
+</div>
+</section>
+<section id="dirdiff-bbr-cirrus-hl-server-ter-pro">
+<h4>03_dirdiff_BBR_Cirrus_HL_Server_ter.pro<a class="headerlink" href="#dirdiff-bbr-cirrus-hl-server-ter-pro" title="Permalink to this heading"></a></h4>
+<p><strong>Current settings:</strong></p>
+<ul class="simple">
+<li><p>Albedo from Taylor et al. 1996</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>Flight date</p></li>
+<li><p>sonde date (mmdd)</p></li>
+<li><p>sounding station (stationname_stationnumber)</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># cd into script folder</span>
+<span class="nb">cd</span><span class="w"> </span>/projekt_agmwend/data/Cirrus_HL/00_Tools/01_BACARDI/
+<span class="c1"># start IDL</span>
+idl
+<span class="c1"># start logging to a file</span>
+idl&gt;<span class="w"> </span>journal,<span class="w"> </span><span class="s1">&#39;filename.log&#39;</span>
+<span class="c1"># run script</span>
+idl&gt;<span class="w"> </span>.r<span class="w"> </span>03_dirdiff_BBR_Cirrus_HL_Server_ter.pro
+<span class="c1"># stop logging</span>
+idl&gt;<span class="w"> </span>journal
+</pre></div>
+</div>
+</section>
+<section id="module-processing.libradtran_write_input_file_bacardi">
+<span id="libradtran-write-input-file-bacardi-py"></span><h4>libradtran_write_input_file_bacardi.py<a class="headerlink" href="#module-processing.libradtran_write_input_file_bacardi" title="Permalink to this heading"></a></h4>
+<p>Create input files for libRadtran simulation to be used in BACARDI processing</p>
+<p>This will write all input files for a clearsky broadband libRadtran simulations along the flight path to be compared to BACARDI measurements.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flights in a list (optional, if not manually specified all flights will be processed)</p></li>
+<li><p>time_step, in what interval should the simulations be done along the flight path?</p></li>
+<li><p>solar_flag, write file for simulation of solar or thermal infrared fluxes?</p></li>
+<li><p>use_dropsonde flag, only available for HALO-(AC)<sup>3</sup></p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>libradtran_write_input_file_bacardi.py
+</pre></div>
+</div>
+<p>Behind some options you find the page number of the manual, where the option is explained in more detail.
+Set options to “None” if you don’t want to use them.
+* Variables which start with “_” are for internal use.
+For HALO-(AC)<sup>3</sup> a fixed radiosonde location (Longyearbyen) is used.
+Uncomment the find_closest_station line for CIRRUS-HL.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.libradtran_run_uvspec_bacardi">
+<span id="libradtran-run-uvspec-bacardi-py"></span><h4>libradtran_run_uvspec_bacardi.py<a class="headerlink" href="#module-processing.libradtran_run_uvspec_bacardi" title="Permalink to this heading"></a></h4>
+<p>Run clearsky broadband libRadtran simulations for comparison with BACARDI measurements.</p>
+<p>The input files come from <a class="reference internal" href="#module-processing.libradtran_write_input_file_bacardi"><span class="std std-ref">libradtran_write_input_file_bacardi.py</span></a>.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flights in a list (optional, if not manually specified all flights will be processed)</p></li>
+<li><p>solar_flag, run simulation for solar or for thermal infrared wavelengths?</p></li>
+</ul>
+<p>The script will loop through all files and start simulations for all input files it finds (in parallel for one flight).
+If the script is called via the command line it creates a <cite>log</cite> folder in the working directory if necessary and saves a log file to that folder.
+It also displays a progress bar in the terminal.
+After it is done with one flight, it will collect information from the input files and merge all output files in a dataframe to which it appends the information from the input files.
+It converts everything to a netCDF file and writes it to disc with a bunch of metadata included.</p>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>out and log file for each simulation</p></li>
+<li><p>log file for script</p></li>
+<li><p>netCDF file with simulation in- and output</p></li>
+</ul>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>libradtran_run_uvspec_bacardi.py
+</pre></div>
+</div>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="smart-processing">
+<h3>SMART processing<a class="headerlink" href="#smart-processing" title="Permalink to this heading"></a></h3>
+<p>For the calibration of SMART the incoming direct radiation needs to be corrected for the cosine response of the inlet.
+In order to get the direct fraction of incoming radiation a clearsky simulation is necessary.
+For this purpose the scripts <a class="reference internal" href="#module-processing.libradtran_write_input_file_smart"><span class="std std-ref">libradtran_write_input_file_smart.py</span></a> and <a class="reference internal" href="#module-processing.libradtran_run_uvspec"><span class="std std-ref">libradtran_run_uvspec.py</span></a> are used.
+To be able to repeat the simulation the state of the first script which produced the input files for the simulation should not be changed.</p>
+<section id="module-processing.libradtran_write_input_file_smart">
+<span id="libradtran-write-input-file-smart-py"></span><h4>libradtran_write_input_file_smart.py<a class="headerlink" href="#module-processing.libradtran_write_input_file_smart" title="Permalink to this heading"></a></h4>
+<p>Create an input file for libRadtran to run a SMART clearsky spectral run to calibrate the SMART files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight (e.g. ‘Flight_202170715a’ or ‘HALO-AC3_20220225_HALO_RF01’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>use_dropsonde flag (only available for HALO-(AC)<sup>3</sup>)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>Behind some options you find the page number of the manual, where the option is explained in more detail.</p>
+<p><strong>Do not change the options in this file!</strong></p>
+<p>This file is part of the SMART calibration and is needed to repeat the calibration.
+Variables which start with “_” are for internal use only and will not be used as an option for the input file.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+<section id="ecrad">
+<h2>ecRad<a class="headerlink" href="#ecrad" title="Permalink to this heading"></a></h2>
+<p><a class="reference external" href="https://confluence.ecmwf.int/display/ECRAD">ecRad</a> is the radiation scheme used in the ECMWF’s IFS numerical weather prediction model.
+For my PhD we are comparing measured radiative fluxes with simulated fluxes along the flight track.
+For this we run ecRad version 1.5.0 in an offline mode and adjust input parameters.
+Those experiments are documented in <a class="reference internal" href="experiments.html#experiments"><span class="std std-ref">Experiments</span></a>.
+Here the general processing with ecRad is described.</p>
+<p><strong>Notes</strong></p>
+<p><em>Questions:</em></p>
+<ul class="simple">
+<li><p>What is the difference between flux_dn_direct_sw and flux_dn_sw in ecrad output? → The second includes diffuse radiation.</p></li>
+<li><p>What does gpoint_sw stand for?</p></li>
+</ul>
+<section id="general-notes-on-setting-up-ecrad">
+<h3>General Notes on setting up ecRad<a class="headerlink" href="#general-notes-on-setting-up-ecrad" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>To avoid a floating point error when running ecrad, run <code class="docutils literal notranslate"><span class="pre">create_practical.sh</span></code> from the ecrad <code class="docutils literal notranslate"><span class="pre">practical</span></code> folder in the directory of the ecRad executable once. Somehow the data link is needed to avoid this error. (for version 1.4.1)</p></li>
+<li><p>changing the verbosity in the namelist files causes an floating point error (for version 1.4.1)</p></li>
+<li><p>decided to use ecRad version 1.5.0 for PhD</p></li>
+</ul>
+<p><em>Thoughts on the solar zenith angle:</em></p>
+<p>The ultimate goal is to compare irradiances measured by aircraft with the ones simulated by ecRad.
+A big influence on these irradiances in the Arctic is the solar zenith angle or the cosine thereof.
+In principle we search for the closest IFS grid point and use this data as input to ecRad.
+However, for the calculation of the solar zenith angle we should not use the latitude and longitude value of the grid point as these are probably slightly off of the values recorded by the aircraft.
+This slight offset in position between aircraft and grid point can cause a big difference in solar zenith angle and thus in the simulated irradiances.
+To avoid additional uncertainty we therefore calculate the solar zenith angle using the latitude and longitude value of the aircraft.
+As we compare minutely simulations to minutely averages of the measured data, we also take the minutely mean of the BAHAMAS data to get the aircraft’s location.</p>
+<p><strong>Folder Structure</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>├──<span class="w"> </span>0X_ecRad
+│<span class="w">   </span>├──<span class="w"> </span>yyyymmdd
+│<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>ecrad_input
+│<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>ecrad_output
+│<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>ecrad_merged
+│<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>radiative_properties_vX
+│<span class="w">   </span>│<span class="w">   </span>├──<span class="w"> </span>IFS_namelists.nam
+│<span class="w">   </span>│<span class="w">   </span>└──<span class="w"> </span>ncfiles.nc
+</pre></div>
+</div>
+</section>
+<section id="workflow-with-ecrad">
+<h3>Workflow with ecRad<a class="headerlink" href="#workflow-with-ecrad" title="Permalink to this heading"></a></h3>
+<div class="line-block">
+<div class="line">IFS raw output + navigation data from aircraft</div>
+<div class="line">→ create ecRad input files which correspond to the columns (+10 surrounding ones) which the aircraft passed during flight</div>
+<div class="line">→ run ecrad for aircraft track</div>
+</div>
+<div class="line-block">
+<div class="line">SMART/BACARDI measurements during flight + ecRad output files for aircraft track</div>
+<div class="line">→ compare upward and downward (spectral/banded) irradiance</div>
+</div>
+<ol class="arabic">
+<li><p>Download IFS(/CAMS) data for campaign → <a class="reference internal" href="#ifs-cams-download"><span class="std std-ref">IFS/CAMS Download</span></a></p></li>
+<li><p>Run <a class="reference internal" href="#ifs-preprocessing"><span class="std std-ref">IFS Preprocessing</span></a> to convert grib to nc files</p></li>
+<li><p>Run <a class="reference internal" href="#module-processing.ecrad_read_ifs"><span class="std std-ref">ecrad_read_ifs.py</span></a> with the options as you want them to be (see script for details)</p></li>
+<li><p>Run <a class="reference internal" href="#module-processing.ecrad_cams_preprocessing"><span class="std std-ref">ecrad_cams_preprocessing.py</span></a> to prepare CAMS data</p></li>
+<li><p>Update namelist in the <code class="docutils literal notranslate"><span class="pre">{yyyymmdd}</span></code> folder with the decorrelation length → choose one value which is representative for the period you want to study</p></li>
+<li><p>Run one of <a class="reference internal" href="#module-processing.ecrad_write_input_files"><span class="std std-ref">ecrad_write_input_files_vx.py</span></a></p></li>
+<li><p>Run <a class="reference internal" href="#ecrad-execute-ifs-sh"><span class="std std-ref">ecrad_execute_IFS.sh</span></a> with options which runs ecRad for each matching file in <code class="docutils literal notranslate"><span class="pre">ecrad_input</span></code> and then runs the following processing steps</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Run <a class="reference internal" href="#module-processing.ecrad_merge_radiative_properties"><span class="std std-ref">ecrad_merge_radiative_properties.py</span></a> to generate one merged radiative properties file from the single files given by the ecRad simulation</p></li>
+<li><p>Run <a class="reference internal" href="#module-processing.ecrad_merge_files"><span class="std std-ref">ecrad_merge_files.py</span></a> to generate merged input and output files for and from the ecRad simulation</p></li>
+<li><p>Run <a class="reference internal" href="#module-processing.ecrad_processing"><span class="std std-ref">ecrad_processing.py</span></a> to generate one merged file from input and output files for and from the ecRad simulation with additional variables</p></li>
+</ol>
+</div></blockquote>
+</li>
+</ol>
+<p>In general one can either vary the input to ecRad or the given namelist.
+For this purpose different input versions can be/were created using modified copies of <code class="xref py py-mod docutils literal notranslate"><span class="pre">ecrad_write_input_files.py</span></code>.
+They can be found in the <code class="docutils literal notranslate"><span class="pre">experiments</span></code> folder.
+An overview of which input versions should be run with which namelist versions can be found in the following table.
+The version numbers reflect the process in which experiments were thought of or conducted.
+With version 5 we switched from the interpolated regular lat lon grid (F1280) to the original grid resolution of the IFS which is a octahedral reduced gaussian grid (O1280).
+The namelists mainly differ in the chosen ice optic parameterization (<em>Fu-IFS</em>, <em>Baran2016</em>, <em>Yi2013</em>) and whether the 3D parameterizations are turned on or not.
+The output file names of the simulations only differ in the version string (e.g. <em>…_v16.nc</em>) reflecting the namelist version.
+Thus, many namelists have the same settings but only have different experiment names and the difference comes due to the input.
+This repetition was chosen to have a better overview of the different combinations of input version and namelist version.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Input version</p></th>
+<th class="head"><p>Namelist version</p></th>
+<th class="head"><p>Short description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1, 2, 3.1, 3.2, 4, 5, 6, 7, 12</p></td>
+<td><p>Original along track data from F1280 IFS output</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>8, 9</p></td>
+<td><p>Use VarCloud retrieval as iwc and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> input along flight track</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>10</p></td>
+<td><p>Use VarCloud retrieval for below cloud simulation</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>11</p></td>
+<td><p>Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>13</p></td>
+<td><p>Set albedo to open ocean (0.06)</p></td>
+</tr>
+<tr class="row-odd"><td><p>5.1</p></td>
+<td><p>13.1</p></td>
+<td><p>Set albedo to 0.99</p></td>
+</tr>
+<tr class="row-even"><td><p>5.2</p></td>
+<td><p>13.2</p></td>
+<td><p>Set albedo to BACARDI measurement below cloud</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>15, 18, 19, 22, 24</p></td>
+<td><p>Along track data from O1280 IFS output (used instead of v1)</p></td>
+</tr>
+<tr class="row-even"><td><p>6.1</p></td>
+<td><p>15.1, 18.1, 19.1, 22.1, 24.1, 30, 31, 32</p></td>
+<td><p>Along track data from O1280 IFS output (used instead of v1) filtered for low clouds</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>16, 20, 26, 27, 28, 33, 34, 35, 36, 37, 38</p></td>
+<td><p>As v3 but with O1280 IFS output</p></td>
+</tr>
+<tr class="row-even"><td><p>7.1</p></td>
+<td><p>16.1, 20.1, 26.1, 27.1, 28.1</p></td>
+<td><p>As v3 but with O1280 IFS output using re_ice from Sun &amp; Rikus</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>17, 21, 23, 25, 29</p></td>
+<td><p>As v2 but with O1280 IFS output</p></td>
+</tr>
+<tr class="row-even"><td><p>9</p></td>
+<td><p>14</p></td>
+<td><p>Turn on aerosol and use CAMS data for it</p></td>
+</tr>
+</tbody>
+</table>
+<section id="ifs-cams-download">
+<h4>IFS/CAMS Download<a class="headerlink" href="#ifs-cams-download" title="Permalink to this heading"></a></h4>
+<p>To download IFS/CAMS data from the ECMWF servers we got a user account there.
+For details on how to access and download data there please see the internal Strahlungs Wiki.
+These are the download scripts used and run on the ECMWF server:</p>
+<p>IFS download script: <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.halo_ac3_ifs_download_from_ecmwf.sh</span></code></p>
+<p>CAMS download script: <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.halo_ac3_cams_downlaod_from_ecmwf.sh</span></code> (deprecated since 13.10.2023)</p>
+<p>The CAMS trace gas climatology was implemented in the ecRad input files on 13.10.2023 (see analysis of impact in <a class="reference internal" href="experiments.html#trace-gases"><span class="std std-ref">Trace gas comparison</span></a>).
+Following the usage in the IFS the files provided at <a class="reference external" href="https://confluence.ecmwf.int/display/ECRAD">https://confluence.ecmwf.int/display/ECRAD</a> were used in <code class="xref py py-mod docutils literal notranslate"><span class="pre">ecrad_cams_preprocessing.py</span></code>.</p>
+<p>For the CAMS aerosol climatology another file is available at <a class="reference external" href="https://sites.ecmwf.int/data/cams/aerosol_radiation_climatology/">https://sites.ecmwf.int/data/cams/aerosol_radiation_climatology/</a>.
+The climatology consists of monthly means on a 3°x3° grid with 60 levels and gives the aerosol concentration as a layer integrated mass (<span class="math notranslate nohighlight">\(m_{\text{int}}\)</span>) in <span class="math notranslate nohighlight">\(\text{kg}\,\text{m}^{-2}\)</span>.
+The file also gives the pressure at the base of each layer and the pressure difference between the top and the base of each layer:</p>
+<div class="math notranslate nohighlight">
+\[\Delta p = p(n+1) - p(n), n = (1, ..., 60).\]</div>
+<p>The pressure can be used to interpolate the data to the 137 full pressure levels of the IFS.
+Further, the aerosol mass mixing ratio in <span class="math notranslate nohighlight">\(\text{kg}\,\text{kg}^{-1}\)</span> can be calculated by dividing the layer integrated mass by the total layer integrated mass:</p>
+<div class="math notranslate nohighlight">
+\[\text{MMR} = \frac{m_{\text{int}}}{m_{\text{layer}}} = \frac{m_{\text{int}}}{\Delta p / g},\]</div>
+<p>with <span class="math notranslate nohighlight">\(\Delta p\)</span> being the pressure difference between the model half levels and <span class="math notranslate nohighlight">\(g = 9.80665\,\text{m}\,\text{s}^{-2}\)</span> the gravitational acceleration.</p>
+<p>Another option would be to download the monthly mean CAMS files from the Copernicus Atmospheric Data Store (<a class="reference external" href="https://ads.atmosphere.copernicus.eu">ADS</a>) and use these files.
+The script <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.download_cams_data.py</span></code> downloads the CAMS aerosol and trace gas climatology and saves them to seperate files.</p>
+</section>
+<section id="ifs-preprocessing">
+<h4>IFS Preprocessing<a class="headerlink" href="#ifs-preprocessing" title="Permalink to this heading"></a></h4>
+<p>IFS data comes in grib format.
+To convert it to netcdf and rename the parameters according to the ECMWF codes run</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cdo<span class="w"> </span>--eccodes<span class="w"> </span>-f<span class="w"> </span>nc<span class="w"> </span>copy<span class="w"> </span>infile.grb<span class="w"> </span>outfile.nc
+</pre></div>
+</div>
+<p>on each file.
+Or run the python script <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.ecrad_preprocessing.py</span></code> (currently only working for IFS files):</p>
+</section>
+<section id="module-processing.ecrad_preprocessing">
+<span id="ecrad-preprocessing-py"></span><h4>ecrad_preprocessing.py<a class="headerlink" href="#module-processing.ecrad_preprocessing" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 18.09.2023</div>
+</div>
+<p>Convert raw IFS surface and multilevel file from grib to netCDF.
+Use cdo to decode grib file and save it to netCDF.
+Will not overwrite existing files.</p>
+<p><strong>Required User Input:</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>date (e.g. 20220313, all)</p></li>
+</ul>
+</div></blockquote>
+<p>If date=all runs for all flights.</p>
+<p>Run like this:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>processing/ecrad_preprocessing.py<span class="w"> </span><span class="nv">date</span><span class="o">=</span>all
+</pre></div>
+</div>
+<p><strong>CAMS files (deprecated since 13.10.2023)</strong></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Deprecated since 13.10.2023
+This is not needed since there is a monthly mean product available on the ADS!</p>
+</div>
+<p>We want to get yearly monthly means from the CAMS reanalysis.
+For this we download 3-hourly data and preprocess it on the ECMWF server to avoid downloading a huge amount of data.</p>
+<p>CAMS preprocessing script: <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.halo_ac3_preprocess_cams_data_on_ecmwf.py</span></code></p>
+<p>The CAMS monthly files are not so big.
+Thus, you can merge them into one big file and run the above command only on one file.
+The merging and conversion to netCDF will take a while though.
+The download script for CAMS data generates yearly folders for better structure in case more than two months are downloaded.
+You can move all files into one folder by calling the following command in the CAMS folder and then merge the files with cdo:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>mv<span class="w"> </span>--target-directory<span class="o">=</span>.<span class="w"> </span><span class="m">20</span>*/20*.grb
+cdo<span class="w"> </span>mergetime<span class="w"> </span><span class="m">20</span>*.grb<span class="w"> </span>cams_ml_halo_ac3.grb
+</pre></div>
+</div>
+</section>
+<section id="module-processing.ecrad_read_ifs">
+<span id="ecrad-read-ifs-py"></span><h4>ecrad_read_ifs.py<a class="headerlink" href="#module-processing.ecrad_read_ifs" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Hanno Müller, Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 22-09-2022</div>
+</div>
+<p>Data extraction from IFS along the flight track</p>
+<p><strong>TODO:</strong></p>
+<ul class="simple">
+<li><p>[x] more precise read in of navigation data</p></li>
+<li><p>[x] test if it is necessary to generate one file per time step → it is</p></li>
+<li><p>[ ] Include an option to interpolate in space</p></li>
+<li><p>[x] check why file 1919-1925 + 6136-6180 + 7184-7194 cause a floating-point exception when processed with ecrad (discovered 2021-04-26) -&gt; probably has to do the way ecrad is called (see execute_IFS.sh)</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>IFS model level (ml) file</p></li>
+<li><p>IFS surface (sfc) file</p></li>
+<li><p>SMART horidata with flight track or BAHAMAS file</p></li>
+<li><p>Ozone sonde (optional)</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<p>Can be passed via the command line (except step).</p>
+<ul class="simple">
+<li><p>campaign (‘halo-ac3’ or ‘cirrus-hl’)</p></li>
+<li><p>key (e.g. RF17)</p></li>
+<li><p>init_time (00, 12 or yesterday)</p></li>
+<li><p>flight (e.g. ‘Flight_20210629a’ or ‘HALO-AC3_20220412_HALO_RF18’)</p></li>
+<li><p>aircraft (‘halo’)</p></li>
+<li><p>use_bahamas, whether to use BAHAMAS or the SMART INS for navigation data (True/False)</p></li>
+<li><p>grid (O1280 or None), which grid the IFS data is on</p></li>
+<li><p>step, one can choose the time resolution on which to interpolate the IFS data on (e.g. ‘1Min’)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>processed IFS file for input to <a class="reference internal" href="#module-processing.ecrad_write_input_files"><span class="std std-ref">ecrad_write_input_files_vx.py</span></a></p></li>
+<li><p>decorrelation length for ecRad namelist file → manually change that in the namelist file</p></li>
+</ul>
+</section>
+<section id="module-processing.ecrad_cams_preprocessing">
+<span id="ecrad-cams-preprocessing-py"></span><h4>ecrad_cams_preprocessing.py<a class="headerlink" href="#module-processing.ecrad_cams_preprocessing" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 10.10.2023</div>
+</div>
+<p>Select closest points of CAMS global reanalysis and global greenhouse gas reanalysis data to flight track.
+Read in CAMS from different sources (ADS, Copernicus Knowledge Base (47r1)).
+The Copernicus Atmospheric Data Store provides the monthly means of trace gase concentrations and aerosol concentrations.
+They are the basis for the files available via the Copernicus Knowledge Base.
+However, these files have been processed a bit before their use in the IFS.
+See <a class="reference internal" href="#ifs-cams-download"><span class="std std-ref">IFS/CAMS Download</span></a> for more details and the links to the files.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>source (47r1, ADS)</p></li>
+<li><p>year (2020, 2019)</p></li>
+<li><p>date (20220411)</p></li>
+</ul>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>monthly mean CAMS data</p></li>
+<li><p>greenhouse gas time series (needed if source is ‘47r1’)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>trace gas and aerosol monthly climatology interpolated to flight day along flight track</p></li>
+</ul>
+</section>
+<section id="module-processing.ecrad_write_input_files">
+<span id="ecrad-write-input-files-vx-py"></span><h4>ecrad_write_input_files_vx.py<a class="headerlink" href="#module-processing.ecrad_write_input_files" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 22-09-2022</div>
+</div>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.7.0: </span>Use <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_write_input_files_vx.py</span></code> instead!</p>
+</div>
+<p>Use a processed IFS output file and generate one ecRad input file for each time step.
+Can be called from the command line with the following key=values pairs:</p>
+<ul class="simple">
+<li><p>t_interp (default: False)</p></li>
+<li><p>date (default: ‘20220411’)</p></li>
+<li><p>init_time (default: ‘00’)</p></li>
+<li><p>flight (default: ‘HALO-AC3_20220411_HALO_RF17’)</p></li>
+<li><p>aircraft (default: ‘halo’)</p></li>
+<li><p>campaign (default: ‘halo-ac3’)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>well documented ecRad input file in netCDF format for each time step</p></li>
+</ul>
+</section>
+<section id="ecrad-execute-ifs-sh">
+<h4>ecrad_execute_IFS.sh<a class="headerlink" href="#ecrad-execute-ifs-sh" title="Permalink to this heading"></a></h4>
+<p>This script loops through all input files and runs ecrad with the setup given in <code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_{date}_{version}.nam</span></code>.</p>
+<p><strong>Attention (version 1.4.1):</strong> ecRad has to be run without full paths for the input and output nc file.
+Only the namelist has to be given with its full path.
+The namelist has to be in the same folder as the input files and the output files have to be written in the same folder.</p>
+<p>The date defines the input path which is generally <code class="docutils literal notranslate"><span class="pre">/projekt_agmwend/data/{campaign}/{ecrad_folder}/ecrad_input/yyyymmdd/</span></code>.
+It then writes the output to the given output path, one output file per input file.
+The <code class="docutils literal notranslate"><span class="pre">radiative_properties.nc</span></code> file which is optionally generated in each run depending on the namelist is renamed and moved to a separate folder to avoid overwriting the file.</p>
+<p><strong>Input:</strong></p>
+<ul class="simple">
+<li><p>ecrad input files</p></li>
+<li><p>IFS namelist</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>-t: use the time interpolated data (default: False)</p></li>
+<li><p>-d yyyymmdd: give the date to be processed</p></li>
+<li><p>-v v1: select which namelist version (experimental setup) to use (see <a class="reference internal" href="experiments.html#ecrad-namelists-and-experiments"><span class="std std-ref">ecRad Namelists and Experiments</span></a> for details on version)</p></li>
+<li><p>-i v1: select which input version to use</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>ecrad output files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">radiative_properties.nc</span></code> moved to a separate folder and renamed according to input file (optional)</p></li>
+</ul>
+<p><strong>Run like this:</strong></p>
+<p>This will write all output to the console and to the specified file.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>.<span class="w"> </span>./ecrad_execute_IFS.sh<span class="w"> </span><span class="o">[</span>-t<span class="o">]</span><span class="w"> </span><span class="o">[</span>-d<span class="w"> </span>yyyymmdd<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="w"> </span>v1<span class="o">]</span><span class="w"> </span><span class="o">[</span>-i<span class="w"> </span>v1<span class="o">]</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>./log/today_ecrad_yyyymmdd.log
+</pre></div>
+</div>
+</section>
+<section id="ecrad-execute-ifs-single-sh">
+<h4>ecrad_execute_IFS_single.sh<a class="headerlink" href="#ecrad-execute-ifs-single-sh" title="Permalink to this heading"></a></h4>
+<p>As above but runs only one file which has to be defined in the script.</p>
+</section>
+<section id="module-processing.ecrad_merge_radiative_properties">
+<span id="ecrad-merge-radiative-properties-py"></span><h4>ecrad_merge_radiative_properties.py<a class="headerlink" href="#module-processing.ecrad_merge_radiative_properties" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 21-04-2023</div>
+</div>
+<p><strong>Merge radiative properties nc files created by ecRad</strong></p>
+<p>This script takes all radiative property files created by ecRad as additional output and merges them.
+Each radiative property file has its time stamp in the file name (seconds of day) and can potentially have only a few columns in it.
+How many columns are saved in one radiative property file depends on the <code class="docutils literal notranslate"><span class="pre">n_blocksize</span></code> namelist option.</p>
+<p>It can be run via the command line and accepts several keyword arguments.</p>
+<p><strong>Run like this:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>ecrad_merge_radiative_properties.py<span class="w"> </span><span class="nv">base_dir</span><span class="o">=</span><span class="s2">&quot;./data_jr&quot;</span><span class="w"> </span><span class="nv">date</span><span class="o">=</span>yyyymmdd<span class="w"> </span><span class="nv">version</span><span class="o">=</span>v1
+</pre></div>
+</div>
+<p>This would merge all radiative property files which can be found in <code class="docutils literal notranslate"><span class="pre">{base_dir}/{date}/radiative_properties_{version}/</span></code>.</p>
+<p><strong>User Input:</strong></p>
+<ul class="simple">
+<li><p>date (yyyymmdd)</p></li>
+<li><p>version (vx, default:v1)</p></li>
+<li><p>base_dir (directory, default: ecrad directory for halo-ac3 campaign)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>intermediate merged files in <code class="docutils literal notranslate"><span class="pre">{base_dir}/radiative_properties_merged/</span></code></p></li>
+<li><p>final merged file: <code class="docutils literal notranslate"><span class="pre">{base_dir}/radiative_properties_merged_{yyyymmdd}_{version}.nc</span></code></p></li>
+</ul>
+</section>
+<section id="module-processing.ecrad_merge_files">
+<span id="ecrad-merge-files-py"></span><h4>ecrad_merge_files.py<a class="headerlink" href="#module-processing.ecrad_merge_files" title="Permalink to this heading"></a></h4>
+<p>Bundle postprocessing steps for ecRad input and output files</p>
+<p>This script takes all in- and outfiles for and from ecRad and merges them together on a given time axis which is constructed from the file names.
+That should rapidly increase further work with ecRad data.
+It merges stepwise to reduce IO.
+In a selectable step the merged input and output files can also be merged.</p>
+<p>It can be run via the command line and accepts several keyword arguments.</p>
+<p><strong>Run like this:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>ecrad_merge_files.py<span class="w"> </span><span class="nv">io_flag</span><span class="o">=</span>input<span class="w"> </span><span class="nv">t_interp</span><span class="o">=</span>False<span class="w"> </span><span class="nv">base_dir</span><span class="o">=</span><span class="s2">&quot;./data_jr&quot;</span><span class="w"> </span><span class="nv">date</span><span class="o">=</span>yyyymmdd<span class="w"> </span><span class="nv">merge_io</span><span class="o">=</span>T
+</pre></div>
+</div>
+<p>This would merge all ecrad input files which are not time interpolated and can be found in <code class="docutils literal notranslate"><span class="pre">{base_dir}/{date}/ecrad_input/</span></code>.
+After that the script would try to merge the merged in- and outfiles into one file.
+If only <code class="docutils literal notranslate"><span class="pre">merge_io</span></code> is given only this would happen:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># merge merged in- and outfiles</span>
+python<span class="w"> </span>ecrad_merge_files.py<span class="w"> </span><span class="nv">merge_io</span><span class="o">=</span>T<span class="w"> </span><span class="nv">date</span><span class="o">=</span>yyyymmdd
+</pre></div>
+</div>
+<p>Usually one would first call it to merge all input files and then a second time to merge all output files and merge them with the merged input files.</p>
+<p><strong>User Input:</strong></p>
+<ul class="simple">
+<li><p>io_flag (input, output or None, default: None)</p></li>
+<li><p>date (yyyymmdd)</p></li>
+<li><p>version (vx, default:v1)</p></li>
+<li><p>t_interp (True or False, default: False)</p></li>
+<li><p>base_dir (directory, default: ecrad directory for halo-ac3 campaign)</p></li>
+<li><p>merge_io (T, optional)</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>intermediate merged files in <code class="docutils literal notranslate"><span class="pre">{base_dir}/ecrad_merged/</span></code></p></li>
+<li><p>final merged file: <code class="docutils literal notranslate"><span class="pre">{base_dir}/ecrad_merged_(input/output)_{yyyymmdd}(_inp).nc</span></code></p></li>
+<li><p>possibly <code class="docutils literal notranslate"><span class="pre">{base_dir}/ecrad_merged_inout_{yyyymmdd}(_inp).nc</span></code></p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.ecrad_processing">
+<span id="ecrad-processing-py"></span><h4>ecrad_processing.py<a class="headerlink" href="#module-processing.ecrad_processing" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 20.04.2023</div>
+</div>
+<p><strong>Bundle calculation of additional variables for ecRad input and output files</strong></p>
+<p>This script calculates a few additional variables which are often needed when working with ecRad in- and output data.
+After that it also saves a file containing the mean over all columns.</p>
+<p>It can be run via the command line and accepts several keyword arguments.</p>
+<p><strong>Run like this:</strong></p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>ecrad_processing.py<span class="w"> </span><span class="nv">date</span><span class="o">=</span>yyyymmdd<span class="w"> </span><span class="nv">base_dir</span><span class="o">=</span><span class="s2">&quot;./data_jr&quot;</span><span class="w"> </span><span class="nv">iv</span><span class="o">=</span>v1<span class="w"> </span><span class="nv">ov</span><span class="o">=</span>v1
+</pre></div>
+</div>
+<p>This would merge the version 1 merged input files with the version 1 merged output files which can be found in <code class="docutils literal notranslate"><span class="pre">{base_dir}/{date}</span></code> and add some variables.</p>
+<p><strong>User Input:</strong></p>
+<ul class="simple">
+<li><p>date (yyyymmdd)</p></li>
+<li><p>base_dir (directory, default: ecrad directory for halo-ac3 campaign)</p></li>
+<li><p>iv (vx, default:v1) input file version</p></li>
+<li><p>ov (vx, default:v1) output file version</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>merged input and output file: <code class="docutils literal notranslate"><span class="pre">{base_dir}/ecrad_merged_inout_{yyyymmdd}_{ov}.nc</span></code></p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="gopro-time-lapse-quicklooks">
+<h2>GoPro Time Lapse quicklooks<a class="headerlink" href="#gopro-time-lapse-quicklooks" title="Permalink to this heading"></a></h2>
+<p>During the flight a GoPro was attached to one of the windows of HALO.
+Using the time-lapse function a picture was taken every 5 seconds.
+Together with BAHAMAS position data (and SMART spectra measurements) a time-lapse video is created.
+The GoPro was set to UTC time but cannot be synchronized to BAHAMAS.
+Thus, a foto of the BAHAMAS time server is taken at the start of each recording to determine the offset of the camera from the fotos metadata.</p>
+<p>During CIRRUS-HL the camera reset its internal time to local time, so the metadata for some flights had to be corrected for that as well.
+See the <code class="docutils literal notranslate"><span class="pre">README.md</span></code> in the CIRRUS-HL GoPro folder for details.
+A list which tracks the processing status can be found there.
+For HALO-(AC)<sup>3</sup> this table is part of the <code class="docutils literal notranslate"><span class="pre">processing_diary.md</span></code> which can be found in the upper level folder <code class="docutils literal notranslate"><span class="pre">HALO-AC3</span></code>.</p>
+<section id="module-processing.gopro_copy_files_to_disk">
+<span id="gopro-copy-files-to-disk-py"></span><h3>gopro_copy_files_to_disk.py<a class="headerlink" href="#module-processing.gopro_copy_files_to_disk" title="Permalink to this heading"></a></h3>
+<p>Copy all files from the GoPro SD Card into one folder</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>date</p></li>
+<li><p>src, source directory</p></li>
+<li><p>dst_dir, destination directory</p></li>
+</ul>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+<section id="module-processing.gopro_add_timestamp_to_picture">
+<span id="gopro-add-timestamp-to-picture-py"></span><h3>gopro_add_timestamp_to_picture.py<a class="headerlink" href="#module-processing.gopro_add_timestamp_to_picture" title="Permalink to this heading"></a></h3>
+<p>Add a timestamp to a GoPro picture and correct the metadata</p>
+<p><strong>Run on Linux!</strong></p>
+<p>This script reads out the DateTimeOriginal metadata tag of each file and corrects it for the Local Time to UTC and BAHAMAS offset if necessary.
+It overwrites the original metadata tag and places a time stamp to the right bottom of the file.
+One can test the time correction by replacing <code class="docutils literal notranslate"><span class="pre">path</span></code> with <code class="docutils literal notranslate"><span class="pre">file</span></code> in <code class="docutils literal notranslate"><span class="pre">run()</span></code> (line 66).</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight</p></li>
+<li><p>correct_time flag</p></li>
+<li><p>filename for a test file</p></li>
+<li><p>LT_to_UTC flag (CIRRUS-HL only)</p></li>
+<li><p>path with all GoPro pictures</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>overwrites metadata in original file with UTC time from BAHAMAS</p></li>
+<li><p>adds a time stamp to the right bottom of the original file</p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.gopro_write_timestamps">
+<span id="gopro-write-timestamps-py"></span><h3>gopro_write_timestamps.py<a class="headerlink" href="#module-processing.gopro_write_timestamps" title="Permalink to this heading"></a></h3>
+<p>Read out timestamps from GoPro images and write to a text file</p>
+<p><strong>Run on Linux!</strong></p>
+<p>Reads the metadata time stamps and saves them together with the picture number in a csv file.</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>txt file with <cite>exiftool</cite> output</p></li>
+<li><p>csv file with datetime from picture metadata and picture number</p></li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ul class="simple">
+<li><p>use exiftool to get timestamps of GoPro images</p></li>
+<li><p>write the output to a textfile</p></li>
+<li><p>read the textfile line by line and extract the picture number and datetime</p></li>
+<li><p>convert to pd.datetime and correct for the time offset to BAHAMAS</p></li>
+<li><p>create DataFrame and save to csv</p></li>
+</ul>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.gopro_plot_maps">
+<span id="gopro-plot-maps-py"></span><h3>gopro_plot_maps.py<a class="headerlink" href="#module-processing.gopro_plot_maps" title="Permalink to this heading"></a></h3>
+<p>Plotting script for map plots to be used in time-lapse videos of GoPro</p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>second airport to add to map</p></li>
+<li><p>csv file with time stamp and GoPro picture number (output from <a class="reference internal" href="#module-processing.gopro_write_timestamps"><span class="std std-ref">gopro_write_timestamps.py</span></a>)</p></li>
+<li><p>BAHAMAS nc file</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>csv file with selected GoPro picture numbers and timestamps which are used for the time-lapse video</p></li>
+<li><p>map for each GoPro picture</p></li>
+</ul>
+<p>Reads in the BAHAMAS latitude and longitude data and selects only the time steps which correspond with a GoPro picture.
+In the <code class="docutils literal notranslate"><span class="pre">plot_props</span></code> dictionary the map layout properties for each flight are defined.
+For testing the first four lines of the last cell can be uncommented and the Parallel call can be commented.
+It makes sense to run this script on the server to utilize more cores and increase processing speed.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.gopro_add_map_to_picture">
+<span id="gopro-add-map-to-picture-py"></span><h3>gopro_add_map_to_picture.py<a class="headerlink" href="#module-processing.gopro_add_map_to_picture" title="Permalink to this heading"></a></h3>
+<p>Add the bahamas map to a picture</p>
+<p><strong>Run on Linux!</strong></p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight</p></li>
+<li><p>maps</p></li>
+<li><p>map numbers from csv file (output of <a class="reference internal" href="#module-processing.gopro_plot_maps"><span class="std std-ref">gopro_plot_maps.py</span></a>)</p></li>
+</ul>
+<p><strong>Output:</strong> new GoPro picture with map in the upper right corner and timestamp in the lower right corner</p>
+<p><strong>Saves to a new directory!</strong></p>
+<p>Adds the BAHAMAS plot onto the GoPro picture but only for pictures, which were taken in flight, according to a csv file.
+Saves those pictures in a new folder: <code class="docutils literal notranslate"><span class="pre">{flight}_map</span></code>.</p>
+<p><em>author</em>: Johannes Roettenbacher</p>
+</section>
+<section id="gopro-make-video-from-pictures-sh">
+<h3>gopro_make_video_from_pictures.sh<a class="headerlink" href="#gopro-make-video-from-pictures-sh" title="Permalink to this heading"></a></h3>
+<p>Uses ffmpeg to create a stop-motion video of the GoPro pictures.</p>
+<p><strong>Run on Linux!</strong></p>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>flight</p></li>
+<li><p>base directory of GoPro images</p></li>
+<li><p>framerate [12, 24]</p></li>
+<li><p>start_number, number in filename of first picture in folder</p></li>
+</ul>
+<p><strong>Output:</strong> video (slow or fast) of flight from GoPro pictures</p>
+</section>
+</section>
+<section id="other">
+<h2>Other<a class="headerlink" href="#other" title="Permalink to this heading"></a></h2>
+<p>Instrument independent processing scripts.</p>
+<section id="module-processing.halo_calculate_attitude_correction">
+<span id="halo-calculate-attitude-correction-py"></span><h3>halo_calculate_attitude_correction.py<a class="headerlink" href="#module-processing.halo_calculate_attitude_correction" title="Permalink to this heading"></a></h3>
+<p>Calculate attitude correction for BACARDI and for SMART from BAHAMAS data</p>
+<p><strong>Rationale</strong></p>
+<p>SMART is stabilized, however the stabilization does not work perfectly all the time.
+By calculating the attitude correction for an unstabilized case and applying this backwards on a libRadtran simulation can tell us more about, how well the stabilization worked and the impact of its imperfection.
+The attitude angles have to be interpolated onto the libRadtran time steps before the correction can be calculated.
+The attitude correction can also be used for the BACARDI data.</p>
+<p>Save the attitude correction in the respective time resolutions for BACARDI, SMART and libRadtran.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-processing.ifs_calculate_along_track_stats">
+<span id="ifs-calculate-along-track-stats-py"></span><h3>ifs_calculate_along_track_stats.py<a class="headerlink" href="#module-processing.ifs_calculate_along_track_stats" title="Permalink to this heading"></a></h3>
+<p>Calculate statistics from the ECMWF IFS output along the flight track</p>
+<p>Using the BAHAMAS down sampled data (0.5Hz) and a defined circle around the closest IFS grid point to the aircraft
+location, statistics from the IFS output are calculated and saved to new netCDF files for use in the case studies.</p>
+<p><em>Input</em>:</p>
+<ul class="simple">
+<li><p>IFS data as returned by read_ifs.py</p></li>
+<li><p>BAHAMAS data</p></li>
+<li><p>ecRad output data</p></li>
+</ul>
+<p><em>Output</em>:</p>
+<p>NetCDF files in the IFS input directory with the statistics.</p>
+<p>TODO: Add option to vary amount of surrounding grid cells</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="setup.html" class="btn btn-neutral float-left" title="Setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quicklooks.html" class="btn btn-neutral float-right" title="Quicklooks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup &mdash; Arctic Cirrus 0.9.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1bc1ca25"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Processing" href="processing.html" />
+    <link rel="prev" title="PhD Base Project" href="readme_link.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arctic Cirrus
+          </a>
+              <div class="version">
+                0.9.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">PhD Base Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html#license">License</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#get-it-running-locally-on-your-machine">Get it running locally on your machine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-pylim">Installing pylim</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#windows10-unix-install-from-source">Windows10/Unix - Install from source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windows10-unix-build-distribution-and-install-from-it">Windows10/Unix - (Build distribution and) install from it</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-structure">Data structure</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Setup</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/setup.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="setup">
+<h1>Setup<a class="headerlink" href="#setup" title="Permalink to this heading"></a></h1>
+<section id="get-it-running-locally-on-your-machine">
+<h2>Get it running locally on your machine<a class="headerlink" href="#get-it-running-locally-on-your-machine" title="Permalink to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><a class="reference external" href="https://radiation-lim.github.io/LIM-pylim/">pylim</a> is now a stand alone package and can be installed from <a class="reference external" href="https://github.com/radiation-lim/LIM-pylim">GitHub</a>. This section is outdated with respect to pylim.</p>
+</div>
+<p>For now (November 2021) the easiest way to use this is to fork this project and install pylim in your python environment.
+If you want to work with the analysis and quicklook scripts you can just work in the cloned repository and add your files as you wish.
+A possible structure could look like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├── phd_base  # source code managed by Johannes`s github account
+│   ├── analysis
+│   ├── docs
+│   ├── processing
+│   ├── src
+│   │   └──  pylim  # actual python module
+│   ├── quicklooks
+│   ├── your_folder  # source code managed by your git
+│   ├── config.toml
+│   ├── LICENSE
+│   ├── README.md
+│   ├── requirements.txt
+</pre></div>
+</div>
+</section>
+<section id="installing-pylim">
+<h2>Installing pylim<a class="headerlink" href="#installing-pylim" title="Permalink to this heading"></a></h2>
+<p><code class="xref py py-mod docutils literal notranslate"><span class="pre">pylim</span></code> is a full module complete with a <code class="file docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and a <code class="file docutils literal notranslate"><span class="pre">setup.cfg</span></code>.
+If you only want to work with the functions provided by pylim and don’t care for the other scripts too much, the easiest way of installing <code class="xref py py-mod docutils literal notranslate"><span class="pre">pylim</span></code> is to download the <code class="file docutils literal notranslate"><span class="pre">.tar.gz</span></code> file from the <code class="docutils literal notranslate"><span class="pre">dist</span></code> folder.
+The <code class="file docutils literal notranslate"><span class="pre">.tar.gz</span></code> file holds the complete package and can be installed like the self build distribution (see <a class="reference internal" href="#install-from-dist"><span class="std std-ref">Windows10/Unix - (Build distribution and) install from it</span></a>).</p>
+<p>If you forked/copied the whole repository you can also <a class="reference external" href="https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#installing-from-source">install it from source</a> or build a distribution and then install it.
+All ways work but the first one should be the easiest.
+These are the ways it works for me on Windows10 and Unix.</p>
+<section id="windows10-unix-install-from-source">
+<h3>Windows10/Unix - Install from source<a class="headerlink" href="#windows10-unix-install-from-source" title="Permalink to this heading"></a></h3>
+<p>Open an anaconda prompt (Windows10) or your bash shell (Unix), move to your project directory (e.g. phd_base) and activate your working environment.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd C:\Users\USERNAME\PyCharmProjects\phd_base</span>
+<span class="go">conda activate phd_base</span>
+</pre></div>
+</div>
+<p>Then install pylim from source with:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m pip install .</span>
+</pre></div>
+</div>
+</section>
+<section id="windows10-unix-build-distribution-and-install-from-it">
+<span id="install-from-dist"></span><h3>Windows10/Unix - (Build distribution and) install from it<a class="headerlink" href="#windows10-unix-build-distribution-and-install-from-it" title="Permalink to this heading"></a></h3>
+<p>If you already have the <code class="file docutils literal notranslate"><span class="pre">tar.gz</span></code> file downloaded you do not need to build the distribution anymore.
+Just skip to the installation.
+Otherwise start here:</p>
+<p>Make sure you have the newest version of <code class="xref py py-mod docutils literal notranslate"><span class="pre">build</span></code> installed:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda install build</span>
+<span class="go">conda update build</span>
+</pre></div>
+</div>
+<p>From your project directory (e.g. phd_base) you can then call:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m build</span>
+</pre></div>
+</div>
+<p>You will see a lot of output and hopefully this line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Successfully</span> <span class="n">built</span> <span class="n">pylim</span><span class="o">-|</span><span class="n">version</span><span class="o">|.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span> <span class="ow">and</span> <span class="n">pylim</span><span class="o">-|</span><span class="n">version</span><span class="o">|-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+</pre></div>
+</div>
+<p>For more information see <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives">Generating distribution archives</a>.</p>
+<p>You will now have a new <code class="docutils literal notranslate"><span class="pre">dist</span></code> folder in your project directory with the two mentioned files above.
+To install <code class="xref py py-mod docutils literal notranslate"><span class="pre">pylim</span></code> from your anaconda prompt call:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -m pip install .\dist\pylim-|version|.tar.gz</span>
+</pre></div>
+</div>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> file will delete any old installations of pylim.
+Whatever way you chose, you should be able to import <code class="xref py py-mod docutils literal notranslate"><span class="pre">pylim</span></code> now:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pylim.helpers</span> <span class="k">as</span> <span class="nn">h</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="data-structure">
+<h2>Data structure<a class="headerlink" href="#data-structure" title="Permalink to this heading"></a></h2>
+<p>HALO campaign data is organized by flight in the <code class="docutils literal notranslate"><span class="pre">01_Flights</span></code> folder, so that every flight has its own folder with subfolders for each instrument in it:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├── 01_Flights
+│   ├── all
+│   │   ├── BACARDI
+│   │   ├── BAHAMAS
+│   │   └── horidata
+│   ├── Flight_20210624a
+│   │   ├── BACARDI
+│   │   ├── BAHAMAS
+│   │   └── libRadtran
+│   ├── Flight_20210625a
+│   │   ├── BACARDI
+│   │   ├── BAHAMAS
+│   │   ├── horidata
+│   │   ├── libRadtran
+│   │   ├── quicklooks
+│   │   └── SMART
+...
+</pre></div>
+</div>
+<p>In order to be able to work across all flights an additional folder can be found called <code class="docutils literal notranslate"><span class="pre">all</span></code>.
+This folder contains one folder for each instrument which holds all data for the whole campaign.</p>
+<p>This data is stored on the server but can also be stored locally.
+To access it without needing to worry about changing the paths every time one switches from the server to local data, the function <code class="xref py py-func docutils literal notranslate"><span class="pre">pylim.helpers.get_path()</span></code> is used together with <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> to generate the correct paths.
+In the configuration toml file the path to each instrument can be defined either as a absolute path or -to allow for easy path creation- relative to the base directory and the flight folder.
+Providing <code class="xref py py-func docutils literal notranslate"><span class="pre">pylim.helpers.get_path()</span></code> with the instrument key (e.g. “smart”), the flight (e.g. “Flight_20210625a”) and the campaign (e.g. “cirrus-hl”) the correct path will then be created according to the current working directory.
+Providing the key “all” requires the additional keyword instrument and will get the path to the instrument folder in the <code class="docutils literal notranslate"><span class="pre">all</span></code> folder.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> file has to be in the current working directory of the python console. So when you run a script in a different folder (like <code class="file docutils literal notranslate"><span class="pre">processing</span></code>) be sure to copy your most recent <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> to that folder as well. Or you change into the directory with the <code class="docutils literal notranslate"><span class="pre">config.toml</span></code> using <code class="xref py py-func docutils literal notranslate"><span class="pre">os.chdir()</span></code>.</p>
+</div>
+<p>There are two ways of setting up paths to your local data source:</p>
+<ol class="arabic simple">
+<li><p>Edit the existing paths under <code class="docutils literal notranslate"><span class="pre">jr_local</span></code> or <code class="docutils literal notranslate"><span class="pre">jr_ubuntu</span></code> depending on whether you are using Windows or Linux.</p></li>
+<li><p>Create a new campaign which defines the paths as you need them.</p></li>
+</ol>
+<p>The second options is kind of hacky but would allow everyone to use the same config file.
+However, I don’t see a merit in that so number 1 would be the preferred option.
+Every user should have their own toml file.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="readme_link.html" class="btn btn-neutral float-left" title="PhD Base Project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="processing.html" class="btn btn-neutral float-right" title="Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
