@@ -205,6 +205,14 @@ Direct sea ice albdeo
 .. automodule:: experiments.ecrad_new_direct_sea_ice_albedo
 
 
+CAMS aerosol climatology
+------------------------
+
+*Script:* :py:mod:`experiments.ecrad_experiment_aerosol.py`
+
+.. automodule:: experiments.ecrad_experiment_aerosol
+
+
 ecRad Setups
 ============
 
