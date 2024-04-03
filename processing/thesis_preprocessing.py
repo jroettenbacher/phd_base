@@ -12,10 +12,10 @@ import ac3airborne
 from ac3airborne.tools import flightphase
 import dill
 import numpy as np
-import pandas as pd
-import xarray as xr
 import os
+import pandas as pd
 from sklearn.neighbors import BallTree
+import xarray as xr
 
 # %% set paths
 campaign = "halo-ac3"
@@ -95,21 +95,29 @@ for key in keys:
         # normalize downward irradiance for cos SZA
         for var in ["F_down_solar", "F_down_solar_diff"]:
             bacardi[f"{var}_norm"] = bacardi[var] / np.cos(np.deg2rad(bacardi["sza"]))
+
+        # interpolate standard ecRad simulation onto BACARDI time
+        ecrad_fdw = ds.flux_dn_sw_clear.interp(time=bacardi.time,
+                                               kwargs={"fill_value": "extrapolate"})
+        ecrad_fup = ds.flux_up_sw_clear.interp(time=bacardi.time,
+                                               kwargs={"fill_value": "extrapolate"})
+        bacardi["ecrad_fdw"] = ecrad_fdw
+        # calculate transmissivity using ecRad at TOA and above cloud
+        bacardi["transmissivity_TOA"] = bacardi["F_down_solar"] / bacardi["ecrad_fdw"].isel(half_level=0)
+        bacardi["transmissivity_above_cloud"] = bacardi["F_down_solar"] / bacardi["ecrad_fdw"].isel(half_level=73)
+        # calculate CRE with ecRad data
+        bacardi['CRE_solar_ecrad'] = bacardi['F_net_solar'] - (ecrad_fdw - ecrad_fup)
+        bacardi['CRE_terrestrial_ecrad'] = bacardi['F_net_terrestrial'] - (ecrad_fdw - ecrad_fup)
+        bacardi['CRE_total_ecrad'] = bacardi['CRE_solar_ecrad'] + bacardi['CRE_terrestrial_ecrad']
+
         # filter data for motion flag
         bacardi_org = bacardi.copy()
         bacardi = bacardi.where(bacardi.motion_flag)
         # overwrite variables which do not need to be filtered with original values
         for var in ["alt", "lat", "lon", "sza", "saa", "attitude_flag", "segment_flag", "motion_flag"]:
             bacardi[var] = bacardi_org[var]
-
-        # interpolate standard ecRad simulation onto BACARDI time
-        bacardi["ecrad_fdw"] = ds.flux_dn_sw_clear.interp(time=bacardi.time,
-                                                                         kwargs={"fill_value": "extrapolate"})
-        # calculate transmissivity using ecRad at TOA and above cloud
-        bacardi["transmissivity_TOA"] = bacardi["F_down_solar"] / bacardi["ecrad_fdw"].isel(half_level=0)
-        bacardi["transmissivity_above_cloud"] = bacardi["F_down_solar"] / bacardi["ecrad_fdw"].isel(half_level=73)
-        print("Saving BACARDI data...")
         # save BACARDI data
+        print("Saving BACARDI data...")
         bacardi.to_netcdf(f"{bacardi_path}/{bacardi_file.replace('.nc', '_v2.nc')}")
 
     print("Saving flight segmentation data...")
@@ -166,6 +174,7 @@ for key in keys:
                                 axis=0)
     latlon_sel = [(x, y) for x, y in closest_latlons]
     ifs_ds_sel = ifs.sel(rgrid=latlon_sel)
-    (ifs_ds_sel.reset_index("rgrid")
+    (ifs_ds_sel
+     .reset_index("rgrid")
      .to_netcdf(f"{ifs_path}/{ifs_file.replace('.nc', '_sel_JR.nc')}"))
 
