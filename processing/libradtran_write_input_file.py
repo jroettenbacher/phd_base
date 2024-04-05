@@ -50,11 +50,7 @@ if __name__ == "__main__":
     integrate = False
 
 # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, flight)
+    log = h.setup_logging("./logs", __file__, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}"
              f"\nScript started: {datetime.datetime.utcnow():%c UTC}")
 

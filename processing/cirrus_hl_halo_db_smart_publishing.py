@@ -27,10 +27,7 @@ if __name__ == "__main__":
         flight_nr = meta.flight_numbers[key]
 
         # %% setup logging
-        try:
-            file = __file__
-        except NameError:
-            file = None
+
         log = h.setup_logging("./logs", file, key)
         log.info(f"Creating subset of SMART data...\nOptions Given:\nversion: {version}\ncampaign: {campaign}\n"
                  f"flight: {key}\nScript started: {datetime.utcnow():%c UTC}\n")

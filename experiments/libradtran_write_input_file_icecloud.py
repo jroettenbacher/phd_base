@@ -93,11 +93,7 @@ if __name__ == "__main__":
         h.make_dir(path)  # create directory
 
     # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, flight)
+    log = h.setup_logging("./logs", __file__, flight)
     log.info(f"Options Given:\n"
              f"\nexperiment: {experiment}\n"
              f"campaign: {campaign}\n"
@@ -232,7 +228,7 @@ if __name__ == "__main__":
                 # %% write input file
                 log.debug(f"Writing input file: {input_filepath}")
                 with open(input_filepath, "w") as ifile:
-                    ifile.write(f"# libRadtran input file generated with {file} "
+                    ifile.write(f"# libRadtran input file generated with {__file__} "
                                 f"({datetime.datetime.utcnow():%c UTC})\n"
                                 f"# Experiment: {experiment}, re_ice: {re_ice_u}, iwc: {iwc_u}\n")
                     for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],

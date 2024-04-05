@@ -37,11 +37,8 @@ if __name__ == "__main__":
     flights = list(campaign_meta.flight_numbers.keys())[1:]  # run all flights
     # flights = ["Flight_20210713a"]  # uncomment for single flight
     for flight in tqdm(flights):
-        try:
-            file = __file__
-        except NameError:
-            file = None
-        log = h.setup_logging("./logs", file, flight)
+
+        log = h.setup_logging("./logs", __file__, flight)
         prop = "Fdw"  # Fup or Fdw
         normalize = True  # use normalized calibration factor (counts are divided by the integration time)
         lab_calib = "after"  # before or after, set which lab calibration to use for the transfer calibration

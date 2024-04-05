@@ -70,11 +70,8 @@ if __name__ == "__main__":
         input_files.sort()  # sort input files -> output files will be sorted as well
 
         # %% setup logging
-        try:
-            file = __file__
-        except NameError:
-            file = None
-        log = h.setup_logging("../experiments/logs", file, flight_key)
+
+        log = h.setup_logging("../experiments/logs", __file__, flight_key)
         log.info(f"Options Given:\n"
                  f"campaign: {campaign}\n"
                  f"flight: {flight}\n"

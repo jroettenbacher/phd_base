@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 28-03-2023
 
-Set up libRadtran like ecRad using input from the IFS and defining an ice cloud along track using the VarCloud ouput from Florian Ewald, LMU.
+Set up libRadtran like ecRad using input from the IFS and defining an ice cloud along track using the VarCloud output from Florian Ewald, LMU.
 
 Simulate an ice cloud along the above cloud section RF17 (2022-04-11 10:48:47 - 11:07:14 UTC) with IWC and
 :math:`r_{eff, ice}` from the VarCloud retrieval.
@@ -99,11 +99,7 @@ if __name__ == "__main__":
         h.make_dir(path)  # create directory
 
     # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, flight)
+    log = h.setup_logging("./logs", __file__, flight)
     log.info(f"Options Given:\n"
              f"\nexperiment: {experiment}\n"
              f"campaign: {campaign}\n"
@@ -246,7 +242,7 @@ if __name__ == "__main__":
         # %% write input file
         log.debug(f"Writing input file: {input_filepath}")
         with open(input_filepath, "w") as ifile:
-            ifile.write(f"# libRadtran input file generated with {file} "
+            ifile.write(f"# libRadtran input file generated with {__file__} "
                         f"({datetime.datetime.utcnow():%c UTC})\n")
             for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                       ["Atmospheric", "RTE", "Post Process"]):

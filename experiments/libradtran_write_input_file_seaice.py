@@ -61,11 +61,7 @@ if __name__ == "__main__":
     integrate = True
 
     # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, flight)
+    log = h.setup_logging("./logs", __file__, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}\nintegrate: {integrate}"
              f"\nuse_smart_ins: {use_smart_ins}\nsolar flag: {solar_flag}"
              f"\nScript started: {datetime.datetime.utcnow():%c UTC}")

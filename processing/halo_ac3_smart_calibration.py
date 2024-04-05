@@ -39,11 +39,7 @@ if __name__ == "__main__":
     # %% run calibration
     for flight in tqdm(flights):
         flight_key = flight[-4:]
-        try:
-            file = __file__
-        except NameError:
-            file = None
-        log = h.setup_logging("./logs", file, flight_key)
+        log = h.setup_logging("./logs", __file__, flight_key)
         flight_date = flight[9:17]
         prop = "Fdw"  # Fdw
         normalize = True  # use normalized calibration factor (counts are divided by the integration time)

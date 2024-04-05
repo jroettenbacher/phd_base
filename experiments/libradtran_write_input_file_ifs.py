@@ -89,11 +89,7 @@ if __name__ == "__main__":
         h.make_dir(path)  # create directory
 
     # %% setup logging
-    try:
-        file = __file__
-    except NameError:
-        file = None
-    log = h.setup_logging("./logs", file, flight)
+    log = h.setup_logging("./logs", __file__, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\n"
              f"flight: {flight}\n"
              f"wkdir: {input_path}\n"
