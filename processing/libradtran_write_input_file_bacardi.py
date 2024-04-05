@@ -161,7 +161,7 @@ if __name__ == "__main__":
             # %% write input file
             with open(_input_filepath, "w") as ifile:
                 ifile.write(f"# libRadtran input file generated with libradtran_write_input_file_bacardi.py "
-                            f"({datetime.datetime.utcnow():%c UTC})\n")
+                            f"({datetime.datetime.now(datetime.UTC):%c UTC})\n")
                 for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                           ["Atmospheric", "RTE", "Post Process"]):
                     ifile.write(f"\n# {line} Settings\n")

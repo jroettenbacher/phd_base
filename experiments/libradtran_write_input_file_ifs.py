@@ -94,7 +94,7 @@ if __name__ == "__main__":
              f"flight: {flight}\n"
              f"wkdir: {input_path}\n"
              f"timestep: {time_step}\n"
-             f"Script started: {datetime.datetime.utcnow():%c UTC}\n")
+             f"Script started: {datetime.datetime.now(datetime.UTC):%c UTC}\n")
 
     # %% read in INS data
     if use_smart_ins:
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         log.debug(f"Writing input file: {input_filepath}")
         with open(input_filepath, "w") as ifile:
             ifile.write(f"# libRadtran input file generated with libradtran_write_input_file_ifs.py "
-                        f"({datetime.datetime.utcnow():%c UTC})\n")
+                        f"({datetime.datetime.now(datetime.UTC):%c UTC})\n")
             for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                       ["Atmospheric", "RTE", "Post Process"]):
                 ifile.write(f"\n# {line} Settings\n")

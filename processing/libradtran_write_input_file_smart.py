@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # %% setup logging
     log = h.setup_logging("./logs", __file__, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}"
-             f"\nScript started: {datetime.datetime.utcnow():%c UTC}")
+             f"\nScript started: {datetime.datetime.now(datetime.UTC):%c UTC}")
 
     # %% set paths
     _base_dir = h.get_path("base", flight, campaign)
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         # %% write input file
         with open(_input_filepath, "w") as ifile:
             ifile.write(f"# libRadtran input file generated with libradtran_write_input_file.py "
-                        f"({datetime.datetime.utcnow():%c UTC})\n")
+                        f"({datetime.datetime.now(datetime.UTC):%c UTC})\n")
             for settings, line in zip([atmos_settings, rte_settings, postprocess_settings],
                                       ["Atmospheric", "RTE", "Post Process"]):
                 ifile.write(f"\n# {line} Settings\n")
