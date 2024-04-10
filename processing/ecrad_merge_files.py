@@ -188,6 +188,7 @@ if __name__ == "__main__":
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign=campaign)
     merge_io = h.strtobool(args["merge_io"]) if "merge_io" in args else False
     # setup logging
+    __file__ = None if "__file__" not in locals() else __file__
     log = h.setup_logging("./logs", __file__, f"{io_flag}_tinp-{t_interp}_{date}")
     log.info(f"The following options have been passed:\nio_flag: {io_flag}\nt_interp: {t_interp}\nversion: {version}\n"
              f"i_version: {i_version}\nbase_dir: {base_dir}\ndate: {date}\nmerge_io: {merge_io}")

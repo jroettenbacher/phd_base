@@ -60,7 +60,8 @@ if __name__ == "__main__":
 
 # %% setup logging
 
-        log = h.setup_logging("./logs", __file__, flight_key)
+        __file__ = None if '__file__' not in locals() else __file__
+        log = h.setup_logging('./logs', __file__, flight_key)
         log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\nwavelength: {wavelength}\n"
                  f"uvspec_exe: {uvspec_exe}\nScript started: {dt.datetime.utcnow():%c UTC}")
 # %% call uvspec for one file

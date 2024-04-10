@@ -54,7 +54,8 @@ if __name__ == "__main__":
     date = flight[9:17] if campaign == "halo-ac3" else flight[7:15]
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
     # setup logging
-    log = h.setup_logging('./logs', __file__, key)
+    __file__ = None if "__file__" not in locals() else __file__
+    log = h.setup_logging("./logs", __file__, key)
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\naircraft: {aircraft}\nflight: {flight}\ndate: {date}"
              f"\ninit time: {init_time}\ngrid: {grid}\nt_interp: {t_interp}")

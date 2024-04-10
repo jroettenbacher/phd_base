@@ -38,6 +38,7 @@ if __name__ == "__main__":
     # flights = ["Flight_20210713a"]  # uncomment for single flight
     for flight in tqdm(flights):
 
+        __file__ = None if "__file__" not in locals() else __file__
         log = h.setup_logging("./logs", __file__, flight)
         prop = "Fdw"  # Fup or Fdw
         normalize = True  # use normalized calibration factor (counts are divided by the integration time)

@@ -54,6 +54,7 @@ if __name__ == "__main__":
         date = flight[7:15]
     dt_day = datetime.strptime(date, '%Y%m%d')  # convert date to date time for further use
     # setup logging
+    __file__ = None if '__file__' not in locals() else __file__
     log = h.setup_logging('./logs', __file__, key)
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\nflight: {flight}\ndate: {date}"

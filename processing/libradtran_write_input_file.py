@@ -50,7 +50,8 @@ if __name__ == "__main__":
     integrate = False
 
 # %% setup logging
-    log = h.setup_logging("./logs", __file__, flight)
+    __file__ = None if '__file__' not in locals() else __file__
+    log = h.setup_logging('./logs', __file__, flight)
     log.info(f"Options Given:\ncampaign: {campaign}\nflight: {flight}\ntimestep: {time_step}"
              f"\nScript started: {datetime.datetime.now(datetime.UTC):%c UTC}")
 

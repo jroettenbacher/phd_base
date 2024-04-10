@@ -64,6 +64,7 @@ if __name__ == "__main__":
         date = flight[7:15]
 
     # setup logging
+    __file__ = None if '__file__' not in locals() else __file__
     log = h.setup_logging('./logs', __file__, key)
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\nkey: {key}\nflight: {flight}\ndate: {date}\n"
@@ -214,6 +215,7 @@ if __name__ == "__main__":
                                          "10: Black carbon, OPAC\n"
                                          "11: Stratospheric sulfate (hydrophilic ammonium sulfate at RH 20%-30%",
                                  )
+        # TODO: Change description to match actual species and not only the radiative description
         ds["aerosol_mmr"] = aerosol_mmr
 
         # calculate effective radius for all levels

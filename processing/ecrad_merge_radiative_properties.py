@@ -169,6 +169,7 @@ if __name__ == "__main__":
     base_dir = args["base_dir"] if "base_dir" in args else h.get_path("ecrad", campaign=campaign)
 
     # setup logging
+    __file__ = None if "__file__" not in locals() else __file__
     log = h.setup_logging("./logs", __file__, f"{date}_{version}")
     log.info(f"The following options have been passed:\n"
              f"date: {date}\n"

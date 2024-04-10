@@ -75,6 +75,7 @@ if __name__ == "__main__":
         raise ValueError(f"No metadata defined for campaign = {campaign}!")
 
     # %% setup logging
+    __file__ = None if "__file__" not in locals() else __file__
     log = h.setup_logging("./logs", __file__, f"input{iv}_output{ov}_{date}")
     log.info(f"The following options have been passed:\n"
              f"campaign: {campaign}\n"
