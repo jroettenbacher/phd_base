@@ -124,8 +124,6 @@ if __name__ == "__main__":
     bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR.nc"
     bahamas_path = h.get_path("bahamas", flight, campaign)
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_1Min.nc"
-    data_path = h.get_path('plot', flight, campaign)
-    stats_file = "statistics.csv"
 
 # %% get flight segments for case study period
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
@@ -165,17 +163,6 @@ if __name__ == "__main__":
         ds = ds.sel(time=case_slice)
         ds = ds.assign_coords({"sw_albedo_band": range(1, 7)})
         ecrad_dict[v] = ds.copy()
-
-# %% read in statistics
-    stats_df = pd.read_csv(f"{data_path}/{stats_file}")
-    # select only relevant versions
-
-# %% prepare metadata for comparing ecRad and BACARDI
-    titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
-              "Terrestrial Upward Irradiance"]
-    names = ["Fdw_solar", "Fdw_terrestrial", "Fup_solar", "Fup_terrestrial"]
-    bacardi_vars = ["F_down_solar", "F_down_terrestrial", "F_up_solar", "F_up_terrestrial"]
-    ecrad_vars = ["flux_dn_sw", "flux_dn_lw", "flux_up_sw", "flux_up_lw"]
 
 # %% set plotting options
     var = "flux_dn_sw"
@@ -382,8 +369,9 @@ if __name__ == "__main__":
     df1["label"] = "ecRad"
     df2["label"] = "BACARDI"
 
-    df1.to_csv(f"C:/Users/Johannes/Documents/Doktor/manuscripts/_arctic_cirrus/figures/{flight}_boxplot_data.csv",
-              index=False)
+    df1.to_csv(f"C:/Users/Johannes/Documents/Doktor/manuscripts/_arctic_cirrus/"
+               f"figures/{flight}_boxplot_data.csv",
+               index=False)
 
     df = pd.concat([df2, df1])
 
