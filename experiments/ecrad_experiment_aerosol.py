@@ -44,12 +44,12 @@ if __name__ == '__main__':
 
 # %% set paths
     campaign = 'halo-ac3'
-    key = 'RF17'
+    key = 'RF18'
     ecrad_versions = ['v15.1', 'v30.1']
     flight = meta.flight_names[key]
     date = flight[9:17]
 
-    plot_path = f'{h.get_path('plot', flight, campaign)}/{flight}/experiment_aerosol'
+    plot_path = f'{h.get_path('plot', flight, campaign)}/experiment_aerosol'
     fig_path = './docs/figures/experiment_aerosol'
     h.make_dir(plot_path)
     h.make_dir(fig_path)
@@ -92,13 +92,14 @@ if __name__ == '__main__':
         ecrad_dict[k] = ds.copy()
 
 # %% set plotting options
-    var = 'flux_up_sw'
-    v = 'diff'
+    var = 'reflectivity_sw'
+    v = 'v15.1'
     band = None
-    aer_type = slice(1, 11)
+    aer_type = None
 
 # %% prepare data set for plotting
     band_str = f'_band{band}' if band is not None else ''
+    aer_str = f'_type_{str(aer_type).replace(", None", "")}' if aer_type is not None else ''
 
     # kwarg dicts
     alphas = dict()
@@ -113,7 +114,7 @@ if __name__ == '__main__':
 
     # set kwargs
     alpha = alphas[var] if var in alphas else 1
-    cmap = h.cmaps[var] if var in h.cmaps else cmr.rainforest
+    cmap = h.cmaps[var] if var in h.cmaps else cmr.rainforest_r
     cmap = plt.get_cmap(cmap).copy()
     cmap.set_bad(color='white')
     ct_fs = ct_fontsize[var] if var in ct_fontsize else 8
@@ -169,7 +170,7 @@ if __name__ == '__main__':
     # ecrad_plot = ecrad_plot.where(np.abs(ecrad_plot) > 0.001)
 
     # select time height slice
-    time_sel = slice(pd.Timestamp('2022-04-11 08:00'), pd.Timestamp('2022-04-11 17:00'))
+    time_sel = slice(pd.Timestamp(f'{date} 08:00'), pd.Timestamp(f'{date} 17:00'))
     if 'band_sw' in ecrad_plot.dims:
         dim3 = 'band_sw'
         dim3 = dim3 if dim3 in ecrad_plot.dims else None
@@ -178,7 +179,7 @@ if __name__ == '__main__':
         dim3 = 'aer_type'
         dim3 = dim3 if dim3 in ecrad_plot.dims else None
         ecrad_plot = ecrad_plot.sel({'time': time_sel, 'height': slice(13, 0), f'{dim3}': aer_type})
-        if len(ecrad_plot[dim3]) > 1:
+        if len(ecrad_plot[dim3].shape) != 0:
             ecrad_plot = ecrad_plot.sum(dim=dim3)
     else:
         ecrad_plot = ecrad_plot.sel(time=time_sel, height=slice(13, 0))
@@ -203,10 +204,10 @@ if __name__ == '__main__':
     ax.set_ylabel('Altitude (km)')
     ax.set_xlabel('Time (UTC)')
     h.set_xticks_and_xlabels(ax, time_extend)
-    figname = f'{plot_path}/{flight}_ecrad_{v}_{var}{band_str}_along_track.png'
+    figname = f'{plot_path}/{flight}_ecrad_{v}_{var}{band_str}{aer_str}_along_track.png'
     plt.savefig(figname, dpi=300, bbox_inches='tight')
-    figname = f'{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_along_track.png'
-    plt.savefig(figname, dpi=300, bbox_inches='tight')
+    # figname = f'{fig_path}/{flight}_ecrad_{v}_{var}{band_str}{aer_str}_along_track.png'
+    # plt.savefig(figname, dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
 
