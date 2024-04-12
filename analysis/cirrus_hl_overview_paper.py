@@ -538,7 +538,7 @@ for section, label in zip(sections, labels):
     sections[section].plot(ax=ax, label=label[-1], linewidth=1)
 
 ax.grid()
-ax.legend(loc='upper right', ncol=4, title='Section', fontsize=6)
+ax.legend(loc='upper right', ncol=4, title='Flight leg', fontsize=6)
 ax.text(0.01, 0.93, '(d)', transform=ax.transAxes)
 ax.set(xlabel='Wavelength (nm)',
        ylabel='Albedo',
