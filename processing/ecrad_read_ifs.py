@@ -285,7 +285,7 @@ if __name__ == "__main__":
     # IFS documentation Part IV, Table 2.6)
     # lw_em_ratio = lw_em_ratio.where(lw_em_ratio < 0.98, 0.98)
     # data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time", "lat", "lon"],
-    #                                         attrs=dict(unit="1", long_name="Longwave surface emissivity"))
+    #                                         attrs=dict(units="1", long_name="Longwave surface emissivity"))
 
     # %% set longwave emissivity as described in IFS documentation Part IV Chapter 2.8.5
     lw_em_shape = data_srf.skt.shape + (2,)
@@ -297,14 +297,14 @@ if __name__ == "__main__":
     lw_em_ratio[..., 1] = 0.98  # see Table 2.6
     dims = ["lat", "lon"] if "F" in grid else ["rgrid"]
     data_ml["lw_emissivity"] = xr.DataArray(lw_em_ratio, dims=["time"] + dims + ["lw_emiss_band"],
-                                            attrs=dict(unit="1", long_name="Longwave surface emissivity"))
+                                            attrs=dict(units="1", long_name="Longwave surface emissivity"))
 
     # %% calculate shortwave albedo according to sea ice concentration and shortwave band albedo climatology for sea ice
     open_ocean_albedo = 0.06
     ci_albedo = h.ci_albedo_da.interp(time=f'2022-{dt_day.month:02}-{dt_day.day:02}')  # interpolate sea ice albedo to date
 
     sw_albedo = data_srf.ci * ci_albedo + (1. - data_srf.ci) * open_ocean_albedo
-    sw_albedo.attrs = dict(unit=1, long_name="Banded short wave albedo")
+    sw_albedo.attrs = dict(units=1, long_name="Banded short wave albedo")
     sw_albedo = sw_albedo.transpose("time", ...)  # transpose so time is first dimension
     # set sw_albedo to constant 0.2 when over land
     data_ml["sw_albedo"] = sw_albedo
@@ -375,7 +375,7 @@ if __name__ == "__main__":
         o3_vmr = o3_vmr.transpose("time", ...)
         o3_vmr = o3_vmr.where(o3_vmr > 0, 0)  # set negative values to 0
         o3_vmr = o3_vmr.where(~np.isnan(o3_vmr), 0)  # set nan values to 0
-        o3_vmr.attrs = dict(unit="1",
+        o3_vmr.attrs = dict(units="1",
                             long_name="Ozone volume mass mixing ratio",
                             description="Sonde measurements interpolated to IFS full pressure levels")
         data_ml["o3_vmr_sonde"] = o3_vmr
@@ -385,20 +385,20 @@ if __name__ == "__main__":
 
     data_ml["o3_vmr_constant"] = xr.DataArray(np.repeat([1.587701e-7], n_levels),
                                               dims=["level"],
-                                              attrs=dict(unit="1", long_name="Ozone mass mixing ratio"))
+                                              attrs=dict(units="1", long_name="Ozone mass mixing ratio"))
     data_ml["o3_vmr_ifs"] =  28.9644 / 47.9982 * 1e9 * data_ml["o3"]  # convert IFS O3 mass mixing ratio to vmr
     data_ml.drop_vars("o3")
 
     # constants according to IFS Documentation Part IV Section 2.8.4
-    data_ml["n2o_vmr_constant"] = xr.DataArray(0.31e-6, attrs=dict(unit="1", long_name="N2O volume mixing ratio"))
-    data_ml["cfc11_vmr_constant"] = xr.DataArray(280e-12, attrs=dict(unit="1", long_name="CFC11 volume mixing ratio"))
-    data_ml["cfc12_vmr_constant"] = xr.DataArray(484e-12, attrs=dict(unit="1", long_name="CFC12 volume mixing ratio"))
+    data_ml["n2o_vmr_constant"] = xr.DataArray(0.31e-6, attrs=dict(units="1", long_name="N2O volume mixing ratio"))
+    data_ml["cfc11_vmr_constant"] = xr.DataArray(280e-12, attrs=dict(units="1", long_name="CFC11 volume mixing ratio"))
+    data_ml["cfc12_vmr_constant"] = xr.DataArray(484e-12, attrs=dict(units="1", long_name="CFC12 volume mixing ratio"))
     # other constants
-    data_ml["o2_vmr"] = xr.DataArray(0.20944, attrs=dict(unit="1", long_name="Oxygen volume mixing ratio"))
+    data_ml["o2_vmr"] = xr.DataArray(0.20944, attrs=dict(units="1", long_name="Oxygen volume mixing ratio"))
     # global monthly mean concentration from https://gml.noaa.gov/ccgg/trends_ch4/
-    data_ml["ch4_vmr_constant"] = xr.DataArray(1909.54e-9, attrs=dict(unit="1", long_name="CH4 volume mixing ratio"))
+    data_ml["ch4_vmr_constant"] = xr.DataArray(1909.54e-9, attrs=dict(units="1", long_name="CH4 volume mixing ratio"))
     # monthly mean CO2 from the Keeling curve https://keelingcurve.ucsd.edu/
-    data_ml["co2_vmr_constant"] = xr.DataArray(416e-6, attrs=dict(unit="1", long_name="CO2 volume mixing ratio"))
+    data_ml["co2_vmr_constant"] = xr.DataArray(416e-6, attrs=dict(units="1", long_name="CO2 volume mixing ratio"))
 
     # %% add cloud properties
     data_ml["fractional_std"] = xr.DataArray(np.repeat([1.], n_levels),
