@@ -14,6 +14,7 @@ Plot of
 import os
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -250,6 +251,83 @@ ax.set(xlabel='',
 fig.supxlabel('Scattering angle $\\vartheta$ (deg)', size=9)
 
 figname = f'{plot_path}/01_phase_function.pdf'
+plt.savefig(figname, bbox_inches='tight')
+plt.show()
+plt.close()
+# %% plot single scattering albedo for terrestrial wavelengths
+h.set_cb_friendly_colors('petroff_6')
+rough = '000'
+wl_range = (3900, 100000)  # nm
+shapes_sel = ['droxtal', 'plate', 'solid_column', 'column_8elements']
+selection1 = ((df['roughness'] == rough)
+              & (df['wavelength'] > wl_range[0])
+              & (df['wavelength'] < wl_range[1])
+              & df['shape'].isin(shapes_sel)
+              & (df['d_max'] == 40)
+              )
+
+selection2 = ((df['roughness'] == rough)
+              & (df['wavelength'] > wl_range[0])
+              & (df['wavelength'] < wl_range[1])
+              & (df['shape'].isin(['plate', 'solid_column']))
+              & (df['d_max'].isin([2, 3, 5, 10, 100]))
+              )
+
+df_plot = df[selection1].copy()
+df_plot['wavelength'] = df_plot.wavelength / 1000  # convert to mum
+plt.rc('font', size=10)
+ylim = (0.0, 1.01)
+fig, axs = plt.subplots(2, 1, layout='constrained',
+                        figsize=(15 * h.cm, 9 * h.cm))
+
+# first row - single scattering albedo vs wavelength for different shapes
+ax = axs[0]
+hue_order = ['plate', 'solid_column', 'droxtal', 'column_8elements']
+sns.lineplot(data=df_plot,
+             x='wavelength',
+             y='omega',
+             hue='shape',
+             hue_order=hue_order,
+             ax=ax)
+ax.text(0.02, 0.85, '(a)', transform=ax.transAxes)
+ax.grid()
+ax.set(xlabel='',
+       ylabel='',
+       xticklabels=[],
+       ylim=ylim)
+ax.yaxis.set_major_locator(mticker.MultipleLocator(0.25))
+handles, labels = ax.get_legend_handles_labels()
+labels = [x.capitalize().replace('_', '\n') for x in labels]
+labels[-1] = "Column\naggregate"
+ax.legend(handles=handles, labels=labels,
+          loc='upper left', bbox_to_anchor=(1.01, 1.01))
+
+# second row - single scattering albedo vs wavelength for different sizes
+df_plot = df[selection2].copy()
+df_plot['wavelength'] = df_plot.wavelength / 1000  # convert to mum
+ax = axs[1]
+hue_order = ['plate', 'solid_column']
+sns.lineplot(data=df_plot,
+             x='wavelength',
+             y='omega',
+             hue='shape',
+             hue_order=hue_order,
+             style='d_max',
+             ax=ax)
+ax.text(0.02, 0.85, '(b)', transform=ax.transAxes)
+ax.grid()
+ax.set(xlabel=r'Wavelength ($\mu$m)',
+       ylabel='',
+       ylim=ylim)
+ax.yaxis.set_major_locator(mticker.MultipleLocator(0.25))
+
+handles, labels = ax.get_legend_handles_labels()
+labels[3] = r'$D_{\text{max}}$'
+ax.legend(handles=handles[3:], labels=labels[3:],
+          bbox_to_anchor=(1.01, 1.01), loc='upper left')
+fig.supylabel(r'Single scattering albedo $\tilde{\omega}$', size=10)
+
+figname = f'{plot_path}/01_single_scattering_albedo_NIR.pdf'
 plt.savefig(figname, bbox_inches='tight')
 plt.show()
 plt.close()
