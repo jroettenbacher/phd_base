@@ -102,7 +102,7 @@ if __name__ == "__main__":
     for lat in latitude:
         for qice in q_ice_set:
             # %% define cloud in atmosphere
-            cond = (atm_new['z(km)'] > cbase) & (atm_new['z(km)'] < ctop)
+            cond = (atm_new['z(km)'] > cbase) & (atm_new['z(km)'] <= ctop)
             q_ice = pd.Series(0, index=atm_new.index)
             q_ice = q_ice.where(~cond, qice)
             re_ice = q_ice.where(~cond, re_ice_set[0])
