@@ -255,6 +255,7 @@ def main():
     # net heating rate
     ds["heating_rate_net"] = ds.heating_rate_sw + ds.heating_rate_lw
 
+    ds.attrs.pop('settings')  # remove the settings attribute as it is not needed anymore
     # save to netCDF
     ds.to_netcdf(f'{base_dir}/ecrad_merged_inout_{version}.nc')
 
