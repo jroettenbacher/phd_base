@@ -169,6 +169,7 @@ for key in keys:
         for section in ['above', 'below']:
             time_sel = slices[key][section]
             ds = bacardi_ds[key][var].sel(time=time_sel)
+            bacardi_count = len(ds)
             bacardi_min = np.min(ds).to_numpy()
             bacardi_max = np.max(ds).to_numpy()
             bacardi_spread = bacardi_max - bacardi_min
@@ -176,7 +177,7 @@ for key in keys:
             bacardi_median = ds.median().to_numpy()
             bacardi_std = ds.std().to_numpy()
             bacardi_stats.append(
-                ('v1', 'BACARDI', key, var, section,
+                ('v1', 'BACARDI', key, var, section, bacardi_count,
                  bacardi_min, bacardi_max, bacardi_spread,
                  bacardi_mean, bacardi_median, bacardi_std))
 
@@ -199,6 +200,7 @@ for version in ecrad_versions:
                 time_sel = slices[key][section]
                 eds = ecrad_ds[evar].sel(time=time_sel)
                 try:
+                    ecrad_count = len(eds)
                     ecrad_min = np.min(eds).to_numpy()
                     ecrad_max = np.max(eds).to_numpy()
                     ecrad_spread = ecrad_max - ecrad_min
@@ -206,19 +208,22 @@ for version in ecrad_versions:
                     ecrad_median = eds.median().to_numpy()
                     ecrad_std = eds.std().to_numpy()
                     ecrad_stats.append(
-                        (version, v_name, key, evar, section,
+                        (version, v_name, key, evar, section, ecrad_count,
                          ecrad_min, ecrad_max, ecrad_spread,
                          ecrad_mean, ecrad_median, ecrad_std)
                     )
                 except ValueError:
                     ecrad_stats.append(
-                        (version, v_name, key, evar, section,
-                         np.nan, np.nan, np.nan, np.nan, np.nan)
+                        (version, v_name, key, evar, section, np.nan,
+                         np.nan, np.nan, np.nan, np.nan, np.nan, np.nan)
                     )
 
 # %% convert statistics to dataframe
-columns = ['version', 'source', 'key', 'variable', 'section', 'min', 'max', 'spread', 'mean', 'median', 'std']
+columns = ['version', 'source', 'key', 'variable', 'section', 'count',
+           'min', 'max', 'spread', 'mean', 'median', 'std']
 ecrad_df = pd.DataFrame(ecrad_stats, columns=columns)
 bacardi_df = pd.DataFrame(bacardi_stats, columns=columns)
 df = pd.concat([ecrad_df, bacardi_df]).reset_index(drop=True)
-df.to_csv(f'{outpath}/{campaign}_bacardi_ecrad_statistics.csv', index=False)
+outfile = f'{outpath}/{campaign}_bacardi_ecrad_statistics.csv'
+df.to_csv(outfile, index=False)
+print(f'Saved {outfile}')
