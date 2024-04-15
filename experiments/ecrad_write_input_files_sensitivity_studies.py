@@ -83,6 +83,7 @@ if __name__ == "__main__":
          .sort_index()
          .reset_index(drop=True)
          .interpolate(method='cubic')[1::2])
+
     # %% set albedo and cos sza
     sw_albedo = (h.ci_albedo_da
                  .interp(time=f'2022-04-11')  # interpolate sea ice albedo to date
@@ -110,6 +111,7 @@ if __name__ == "__main__":
             # %% create DataSet with relevant variables for ecRad
             ds = xr.Dataset(
                 {
+                    'altitude': (['column', 'half_level'], [atm_new['z(km)']], {'units': 'km'}),
                     'skin_temperature': (['column'], [253], {'units': 'K'}),
                     'cos_solar_zenith_angle': (['column'], [cos_sza], dict(units='1')),
                     'sw_albedo': sw_albedo,
