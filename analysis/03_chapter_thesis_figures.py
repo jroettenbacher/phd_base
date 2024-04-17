@@ -1,44 +1,47 @@
 #!/usr/bin/env python
 """
 | *author*: Johannes Röttenbacher
-| *created*: 22.03.2024
+| *created*: 11.04.2024
 
-Here all figures from chapter 3 of my thesis are created.
-
-- violin plot for sea ice albedo experiment
+Plots for Measurement chapter
 """
+
 # %% import modules
 import os
-import dill
 
+import cartopy.crs as ccrs
+import cmasher as cmr
+import dill
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import xarray as xr
+from matplotlib import ticker, patheffects, colors
+from matplotlib.collections import LineCollection
+from matplotlib.patches import Patch
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import pylim.halo_ac3 as meta
 import pylim.helpers as h
 from pylim import ecrad
 
-h.set_cb_friendly_colors('petroff_6')
 cbc = h.get_cb_friendly_colors('petroff_6')
 
 # %% set paths
 campaign = 'halo-ac3'
+keys = ['RF17', 'RF18']
+ecrad_versions = ['v15.1']
 save_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data'
 plot_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/figure'
-trajectory_path = f'{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude'
-keys = ['RF17', 'RF18']
-ecrad_versions = [f'v{x}' for x in [13, 13.1, 13.2, 15.1, 16, 18.1, 19.1, 20,
-                                    22, 24, 26, 27, 28, 30.1, 31.1, 32.1]]
+trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude"
 
 # %% read in data
 (
-    bahamas_ds, bacardi_ds, bacardi_ds_res, ecrad_dicts, varcloud_ds, above_clouds,
-    below_clouds, slices, ecrad_orgs, ifs_ds_sel, dropsonde_ds
-) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
+    bahamas_ds, bacardi_ds, bacardi_ds_res, varcloud_ds, above_clouds,
+    below_clouds, slices, ifs_ds, ifs_ds_sel, dropsonde_ds, lidar_ds, radar_ds
+) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
 
 for key in keys:
     flight = meta.flight_names[key]
@@ -50,13 +53,18 @@ for key in keys:
     varcloud_path = h.get_path('varcloud', flight, campaign)
     dropsonde_path = h.get_path('dropsondes', flight, campaign)
     dropsonde_path = f'{dropsonde_path}/Level_1' if key == 'RF17' else f'{dropsonde_path}/Level_2'
+    radar_path = h.get_path("hamp_mira", flight, campaign)
+    lidar_path = h.get_path("wales", flight, campaign)
 
     # filenames
     bahamas_file = f'HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc'
     bacardi_file = f'HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR_v2.nc'
-    ifs_file = f'ifs_{date}_00_ml_O1280_processed_sel_JR.nc'
+    ifs_file = f"ifs_{date}_00_ml_O1280_processed.nc"
+    ifs_sel_file = f'ifs_{date}_00_ml_O1280_processed_sel_JR.nc'
     varcloud_file = [f for f in os.listdir(varcloud_path) if f.endswith('_JR.nc')][0]
     dropsonde_files = [f for f in os.listdir(dropsonde_path) if f.endswith('.nc')]
+    radar_file = f"HALO_HALO_AC3_radar_unified_{key}_{date}_v2.6.nc"
+    lidar_file = f"HALO-AC3_HALO_WALES_bsrgl_{date}_{key}_V2.0.nc"
 
     # read in aircraft data
     bahamas_ds[key] = xr.open_dataset(f'{bahamas_path}/{bahamas_file}')
@@ -66,23 +74,49 @@ for key in keys:
     bacardi_res = xr.open_dataset(f'{bacardi_path}/{bacardi_file.replace('_v2.nc', '_1Min_v2.nc')}')
     bacardi_ds_res[key] = bacardi_res
 
+    # read in radar & lidar data
+    radar = xr.open_dataset(f"{radar_path}/{radar_file}")
+    lidar = xr.open_dataset(f"{lidar_path}/{lidar_file}")
+
+    lidar = lidar.rename(altitude="height").transpose("time", "height")
+    lidar["height"] = lidar.height / 1000
+    radar["height"] = radar.height / 1000
+    # interpolate lidar data onto radar range resolution
+    new_range = radar.height.values
+    lidar_r = lidar.interp(height=np.flip(new_range))
+    # convert lidar data to radar convention: [time, height], ground = 0m
+    lidar_r = lidar_r.assign_coords(height=np.flip(new_range)).isel(height=slice(None, None, -1))
+    # create radar mask
+    radar["mask"] = ~np.isnan(radar["dBZg"])
+    # combine radar and lidar mask
+    lidar_mask = lidar_r["flags"] == 0
+    lidar_mask = lidar_mask.where(lidar_mask == 0, 2).resample(time="1s").first()
+    radar["radar_lidar_mask"] = radar["mask"] + lidar_mask
+
+    radar_ds[key] = radar
+    lidar_ds[key] = lidar
+
+    # read in dropsonde data
+    dropsondes = dict()
+    for file in dropsonde_files:
+        k = file[-11:-5] if key == "RF17" else file[27:35].replace("_", "")
+        dropsondes[k] = xr.open_dataset(f"{dropsonde_path}/{file}")
+        if key == "RF18":
+            dropsondes[k]["ta"] = dropsondes[k].ta - 273.15
+            dropsondes[k]["rh"] = dropsondes[k].rh * 100
+    dropsonde_ds[key] = dropsondes
+
     # read in ifs data
-    ifs_ds_sel[key] = xr.open_dataset(f'{ifs_path}/{ifs_file}').set_index(rgrid=['lat', 'lon'])
-
-    # read in ecrad data
-    ecrad_dict, ecrad_org = dict(), dict()
-
-    for k in ecrad_versions:
-        ds = xr.open_dataset(f'{ecrad_path}/ecrad_merged_inout_{date}_{k}.nc')
-        # add net terrestrial irradiance
-        ds['flux_net_lw'] = ds['flux_dn_lw'] - ds['flux_up_lw']
-        ecrad_org[k] = ds.copy(deep=True)
-        # select only center column for direct comparisons
-        ds = ds.sel(column=0, drop=True) if 'column' in ds.dims else ds
-        ecrad_dict[k] = ds.copy(deep=True)
-
-    ecrad_dicts[key] = ecrad_dict
-    ecrad_orgs[key] = ecrad_org
+    ifs = xr.open_dataset(f"{ifs_path}/{ifs_file}").set_index(rgrid=["lat", "lon"])
+    # filter low clouds according to ECMWF low cloud criterion (pressure higher than 0.8 * surface pressure)
+    cloud_data = ifs[["q_liquid", "q_ice", "cloud_fraction", "clwc", "ciwc", "crwc", "cswc"]]
+    pressure_filter = ifs.pressure_full.sel(level=137) * 0.8
+    low_cloud_filter = ifs.pressure_full < pressure_filter  # False for low clouds
+    cloud_data = cloud_data.where(low_cloud_filter, 0)  # replace where False with 0
+    ifs.update(cloud_data)
+    ifs_ds[key] = ifs.copy(deep=True)
+    # read in ifs data along flight path
+    ifs_ds_sel[key] = xr.open_dataset(f'{ifs_path}/{ifs_sel_file}').set_index(rgrid=['lat', 'lon'])
 
     loaded_objects = list()
     filenames = [f'{key}_slices.pkl', f'{key}_above_cloud.pkl', f'{key}_below_cloud.pkl']
@@ -97,233 +131,512 @@ for key in keys:
 # read in stats
 stats = pd.read_csv(f'{save_path}/halo-ac3_bacardi_ecrad_statistics.csv')
 
-# %% solar transmissivity - prepare data for box/violin plot
-ecrad_var = 'transmissivity_sw_above_cloud'
-label = 'transmissivity_sw'
-bacardi_var = 'transmissivity_above_cloud'
-df = pd.DataFrame()
-for key in keys:
-    dfs = list()
-    dfs.append(df)
-    for v in ecrad_versions:
-        dfs.append(pd.DataFrame({'values': (ecrad_orgs[key][v][ecrad_var]
-                                            .isel(half_level=ecrad_dicts[key][v].aircraft_level)
-                                            .sel(time=slices[key]['below'])
-                                            .to_numpy()
-                                            .flatten()),
-                                 'label': v,
-                                 'key': key}))
+# %% plot BACARDI misalignment error
+theta = np.arange(60, 90, 5)
+d_theta = np.arange(0, 3.5, 0.5)
+# Create a DataFrame
+df = pd.DataFrame({'theta': np.repeat(theta, len(d_theta)),
+                   'd_theta': np.tile(d_theta, len(theta))})
+# Calculate psi
+df['psi'] = (np.cos(np.deg2rad(df['theta'] + df['d_theta']))
+             / np.cos(np.deg2rad(df['theta'])))
+df['error'] = (df['psi'] - 1) * 100
 
-    dfs.append(pd.DataFrame({'values': (bacardi_ds[key][bacardi_var]
-                                        .sel(time=slices[key]['below'])
-                                        .dropna('time')
-                                        .to_pandas()
-                                        .reset_index(drop=True)),
-                             'label': 'BACARDI',
-                             'key': key}))
-    df = pd.concat(dfs)
-
-df = df.reset_index(drop=True)
-
-# %% solar transmissivity - get statistics
-st_stats = (df
-            .groupby(['key', 'label'])['values']
-            .describe()
-            .sort_values(['key', 'mean'], ascending=[True, False]))
-
-# %% 3D effects - plot violinplot of solar transmissivity
-h.set_cb_friendly_colors('petroff_6')
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    df_plot = df[(df.key == key)
-                 & (df.label.isin(['BACARDI', 'v15.1', 'v22', 'v18.1', 'v24']))]
-    df_plot['label'] = df_plot['label'].astype('category')
-    sns.violinplot(df_plot, x='label', y='values', hue='label',
-                   order=['BACARDI', 'v15.1', 'v22', 'v18.1', 'v24'],
-                   ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad 3D on\nFu-IFS (v22)',
-                        'ecRad Reference\nBaran2016 (v18.1)',
-                        'ecRad 3D on\nBaran2016 (v24)'],
-           ylim=(0.45, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid()
-
-axs[0].set(ylabel=f'{h.cbarlabels[label]}')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_3d_effects_violin.png'
-plt.savefig(f'{plot_path}/{figname}', dpi=300)
-plt.show()
-plt.close()
-
-# %% 3D effects - plot boxplot with all simulations
-h.set_cb_friendly_colors('cartocolor')
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    df_plot = df[(df.key == key)
-                 & (df.label.isin(['BACARDI'] + ecrad_versions))]
-    sns.boxplot(df_plot, x='label', y='values', notch=True, hue='label',
-                order=['BACARDI', 'v15.1', 'v22', 'v18.1', 'v24', 'v16', 'v26', 'v20', 'v27'],
-                ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
-                        'Fu-IFS (v15.1)',
-                        '3D on Fu-IFS (v22)',
-                        'Baran2016 (v18.1)',
-                        '3D on Baran2016 (v24)',
-                        'VarCloud Fu-IFS (v16)',
-                        'VarCloud 3D Fu-IFS (v26)',
-                        'VarCloud Baran2016 (v20)',
-                        'VarCloud 3D Baran2016 (v27)'],
-           ylim=(0.45, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-    ax.grid()
-
-axs[0].set(ylabel=f'{h.cbarlabels[label]}')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_3d_effects_boxplot_all.png'
-plt.savefig(f'{plot_path}/{figname}', dpi=300)
-plt.show()
-plt.close()
-
-# %% sea ice - plot violinplot of below cloud transmissivity
-h.set_cb_friendly_colors('petroff_6')
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    df_plot = df[(df.key == key)
-                 & (df.label.isin(['BACARDI', 'v15.1', 'v13', 'v13.2']))]
-    df_plot['label'] = (df_plot['label']
-                        .astype('category')
-                        .cat.reorder_categories(['BACARDI', 'v15.1', 'v13', 'v13.2']))
-    sns.violinplot(df_plot, x='label', y='values', hue='label',
-                   ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
-                        'ecRad Reference\nsimulation (v15.1)',
-                        'ecRad Open ocean\nsimulation (v13)',
-                        'ecRad Measured albedo\nsimulation (v13.2)'],
-           ylim=(0.4, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid()
-
-axs[0].set(ylabel='Solar transmissivity')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_albedo_violin.png'
-plt.savefig(f'{plot_path}/{figname}', dpi=300)
-plt.show()
-plt.close()
-
-# %% aerosol - plot violinplot of solar transmissivity
-plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    df_plot = df[(df.key == key)
-                 & (df.label.isin(['BACARDI', 'v15.1', 'v30.1']))]
-    df_plot['label'] = df_plot['label'].astype('category')
-    sns.violinplot(df_plot, x='label', y='values', hue='label', ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad aerosol on\nFu-IFS (v30.1)',
-                        ],
-           ylim=(0.45, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid()
-
-axs[0].set(ylabel=f'{h.cbarlabels[label]}')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_aerosol_violin.png'
-plt.savefig(f'{plot_path}/{figname}', dpi=300)
-plt.show()
-plt.close()
-
-# %% aerosol - plot violinplot of solar transmissivity for all simulations
-plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    df_plot = df[(df.key == key)
-                 & (df.label.isin(['BACARDI', 'v15.1', 'v30.1', 'v31.1', 'v32.1']))]
-    df_plot['label'] = df_plot['label'].astype('category')
-    sns.violinplot(df_plot, x='label', y='values', hue='label', ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad aerosol on\nFu-IFS (v30.1)',
-                        'ecRad aerosol on\nYi2013 (v31.1)',
-                        'ecRad aerosol on\nBaran2016 (v32.1)',
-                        ],
-           ylim=(0.45, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid()
-
-axs[0].set(ylabel=f'{h.cbarlabels[label]}')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_aerosol_violin_all.png'
-plt.savefig(f'{plot_path}/{figname}', dpi=300)
-plt.show()
-plt.close()
-
-# %% aerosol - print stats
-st_stats[st_stats.index.isin(['BACARDI', 'v15.1', 'v30.1', 'v31.1', 'v32.1'], level=1)]
-
-# %% terrestrial irradiance - plot BACARDI vs. ecRad terrestrial downward above cloud
-plt.rc('font', size=10)
-label = ['(a)', '(b)']
-for v in ['v15.1', 'v18.1', 'v19.1']:
-    _, axs = plt.subplots(1, 2, figsize=(16 * h.cm, 8 * h.cm), layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-above_sel = (bahamas_ds[key].IRS_ALT > 11000).resample(time='1Min').first()
-bacardi_res = bacardi_ds_res[key]
-bacardi_plot = bacardi_res.where(bacardi_res.alt > 11000)
-ecrad_ds = ecrad_dicts[key][v]
-height_sel = ecrad_dicts[key][v].aircraft_level
-ecrad_plot = ecrad_ds.flux_dn_lw.isel(half_level=height_sel).where(above_sel)
-
-# actual plotting
-rmse = np.sqrt(np.mean((bacardi_plot['F_down_terrestrial'] - ecrad_plot) ** 2)).to_numpy()
-bias = np.nanmean((bacardi_plot['F_down_terrestrial'] - ecrad_plot).to_numpy())
-ax.scatter(bacardi_plot['F_down_terrestrial'], ecrad_plot, color=cbc[3])
-ax.axline((0, 0), slope=1, color='k', lw=2, transform=ax.transAxes)
-ax.set(
-    aspect='equal',
-    xlabel=r'Measured irradiance (W$\,$m$^{-2}$)',
-    ylabel=r'Simulated irradiance (W$\,$m$^{-2}$)',
-    xlim=(20, 40),
-    ylim=(20, 40),
-)
+plt.rc('font', size=9)
+_, ax = plt.subplots(figsize=(9 * h.cm, 9 * h.cm), layout='constrained')
+sns.lineplot(df, x='d_theta', y='error',
+             hue='theta', palette=cbc,
+             style='theta', markers=True, dashes=False, markersize=8,
+             ax=ax)
+ax.legend(title='Solar zenith\n   angle (°)')
 ax.grid()
-ax.text(
-    0.025,
-    0.95,
-    f'{label[i]} {key.replace('1', ' 1')}\n'
-    f'n= {sum(~np.isnan(bacardi_plot['F_down_terrestrial'])):.0f}\n'
-    f'RMSE: {rmse:.0f} {h.plot_units['flux_dn_lw']}\n'
-    f'Bias: {bias:.0f} {h.plot_units['flux_dn_lw']}',
-    ha='left',
-    va='top',
-    transform=ax.transAxes,
-    bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'),
+ax.set(
+    xlabel='Horizontal misalignment (°)',
+    ylabel='Irradiance deviation $\\Phi_F$ (%)'
 )
+figname = f'{plot_path}/03_phi_f.pdf'
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
 
-figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_bacardi_ecrad_f_down_terrestrial_above_cloud_all_{v}.png'
+# %% plot flight track together with trajectories and high cloud cover
+cmap = mpl.colormaps["tab20b_r"]([20, 20, 0, 3, 4, 7, 8, 11, 12, 15, 16, 19])
+cmap[:2] = mpl.colormaps["tab20c"]([7, 4])
+cmap = mpl.colors.ListedColormap(cmap)
+plt_sett = {
+    'label': 'Time relative to release (h)',
+    'norm': plt.Normalize(-72, 0),
+    'ylim': [-72, 0],
+    'cmap_sel': cmap,
+    'cmap_ticks': np.arange(-72, 0.1, 12),
+    'shrink': 1
+}
+data_crs = ccrs.PlateCarree()
+map_crs = ccrs.NorthPolarStereo()
+
+plt.rc("font", size=8)
+fig, axs = plt.subplots(1, 2,
+                        figsize=(17 * h.cm, 9 * h.cm),
+                        subplot_kw={"projection": map_crs},
+                        layout="constrained")
+
+# plot trajectory map 11 April in first row and first column
+ax = axs[0]
+ax.coastlines(alpha=0.5)
+xlim = (-1200000, 1200000)
+ylim = (-2500000, 50000)
+ax.set(title="(a) RF 17")
+# ax.set_extent([-30, 40, 65, 90], crs=map_crs)
+ax.set_extent([xlim[0], xlim[1], ylim[0], ylim[1]], crs=map_crs)
+gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+gl.xlocator = ticker.FixedLocator(np.arange(-180, 180, 20))
+gl.ylocator = ticker.FixedLocator(np.arange(60, 90, 5))
+gl.top_labels = False
+gl.right_labels = False
+
+# Plot the surface pressure - 11 April
+ifs = ifs_ds["RF17"].sel(time="2022-04-11 12:00")
+pressure_levels = np.arange(900, 1125, 5)
+press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
+cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
+                   linestyles='solid', alpha=1, transform=data_crs)
+cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+
+# add seaice edge
+ci_levels = [0.8]
+cci = ax.tricontour(ifs.lon, ifs.lat, ifs.ci, ci_levels, transform=data_crs, linestyles="--", colors="#332288",
+                    linewidths=1)
+
+# add high cloud cover according to IFS
+ifs_cc = ifs.hcc
+hcc = ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=np.arange(0.2, 1.01, 0.1), transform=data_crs,
+                     cmap="Blues", alpha=0.5)
+# ax.tricontour(ifs.lon, ifs.lat, ifs_cc, levels=[0.2], linestyles=":", colors="blue", transform=data_crs,
+#               alpha=1, linewidths=0.5)
+
+# add colorbar
+axins1 = inset_axes(
+    ax,
+    width="3%",  # width: 50% of parent_bbox width
+    height="25%",  # height: 5%
+    loc="upper left",
+)
+plt.colorbar(hcc, cax=axins1, orientation="vertical", ticks=[0.2, 0.4, 0.6, 0.8, 1])
+axins1.yaxis.set_ticks_position("right")
+axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=6,
+                       path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+
+# plot trajectories - 11 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220411_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to upper char
+for j in range(len(header)):
+    header[j] = header[j].upper()
+
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+var_index = header.index("TIME")
+
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett['cmap_sel'], norm=plt_sett['norm'],
+                        alpha=1, transform=data_crs)
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
+
+# plot flight track - 11 April
+ins = bahamas_ds["RF17"]
+track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
+ax.plot(track_lons[::1000], track_lats[::1000], c="k",
+        zorder=400, transform=data_crs)
+
+# highlight case study region
+ins_hl = ins.sel(time=slices["RF17"]["above"])
+ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
+        zorder=400, transform=ccrs.PlateCarree())
+
+# plot dropsonde locations - 11 April
+ds_dict = dropsonde_ds["RF17"]
+for i, ds in enumerate(ds_dict.values()):
+    ds["alt"] = ds.alt / 1000  # convert altitude to km
+    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
+                    zorder=450)
+    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=7, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+
+# plot trajectories 12 April in second row first column
+ax = axs[1]
+ax.coastlines(alpha=0.5)
+ax.set(title="(b) RF 18")
+ax.set_extent([xlim[0], xlim[1], ylim[0], ylim[1]], crs=map_crs)
+gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+gl.top_labels = False
+gl.right_labels = False
+gl.xlocator = ticker.FixedLocator(np.arange(-180, 180, 20))
+gl.ylocator = ticker.FixedLocator(np.arange(60, 90, 5))
+
+# Plot the surface pressure - 12 April
+ifs = ifs_ds["RF18"].sel(time="2022-04-12 12:00")
+pressure_levels = np.arange(900, 1125, 5)
+press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
+cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
+                   linestyles='solid', alpha=1, transform=data_crs)
+cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+
+# add seaice edge
+ci_levels = [0.8]
+cci = ax.tricontour(ifs.lon, ifs.lat, ifs.ci, ci_levels, transform=data_crs, linestyles="--", colors="#332288",
+                    linewidths=1)
+
+# add high cloud cover according to IFS
+ifs_cc = ifs.hcc
+hcc = ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=np.arange(0.2, 1.01, 0.1), transform=data_crs,
+                     cmap="Blues", alpha=0.5)
+# ax.tricontour(ifs.lon, ifs.lat, ifs_cc, levels=[0.2], linestyles=":", colors="blue", transform=data_crs,
+#               alpha=1, linewidths=0.5)
+
+# add colorbar
+axins1 = inset_axes(
+    ax,
+    width="3%",  # width: 50% of parent_bbox width
+    height="25%",  # height: 5%
+    loc="upper left",
+)
+cb = plt.colorbar(hcc, cax=axins1, orientation="vertical", ticks=[0.2, 0.4, 0.6, 0.8, 1])
+axins1.yaxis.set_ticks_position("right")
+axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=6,
+                       path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+
+# plot trajectories - 12 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220412_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to lower char.
+for j in range(len(header)):
+    header[j] = header[j].upper()  # convert to lower
+
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett['cmap_sel'], norm=plt_sett['norm'],
+                        alpha=1, transform=ccrs.PlateCarree())
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
+
+# plot flight track - 12 April
+ins = bahamas_ds["RF18"]
+track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
+ax.plot(track_lons[::1000], track_lats[::1000], c="k",
+        zorder=400, transform=ccrs.PlateCarree())
+
+# highlight case study region
+ins_hl = ins.sel(time=slices["RF18"]["above"])
+ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
+        zorder=400, transform=ccrs.PlateCarree())
+
+# plot dropsonde locations - 12 April
+ds_dict = dropsonde_ds["RF18"]
+for i, ds in enumerate(ds_dict.values()):
+    launch_time = pd.to_datetime(ds.time[0].to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, transform=data_crs, zorder=450)
+for i in [-4]:
+    ds = list(ds_dict.values())[i]
+    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=7, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+
+# make legend for flight track and dropsondes
+labels = ["HALO flight track", "Case study section",
+          "Dropsonde", "Sea ice edge",
+          "Mean sea level pressure (hPa)", "High cloud cover at 12:00 UTC"]
+handles = [plt.plot([], ls="-", color="k")[0],  # flight track
+           plt.plot([], ls="-", color=cbc[1])[0],  # case study section
+           cross[0],  # dropsondes
+           plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
+           plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
+           Patch(facecolor="royalblue", alpha=0.5)]  # cloud cover
+fig.legend(handles=handles, labels=labels, framealpha=1, ncols=3,
+           loc="outside lower center")
+
+cbar = fig.colorbar(line, pad=0.01, ax=ax,
+                    shrink=plt_sett["shrink"],
+                    ticks=plt_sett["cmap_ticks"])
+cbar.set_label(label=plt_sett['label'])
+
+figname = f"{plot_path}/03_HALO-AC3_RF17_RF18_fligh_track_trajectories_plot_overview.png"
+plt.savefig(figname, dpi=600)
+plt.show()
+plt.close()
+
+# %% plot zoom of case study region RF 18
+plt.rc("font", size=5)
+fig, ax = plt.subplots(figsize=(2 * h.cm, 2.5 * h.cm),
+                       subplot_kw={"projection": map_crs},
+                       layout="constrained")
+
+# plot trajectories 12 April in second row first column
+ax.coastlines(alpha=0.5)
+ax.set_extent([-20, 22, 87, 90], crs=data_crs)
+gl = ax.gridlines(crs=data_crs, draw_labels=False, linewidth=1, color='gray', alpha=0.5,
+                  linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
+
+# Plot the surface pressure - 12 April
+ifs = ifs_ds["RF18"].sel(time="2022-04-12 12:00")
+pressure_levels = np.arange(900, 1125, 5)
+press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
+cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
+                   linestyles='solid', alpha=1, transform=data_crs)
+# cp.clabel(fontsize=2, inline=1, inline_spacing=1, fmt='%i hPa', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=4, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+
+# add high cloud cover
+ifs_cc = ifs.hcc
+hcc = ax.tricontourf(ifs.lon, ifs.lat, ifs_cc, levels=np.arange(0.2, 1.01, 0.1), transform=data_crs,
+                     cmap="Blues", alpha=0.5)
+
+# plot trajectories - 12 April
+header_line = [2]  # header-line of .1 files is always line #2 (counting from 0)
+date_h = f"20220412_07"
+# get filenames
+fname_traj = "traj_CIRR_HALO_" + date_h + ".1"
+trajs = np.loadtxt(f"{trajectory_path}/{fname_traj}", dtype="f", skiprows=5)
+times = trajs[:, 0]
+# generate object to only load specific header line
+gen = h.generate_specific_rows(f"{trajectory_path}/{fname_traj}", userows=header_line)
+header = np.loadtxt(gen, dtype="str", unpack=True)
+header = header.tolist()  # convert to list
+# convert to lower char.
+for j in range(len(header)):
+    header[j] = header[j].upper()  # convert to lower
+
+# get the time step of the trajectories # here: manually set
+dt = 0.01
+traj_single_len = 4320  # int(tmax/dt)
+traj_overall_len = int(len(times))
+traj_num = int(traj_overall_len / (traj_single_len + 1))  # +1 for the empty line after
+# each traj
+for k in range(traj_single_len + 1):
+    # reduce to hourly? --> [::60]
+    lon = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 1][::60]
+    lat = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), 2][::60]
+    var = trajs[k * (traj_single_len + 1):(k + 1) * (traj_single_len + 1), var_index][::60]
+    x, y = lon, lat
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    lc = LineCollection(segments, cmap=plt_sett['cmap_sel'], norm=plt_sett['norm'],
+                        alpha=1, transform=ccrs.PlateCarree())
+    # Set the values used for colormapping
+    lc.set_array(var)
+    if int(traj_num) == 1:
+        lc.set_linewidth(5)
+    elif int(traj_num) >= 2:
+        lc.set_linewidth(1)
+    line = ax.add_collection(lc)
+
+# plot flight track - 12 April
+ins = bahamas_ds["RF18"]
+track_lons, track_lats = ins["IRS_LON"], ins["IRS_LAT"]
+ax.plot(track_lons[::1000], track_lats[::1000], c="k",
+        zorder=400, transform=data_crs)
+
+# highlight case study region
+ins_hl = ins.sel(time=slices["RF18"]["above"])
+ax.plot(ins_hl.IRS_LON[::20], ins_hl.IRS_LAT[::20], c=cbc[1],
+        zorder=400, transform=data_crs)
+
+# plot dropsonde locations - 12 April
+ds_dict = dropsonde_ds["RF18"]
+for i in [0, -3, -6, 6, 3]:
+    ds = list(ds_dict.values())[i]
+    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    cross = ax.plot(x, y, "x", color="orangered", markersize=4, transform=data_crs, zorder=450)
+    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
+    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
+    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=6, transform=data_crs, zorder=500,
+            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+
+figname = f"{plot_path}/03_HALO-AC3_RF18_fligh_track_trajectories_plot_overview_zoom.png"
+plt.savefig(figname, dpi=600, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# %% solar irradiance - plot BACARDI six panel plot with above and below cloud measurements and transmissivity
+plt.rc("font", size=9)
+xlims = [(0, 240), (0, 320)]
+ylim_transmissivity = (0.45, 1)
+ylim_irradiance = [(100, 279), (80, 260)]
+label_xy = (0.03, 0.9)
+box_xy = (0.98, 0.9)
+_, axs = plt.subplots(3, 2, figsize=(17 * h.cm, 15 * h.cm),
+                      layout="constrained")
+
+# upper left panel - RF17 BACARDI F above cloud
+ax = axs[0, 0]
+plot_ds = bacardi_ds["RF17"].sel(time=slices["RF17"]["above"])
+plot_ds["distance"] = bahamas_ds["RF17"]["distance"].sel(time=slices["RF17"]["above"])
+# set first distance to 0
+plot_ds["distance"][0] = 0
+# sum up distances to generate a distance axis and convert to km
+plot_ds["cum_distance"] = plot_ds["distance"].cumsum() / 1000
+# bacardi measurements
+for var in ["F_down_solar", "F_up_solar"]:
+    ax.plot(plot_ds.cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
+ax.legend(loc=4, fontsize=9)
+ax.grid()
+ax.text(box_xy[0], box_xy[1], "Above cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.set(title="RF 17 - 11 April 2022",
+       ylabel=f"Solar irradiance ({h.plot_units['flux_dn_sw']})",
+       ylim=ylim_irradiance[0],
+       xlim=xlims[0])
+
+# middle left panel - RF17 BACARDI F below_cloud
+ax = axs[1, 0]
+plot_ds = bacardi_ds["RF17"].sel(time=slices["RF17"]["below"])
+plot_ds["distance"] = bahamas_ds["RF17"]["distance"].sel(time=slices["RF17"]["below"])
+# set first distance to 0
+plot_ds["distance"][0] = 0
+# sum up distances to generate a distance axis and convert to km, flip the distance to show travel in other direction
+cum_distance = np.flip(plot_ds["distance"].cumsum().to_numpy() / 1000)
+# bacardi measurements
+for var in ["F_down_solar", "F_up_solar"]:
+    ax.plot(cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
+ax.grid()
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.set(ylabel=f"Solar irradiance ({h.plot_units['flux_dn_sw']})",
+       ylim=ylim_irradiance[1],
+       xlim=xlims[0])
+
+# lower left panel - RF17 transmissivity
+ax = axs[2, 0]
+# ax.axhline(y=1, color="k")
+ax.plot(cum_distance, plot_ds["transmissivity_above_cloud"], label="Solar transmissivity", color=cbc[3])
+ax.grid()
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.set(ylabel="Solar transmissivity",
+       xlabel="Distance (km)",
+       ylim=ylim_transmissivity,
+       xlim=xlims[0])
+
+# upper right panel - RF18 BACARDI F above cloud
+ax = axs[0, 1]
+plot_ds = bacardi_ds["RF18"].sel(time=slices["RF18"]["above"])
+plot_ds["distance"] = bahamas_ds["RF18"]["distance"].sel(time=slices["RF18"]["above"])
+# set first distance to 0
+plot_ds["distance"][0] = 0
+# sum up distances to generate a distance axis and convert to km
+plot_ds["cum_distance"] = plot_ds["distance"].cumsum() / 1000
+# bacardi measurements
+for var in ["F_down_solar", "F_up_solar"]:
+    ax.plot(plot_ds.cum_distance, plot_ds[var], label=f"{h.bacardi_labels[var]}")
+ax.grid()
+ax.text(box_xy[0], box_xy[1], "Above cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.set(title="RF 18 - 12 April 2022",
+       ylim=ylim_irradiance[0],
+       xlim=xlims[1])
+
+# middle right panel - RF18 BACARDI F below cloud
+ax = axs[1, 1]
+plot_ds = bacardi_ds["RF18"].sel(time=slices["RF18"]["below"])
+plot_ds["distance"] = bahamas_ds["RF18"]["distance"].sel(time=slices["RF18"]["below"])
+# set first distance to 0
+plot_ds["distance"][0] = 0
+# sum up distances to generate a distance axis and convert to km
+plot_ds["cum_distance"] = plot_ds["distance"].cumsum() / 1000
+# bacardi measurements
+for var in ["F_down_solar", "F_up_solar"]:
+    ax.plot(plot_ds["cum_distance"], plot_ds[var], label=f"{h.bacardi_labels[var]}")
+ax.grid()
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.set(ylim=ylim_irradiance[1],
+       xlim=xlims[1])
+
+# lower right panel - RF18 transmissivity
+ax = axs[2, 1]
+# ax.axhline(y=1, color="k")
+ax.plot(plot_ds["cum_distance"], plot_ds["transmissivity_above_cloud"],
+        label="Solar transmissivity", color=cbc[3])
+ax.grid()
+# ax.text(label_xy[0], label_xy[1], "(f)", transform=ax.transAxes)
+ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
+        transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
+ax.set(xlabel="Distance (km)",
+       ylim=ylim_transmissivity,
+       xlim=xlims[1])
+
+# set a-f labels
+for ax, label in zip(axs.flatten(), ["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"]):
+    ax.text(label_xy[0], label_xy[1], label, transform=ax.transAxes, fontsize=8)
+
+figname = f"{plot_path}/03_HALO-AC3_HALO_RF17_RF18_BACARDI_case_studies_6panel.pdf"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
 # %% terrestrial irradiance - plot BACARDI terrestrial fluxes - 6 panel figure
-plt.rc('font', size=10)
+plt.rc('font', size=9)
 xlims = [(0, 240), (0, 320)]
 ylim_net = (-175, 0)
 ylim_irradiance = [(0, 280), (0, 280)]
-yticks = mticker.MultipleLocator(50)
+yticks = ticker.MultipleLocator(50)
 label_xy = (0.03, 0.9)
 box_xy = (0.98, 0.9)
 _, axs = plt.subplots(3, 2, figsize=(17 * h.cm, 15 * h.cm), layout='constrained')
@@ -447,7 +760,7 @@ ax.set(xlabel='Distance (km)',
 for ax, label in zip(axs.flatten(), ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)']):
     ax.text(label_xy[0], label_xy[1], label, transform=ax.transAxes)
 
-figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_BACARDI_terrestrial_case_studies_6panel.png'
+figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_BACARDI_terrestrial_case_studies_6panel.pdf'
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
@@ -458,311 +771,78 @@ selection = (stats['version'].isin(['v1', 'v15.1'])
              & (stats['variable'].isin(sel_vars)
                 | stats['variable'].isin(['flux_dn_lw', 'flux_up_lw', 'flux_net_lw'])))
 df_print = stats[selection]
+# %% lidar plot
+ylim = (0, 10)
+plt.rc('font', size=9)
+_, axs = plt.subplot_mosaic([['top_left', 'top_right'],
+                             ['bottom_left', 'bottom_right']],
+                            figsize=(17 * h.cm, 10 * h.cm), layout='constrained')
+# lidar RF17
+ax = axs['top_left']
+key = 'RF17'
+plot_ds = (lidar_ds[key]['backscatter_ratio']
+           .where((lidar_ds[key].flags == 0)
+                  & (lidar_ds[key].backscatter_ratio > 1))
+           .sel(time=slices[key]['above']))
+plot_ds.plot(x='time', y='height', cmap=cmr.rainforest_r, norm=colors.LogNorm(),
+             vmax=100, add_colorbar=False,
+             ax=ax)
+h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
+ax.set(
+    title='RF17 - 11 April 2024',
+    xlabel='',
+    ylabel='Altitude (km)',
+    ylim=ylim)
 
-# %% terrestrial irradiance - plot PDF of net terrestrial irradiance below cloud
-plt.rc('font', size=10)
-label = [['(a)', '(b)', '(c)'], ['(d)', '(e)', '(f)']]
-ylims = [(0, 0.3), (0, 0.12)]
-xlims = (-150, -25)
-legend_loc = ['upper right']
-binsize = 1
-xlabel = r'Net terrestrial irradiance (W$\,$m$^{-2}$)'
-_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm), layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    l = label[i]
-    bacardi_sel = bacardi_ds[key].sel(time=slices[key]['below'])
-    bacardi_plot = bacardi_sel['F_net_terrestrial'].resample(time='1Min').mean()
-    bins = np.arange(-150, -25, binsize)
-    # BACARDI histogram
-    bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
+# radar RF17
+ax = axs['bottom_left']
+key = 'RF17'
+plot_ds = (radar_ds[key]['dBZg']
+           .sel(time=slices[key]['above']))
+plot_ds.plot(x='time', y='height', cmap=cmr.torch_r, vmax=0, vmin=-50,
+             add_colorbar=False,
+             ax=ax)
+h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
+ax.set(
+    xlabel='Time (UTC)',
+    ylabel='Altitude (km)',
+    ylim=ylim)
 
-    for ii, v in enumerate(['v15.1', 'v19.1', 'v18.1']):
-        v_name = ecrad.get_version_name(v[:3])
-        a = ax[ii]
-        ecrad_ds = ecrad_orgs[key][v].sel(time=slices[key]['below'])
-        height_sel = ecrad_ds['aircraft_level']
-        ecrad_plot = ecrad_ds['flux_net_lw'].isel(half_level=height_sel)
+# lidar RF18
+ax = axs['top_right']
+key = 'RF18'
+plot_ds = (lidar_ds[key]['backscatter_ratio']
+           .where((lidar_ds[key].flags == 0)
+                  & (lidar_ds[key].backscatter_ratio > 1))
+           .sel(time=slices[key]['above']))
+plot_ds.plot(x='time', y='height', cmap=cmr.rainforest_r, norm=colors.LogNorm(),
+             vmax=100, cbar_kwargs=dict(label='Backscatter ratio\nat 532$\\,$nm'),
+             ax=ax)
+h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
+ax.set(
+    title='RF18 - 12 April 2024',
+    xlabel='',
+    ylabel='',
+    ylim=ylim)
 
-        # actual plotting
-        sns.histplot(bacardi_plot, label='BACARDI', ax=a, stat='density', kde=False, bins=bins, element='step')
-        sns.histplot(ecrad_plot.to_numpy().flatten(), label=v_name, stat='density', element='step',
-                     kde=False, bins=bins, ax=a, color=cbc[ii + 1])
-        # add mean
-        a.axvline(bacardi_plot.mean(), color=cbc[0], lw=3, ls='--')
-        a.axvline(ecrad_plot.mean(), color=cbc[ii + 1], lw=3, ls='--')
-        a.plot([], ls='--', color='k', label='Mean')  # label for means
-        a.set(ylabel='',
-              ylim=ylims[i],
-              xlim=xlims
-              )
-        handles, labels = a.get_legend_handles_labels()
-        order = [1, 0, 2]
-        handles = [handles[idx] for idx in order]
-        labels = [labels[idx] for idx in order]
-        if key == 'RF17':
-            a.legend(handles, labels, loc=legend_loc[i])
-        a.text(
-            0.02,
-            0.95,
-            f'{l[ii]}',
-            ha='left',
-            va='top',
-            transform=a.transAxes,
-        )
-        a.grid()
+# radar RF18
+ax = axs['bottom_right']
+key = 'RF18'
+plot_ds = (radar_ds[key]['dBZg']
+           .sel(time=slices[key]['above']))
+plot_ds.plot(x='time', y='height', cmap=cmr.torch_r, vmax=0, vmin=-50,
+             cbar_kwargs=dict(label='Equivalent reflectivity\nfactor (dBZ)'),
+             ax=ax)
+h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
+ax.set(
+    xlabel='Time (UTC)',
+    ylabel='',
+    ylim=ylim)
 
-    ax[0].set(ylabel='Probability density function')
-    ax[1].set(title=f'{key.replace('1', ' 1')} '
-                f'(n = {len(ecrad_plot.to_numpy().flatten()):.0f})')
-    if key == 'RF18':
-        ax[1].set(xlabel=xlabel)
+for k, label in zip(axs, ['(a)', '(b)', '(c)', '(d)']):
+    axs[k].text(0.01, 0.91, label, transform=axs[k].transAxes)
 
-figname = (f'{plot_path}/03_HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_F_net_terr_PDF'
-           f'_below_cloud_ice_optics'
-           f'_all_columns.pdf')
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% terrestrial irradiance - plot PDF of net terrestrial irradiance below cloud VarCloud
-plt.rc('font', size=10)
-label = [['(a)', '(b)', '(c)'], ['(d)', '(e)', '(f)']]
-ylims = [(0, 0.3), (0, 0.12)]
-xlims = (-150, -25)
-legend_loc = ['upper right']
-binsize = 1
-xlabel = r'Net terrestrial irradiance (W$\,$m$^{-2}$)'
-_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm), layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    l = label[i]
-    bacardi_sel = bacardi_ds[key].sel(time=slices[key]['below'])
-    bacardi_plot = bacardi_sel['F_net_terrestrial'].resample(time='1Min').mean()
-    bins = np.arange(-150, -25, binsize)
-    # BACARDI histogram
-    bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
-
-    for ii, v in enumerate(['v16', 'v28', 'v20']):
-        v_name = ecrad.get_version_name(v[:3])
-        v_name = v_name.replace(' VarCloud', '')
-        a = ax[ii]
-        ecrad_ds = ecrad_orgs[key][v].sel(time=slices[key]['below'])
-        height_sel = ecrad_ds['aircraft_level']
-        ecrad_plot = ecrad_ds['flux_net_lw'].isel(half_level=height_sel)
-
-        # actual plotting
-        sns.histplot(bacardi_plot, label='BACARDI', ax=a, stat='density', kde=False, bins=bins, element='step')
-        sns.histplot(ecrad_plot.to_numpy().flatten(), label=v_name, stat='density', element='step',
-                     kde=False, bins=bins, ax=a, color=cbc[ii + 1])
-        # add mean
-        a.axvline(bacardi_plot.mean(), color=cbc[0], lw=3, ls='--')
-        a.axvline(ecrad_plot.mean(), color=cbc[ii + 1], lw=3, ls='--')
-        a.plot([], ls='--', color='k', label='Mean')  # label for means
-        a.set(ylabel='',
-              ylim=ylims[i],
-              xlim=xlims
-              )
-        handles, labels = a.get_legend_handles_labels()
-        order = [1, 0, 2]
-        handles = [handles[idx] for idx in order]
-        labels = [labels[idx] for idx in order]
-        if key == 'RF17':
-            a.legend(handles, labels, loc=legend_loc[i])
-        a.text(
-            0.02,
-            0.95,
-            f'{l[ii]}',
-            ha='left',
-            va='top',
-            transform=a.transAxes,
-        )
-        a.grid()
-
-    ax[0].set(ylabel='Probability density function')
-    ax[1].set(title=f'{key.replace('1', ' 1')} '
-                    f'(n = {len(ecrad_plot.to_numpy().flatten()):.0f})')
-    if key == 'RF18':
-        ax[1].set(xlabel=xlabel)
-
-figname = (f'{plot_path}/03_HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_F_net_terr_PDF'
-           f'_below_cloud_ice_optics_VarCloud'
-           f'_all_columns.pdf')
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% terrestrial irradiance - print stats for all simulations
-sel_vars = ['F_net_terrestrial']
-selection = (stats['version'].isin(['v1', 'v15.1', 'v16', 'v19.1', 'v28', 'v18.1', 'v20'])
-             & (stats['section'] == 'below')
-             & (stats['variable'].isin(sel_vars)
-                | stats['variable'].isin(['flux_net_lw'])))
-df_print = stats[selection]
-
-# %% terrestrial irradiance - plot PDF of downward terrestrial irradiance below cloud
-plt.rc('font', size=10)
-label = [['(a)', '(b)', '(c)'], ['(d)', '(e)', '(f)']]
-ylims = [(0, 0.3), (0, 0.12)]
-xlims = (80, 200)
-legend_loc = ['lower right']
-binsize = 1
-xlabel = r'Terrestrial downward irradiance (W$\,$m$^{-2}$)'
-_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm), layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-l = label[i]
-bacardi_sel = bacardi_ds[key].sel(time=slices[key]['below'])
-bacardi_plot = bacardi_sel['F_down_terrestrial'].resample(time='1Min').mean()
-bins = np.arange(xlims[0], xlims[1], binsize)
-# BACARDI histogram
-bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
-
-for ii, v in enumerate(['v15.1', 'v19.1', 'v18.1']):
-    v_name = ecrad.get_version_name(v[:3])
-a = ax[ii]
-ecrad_ds = ecrad_orgs[key][v].sel(time=slices[key]['below'])
-height_sel = ecrad_ds['aircraft_level']
-ecrad_plot = ecrad_ds['flux_dn_lw'].isel(half_level=height_sel)
-
-# actual plotting
-sns.histplot(bacardi_plot, label='BACARDI', ax=a, stat='density', kde=False, bins=bins, element='step')
-sns.histplot(ecrad_plot.to_numpy().flatten(), label=v_name, stat='density', element='step',
-             kde=False, bins=bins, ax=a, color=cbc[ii + 1])
-# add mean
-a.axvline(bacardi_plot.mean(), color=cbc[0], lw=3, ls='--')
-a.axvline(ecrad_plot.mean(), color=cbc[ii + 1], lw=3, ls='--')
-a.plot([], ls='--', color='k', label='Mean')  # label for means
-a.set(ylabel='',
-      ylim=ylims[i],
-      xlim=xlims
-      )
-handles, labels = a.get_legend_handles_labels()
-order = [1, 0, 2]
-handles = [handles[idx] for idx in order]
-labels = [labels[idx] for idx in order]
-if key == 'RF17':
-    a.legend(handles, labels, loc=legend_loc[i])
-a.text(
-    0.02,
-    0.95,
-    f'{l[ii]}',
-    ha='left',
-    va='top',
-    transform=a.transAxes,
-)
-a.grid()
-
-ax[0].set(ylabel='Probability density function')
-ax[1].set(title=f'{key.replace('1', ' 1')} '
-                f'(n = {len(ecrad_plot.to_numpy().flatten()):.0f})')
-if key == 'RF18':
-    ax[1].set(xlabel=xlabel)
-
-figname = (f'{plot_path}/03_HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_F_down_terr_PDF'
-           f'_below_cloud_ice_optics'
-           f'_all_columns.pdf')
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% terrestrial irradiance - plot PDF of upward terrestrial irradiance below cloud
-plt.rc('font', size=10)
-label = [['(a)', '(b)', '(c)'], ['(d)', '(e)', '(f)']]
-ylims = [(0, 0.3), (0, 0.12)]
-xlims = (210, 240)
-legend_loc = ['lower right']
-binsize = 1
-xlabel = r'Terrestrial upward irradiance (W$\,$m$^{-2}$)'
-_, axs = plt.subplots(2, 3, figsize=(18 * h.cm, 14 * h.cm), layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-l = label[i]
-bacardi_sel = bacardi_ds[key].sel(time=slices[key]['below'])
-bacardi_plot = bacardi_sel['F_up_terrestrial'].resample(time='1Min').mean()
-bins = np.arange(xlims[0], xlims[1], binsize)
-# BACARDI histogram
-bacardi_hist = np.histogram(bacardi_plot, density=True, bins=bins)
-
-for ii, v in enumerate(['v15.1', 'v19.1', 'v18.1']):
-    v_name = ecrad.get_version_name(v[:3])
-a = ax[ii]
-ecrad_ds = ecrad_orgs[key][v].sel(time=slices[key]['below'])
-height_sel = ecrad_ds['aircraft_level']
-ecrad_plot = ecrad_ds['flux_up_lw'].isel(half_level=height_sel)
-
-# actual plotting
-sns.histplot(bacardi_plot, label='BACARDI', ax=a, stat='density', kde=False, bins=bins, element='step')
-sns.histplot(ecrad_plot.to_numpy().flatten(), label=v_name, stat='density', element='step',
-             kde=False, bins=bins, ax=a, color=cbc[ii + 1])
-# add mean
-a.axvline(bacardi_plot.mean(), color=cbc[0], lw=3, ls='--')
-a.axvline(ecrad_plot.mean(), color=cbc[ii + 1], lw=3, ls='--')
-a.plot([], ls='--', color='k', label='Mean')  # label for means
-a.set(ylabel='',
-      ylim=ylims[i],
-      xlim=xlims
-      )
-handles, labels = a.get_legend_handles_labels()
-order = [1, 0, 2]
-handles = [handles[idx] for idx in order]
-labels = [labels[idx] for idx in order]
-if key == 'RF17':
-    a.legend(handles, labels, loc=legend_loc[i])
-a.text(
-    0.02,
-    0.95,
-    f'{l[ii]}',
-    ha='left',
-    va='top',
-    transform=a.transAxes,
-)
-a.grid()
-
-ax[0].set(ylabel='Probability density function')
-ax[1].set(title=f'{key.replace('1', ' 1')} '
-                f'(n = {len(ecrad_plot.to_numpy().flatten()):.0f})')
-if key == 'RF18':
-    ax[1].set(xlabel=xlabel)
-
-figname = (f'{plot_path}/03_HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_F_up_terr_PDF'
-           f'_below_cloud_ice_optics'
-           f'_all_columns.pdf')
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% cre - plot BACARDI net radiative effect
-plt.rc('font', size=10)
-ylims = (-50, 70)
-_, axs = plt.subplots(2, 1, figsize=(16 * h.cm, 9 * h.cm), layout='constrained')
-for i, k in enumerate(keys):
-    ax = axs[i]
-    plot_ds = bacardi_ds[k].sel(time=slices[k]['case'])
-    time_extend = pd.to_timedelta((plot_ds.time[-1] - plot_ds.time[0]).to_numpy())
-    ax.plot(plot_ds.time, plot_ds['CRE_solar'], label=h.bacardi_labels['CRE_solar'])
-    ax.plot(plot_ds.time, plot_ds['CRE_terrestrial'], label=h.bacardi_labels['CRE_terrestrial'])
-    ax.plot(plot_ds.time, plot_ds['CRE_total'], label=h.bacardi_labels['CRE_total'])
-    ax.axhline(y=0, color='k')
-    h.set_xticks_and_xlabels(ax, time_extend)
-    ax.grid()
-    ax.set(ylabel=f'Cloud radiative\neffect ({h.plot_units['cre_sw']})',
-           ylim=ylims)
-
-axs[0].text(0.03, 0.88, '(a)', transform=axs[0].transAxes)
-axs[1].text(0.03, 0.88, '(b)', transform=axs[1].transAxes)
-axs[1].set_xlabel('Time (UTC)')
-axs[0].legend(loc=1, ncols=3)
-
-figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_BACARDI_libRadtran_CRE.png'
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% cre - plot PDF
-pass
-
-# %% testing
-plot_ds[var].plot(x='time')
+figname = f'{plot_path}/03_HALO-AC3_HALO_RF17_RF18_radar_lidar_backscatter.png'
+plt.savefig(figname, dpi=600)
 plt.show()
 plt.close()
