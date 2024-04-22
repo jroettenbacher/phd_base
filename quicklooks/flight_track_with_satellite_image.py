@@ -49,10 +49,12 @@ for file in dropsonde_files:
         dropsondes[k]['rh'] = dropsondes[k].rh * 100
 
 # Construct Arctic Polar Stereographic projection URL
+left, right, bottom, top = 0, 2415343, -1500000, 0
+layer = "Bands367"  # 'TrueColor'
 url = f'https://gibs.earthdata.nasa.gov/wms/epsg3413/best/wms.cgi?\
 version=1.3.0&service=WMS&request=GetMap&\
-format=image/png&STYLE=default&bbox=0,-1500000,2415343,0&CRS=EPSG:3413&\
-HEIGHT=8192&WIDTH=8192&TIME={urldate}&layers=MODIS_Terra_CorrectedReflectance_TrueColor'
+format=image/png&STYLE=default&bbox={left},{bottom},{right},{top}&CRS=EPSG:3413&\
+HEIGHT=8192&WIDTH=8192&TIME={urldate}&layers=MODIS_Terra_CorrectedReflectance_{layer}'
 
 # Request image
 img = io.imread(url)
@@ -60,8 +62,8 @@ img = io.imread(url)
 # %% plot satellite image with flight track
 data_crs = ccrs.PlateCarree()
 plot_crs = ccrs.NorthPolarStereo(central_longitude=-45)
-extent = (0, 2415343, -1500e3, 0)  # left, right, bottom, top
-_, ax = plt.subplots(figsize=(15 * h.cm, 7.5 * h.cm),
+extent = (left, right, bottom, top)
+_, ax = plt.subplots(figsize=(30 * h.cm, 15 * h.cm),
                      subplot_kw={'projection': plot_crs},
                      layout='constrained')
 # satellite
@@ -71,7 +73,7 @@ ax.plot(lon, lat, color='k', transform=data_crs, label='HALO flight track')
 # dropsondes
 for i, ds in enumerate(dropsondes.values()):
     ds['alt'] = ds.alt / 1000  # convert altitude to km
-    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+    launch_time = pd.to_datetime(ds.launch_time.to_numpy()) if key == 'RF17' else pd.to_datetime(ds.time[0].to_numpy())
     x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
     cross = ax.plot(x, y, 'x', color='orangered', markersize=5, transform=data_crs,
                     zorder=450)
@@ -92,5 +94,9 @@ gl.top_labels = False
 gl.right_labels = False
 
 ax.legend()
+ax.set(
+    title=f'{key} - MODIS Terra {layer} Corrected Reflectance'
+)
+
 plt.show()
 plt.close()
