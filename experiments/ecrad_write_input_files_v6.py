@@ -50,7 +50,15 @@ if __name__ == "__main__":
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
     filter_low_clouds = h.strtobool(args["filter_low_clouds"]) if "filter_low_clouds" in args else True
-    version = "v6" if not filter_low_clouds else "v6.1"
+    no_cosine_dependence = h.strtobool(args["no_cosine_dependence"]) if "no_cosine_dependence" in args else True
+    if not filter_low_clouds and not no_cosine_dependence:
+        version = "v6.0"
+    elif filter_low_clouds and not no_cosine_dependence:
+        version = "v6.1"
+    elif filter_low_clouds and no_cosine_dependence:
+        version = "v6.2"
+    elif not filter_low_clouds and no_cosine_dependence:
+        version = "v6.3"
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -72,6 +80,7 @@ if __name__ == "__main__":
              f"O3 source: {o3_source}\nTrace gas source: {trace_gas_source}\n"
              f"Aerosol source: {aerosol_source}\n"
              f"Filter low level clouds: {filter_low_clouds}\n"
+             f"No cosine dependence: {no_cosine_dependence}\n"
              )
 
     # %% set paths
@@ -218,17 +227,25 @@ if __name__ == "__main__":
         # TODO: Change description to match actual species and not only the radiative description
         ds["aerosol_mmr"] = aerosol_mmr
 
-        # calculate effective radius for all levels
-        ds = apply_ice_effective_radius(ds)
-        ds = apply_liquid_effective_radius(ds)
         # reset the MultiIndex
         ds = ds.reset_index(["rgrid", "lat", "lon"])
         # overwrite the MultiIndex object with simple integers as column numbers
         # otherwise it can not be saved to a netCDF file
         ds["rgrid"] = np.arange(n_rgrid)
+
+        # calculate effective radius for all levels
+        ds = apply_liquid_effective_radius(ds)
+        if no_cosine_dependence:
+            orig_lat = ds["lat"]  # save original latitude
+            # set latitude to 0 to remove cosine dependence from ice effective radius parameterizations
+            ds["lat"] = xr.full_like(ds["lat"], 0)
+            ds = apply_ice_effective_radius(ds)
+            ds["lat"] = orig_lat  # overwrite latitude with original latitude
+        else:
+            ds = apply_ice_effective_radius(ds)
+
         # turn lat, lon, time into variables for cleaner output and to avoid later problems when merging data
         ds = ds.reset_coords(["lat", "lon", "time"]).drop_dims("reduced_points")
-
         for var in ["lat", "lon"]:
             ds[var] = xr.DataArray(ds[var].to_numpy(), dims="rgrid")
         ds = ds.rename(rgrid="column")  # rename rgrid to column for ecrad

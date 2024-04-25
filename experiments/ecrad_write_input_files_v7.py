@@ -14,7 +14,7 @@ Use the VarCloud retrieval for the below cloud section.
 * init_time, initalization time of IFS run (00, 12, yesterday)
 * o3_source, which ozone concentration to use? (one of '47r1', 'ifs', 'constant', 'sonde')
 * trace_gas_source, which trace gas concentrations to use? (one of '47r1', 'constant')
-* aerosol_source, which aersol concentrations to use? (one of '47r1', 'ADS')
+* aerosol_source, which aerosol concentrations to use? (one of '47r1', 'ADS')
 
 **Output:**
 
@@ -52,8 +52,15 @@ if __name__ == "__main__":
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
-    use_varcloud_reice = h.strtobool(args["use_varcloud_reice"]) if "use_varcloud_reice" in args else True
-    version = "v7" if use_varcloud_reice else "v7.1"
+    use_varcloud_reice = h.strtobool(args["use_varcloud_reice"]) if "use_varcloud_reice" in args else False
+    no_cosine_dependence = h.strtobool(args["no_cosine_dependence"]) if "no_cosine_dependence" in args else True
+    if use_varcloud_reice:
+        version = "v7.0"
+        no_cosine_dependence = False
+    elif not no_cosine_dependence:
+        version = "v7.1"
+    elif no_cosine_dependence:
+        version = "v7.2"
 
     if campaign == "halo-ac3":
         import pylim.halo_ac3 as meta
@@ -72,7 +79,8 @@ if __name__ == "__main__":
     # print options to user
     log.info(f"Options set: \ncampaign: {campaign}\nkey: {key}\nflight: {flight}\ndate: {date}\n"
              f"init time: {init_time}\nt_interp: {t_interp}\n"
-             f"use VarCloud re_ice: {use_varcloud_reice}\nversion: {version}\n"
+             f"use VarCloud re_ice: {use_varcloud_reice}\n"
+             f"No cosine: {no_cosine_dependence}\nversion: {version}\n"
              f"O3 source: {o3_source}\nTrace gas source: {trace_gas_source}\n"
              f"Aerosol source: {aerosol_source}\n")
 
@@ -175,7 +183,14 @@ if __name__ == "__main__":
             ds["ciwc"] = ds["q_ice"]
             ds["cswc"] = xr.full_like(ds.cswc, 0)  # set cloud snow water content to 0
             # calculate re_ice from VarCloud IWC
-            ds = apply_ice_effective_radius(ds)
+            if no_cosine_dependence:
+                orig_lat = ds["lat"]  # save original latitude
+                # set latitude to 0 to remove cosine dependence from ice effective radius parameterizations
+                ds["lat"] = xr.full_like(ds["lat"], 0)
+                ds = apply_ice_effective_radius(ds)
+                ds["lat"] = orig_lat  # overwrite latitude with original latitude
+            else:
+                ds = apply_ice_effective_radius(ds)
 
         ds = apply_liquid_effective_radius(ds)
 
