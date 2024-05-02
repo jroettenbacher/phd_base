@@ -14,14 +14,15 @@ import cmasher as cmr
 import dill
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import xarray as xr
 from matplotlib import ticker, patheffects, colors
 from matplotlib.collections import LineCollection
 from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import numpy as np
+import pandas as pd
+from skimage import io
+import seaborn as sns
+import xarray as xr
 
 import pylim.halo_ac3 as meta
 import pylim.helpers as h
@@ -40,12 +41,17 @@ trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC
 # %% read in data
 (
     bahamas_ds, bacardi_ds, bacardi_ds_res, varcloud_ds, above_clouds,
-    below_clouds, slices, ifs_ds, ifs_ds_sel, dropsonde_ds, lidar_ds, radar_ds
-) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
+    below_clouds, slices, ifs_ds, ifs_ds_sel, dropsonde_ds, lidar_ds, radar_ds,
+    sat_imgs
+) = (dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict(), dict())
+
+left, right, bottom, top = 0, 1000000, -1000000, 0
+sat_img_extent = (left, right, bottom, top)
 
 for key in keys:
     flight = meta.flight_names[key]
     date = flight[9:17]
+    urldate = pd.to_datetime(date).strftime('%Y-%m-%d')
     bacardi_path = h.get_path('bacardi', flight, campaign)
     bahamas_path = h.get_path('bahamas', flight, campaign)
     ifs_path = f'{h.get_path('ifs', flight, campaign)}/{date}'
@@ -65,6 +71,11 @@ for key in keys:
     dropsonde_files = [f for f in os.listdir(dropsonde_path) if f.endswith('.nc')]
     radar_file = f"HALO_HALO_AC3_radar_unified_{key}_{date}_v2.6.nc"
     lidar_file = f"HALO-AC3_HALO_WALES_bsrgl_{date}_{key}_V2.0.nc"
+    satfile = f'{save_path}/{key}_MODIS_Terra_CorrectedReflectance_Bands367.png'
+    sat_url = f'https://gibs.earthdata.nasa.gov/wms/epsg3413/best/wms.cgi?\
+    version=1.3.0&service=WMS&request=GetMap&\
+    format=image/png&STYLE=default&bbox={left},{bottom},{right},{top}&CRS=EPSG:3413&\
+    HEIGHT=8192&WIDTH=8192&TIME={urldate}&layers=MODIS_Terra_CorrectedReflectance_Bands367'
 
     # read in aircraft data
     bahamas_ds[key] = xr.open_dataset(f'{bahamas_path}/{bahamas_file}')
@@ -73,6 +84,12 @@ for key in keys:
     # read in resampled BACARDI data
     bacardi_res = xr.open_dataset(f'{bacardi_path}/{bacardi_file.replace('_v2.nc', '_1Min_v2.nc')}')
     bacardi_ds_res[key] = bacardi_res
+
+    # read in satellite image
+    try:
+        sat_imgs[key] = io.imread(satfile)
+    except FileNotFoundError:
+        sat_imgs[key] = io.imread(sat_url)
 
     # read in radar & lidar data
     radar = xr.open_dataset(f"{radar_path}/{radar_file}")
@@ -118,6 +135,7 @@ for key in keys:
     # read in ifs data along flight path
     ifs_ds_sel[key] = xr.open_dataset(f'{ifs_path}/{ifs_sel_file}').set_index(rgrid=['lat', 'lon'])
 
+    # read in time slices
     loaded_objects = list()
     filenames = [f'{key}_slices.pkl', f'{key}_above_cloud.pkl', f'{key}_below_cloud.pkl']
     for filename in filenames:
@@ -511,6 +529,61 @@ for i in [0, -3, -6, 6, 3]:
 
 figname = f"{plot_path}/03_HALO-AC3_RF18_fligh_track_trajectories_plot_overview_zoom.png"
 plt.savefig(figname, dpi=600, bbox_inches='tight')
+plt.show()
+plt.close()
+
+# %% plot satellite image together with flight track
+labels = ['(a)', '(b)']
+date_title = ['11 April 2022', '12 April 2022']
+data_crs = ccrs.PlateCarree()
+plot_crs = ccrs.NorthPolarStereo(central_longitude=-45)
+extent = sat_img_extent
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 2, figsize=(18 * h.cm, 9 * h.cm),
+                      subplot_kw={'projection': plot_crs},
+                      layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    # satellite
+    ax.imshow(sat_imgs[key], extent=extent, origin='upper')
+    # bahamas
+    ax.plot(bahamas_ds[key].IRS_LON, bahamas_ds[key].IRS_LAT,
+            color='k', transform=data_crs, label='HALO flight track')
+    # dropsondes
+    ds = dropsonde_ds[key]
+    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+    x, y = ds.lon.mean(dim='alt').to_numpy(), ds.lat.mean(dim='alt').to_numpy()
+    cross = ax.plot(x, y, 'X', color=cbc[0], markersize=7, transform=data_crs,
+                    zorder=450)
+    if key == 'RF17':
+        for ii, lt in enumerate(launch_time):
+            ax.text(x[ii], y[ii], f'{lt:%H:%M}', c='k', transform=data_crs, zorder=500,
+                    path_effects=[patheffects.withStroke(linewidth=0.5, foreground='white')])
+    else:
+        ds = ds.where(ds.launch_time.isin(ds.launch_time[[1, 6]]), drop=True)
+        launch_time = pd.to_datetime(ds.launch_time.to_numpy())
+        x, y = ds.lon.mean(dim='alt').to_numpy(), ds.lat.mean(dim='alt').to_numpy()
+        for ii, lt in enumerate(launch_time):
+            ax.text(x[ii], y[ii], f"{lt:%H:%M}", color="k", transform=data_crs, zorder=500,
+                    path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+    # add legend artist
+    ax.plot([], label='Dropsonde', ls='', marker='X', color=cbc[0], markersize=7)
+
+    ax.coastlines(color='k', linewidth=1)
+    gl = ax.gridlines(draw_labels=True, dms=True, x_inline=False, y_inline=False)
+    gl.top_labels = False
+    gl.right_labels = False
+
+    ax.set(
+        xlim=(left, right),
+        ylim=(bottom, top),
+    )
+    ax.set_title(f'{labels[i]} {key.replace("1", " 1")} - {date_title[i]}', fontsize=10)
+
+
+axs[1].legend()
+figname = f'{plot_path}/HALO-AC3_RF17_RF18_MODIS_Bands367_flight_track.pdf'
+plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
