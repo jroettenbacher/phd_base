@@ -47,6 +47,10 @@ trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC
 
 left, right, bottom, top = 0, 1000000, -1000000, 0
 sat_img_extent = (left, right, bottom, top)
+# read in dropsonde data
+dropsonde_path = f"{h.get_path('all', campaign=campaign, instrument='dropsondes')}/Level_3"
+dropsonde_file = "merged_HALO_P5_beta_v2.nc"
+dds = xr.open_dataset(f"{dropsonde_path}/{dropsonde_file}")
 
 for key in keys:
     flight = meta.flight_names[key]
@@ -57,8 +61,6 @@ for key in keys:
     ifs_path = f'{h.get_path('ifs', flight, campaign)}/{date}'
     ecrad_path = f'{h.get_path('ecrad', flight, campaign)}/{date}'
     varcloud_path = h.get_path('varcloud', flight, campaign)
-    dropsonde_path = h.get_path('dropsondes', flight, campaign)
-    dropsonde_path = f'{dropsonde_path}/Level_1' if key == 'RF17' else f'{dropsonde_path}/Level_2'
     radar_path = h.get_path("hamp_mira", flight, campaign)
     lidar_path = h.get_path("wales", flight, campaign)
 
@@ -68,7 +70,6 @@ for key in keys:
     ifs_file = f"ifs_{date}_00_ml_O1280_processed.nc"
     ifs_sel_file = f'ifs_{date}_00_ml_O1280_processed_sel_JR.nc'
     varcloud_file = [f for f in os.listdir(varcloud_path) if f.endswith('_JR.nc')][0]
-    dropsonde_files = [f for f in os.listdir(dropsonde_path) if f.endswith('.nc')]
     radar_file = f"HALO_HALO_AC3_radar_unified_{key}_{date}_v2.6.nc"
     lidar_file = f"HALO-AC3_HALO_WALES_bsrgl_{date}_{key}_V2.0.nc"
     satfile = f'{save_path}/{key}_MODIS_Terra_CorrectedReflectance_Bands367.png'
@@ -91,6 +92,9 @@ for key in keys:
     except FileNotFoundError:
         sat_imgs[key] = io.imread(sat_url)
 
+    # split up dropsonde data into RF17 and RF18
+    dropsonde_ds[key] = dds.where(dds.launch_time.dt.date == pd.to_datetime(date).date(), drop=True)
+
     # read in radar & lidar data
     radar = xr.open_dataset(f"{radar_path}/{radar_file}")
     lidar = xr.open_dataset(f"{lidar_path}/{lidar_file}")
@@ -112,16 +116,6 @@ for key in keys:
 
     radar_ds[key] = radar
     lidar_ds[key] = lidar
-
-    # read in dropsonde data
-    dropsondes = dict()
-    for file in dropsonde_files:
-        k = file[-11:-5] if key == "RF17" else file[27:35].replace("_", "")
-        dropsondes[k] = xr.open_dataset(f"{dropsonde_path}/{file}")
-        if key == "RF18":
-            dropsondes[k]["ta"] = dropsondes[k].ta - 273.15
-            dropsondes[k]["rh"] = dropsondes[k].rh * 100
-    dropsonde_ds[key] = dropsondes
 
     # read in ifs data
     ifs = xr.open_dataset(f"{ifs_path}/{ifs_file}").set_index(rgrid=["lat", "lon"])
@@ -192,9 +186,9 @@ plt_sett = {
 data_crs = ccrs.PlateCarree()
 map_crs = ccrs.NorthPolarStereo()
 
-plt.rc("font", size=8)
+plt.rc("font", size=10)
 fig, axs = plt.subplots(1, 2,
-                        figsize=(17 * h.cm, 9 * h.cm),
+                        figsize=(17.75 * h.cm, 9.5 * h.cm),
                         subplot_kw={"projection": map_crs},
                         layout="constrained")
 
@@ -203,7 +197,7 @@ ax = axs[0]
 ax.coastlines(alpha=0.5)
 xlim = (-1200000, 1200000)
 ylim = (-2500000, 50000)
-ax.set(title="(a) RF 17")
+ax.set_title("(a) RF 17 - 11 April 2022", fontsize=10)
 # ax.set_extent([-30, 40, 65, 90], crs=map_crs)
 ax.set_extent([xlim[0], xlim[1], ylim[0], ylim[1]], crs=map_crs)
 gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
@@ -219,7 +213,7 @@ pressure_levels = np.arange(900, 1125, 5)
 press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
 cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
                    linestyles='solid', alpha=1, transform=data_crs)
-cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=7, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add seaice edge
 ci_levels = [0.8]
@@ -242,7 +236,7 @@ axins1 = inset_axes(
 )
 plt.colorbar(hcc, cax=axins1, orientation="vertical", ticks=[0.2, 0.4, 0.6, 0.8, 1])
 axins1.yaxis.set_ticks_position("right")
-axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=6,
+axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=8,
                        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot trajectories - 11 April
@@ -298,20 +292,21 @@ ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
         zorder=400, transform=ccrs.PlateCarree())
 
 # plot dropsonde locations - 11 April
-ds_dict = dropsonde_ds["RF17"]
-for i, ds in enumerate(ds_dict.values()):
-    ds["alt"] = ds.alt / 1000  # convert altitude to km
-    launch_time = pd.to_datetime(ds.launch_time.to_numpy())
-    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=4, label="Dropsonde", transform=data_crs,
-                    zorder=450)
-    ax.text(x, y, f"{launch_time:%H:%M}", c="k", fontsize=7, transform=data_crs, zorder=500,
+ds_ds = dropsonde_ds["RF17"]
+x, y = ds_ds.lon.isel(alt=-1), ds_ds.lat.isel(alt=-1)
+launch_times = pd.to_datetime(ds_ds.launch_time.to_numpy())
+cross = ax.scatter(x, y, marker="x", c="orangered", s=8, label="Dropsonde",
+                   transform=data_crs,
+                   zorder=450)
+for i, lt in enumerate(launch_times):
+    ax.text(x[i], y[i], f"{launch_times[i]:%H:%M}", c="k", fontsize=8,
+            transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot trajectories 12 April in second row first column
 ax = axs[1]
 ax.coastlines(alpha=0.5)
-ax.set(title="(b) RF 18")
+ax.set_title("(b) RF 18 - 12 April 2022", fontsize=10)
 ax.set_extent([xlim[0], xlim[1], ylim[0], ylim[1]], crs=map_crs)
 gl = ax.gridlines(crs=data_crs, draw_labels=True, linewidth=1, color='gray', alpha=0.5,
                   linestyle=':', x_inline=False, y_inline=False, rotate_labels=False)
@@ -326,7 +321,7 @@ pressure_levels = np.arange(900, 1125, 5)
 press = ifs.mean_sea_level_pressure / 100  # conversion to hPa
 cp = ax.tricontour(ifs.lon, ifs.lat, press, levels=pressure_levels, colors='k', linewidths=0.5,
                    linestyles='solid', alpha=1, transform=data_crs)
-cp.clabel(fontsize=5, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
+cp.clabel(fontsize=7, inline=1, inline_spacing=4, fmt='%i', rightside_up=True, use_clabeltext=True)
 
 # add seaice edge
 ci_levels = [0.8]
@@ -349,7 +344,7 @@ axins1 = inset_axes(
 )
 cb = plt.colorbar(hcc, cax=axins1, orientation="vertical", ticks=[0.2, 0.4, 0.6, 0.8, 1])
 axins1.yaxis.set_ticks_position("right")
-axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=6,
+axins1.set_yticklabels([0.2, 0.4, 0.6, 0.8, 1], size=8,
                        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # plot trajectories - 12 April
@@ -404,17 +399,15 @@ ax.plot(ins_hl.IRS_LON[::100], ins_hl.IRS_LAT[::100], c=cbc[1],
         zorder=400, transform=ccrs.PlateCarree())
 
 # plot dropsonde locations - 12 April
-ds_dict = dropsonde_ds["RF18"]
-for i, ds in enumerate(ds_dict.values()):
-    launch_time = pd.to_datetime(ds.time[0].to_numpy())
-    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=4, transform=data_crs, zorder=450)
-for i in [-4]:
-    ds = list(ds_dict.values())[i]
-    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
-    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=7, transform=data_crs, zorder=500,
-            path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
+ds_ds = dropsonde_ds["RF18"]
+x, y = ds_ds.lon.isel(alt=-1), ds_ds.lat.isel(alt=-1)
+launch_times = pd.to_datetime(ds_ds.launch_time.to_numpy())
+cross = ax.scatter(x, y, marker="x", c="orangered", s=8, label="Dropsonde",
+                   transform=data_crs,
+                   zorder=450)
+ax.text(x[10], y[10], f"{launch_times[10]:%H:%M}", c="k", fontsize=8,
+        transform=data_crs, zorder=500,
+        path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 # make legend for flight track and dropsondes
 labels = ["HALO flight track", "Case study section",
@@ -422,7 +415,7 @@ labels = ["HALO flight track", "Case study section",
           "Mean sea level pressure (hPa)", "High cloud cover at 12:00 UTC"]
 handles = [plt.plot([], ls="-", color="k")[0],  # flight track
            plt.plot([], ls="-", color=cbc[1])[0],  # case study section
-           cross[0],  # dropsondes
+           cross,  # dropsondes
            plt.plot([], ls="--", color="#332288")[0],  # sea ice edge
            plt.plot([], ls="solid", lw=0.7, color="k")[0],  # isobars
            Patch(facecolor="royalblue", alpha=0.5)]  # cloud cover
@@ -516,15 +509,17 @@ ax.plot(ins_hl.IRS_LON[::20], ins_hl.IRS_LAT[::20], c=cbc[1],
         zorder=400, transform=data_crs)
 
 # plot dropsonde locations - 12 April
-ds_dict = dropsonde_ds["RF18"]
-for i in [0, -3, -6, 6, 3]:
-    ds = list(ds_dict.values())[i]
-    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
-    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    cross = ax.plot(x, y, "x", color="orangered", markersize=4, transform=data_crs, zorder=450)
-    launch_time = pd.to_datetime(ds.time[-1].to_numpy())
-    x, y = ds.lon.mean().to_numpy(), ds.lat.mean().to_numpy()
-    ax.text(x, y, f"{launch_time:%H:%M}", color="k", fontsize=6, transform=data_crs, zorder=500,
+ds_ds = dropsonde_ds["RF18"]
+ds_ds = ds_ds.where(ds_ds.launch_time > pd.Timestamp('2022-04-12 10:30'), drop=True)
+x, y = ds_ds.lon.isel(alt=-1), ds_ds.lat.isel(alt=-1)
+launch_times = pd.to_datetime(ds_ds.launch_time.to_numpy())
+for i, lt in enumerate(launch_times):
+    cross = ax.scatter(x[i], y[i], marker="x", c="orangered", s=8,
+                       label="Dropsonde",
+                       transform=data_crs,
+                       zorder=450)
+    ax.text(x[i], y[i], f"{lt:%H:%M}", c="k", fontsize=6,
+            transform=data_crs, zorder=500,
             path_effects=[patheffects.withStroke(linewidth=0.5, foreground="white")])
 
 figname = f"{plot_path}/03_HALO-AC3_RF18_fligh_track_trajectories_plot_overview_zoom.png"
@@ -582,7 +577,7 @@ for i, key in enumerate(keys):
 
 
 axs[1].legend()
-figname = f'{plot_path}/HALO-AC3_RF17_RF18_MODIS_Bands367_flight_track.pdf'
+figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_MODIS_Bands367_flight_track.pdf'
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
