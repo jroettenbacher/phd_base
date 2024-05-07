@@ -563,11 +563,10 @@ ax.text(0.517, 0.935, 'Section 3', bbox=box_props, transform=ax.transAxes, size=
 ax.text(0.015, 0.43, 'Section 4', bbox=box_props, transform=ax.transAxes, size=6)
 ax.text(0.517, 0.43, 'Section 5', bbox=box_props, transform=ax.transAxes, size=6)
 ax.axis('off')
-ax.set_aspect('auto', adjustable='box')
-fig.text(0.52, 0.47, '(e)')
+fig.text(0.52, 0.43, '(e)')
 
 plt.savefig(f'{plot_path}/Fig_arctic_cloud.pdf', dpi=300, bbox_inches='tight')
-# plt.show()
+plt.show()
 plt.close()
 
 # %% testing
