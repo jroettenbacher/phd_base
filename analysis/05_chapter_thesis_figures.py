@@ -199,7 +199,7 @@ for i, key in enumerate(keys):
         ylim=(0, 12),
         xlabel='Air temperature (°C)',
     )
-    ax.set_title(f'{key} - {date_title[i]}', fontsize=10)
+    ax.set_title(f'{key.replace("1", " 1")} - {date_title[i]}', fontsize=10)
     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=15))
     ax.plot([], color='grey', label='IFS profiles')
     ax.axhline(below_cloud_altitude[key], c='k')
@@ -224,7 +224,7 @@ for i, key in enumerate(keys):
         ylim=(0, 12),
         xlabel='Relative humidity \nover ice (%)',
     )
-    ax.set_title(f'{key} - {date_title[i]}', fontsize=10)
+    ax.set_title(f'{key.replace("1", " 1")} - {date_title[i]}', fontsize=10)
     ax.xaxis.set_major_locator(mticker.MultipleLocator(base=25))
     ax.plot([], color='grey', label='IFS profiles')
     ax.axhline(below_cloud_altitude[key], c='k')
@@ -432,29 +432,34 @@ for v in ["v15.1"]:
 ecrad_var = 'transmissivity_sw_above_cloud'
 label = 'transmissivity_sw'
 bacardi_var = 'transmissivity_above_cloud'
-df = pd.DataFrame()
-for key in keys:
-    dfs = list()
-    dfs.append(df)
-    for v in ecrad_versions:
-        dfs.append(pd.DataFrame({'values': (ecrad_orgs[key][v][ecrad_var]
-                                            .isel(half_level=ecrad_dicts[key][v].aircraft_level)
+filepath = f'{save_path}/halo-ac3_{label}_boxplot_data.csv'
+if os.path.isfile(filepath):
+    df = pd.read_csv(filepath)
+else:
+    df = pd.DataFrame()
+    for key in keys:
+        dfs = list()
+        dfs.append(df)
+        for v in ecrad_versions:
+            dfs.append(pd.DataFrame({'values': (ecrad_orgs[key][v][ecrad_var]
+                                                .isel(half_level=ecrad_dicts[key][v].aircraft_level)
+                                                .sel(time=slices[key]['below'])
+                                                .to_numpy()
+                                                .flatten()),
+                                     'label': v,
+                                     'key': key}))
+
+        dfs.append(pd.DataFrame({'values': (bacardi_ds[key][bacardi_var]
                                             .sel(time=slices[key]['below'])
-                                            .to_numpy()
-                                            .flatten()),
-                                 'label': v,
+                                            .dropna('time')
+                                            .to_pandas()
+                                            .reset_index(drop=True)),
+                                 'label': 'BACARDI',
                                  'key': key}))
+        df = pd.concat(dfs)
 
-    dfs.append(pd.DataFrame({'values': (bacardi_ds[key][bacardi_var]
-                                        .sel(time=slices[key]['below'])
-                                        .dropna('time')
-                                        .to_pandas()
-                                        .reset_index(drop=True)),
-                             'label': 'BACARDI',
-                             'key': key}))
-    df = pd.concat(dfs)
-
-df = df.reset_index(drop=True)
+    df = df.reset_index(drop=True)
+    df.to_csv(filepath, index=False)
 
 # %% solar transmissivity - get statistics
 st_stats = (df
@@ -462,30 +467,68 @@ st_stats = (df
             .describe()
             .sort_values(['key', 'mean'], ascending=[True, False]))
 
+# %% sea ice - plot violinplot of below cloud transmissivity
+h.set_cb_friendly_colors('petroff_6')
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+                      layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    df_plot = df[(df.key == key)
+                 & (df.label.isin(['BACARDI', 'v15.1', 'v13', 'v13.2']))]
+    df_plot['label'] = (df_plot['label']
+                        .astype('category')
+                        .cat.reorder_categories(['BACARDI', 'v15.1', 'v13', 'v13.2']))
+    sns.violinplot(df_plot, x='values', y='label', hue='label',
+                   ax=ax)
+    ax.set(xlabel='Solar transmissivity',
+           ylabel='',
+           yticklabels='',
+           xlim=(0.35, 1),
+           )
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
+    ax.grid()
+
+axs[0].set_yticklabels(['BACARDI',
+                        'ecRad Reference\nsimulation (v15.1)',
+                        'ecRad Open ocean\nsimulation (v13)',
+                        'ecRad Measured albedo\nsimulation (v13.2)'],)
+figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_albedo_violin.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
 # %% 3D effects - plot violinplot of solar transmissivity
 h.set_cb_friendly_colors('petroff_6')
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 9 * h.cm),
+                      layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
     df_plot = df[(df.key == key)
                  & (df.label.isin(['BACARDI', 'v15.1', 'v22', 'v18.1', 'v24']))]
     df_plot['label'] = df_plot['label'].astype('category')
-    sns.violinplot(df_plot, x='label', y='values', hue='label',
+    sns.violinplot(df_plot, x='values', y='label', hue='label',
                    order=['BACARDI', 'v15.1', 'v22', 'v18.1', 'v24'],
                    ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
+    ax.set(xlabel='Solar transmissivity',
+           ylabel='',
+           yticklabels='',
+           xlim=(0.45, 1),
+           )
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
+    ax.grid()
+
+axs[0].set_yticklabels(['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
                         'ecRad 3D on\nFu-IFS (v22)',
                         'ecRad Reference\nBaran2016 (v18.1)',
-                        'ecRad 3D on\nBaran2016 (v24)'],
-           ylim=(0.45, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid()
-
-axs[0].set(ylabel=f'{h.cbarlabels[label]}')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_3d_effects_violin.png'
+                        'ecRad 3D on\nBaran2016 (v24)'])
+figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_3d_effects_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
@@ -521,33 +564,6 @@ plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
-# %% sea ice - plot violinplot of below cloud transmissivity
-h.set_cb_friendly_colors('petroff_6')
-_, axs = plt.subplots(1, 2, figsize=h.figsize_wide, layout='constrained')
-for i, key in enumerate(keys):
-    ax = axs[i]
-    df_plot = df[(df.key == key)
-                 & (df.label.isin(['BACARDI', 'v15.1', 'v13', 'v13.2']))]
-    df_plot['label'] = (df_plot['label']
-                        .astype('category')
-                        .cat.reorder_categories(['BACARDI', 'v15.1', 'v13', 'v13.2']))
-    sns.violinplot(df_plot, x='label', y='values', hue='label',
-                   ax=ax)
-    ax.set(xlabel='', ylabel='',
-           xticklabels=['BACARDI',
-                        'ecRad Reference\nsimulation (v15.1)',
-                        'ecRad Open ocean\nsimulation (v13)',
-                        'ecRad Measured albedo\nsimulation (v13.2)'],
-           ylim=(0.4, 1),
-           title=key.replace('1', ' 1'))
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid()
-
-axs[0].set(ylabel='Solar transmissivity')
-figname = f'03_HALO_AC3_RF17_RF18_{bacardi_var}_BACARDI_ecRad_albedo_violin.png'
-plt.savefig(f'{plot_path}/{figname}', dpi=300)
-plt.show()
-plt.close()
 
 # %% aerosol - plot violinplot of solar transmissivity
 plt.rc('font', size=10)
