@@ -52,10 +52,10 @@ if __name__ == "__main__":
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
-    use_varcloud_reice = h.strtobool(args["use_varcloud_reice"]) if "use_varcloud_reice" in args else False
+    use_varcloud_reice = h.strtobool(args["use_varcloud_reice"]) if "use_varcloud_reice" in args else True
     no_cosine_dependence = h.strtobool(args["no_cosine_dependence"]) if "no_cosine_dependence" in args else True
     if use_varcloud_reice:
-        version = "v7.0"
+        version = "v7"
         no_cosine_dependence = False
     elif not no_cosine_dependence:
         version = "v7.1"
@@ -173,6 +173,10 @@ if __name__ == "__main__":
         q_ice = varcloud_sel["Varcloud_Cloud_Ice_Water_Content"] * units("kg/m3") / air_density
         # overwrite ice water content
         ds["q_ice"] = q_ice.metpy.dequantify().where(~np.isnan(q_ice), 0)
+        # overwrite cloud fraction, set it to 1 whenever there is a retrieved IWC value
+        ds["cloud_fraction"] = (ds['cloud_fraction']
+                                .where(ds.q_ice > 0, 0)  # set values outside the cloud to 0
+                                .where(~(ds.q_ice > 0), 1))  # set values inside cloud to 1
 
         if use_varcloud_reice:
             # assign effective radius
