@@ -52,7 +52,7 @@ if __name__ == "__main__":
     filter_low_clouds = h.strtobool(args["filter_low_clouds"]) if "filter_low_clouds" in args else True
     no_cosine_dependence = h.strtobool(args["no_cosine_dependence"]) if "no_cosine_dependence" in args else True
     if not filter_low_clouds and not no_cosine_dependence:
-        version = "v6.0"
+        version = "v6"
     elif filter_low_clouds and not no_cosine_dependence:
         version = "v6.1"
     elif filter_low_clouds and no_cosine_dependence:
