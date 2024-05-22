@@ -35,25 +35,25 @@ Namelists can be found in the corresponding date folder in the ecrad folder for 
    :file: files/ecrad_version_overview.csv
    :header-rows: 1
 
-=============   ==========================================  =================
-Input version   Namelist version                            Short description
-=============   ==========================================  =================
-1               1, 2, 3.1, 3.2, 4, 5, 6, 7, 12              Original along track data from F1280 IFS output
-2               8, 9                                        Use VarCloud retrieval as iwc and |re-ice| input along flight track
-3               10                                          Use VarCloud retrieval for below cloud simulation
-4               11                                          Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc
-5               13                                          Set albedo to open ocean (0.06)
-5.1             13.1                                        Set albedo to 0.99
-5.2             13.2                                        Set albedo to BACARDI measurement below cloud
-6               15, 18, 19, 22, 24                          Along track data from O1280 IFS output (used instead of v1)
-6.1             15.1, 18.1, 19.1, 22.1, 24.1, 30, 31, 32    As above but filtered for low clouds
-6.2             39.2, 40.2                                  As above but with latitude set to 0 to remove cosine dependence of the ice effective radius
-7               16, 20, 26, 27, 28, 33, 34, 35, 36, 37, 38  As v3 but with O1280 IFS output
-7.1             16.1, 20.1, 26.1, 27.1, 28.1                As above but using re_ice from Sun & Rikus
-7.2             41.2, 42.2                                  As above but with latitude set to 0 to remove cosine dependence of the ice effective radius
-8               17, 21, 23, 25, 29                          As v2 but with O1280 IFS output
-9               14                                          Turn on aerosol and use CAMS data for it
-=============   ==========================================  =================
+=============   ==============================================  ===========================================================================================
+Input version   Namelist version                                Short description
+=============   ==============================================  ===========================================================================================
+1               1, 2, 3.1, 3.2, 4, 5, 6, 7, 12                  Original along track data from F1280 IFS output
+2               8, 9                                            Use VarCloud retrieval as iwc and |re-ice| input along flight track
+3               10                                              Use VarCloud retrieval for below cloud simulation
+4               11                                              Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc
+5               13                                              Set albedo to open ocean (0.06)
+5.1             13.1                                            Set albedo to 0.99
+5.2             13.2                                            Set albedo to BACARDI measurement below cloud
+6               15, 18, 19, 22, 24                              Along track data from O1280 IFS output (used instead of v1)
+6.1             15.1, 18.1, 19.1, 22.1, 24.1, 30.1, 31.1, 32.1  As above but filtered for low clouds
+6.2             39.2, 40.2                                      As above but with latitude set to 0 to remove cosine dependence of the ice effective radius
+7               16, 20, 26, 27, 28, 33, 34, 35, 36, 37, 38      As v3 but with O1280 IFS output
+7.1             16.1, 20.1, 26.1, 27.1, 28.1                    As above but using re_ice from Sun & Rikus
+7.2             41.2, 42.2                                      As above but with latitude set to 0 to remove cosine dependence of the ice effective radius
+8               17, 21, 23, 25, 29                              As v2 but with O1280 IFS output
+9               14                                              Turn on aerosol and use CAMS data for it
+=============   ==============================================  ===========================================================================================
 
 * ``IFS_namelist_jr_20220411_v1.nam``: for RF17 with **Fu-IFS** ice model
 * ``IFS_namelist_jr_20220411_v2.nam``: for RF17 with **Baran2017** ice model (deprecated)
@@ -223,6 +223,13 @@ CAMS aerosol climatology
 *Script:* :py:mod:`experiments.ecrad_experiment_aerosol.py`
 
 .. automodule:: experiments.ecrad_experiment_aerosol
+
+3-D effects parameterization
+----------------------------
+
+*Script:* :py:mod:`experiments.ecrad_3D_case_study.py`
+
+.. automodule:: experiments.ecrad_3D_case_study
 
 
 ecRad Setups
