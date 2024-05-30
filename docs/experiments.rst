@@ -96,10 +96,10 @@ Input version   Namelist version                                Short descriptio
 * ``IFS_namelist_jr_20220411_v36.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS, **VarCloud** retrieval for q_ice and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
 * ``IFS_namelist_jr_20220411_v37.nam``: for RF17 with **Yi2013** ice model using O1280 IFS, **VarCloud** retrieval for q_ice and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
 * ``IFS_namelist_jr_20220411_v38.nam``: for RF17 with **Baran2016** ice model using O1280 IFS, **VarCloud** retrieval for q_ice and re_ice input **below cloud**, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version **v7**)
-* ``IFS_namelist_jr_20220411_v39.2.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version **v6.2**)
-* ``IFS_namelist_jr_20220411_v40.2.nam``: for RF18 with **Yi2013** ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version **v6.2**)
-* ``IFS_namelist_jr_20220411_v41.2.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
-* ``IFS_namelist_jr_20220411_v42.2.nam``: for RF18 with **Yi2013** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
+* ``IFS_namelist_jr_20220411_v39.2.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version **v6.2**)
+* ``IFS_namelist_jr_20220411_v40.2.nam``: for RF17 with **Yi2013** ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version **v6.2**)
+* ``IFS_namelist_jr_20220411_v41.2.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
+* ``IFS_namelist_jr_20220411_v42.2.nam``: for RF17 with **Yi2013** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
 
 |haloac3| **2022-04-12**
 
@@ -230,6 +230,13 @@ CAMS aerosol climatology
 *Script:* :py:mod:`experiments.ecrad_3D_case_study.py`
 
 .. automodule:: experiments.ecrad_3D_case_study
+
+Longwave cloud scattering
+-------------------------
+
+*Script:* :py:mod:`experiments.ecrad_lw_cloud_scattering.py`
+
+.. automodule:: experiments.ecrad_lw_cloud_scattering
 
 
 ecRad Setups
