@@ -6,7 +6,7 @@
 Set the fractional standard deviation to 0.
 This will remove any subgrid scale variability of IWC.
 Thus, the cloud is homogeneous in each grid cell.
-Using the VarCloud input for these simulations would then have the effect on representing the measured inhomogeneity of the cloud field.
+Using the VarCloud input for these simulations would then have the effect of representing the measured inhomogeneity of the cloud field.
 
 Namelists used:
 
@@ -45,6 +45,10 @@ We can also take a look on the effect the reduced variability has on the solar t
 
     Solar transmissivity below cloud for RF 17 and RF 18 using the three different ice optic parameterizations Fu-IFS, Yi213 and Baran2016 (from left to right).
 
+Although only minute, a small shift to lower transmissivities can be seen.
+All in all, the change to a fractional standard deviation of 0 leads to a minor change of the radiative fluxes.
+Turning the artificially introduced inhomogeneity off, is a better representation of the actual cloud field.
+Therefore, these new versions are used in the paper and the thesis.
 
 """
 
@@ -214,7 +218,7 @@ if __name__ == "__main__":
         slices[key] = dict(case=case_slice, above=above_slice, below=below_slice)
 
 # %% set plotting options
-    var = "flux_dn_sw"
+    var = "flux_up_sw"
     v = "diff"
     band = None
     key = "RF17"
@@ -322,7 +326,7 @@ if __name__ == "__main__":
     h.set_xticks_and_xlabels(ax, time_extend)
 
     figname = f"{plot_path}/{key}_ecrad_{v}_{var}{band_str}_along_track.png"
-    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
 
@@ -396,4 +400,3 @@ if __name__ == "__main__":
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
-
