@@ -3,7 +3,7 @@
 | *author*: Johannes Röttenbacher
 | *created*: 28.06.2023
 
-Use CAMS data and calculate a climatology for relevant input parameters for ecRad.
+Use CAMS data and calculate a monthly mean climatology for relevant input parameters for ecRad.
 
 """
 
