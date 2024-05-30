@@ -43,6 +43,7 @@ if __name__ == "__main__":
     climatology_year = "2020"
 
     # setup logging
+    __file__ = None if '__file__' not in locals() else __file__
     log = h.setup_logging("./logs", __file__, f"{date}")
     log.info(f"The following options have been passed:\n"
              f"campaign: {campaign}\n"
