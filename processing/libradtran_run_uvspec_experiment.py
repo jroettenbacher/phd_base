@@ -32,22 +32,20 @@ if __name__ == "__main__":
     import xarray as xr
     import os
     from operator import itemgetter
-    from subprocess import Popen
     from tqdm import tqdm
-    from joblib import cpu_count
     import datetime as dt
     from pysolar.solar import get_azimuth
 
     # %% set options
-    experiment = "seaice_thermal"  # string defining experiment name, will be used for input path and netCDF filename
+    experiment = "seaice_solar"  # string defining experiment name, will be used for input path and netCDF filename
     campaign = "halo-ac3"
     # get all flights from dictionary
     all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(
         meta.flight_names.values())
-    all_flights = all_flights[18:19]  # select specific flight[s] if needed
+    all_flights = all_flights[19:20]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
-    solar_flag = False
+    solar_flag = True
     # set base paths
     libradtran_base_path = h.get_path("libradtran_exp", campaign=campaign)
 
@@ -78,7 +76,7 @@ if __name__ == "__main__":
                  f"experiment: {experiment}\n"
                  f"solar_flag: {solar_flag}\n"
                  f"uvspec_exe: {uvspec_exe}\n"
-                 f"Script started: {dt.datetime.utcnow():%c UTC}\n"
+                 f"Script started: {dt.datetime.now(dt.datetime.UTC):%c UTC}\n"
                  f"wkdir: {libradtran_path}")
 
         # %% call uvspec for all files
@@ -107,7 +105,7 @@ if __name__ == "__main__":
 
         log.info("Merging all output files and adding information from input files...")
         output_files = [f.replace(".inp", ".out") for f in input_files]  # generate/get output filenames
-        output = pd.concat([pd.read_csv(file, header=None, names=header, sep="\s+").assign(time=ts)
+        output = pd.concat([pd.read_csv(file, header=None, names=header, sep=r"\s+").assign(time=ts)
                             for file, ts in zip(tqdm(output_files, desc="Output files"), time_stamps)])
         # convert output altitude to m
         output["zout"] = output["zout"] * 1000
