@@ -234,6 +234,58 @@ lw_stats = (df_lw
             .groupby(['key', 'label'])['values']
             .describe()
             .sort_values(['key', 'mean'], ascending=[True, False]))
+versions = [v for v in lw_stats.index.get_level_values('label') if v.startswith('v')]
+df_save = lw_stats.reset_index()
+name = list()
+aerosol = list()
+for v in df_save['label']:
+    try:
+        n = ecrad.get_version_name(v[:3])
+        name.append(n)
+        a = 'On' if v[:3] in ecrad.aerosol_on else 'Off'
+        aerosol.append(a)
+    except ValueError:
+        name.append(v)
+        aerosol.append('Off')
+df_save = df_save.assign(name=name, aerosol=aerosol)
+df_save.to_csv(f'{save_path}/HALO-AC3_net_terrestrial_irradiance_stats.csv',
+               index=False)
+
+# %% violinplot
+sel_ver = ['BACARDI', 'v15.1']
+h.set_cb_friendly_colors('petroff_6')
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 6 * h.cm),
+                      layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    df_plot = df_lw[(df_lw.key == key)
+                 & (df_lw.label.isin(sel_ver))]
+    df_plot['label'] = df_plot['label'].astype('category')
+    sns.violinplot(df_plot, x='values', y='label', hue='label',
+                   ax=ax, order=sel_ver)
+    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+           ylabel='',
+           yticklabels='',
+           xlim=(-140, -40),
+           )
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.91, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[0].set(yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        ])
+figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_violin.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
+# %% print statistics
+df_print = lw_stats.loc[pd.IndexSlice[:, ['BACARDI_org'] + sel_ver], :].sort_values('key')
+print(df_print)
 
 # %% plot BACARDI vs. ecRad terrestrial upward below cloud
 plt.rc('font', size=10)
@@ -278,10 +330,94 @@ for v in ['v15.1', 'v18.1', 'v19.1']:
             bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'),
         )
 
-    figname = f'{plot_path}/05_HALO-AC3_RF17_RF18_bacardi_ecrad_f_up_lw_below_cloud_{v}.png'
+    figname = f'{plot_path}/05_HALO-AC3_RF17_RF18_bacardi_ecrad_f_up_lw_below_cloud_{v}.pdf'
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
+
+# %% plot BACARDI vs. ecRad terrestrial downward below cloud
+plt.rc('font', size=10)
+label = ['(a)', '(b)']
+# xlims = [(85, 110), (130, 180)]
+xlims = [(175, 200), (155, 180)]
+for v in ['v15.1', 'v18.1', 'v19.1']:
+    _, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 9 * h.cm),
+                          layout='constrained')
+    for i, key in enumerate(keys):
+        ax = axs[i]
+        time_sel = slices[key]['above']
+        bacardi_res = bacardi_ds_res[key]
+        bacardi_plot = bacardi_res.sel(time=time_sel)
+        ecrad_ds = ecrad_dicts[key][v]
+        height_sel = ecrad_dicts[key][v].aircraft_level
+        ecrad_plot = (ecrad_ds.flux_up_lw
+                      .isel(half_level=height_sel)
+                      .sel(time=time_sel))
+
+        # actual plotting
+        rmse = np.sqrt(np.mean((bacardi_plot['F_up_terrestrial'] - ecrad_plot) ** 2)).to_numpy()
+        bias = np.nanmean((bacardi_plot['F_up_terrestrial'] - ecrad_plot).to_numpy())
+        ax.scatter(bacardi_plot['F_up_terrestrial'], ecrad_plot, color=cbc[3])
+        ax.axline((0, 0), slope=1, color='k', lw=2, transform=ax.transAxes)
+        ax.set(
+            aspect='equal',
+            xlabel=r'Measured irradiance (W$\,$m$^{-2}$)',
+            ylabel=r'Simulated irradiance (W$\,$m$^{-2}$)',
+            xlim=xlims[i],
+            ylim=xlims[i],
+        )
+        ax.grid()
+        ax.text(
+            0.05,
+            0.95,
+            f'{label[i]} {key.replace('1', ' 1')}\n'
+            f'n= {sum(~np.isnan(bacardi_plot['F_up_terrestrial'])):.0f}\n'
+            f'RMSE: {rmse:.0f} {h.plot_units['flux_up_lw']}\n'
+            f'Bias: {bias:.0f} {h.plot_units['flux_up_lw']}',
+            ha='left',
+            va='top',
+            transform=ax.transAxes,
+            bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'),
+        )
+
+    figname = f'{plot_path}/05_HALO-AC3_RF17_RF18_bacardi_ecrad_f_up_lw_above_cloud_{v}.pdf'
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% print mean below-cloud terrestrial upward irradiance
+for key in keys:
+    time_sel = slices[key]['below']
+    bacardi_res = bacardi_ds_res[key]
+    bacardi_plot = bacardi_res.sel(time=time_sel)
+    ecrad_ds = ecrad_dicts[key][v]
+    height_sel = ecrad_dicts[key][v].aircraft_level
+    ecrad_plot = (ecrad_ds.flux_up_lw
+                  .isel(half_level=height_sel)
+                  .sel(time=time_sel))
+    print(f'{key}\n'
+          f'Mean F up BACARDI: {bacardi_plot["F_up_terrestrial"].mean():.2f}\n'
+          f'Std F up BACARDI: {bacardi_plot["F_up_terrestrial"].std():.2f}\n'
+          f'Mean F up ecRad: {ecrad_plot.mean():.2f}\n'
+          f'Std F up ecRad: {ecrad_plot.std():.2f}\n'
+          )
+
+# %% print mean below-cloud terrestrial downward irradiance
+for key in keys:
+    time_sel = slices[key]['below']
+    bacardi_res = bacardi_ds_res[key]
+    bacardi_plot = bacardi_res.sel(time=time_sel)
+    ecrad_ds = ecrad_dicts[key][v]
+    height_sel = ecrad_dicts[key][v].aircraft_level
+    ecrad_plot = (ecrad_ds.flux_dn_lw
+                  .isel(half_level=height_sel)
+                  .sel(time=time_sel))
+    print(f'{key}\n'
+          f'Mean F down BACARDI: {bacardi_plot["F_down_terrestrial"].mean():.2f}\n'
+          f'Std F down BACARDI: {bacardi_plot["F_down_terrestrial"].std():.2f}\n'
+          f'Mean F down ecRad: {ecrad_plot.mean():.2f}\n'
+          f'Std F down ecRad: {ecrad_plot.std():.2f}\n'
+          )
 
 # %% sea ice albedo experiment plot violinplot
 sel_ver = ['BACARDI', 'v15.1', 'v13', 'v13.2']
@@ -450,25 +586,120 @@ plt.show()
 plt.close()
 
 # %% aerosol - plot total aerosol mass mixing ratio
+plt.rc('font', size=9)
+fig, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+                        layout='constrained')
 for i, key in enumerate(keys):
+    ax = axs[i]
     ds = ecrad_orgs[key]['v30.1']
     mmr = (ds.aerosol_mmr
            .mean(dim='column')
            .sum(dim='aer_type')
-           .sel(time=slices[key]['case']) * 1e6)
+           .sel(time=slices[key]['case']) * 1e9)
     mmr = mmr.where(mmr > 0)
-    mmr.plot(x='time', cmap=cm.batlow,
-             # norm=colors.LogNorm(),
-             cbar_kwargs={
-                 'label': 'Aerosol mass mixing ratio (mg$\\,$kg$^{-1}$)'},)
-    plt.xlabel('Time (UTC)')
-    plt.ylabel('Model level')
-    plt.ylim(137, 0)
-    plt.title(f'{key.replace("1", " 1")} - {date_title[i]}')
+    pcm = mmr.plot(x='time', cmap=cm.batlow,
+                   vmin=0.0003, vmax=60,
+                   add_colorbar=False,
+                   norm=colors.LogNorm(),
+                   # cbar_kwargs={
+                   #     'label': 'Aerosol mass mixing ratio (mg$\\,$kg$^{-1}$)'},
+                   ax=ax,
+                   )
+    ax.set(
+        xlabel='Time (UTC)',
+        ylabel='',
+        ylim=(137, 0),
+    )
+    ax.set_title(f'{key.replace("1", " 1")} - {date_title[i]}', fontsize=9)
+    h.set_xticks_and_xlabels(ax, time_extend=pd.Timedelta(1, 'h'))
+
+axs[0].set_ylabel('Model level')
+fig.colorbar(pcm, ax=axs.ravel().tolist(),
+             label='Aerosol mass mixing ratio ($\\mu$g$\\,$kg$^{-1}$)')
+figname = f'HALO-AC3_RF17_RF18_case_IFS_total_aerosol_mmr.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
+# %% aerosol - plot each aerosol species
+plt.rc('font', size=9)
+for type in ecrad_orgs['RF17']['v30.1'].aer_type:
+    fig, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+                            layout='constrained')
+    for i, key in enumerate(keys):
+        ax = axs[i]
+        ds = ecrad_orgs[key]['v30.1']
+        mmr = (ds.aerosol_mmr
+               .mean(dim='column')
+               .sel(aer_type=type,
+                    time=slices[key]['case'])
+               * 1e9)
+        mmr = mmr.where(mmr > 0)
+        pcm = mmr.plot(x='time', cmap=cm.batlow,
+                       vmin=0.0003, vmax=60,
+                       add_colorbar=False,
+                       norm=colors.LogNorm(),
+                       # cbar_kwargs={
+                       #     'label': 'Aerosol mass mixing ratio (mg$\\,$kg$^{-1}$)'},
+                       ax=ax,
+                       )
+        ax.set(
+            xlabel='Time (UTC)',
+            ylabel='',
+            ylim=(137, 0),
+        )
+        ax.set_title(f'{key.replace("1", " 1")} - {date_title[i]}', fontsize=9)
+        h.set_xticks_and_xlabels(ax, time_extend=pd.Timedelta(1, 'h'))
+
+    axs[0].set_ylabel('Model level')
+    fig.colorbar(pcm, ax=axs.ravel().tolist(),
+                 label='Aerosol mass mixing ratio ($\\mu$g$\\,$kg$^{-1}$)')
+    figname = f'HALO-AC3_RF17_RF18_case_IFS_aerosol_mmr_{type.to_numpy()}.png'
+    plt.savefig(f'{plot_path}/{figname}', dpi=300)
     plt.show()
     plt.close()
 
-# %% ice optics plot violinplot
+# %% aerosol - plot total aerosol mass mixing ratio
+plt.rc('font', size=9)
+fig, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+                        layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    ds = ecrad_orgs[key]['v30.1']
+    mmr = (ds.aerosol_mmr
+           .mean(dim='column')
+           .sum(dim='aer_type')
+           .sel(time=slices[key]['case']) * 1e9)
+    mmr = mmr.where(mmr > 0)
+    pcm = mmr.plot(x='time', cmap=cm.batlow,
+                   vmin=0.0003, vmax=60,
+                   add_colorbar=False,
+                   norm=colors.LogNorm(),
+                   # cbar_kwargs={
+                   #     'label': 'Aerosol mass mixing ratio (mg$\\,$kg$^{-1}$)'},
+                   ax=ax,
+                   )
+    ax.set(
+        xlabel='Time (UTC)',
+        ylabel='',
+        ylim=(137, 0),
+    )
+    ax.set_title(f'{key.replace("1", " 1")} - {date_title[i]}', fontsize=9)
+    h.set_xticks_and_xlabels(ax, time_extend=pd.Timedelta(1, 'h'))
+
+axs[0].set_ylabel('Model level')
+fig.colorbar(pcm, ax=axs.ravel().tolist(),
+             label='Aerosol mass mixing ratio ($\\mu$g$\\,$kg$^{-1}$)')
+figname = f'HALO-AC3_RF17_RF18_case_IFS_total_aerosol_mmr.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
+# %% aerosol print stats
+df_print = lw_stats.loc[pd.IndexSlice[:, ['BACARDI_org'] + sel_ver], :].sort_values('key')
+print(df_print)
+
+# %% ice optics - plot violinplot
 sel_ver = ['BACARDI', 'v15.1', 'v19.1', 'v18.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
@@ -502,37 +733,117 @@ plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
-# %% cre - plot BACARDI net radiative effect
+# %% ice optics - print stats
+df_print = lw_stats.loc[pd.IndexSlice[:, ['BACARDI_org'] + sel_ver], :].sort_values('key')
+print(df_print)
+
+# %% VarCloud - plot violinplot
+sel_ver = ['BACARDI', 'v15.1', 'v36']
+h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-ylims = (-50, 70)
-_, axs = plt.subplots(2, 1, figsize=(16 * h.cm, 9 * h.cm), layout='constrained')
-for i, k in enumerate(keys):
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+                      layout='constrained')
+for i, key in enumerate(keys):
     ax = axs[i]
-    plot_ds = bacardi_ds[k].sel(time=slices[k]['case'])
-    time_extend = pd.to_timedelta((plot_ds.time[-1] - plot_ds.time[0]).to_numpy())
-    ax.plot(plot_ds.time, plot_ds['CRE_solar'], label=h.bacardi_labels['CRE_solar'])
-    ax.plot(plot_ds.time, plot_ds['CRE_terrestrial'], label=h.bacardi_labels['CRE_terrestrial'])
-    ax.plot(plot_ds.time, plot_ds['CRE_total'], label=h.bacardi_labels['CRE_total'])
-    ax.axhline(y=0, color='k')
-    h.set_xticks_and_xlabels(ax, time_extend)
+    df_plot = df_lw[(df_lw.key == key)
+                 & (df_lw.label.isin(sel_ver))]
+    df_plot['label'] = df_plot['label'].astype('category')
+    sns.violinplot(df_plot, x='values', y='label', hue='label',
+                   ax=ax, order=sel_ver)
+    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+           ylabel='',
+           yticklabels='',
+           xlim=(-140, -20),
+           )
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
     ax.grid()
-    ax.set(ylabel=f'Cloud radiative\neffect ({h.plot_units['cre_sw']})',
-           ylim=ylims)
 
-axs[0].text(0.03, 0.88, '(a)', transform=axs[0].transAxes)
-axs[1].text(0.03, 0.88, '(b)', transform=axs[1].transAxes)
-axs[1].set_xlabel('Time (UTC)')
-axs[0].legend(loc=1, ncols=3)
-
-figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_BACARDI_libRadtran_CRE.png'
-plt.savefig(figname, dpi=300)
+axs[0].set(yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad VarCloud\nFu-IFS (v36)',
+                        ],)
+figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_varcloud_violin.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
-# %% cre - plot PDF
-pass
+# %% VarCloud - plot violinplot - all ice optics
+sel_ver = ['BACARDI', 'v15.1', 'v36', 'v19.1', 'v37', 'v18.1', 'v38']
+xlims = [(-140, -90), (-140, -10)]
+locator = [10, 25]
+h.set_cb_friendly_colors('petroff_6')
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 10 * h.cm),
+                      layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    df_plot = df_lw[(df_lw.key == key)
+                 & (df_lw.label.isin(sel_ver))]
+    df_plot['label'] = df_plot['label'].astype('category')
+    sns.violinplot(df_plot, x='values', y='label', hue='label',
+                   ax=ax, order=sel_ver)
+    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+           ylabel='',
+           yticklabels='',
+           xlim=xlims[i],
+           )
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(locator[i]))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.grid()
 
-# %% testing
-plot_ds[var].plot(x='time')
+axs[0].set(yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad VarCloud\nFu-IFS (v36)',
+                        'ecRad Reference\nYi2013 (v19.1)',
+                        'ecRad VarCloud\nYi2013 (v37)',
+                        'ecRad Reference\nBaran2016 (v18.1)',
+                        'ecRad VarCloud\nBaran2016 (v38)',
+                        ],)
+figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_varcloud_violin_all.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
+# %% VarCloud - print stats
+df_print = lw_stats.loc[pd.IndexSlice[:, ['BACARDI_org'] + sel_ver], :].sort_values('key')
+print(df_print)
+# %% re_ice latitude dependence - plot violinplot
+sel_ver = ['BACARDI', 'v15.1', 'v39.2']
+h.set_cb_friendly_colors('petroff_6')
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+                      layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    df_plot = df_lw[(df_lw.key == key)
+                 & (df_lw.label.isin(sel_ver))]
+    df_plot['label'] = df_plot['label'].astype('category')
+    sns.violinplot(df_plot, x='values', y='label', hue='label',
+                   ax=ax, order=sel_ver)
+    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+           ylabel='',
+           yticklabels='',
+           xlim=(-140, -20),
+           )
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[0].set(yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad no latitude\nFu-IFS (v39.2)',
+                        ],)
+figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_re_ice_latitude_violin.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
+# %% re_ice latitude - print stats
+df_print = lw_stats.loc[pd.IndexSlice[:, ['BACARDI_org'] + sel_ver], :].sort_values('key')
+print(df_print)

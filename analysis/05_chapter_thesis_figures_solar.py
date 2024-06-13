@@ -1043,36 +1043,6 @@ plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
-# %% cre - plot BACARDI net radiative effect
-plt.rc('font', size=10)
-ylims = (-50, 70)
-_, axs = plt.subplots(2, 1, figsize=(16 * h.cm, 9 * h.cm), layout='constrained')
-for i, k in enumerate(keys):
-    ax = axs[i]
-    plot_ds = bacardi_ds[k].sel(time=slices[k]['case'])
-    time_extend = pd.to_timedelta((plot_ds.time[-1] - plot_ds.time[0]).to_numpy())
-    ax.plot(plot_ds.time, plot_ds['CRE_solar'], label=h.bacardi_labels['CRE_solar'])
-    ax.plot(plot_ds.time, plot_ds['CRE_terrestrial'], label=h.bacardi_labels['CRE_terrestrial'])
-    ax.plot(plot_ds.time, plot_ds['CRE_total'], label=h.bacardi_labels['CRE_total'])
-    ax.axhline(y=0, color='k')
-    h.set_xticks_and_xlabels(ax, time_extend)
-    ax.grid()
-    ax.set(ylabel=f'Cloud radiative\neffect ({h.plot_units['cre_sw']})',
-           ylim=ylims)
-
-axs[0].text(0.03, 0.88, '(a)', transform=axs[0].transAxes)
-axs[1].text(0.03, 0.88, '(b)', transform=axs[1].transAxes)
-axs[1].set_xlabel('Time (UTC)')
-axs[0].legend(loc=1, ncols=3)
-
-figname = f'{plot_path}/03_HALO-AC3_RF17_RF18_BACARDI_libRadtran_CRE.png'
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
-
-# %% cre - plot PDF
-pass
-
 # %% testing
 plot_ds[var].plot(x='time')
 plt.show()
