@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quicklooks &mdash; Arctic Cirrus 0.9.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1bc1ca25"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Experiments" href="experiments.html" />
+    <link rel="prev" title="Processing" href="processing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arctic Cirrus
+          </a>
+              <div class="version">
+                0.9.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">PhD Base Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html#license">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quicklooks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-quicklooks.bahamas_quicklook_halo_ac3">bahamas_quicklook_halo_ac3.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#halo-smart-quicklook-halo-ac3-py">halo_smart_quicklook_halo_ac3.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-quicklooks.smart_write_ncfile_ql">smart_write_ncfile_ql.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-quicklooks.smart_write_INS_ql_file">smart_write_INS_ql_file.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quicklooks</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quicklooks.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quicklooks">
+<h1>Quicklooks<a class="headerlink" href="#quicklooks" title="Permalink to this heading"></a></h1>
+<p>Especially during a campaign it is important to get a quick look into the measured data.
+Usually those quicklooks are provided by each instrument operator or team shortly after the flight.
+For HALO-(AC)<sup>3</sup> a hackathon was held to prepare those quicklooks for each instrument to get a set of comparable plots for each flight.</p>
+<p>Another idea was to generate quicklook files which are mostly unprocessed subsets of the original measurement data, but can be shared and used by other groups easily to prepare combined quicklooks or to correct their measurements.</p>
+<p>From LIM side there are quicklooks provided for:</p>
+<ul class="simple">
+<li><p>BAHAMAS (see <a class="reference internal" href="#bahamas-ql"><span class="std std-ref">bahamas_quicklook_halo_ac3.py</span></a>)</p></li>
+<li><p>HALO-SMART system (see <a class="reference internal" href="#smart-ql"><span class="std std-ref">halo_smart_quicklook_halo_ac3.py</span></a>)</p></li>
+</ul>
+<p>For HALO-SMART there are also two quicklook nc files generated:</p>
+<ul class="simple">
+<li><p>HALO-SMART data quicklook file with selected wavelengths and broadband data (see <a class="reference internal" href="#smart-ql-nc"><span class="std std-ref">smart_write_ncfile_ql.py</span></a>)</p></li>
+<li><p>HALO-SMART INS quicklook file with attitude angles and solar position (see <a class="reference internal" href="#smart-ins-ql-nc"><span class="std std-ref">smart_write_INS_ql_file.py</span></a>)</p></li>
+</ul>
+<section id="module-quicklooks.bahamas_quicklook_halo_ac3">
+<span id="bahamas-quicklook-halo-ac3-py"></span><span id="bahamas-ql"></span><h2>bahamas_quicklook_halo_ac3.py<a class="headerlink" href="#module-quicklooks.bahamas_quicklook_halo_ac3" title="Permalink to this heading"></a></h2>
+<p>Produces the standard BAHAMAS quicklook for HALO-(AC)<sup>3</sup></p>
+<p>Quicklooks:</p>
+<ul class="simple">
+<li><p>map with sea ice extent and flight track</p></li>
+<li><p>TBD: map with MODIS image and flight track</p></li>
+<li><p>Movement quicklook</p></li>
+<li><p>Meteo quicklook</p></li>
+</ul>
+<p><strong>Input</strong>:</p>
+<ul class="simple">
+<li><p>flight</p></li>
+<li><p>Path to files</p></li>
+<li><p>save figure flag</p></li>
+</ul>
+<p><em>author:</em> Johannes Röttenbacher</p>
+</section>
+<section id="halo-smart-quicklook-halo-ac3-py">
+<span id="smart-ql"></span><h2>halo_smart_quicklook_halo_ac3.py<a class="headerlink" href="#halo-smart-quicklook-halo-ac3-py" title="Permalink to this heading"></a></h2>
+<p>TBD</p>
+</section>
+<section id="module-quicklooks.smart_write_ncfile_ql">
+<span id="smart-write-ncfile-ql-py"></span><span id="smart-ql-nc"></span><h2>smart_write_ncfile_ql.py<a class="headerlink" href="#module-quicklooks.smart_write_ncfile_ql" title="Permalink to this heading"></a></h2>
+<p>Given a flight and campaign write a well documented netCDF file containing only certain wavelengths from HALO-SMART
+for quicklooks.
+Add Roll and Pitch angles from the SMART INS to filter the data.</p>
+<p>Two options:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>One spectrometer = one file</p></li>
+<li><p>One flight = one file</p></li>
+</ol>
+</div></blockquote>
+<p>Use option 2 because only a couple of wavelengths will be used.</p>
+<p>This script can be used during campaigns to quickly generate files for quicklooks and sharing with other groups.
+Before the script <cite>smart_write_INS_ql_file.py</cite> should generate the INS ql file</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-quicklooks.smart_write_INS_ql_file">
+<span id="smart-write-ins-ql-file-py"></span><span id="smart-ins-ql-nc"></span><h2>smart_write_INS_ql_file.py<a class="headerlink" href="#module-quicklooks.smart_write_INS_ql_file" title="Permalink to this heading"></a></h2>
+<p>Create a 1Hz INS file for quicklook processing directly after the flight</p>
+<p><strong>Input:</strong> SMART IMS and GPS data</p>
+<p><strong>Output:</strong> 1Hz INS netCDF file</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="processing.html" class="btn btn-neutral float-left" title="Processing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="experiments.html" class="btn btn-neutral float-right" title="Experiments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
