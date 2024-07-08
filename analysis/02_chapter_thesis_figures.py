@@ -133,8 +133,8 @@ else:
 
 # %% plot single scattering albedo
 h.set_cb_friendly_colors('petroff_6')
-rough = '000'
-wl_range = (300, 2500)  # nm
+rough = 0
+wl_range = (300, 5000)  # nm
 shapes_sel = ['droxtal', 'plate', 'solid_column', 'column_8elements']
 selection1 = ((df['roughness'] == rough)
               & (df['wavelength'] > wl_range[0])
@@ -147,10 +147,10 @@ selection2 = ((df['roughness'] == rough)
               & (df['wavelength'] > wl_range[0])
               & (df['wavelength'] < wl_range[1])
               & (df['shape'].isin(['plate', 'solid_column']))
-              & (df['d_max'].isin([10, 20, 30]))
+              & (df['d_max'].isin([10, 20, 40, 80]))
               )
 plt.rc('font', size=9)
-ylim = (0.85, 1.01)
+ylim = (0.2, 1.01)
 fig, axs = plt.subplots(2, 1, layout='constrained',
                         figsize=(15 * h.cm, 9 * h.cm))
 
@@ -169,6 +169,7 @@ ax.set(xlabel='',
        ylabel='',
        xticklabels=[],
        ylim=ylim)
+# ax.yaxis.set_major_locator(mticker.MultipleLocator(0.05))
 handles, labels = ax.get_legend_handles_labels()
 labels = [x.capitalize().replace('_', ' ') for x in labels]
 labels[-1] = "Column aggregate"
@@ -190,9 +191,12 @@ ax.grid()
 ax.set(xlabel='Wavelength (nm)',
        ylabel='',
        ylim=ylim)
+# ax.yaxis.set_major_locator(mticker.MultipleLocator(0.05))
 handles, labels = ax.get_legend_handles_labels()
 labels = [x.capitalize().replace('_', ' ') for x in labels]
-labels[3] = r'$D_{\text{max}}$'
+labels[3] = r'$D_{\text{max}}$ ($\mu m$)'
+handles.insert(3, plt.plot([], ls='')[0])
+labels.insert(3, '')
 handles.insert(3, plt.plot([], ls='')[0])
 labels.insert(3, '')
 ax.legend(handles=handles, labels=labels, ncols=2)
