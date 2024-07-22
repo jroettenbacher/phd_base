@@ -31,7 +31,9 @@ ecrad_dict = dict()
 for v in ['v1', 'v2', 'v3']:
     ecrad_dict[v] = xr.open_dataset(f'{ecrad_path}/ecrad_merged_inout_{v}.nc')
 
-# %% plot minimum ice effective radius from Sun2001 parameterization
+ed = pd.read_csv(f'{save_path}/median_ed_delatorre2023.csv')
+
+# %% plot minimum ice effective radius from Sun2001 parameterization together with median ed from delatorre2023
 latitudes = np.arange(0, 91)
 de2re = 0.64952  # from suecrad.f90
 min_ice = 60
@@ -39,22 +41,17 @@ min_diameter_um = 20 + (min_ice - 20) * np.cos((np.deg2rad(latitudes)))
 min_radius_um = de2re * min_diameter_um
 
 plt.rc('font', size=9)
-# _, ax = plt.subplots(figsize=(15 * h.cm, 7 * h.cm), layout='constrained')
-# ax.plot(min_radius_um, latitudes, '.')
-# ax.set(ylabel='Latitude (°N)', xlabel='Minimum ice effective radius ($\\mu m$)')
-# ax.yaxis.set_major_locator(ticker.MultipleLocator(15))
-# ax.grid()
-# plt.show()
-# plt.close()
-
 _, ax = plt.subplots(figsize=(15 * h.cm, 6 * h.cm), layout='constrained')
 ax.plot(latitudes, min_radius_um, '.', ms=10)
-ax.set(xlabel='Latitude (°N)', ylabel='Minimum\n ice effective radius ($\\mu m$)',
-       ylim=(10, 40), xlim=0)
-ax.xaxis.set_major_locator(ticker.MultipleLocator(15))
-ax.yaxis.set_major_locator(ticker.MultipleLocator(5))
+ed.plot(x='mid_latitude', y='effective_diameter', ax=ax)
+ax.set(xlabel='Latitude (°N)',
+       ylabel='Minimum\n ice effective radius ($\\mu m$)',
+       # ylim=(10, 40),
+       xlim=0)
+# ax.xaxis.set_major_locator(ticker.MultipleLocator(15))
+# ax.yaxis.set_major_locator(ticker.MultipleLocator(5))
 ax.grid()
-plt.savefig(f'{plot_path}/02_reice_min_latitude.pdf', dpi=300)
+# plt.savefig(f'{plot_path}/02_reice_min_latitude.pdf', dpi=300)
 plt.show()
 plt.close()
 
