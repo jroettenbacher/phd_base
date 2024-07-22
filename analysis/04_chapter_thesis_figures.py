@@ -27,6 +27,7 @@ import xarray as xr
 import pylim.halo_ac3 as meta
 import pylim.helpers as h
 from pylim import ecrad
+from pylim.bahamas import preprocess_bahamas
 
 cbc = h.get_cb_friendly_colors('petroff_6')
 
@@ -36,6 +37,8 @@ keys = ['RF17', 'RF18']
 ecrad_versions = ['v15.1']
 save_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data'
 plot_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/figure'
+bacardi_all_path = h.get_path('all', campaign=campaign, instrument='BACARDI')
+bahamas_all_path = h.get_path('all', campaign=campaign, instrument='BAHAMAS')
 trajectory_path = f"{h.get_path('trajectories', campaign=campaign)}/selection_CC_and_altitude"
 
 # %% read in data
@@ -143,6 +146,17 @@ for key in keys:
 # read in stats
 stats = pd.read_csv(f'{save_path}/halo-ac3_bacardi_ecrad_statistics.csv')
 
+# %% read in all BAHAMAS and BACARDI data
+all_files = os.listdir(bacardi_all_path)
+all_files.sort()
+all_files = [os.path.join(bacardi_all_path, file) for file in all_files[2:] if file.endswith("JR.nc")]
+bacardi_ds_all = xr.open_mfdataset(all_files)
+# bahamas
+all_files = [f for f in os.listdir(bahamas_all_path) if f.startswith("HALO")]
+all_files.sort()
+all_files = [os.path.join(bahamas_all_path, file) for file in all_files[1:]]
+bahamas_ds_all = xr.open_mfdataset(all_files, preprocess=preprocess_bahamas)
+
 # %% plot BACARDI misalignment error
 theta = np.arange(60, 90, 5)
 d_theta = np.arange(0, 3.5, 0.5)
@@ -171,6 +185,8 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
+# %% plot BACARDI F_dw_solar deviation from libRadtran simulation
+print('To Be Done')
 # %% plot flight track together with trajectories and high cloud cover
 cmap = mpl.colormaps["tab20b_r"]([20, 20, 0, 3, 4, 7, 8, 11, 12, 15, 16, 19])
 cmap[:2] = mpl.colormaps["tab20c"]([7, 4])
