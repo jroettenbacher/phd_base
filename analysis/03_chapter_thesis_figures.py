@@ -879,12 +879,17 @@ plot_ds = (lidar_ds[key]['backscatter_ratio']
 plot_ds.plot(x='time', y='height', cmap=cmr.rainforest_r, norm=colors.LogNorm(),
              vmax=100, add_colorbar=False,
              ax=ax)
+# add below cloud altitude of HALO
+altitude = bahamas_ds[key]['IRS_ALT'].sel(time=slices[key]['below']).to_numpy() / 1000
+new_t = pd.date_range(plot_ds.time.to_numpy()[0], plot_ds.time.to_numpy()[-1], periods=len(altitude))
+ax.plot(new_t, altitude, color='k', label='HALO below\n cloud altitude')
 h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
 ax.set(
     title='RF17 - 11 April 2024',
     xlabel='',
     ylabel='Altitude (km)',
     ylim=ylim)
+ax.legend(loc=3)
 
 # radar RF17
 ax = axs['bottom_left']
@@ -894,6 +899,10 @@ plot_ds = (radar_ds[key]['dBZg']
 plot_ds.plot(x='time', y='height', cmap=cmr.torch_r, vmax=0, vmin=-50,
              add_colorbar=False,
              ax=ax)
+# add below cloud altitude of HALO
+altitude = bahamas_ds[key]['IRS_ALT'].sel(time=slices[key]['below']).to_numpy() / 1000
+new_t = pd.date_range(plot_ds.time.to_numpy()[0], plot_ds.time.to_numpy()[-1], periods=len(altitude))
+ax.plot(new_t, altitude, color='k')
 h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
 ax.set(
     xlabel='Time (UTC)',
@@ -910,6 +919,10 @@ plot_ds = (lidar_ds[key]['backscatter_ratio']
 plot_ds.plot(x='time', y='height', cmap=cmr.rainforest_r, norm=colors.LogNorm(),
              vmax=100, cbar_kwargs=dict(label='Backscatter ratio\nat 532$\\,$nm'),
              ax=ax)
+# add below cloud altitude of HALO
+altitude = bahamas_ds[key]['IRS_ALT'].sel(time=slices[key]['below']).to_numpy() / 1000
+new_t = pd.date_range(plot_ds.time.to_numpy()[0], plot_ds.time.to_numpy()[-1], periods=len(altitude))
+ax.plot(new_t, altitude, color='k')
 h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
 ax.set(
     title='RF18 - 12 April 2024',
@@ -925,6 +938,10 @@ plot_ds = (radar_ds[key]['dBZg']
 plot_ds.plot(x='time', y='height', cmap=cmr.torch_r, vmax=0, vmin=-50,
              cbar_kwargs=dict(label='Equivalent reflectivity\nfactor (dBZ)'),
              ax=ax)
+# add below cloud altitude of HALO
+altitude = bahamas_ds[key]['IRS_ALT'].sel(time=slices[key]['below']).to_numpy() / 1000
+new_t = pd.date_range(plot_ds.time.to_numpy()[0], plot_ds.time.to_numpy()[-1], periods=len(altitude))
+ax.plot(new_t, altitude, color='k')
 h.set_xticks_and_xlabels(ax, slices[key]['above'].stop - slices[key]['above'].start)
 ax.set(
     xlabel='Time (UTC)',
