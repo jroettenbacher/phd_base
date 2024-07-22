@@ -31,6 +31,8 @@ ecrad_dict = dict()
 for v in ['v1', 'v2', 'v3']:
     ecrad_dict[v] = xr.open_dataset(f'{ecrad_path}/ecrad_merged_inout_{v}.nc')
 
+ecrad_dict['diff_v2'] = ecrad_dict['v1'] - ecrad_dict['v2']
+ecrad_dict['diff_v3'] = ecrad_dict['v1'] - ecrad_dict['v3']
 ed = pd.read_csv(f'{save_path}/median_ed_delatorre2023.csv')
 
 # %% plot minimum ice effective radius from Sun2001 parameterization together with median ed from delatorre2023
@@ -51,7 +53,7 @@ ax.set(xlabel='Latitude (°N)',
 # ax.xaxis.set_major_locator(ticker.MultipleLocator(15))
 # ax.yaxis.set_major_locator(ticker.MultipleLocator(5))
 ax.grid()
-# plt.savefig(f'{plot_path}/02_reice_min_latitude.pdf', dpi=300)
+# plt.savefig(f'{plot_path}/04_reice_min_latitude.pdf', dpi=300)
 plt.show()
 plt.close()
 
@@ -120,7 +122,7 @@ plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
-# %% plot profiles of sensitivity study
+# %% plot profiles of sensitivity study - ice optics
 plt.rc('font', size=9)
 fig, axs = plt.subplots(1, 3, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
 
@@ -170,8 +172,98 @@ axs[0].annotate('Cirrus', xy=(120, 8), xytext=(100, 9),
 axs[0].set(ylabel='Altitude (km)')
 axs[1].set(xlabel=r'Solar downward irradiance (W$\,$m$^{-2}$)')
 
-figname = f'{plot_path}/02_ecrad_sensitivity_study_flux_dn_sw.pdf'
+figname = f'{plot_path}/04_ecrad_sensitivity_study_flux_dn_sw_ice_optics.pdf'
 plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot profiles of sensitivity study - IWC
+plt.rc('font', size=9)
+fig, axs = plt.subplots(1, 3, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
+
+re_ice = '1.5e-05'
+q_ices = ['0.0001', '1e-05', '5e-06']
+vs = ['diff_v2', 'diff_v3']
+lats = ['30', '80']
+titles = [r'$0.1\,$g kg$^{-1}$', r'$0.01\,$g kg$^{-1}$', r'$0.005\,$g kg$^{-1}$']
+ls = ['-', '--']
+labels = ['(a)', '(b)', '(c)']
+altitude = ecrad_dict['v1']['altitude'].sel(q_ice_dim=q_ices[0], re_ice_dim=re_ice, latitude_dim='30', column=0)
+
+for i, q_ice in enumerate(q_ices):
+    ax = axs[i]
+    ax.grid()
+    ax.set(
+        xlim=(-10, 10),
+        ylim=(0, 10),
+        title=titles[i]
+    )
+    ax.text(0.02, 0.95, labels[i], transform=ax.transAxes)
+    ax.fill_between(np.array([-10, 10]), 5, 8, alpha=0.3, color='grey')
+    for ii, v in enumerate(vs):
+        for iii, lat in enumerate(lats):
+            ecrad_plot = ecrad_dict[v].sel(q_ice_dim=q_ice,
+                                           latitude_dim=lat,
+                                           re_ice_dim=re_ice,
+                                           column=0)
+            ax.plot(ecrad_plot.flux_dn_sw.to_numpy(),
+                    altitude.to_numpy(),
+                    color=cbc[ii],
+                    ls=ls[iii],
+                    )
+
+# create nice legend
+axs[0].plot([], color=None, ls='', label='Ice Optics')
+axs[0].plot([], color=cbc[0], label='Yi2013')
+axs[0].plot([], color=cbc[1], label='Baran2016')
+axs[0].plot([], color=None, ls='', label='Latitude')
+axs[0].plot([], color='k', ls=ls[0], label='30°$\\,$N')
+axs[0].plot([], color='k', ls=ls[1], label='80°$\\,$N')
+fig.legend(loc='outside right upper')
+
+axs[0].set(ylabel='Altitude (km)')
+axs[1].set(xlabel=r'Solar downward irradiance (W$\,$m$^{-2}$)')
+
+figname = f'{plot_path}/04_ecrad_sensitivity_study_flux_dn_sw_iwc.pdf'
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+
+# %% plot difference between ice optics
+re_ice = '1.5e-05'
+q_ice = '1e-05'
+vs = ['diff_v2', 'diff_v3']
+lats = ['30', '80']
+half_level = 44.5  # below cloud altitude (5km)
+labels = ['Yi2013', 'Baran2016']
+ls = ['-', '--']
+altitude = ecrad_dict['v1']['altitude'].sel(q_ice_dim=q_ice, re_ice_dim=re_ice, latitude_dim='30', column=0) / 1000
+
+_, ax = plt.subplots(figsize=(15 * h.cm, 6 * h.cm), layout='constrained')
+for i, v in enumerate(vs):
+    for ii, lat in enumerate(lats):
+        flux_dn_sw = ecrad_dict[v]['flux_dn_sw'].sel(q_ice_dim=q_ice, re_ice_dim=re_ice, latitude_dim=lat, column=0)#half_level=half_level)
+        ax.plot(flux_dn_sw.to_numpy(),
+                altitude.to_numpy(),
+                color=cbc[i],
+                ls=ls[ii])
+
+ax.set(
+    ylabel='Altitude (km)',
+    xlabel='Solar downward\n irradiance (W$\\,$m$^{-2}$)',
+    title='',
+    xlim=(-6, 6),
+    ylim=(0, 10),
+)
+# create nice legend
+ax.plot([], color=None, ls='', label='Latitude (°N)')
+ax.plot([], color='k', ls=ls[0], label='30')
+ax.plot([], color='k', ls=ls[1], label='80')
+ax.plot([], color=None, ls='', label='Ice Optics')
+ax.plot([], color=cbc[0], label=labels[0])
+ax.plot([], color=cbc[1], label=labels[1])
+ax.grid()
+ax.legend()
 plt.show()
 plt.close()
 
@@ -191,6 +283,28 @@ for v in vs:
                     stats.append((v, lat, q_ice, label, var, ds[var].to_numpy()))
 
 df = pd.DataFrame(stats, columns=['version', 'latitude', 'q_ice', 'altitude', 'variable', 'value'])
+
+# %% get more statistics
+stats = list()
+variables = ['flux_dn_sw']
+for v in vs:
+    for lat in lats:
+        for q_ice in q_ices:
+            for var in variables:
+                ds = ecrad_dict[v].sel(q_ice_dim=q_ice,
+                                       latitude_dim=lat,
+                                       re_ice_dim=re_ice,
+                                       column=0,
+                                       half_level=slice(42, 50),
+                                       )
+                stats.append((v, lat, q_ice, 'mean', var, np.mean(ds[var].to_numpy())))
+                stats.append((v, lat, q_ice, 'median', var, np.median(ds[var].to_numpy())))
+                stats.append((v, lat, q_ice, 'min', var, np.min(ds[var].to_numpy())))
+                stats.append((v, lat, q_ice, 'max', var, np.max(ds[var].to_numpy())))
+
+df_stat = pd.DataFrame(stats, columns=['version', 'latitude', 'q_ice', 'stat', 'variable', 'value'])
+
+# %% print
 
 # %% calculate difference of above to below cloud solar downward irradiance
 pivot_df = (df[df.variable == 'flux_dn_sw']
