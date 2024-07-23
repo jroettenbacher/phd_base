@@ -493,6 +493,22 @@ st_stats = (df
             .groupby(['key', 'label'])['values']
             .describe()
             .sort_values(['key', 'mean'], ascending=[True, False]))
+versions = [v for v in st_stats.index.get_level_values('label') if v.startswith('v')]
+df_save = st_stats.reset_index()
+name = list()
+aerosol = list()
+for v in df_save['label']:
+    try:
+        n = ecrad.get_version_name(v[:3])
+        name.append(n)
+        a = 'On' if v[:3] in ecrad.aerosol_on else 'Off'
+        aerosol.append(a)
+    except ValueError:
+        name.append(v)
+        aerosol.append('Off')
+df_save = df_save.assign(name=name, aerosol=aerosol)
+df_save.to_csv(f'{save_path}/HALO-AC3_transmissivity_sw_stats.csv',
+               index=False)
 
 # %% plot violinplot with all simulations
 sel_ver = ['BACARDI_org', 'BACARDI'] + ecrad_versions
