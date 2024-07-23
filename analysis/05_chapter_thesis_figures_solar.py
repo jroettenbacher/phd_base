@@ -298,7 +298,7 @@ for i, key in enumerate(keys):
     ax.plot([], color=cbc[1], label='Radar & Lidar Mask', lw=2)
     bahamas_plot.plot(x='time', lw=2, color=cbc[-2], label='HALO altitude', ax=ax)
     ax.axvline(x=pd.to_datetime(f'{bahamas_plot.time.dt.date[0]:%Y-%m-%d} 11:30'),
-               label='New IFS timestep', lw=2, ls='--')
+               label='New IFS time step', lw=2, ls='--')
     h.set_xticks_and_xlabels(ax, time_extend)
     ax.set(xlabel='Time (UTC)', ylabel='Height (km)')
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=0, ha='center')
@@ -307,8 +307,8 @@ for i, key in enumerate(keys):
 fig.colorbar(pcm, ax=axs[:2], label=f'IFS {h.cbarlabels[var].lower()} {h.plot_units[var]}', pad=0.001)
 axs[0].legend(fontsize=8)
 axs[0].set_xlabel('')
-axs[0].text(0.01, 0.85, '(a) RF 17', transform=axs[0].transAxes, bbox=dict(boxstyle='Round', fc='white'))
-axs[1].text(0.01, 0.85, '(b) RF 18', transform=axs[1].transAxes, bbox=dict(boxstyle='Round', fc='white'))
+axs[0].text(0.01, 0.85, '(a) RF 17', transform=axs[0].transAxes)
+axs[1].text(0.01, 0.85, '(b) RF 18', transform=axs[1].transAxes)
 
 figname = f'{plot_path}/05_HALO-AC3_HALO_RF17_RF18_IFS_{var}_radar_lidar_mask.pdf'
 plt.savefig(figname, dpi=300)
