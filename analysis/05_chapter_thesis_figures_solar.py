@@ -537,7 +537,7 @@ plt.close()
 sel_ver = ['BACARDI', 'v15.1', 'v13', 'v13.2']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -548,21 +548,25 @@ for i, key in enumerate(keys):
                         .cat.reorder_categories(sel_ver))
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax)
-    ax.set(xlabel='Solar transmissivity',
+    ax.set(xlabel='',
            ylabel='',
            yticklabels='',
            xlim=(0.35, 1),
            )
+    ax.set_yticklabels(['BACARDI',
+                        'ecRad Reference\nsimulation (v15.1)',
+                        'ecRad Open ocean\nsimulation (v13)',
+                        'ecRad Measured albedo\nsimulation (v13.2)'], )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set_yticklabels(['BACARDI',
-                        'ecRad Reference\nsimulation (v15.1)',
-                        'ecRad Open ocean\nsimulation (v13)',
-                        'ecRad Measured albedo\nsimulation (v13.2)'],)
+axs[1].set(
+    xlabel='Solar transmissivity'
+)
+
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_albedo_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
@@ -612,7 +616,7 @@ print(df_print)
 # %% aerosol - plot violinplot of solar transmissivity
 sel_ver = ['BACARDI', 'v15.1', 'v30.1']
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -621,21 +625,24 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label', ax=ax,
                    order=sel_ver)
-    ax.set(xlabel='Solar transmissivity',
+    ax.set(xlabel='',
            ylabel='',
            yticklabels='',
            xlim=(0.45, 1),
            )
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
-    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
-                 fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
-    ax.grid()
-
-axs[0].set(yticklabels=['BACARDI',
+    ax.set(yticklabels=['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
                         'ecRad aerosol on\nFu-IFS (v30.1)',
                         ])
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[1].set(
+    xlabel='Solar transmissivity'
+)
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_aerosol_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
@@ -683,7 +690,7 @@ st_stats[st_stats.index.isin(['BACARDI_org', 'BACARDI', 'v15.1', 'v30.1', 'v31.1
 # %% ice optics parameterizations - plot violinplot of solar transmissivity
 sel_ver = ['BACARDI', 'v15.1', 'v19.1', 'v18.1']
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -692,22 +699,25 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label', ax=ax,
                    order=sel_ver)
-    ax.set(xlabel='Solar transmissivity',
+    ax.set(xlabel='',
            ylabel='',
            yticklabels='',
            xlim=(0.45, 1),
            )
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
-    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
-                 fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
-    ax.grid()
-
-axs[0].set(yticklabels=['BACARDI',
+    ax.set(yticklabels=['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
                         'ecRad Reference\nYi2013 (v19.1)',
                         'ecRad Reference\nBaran2016 (v18.1)',
                         ])
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[1].set(
+    xlabel='Solar transmissivity'
+)
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_ice_optics_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
@@ -797,7 +807,7 @@ plt.close()
 # %% ice effective radius - plot violinplot of solar transmissivity cosine dependence
 sel_ver = ['BACARDI', 'v15.1', 'v39.2']
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -806,21 +816,24 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label', ax=ax,
                    order=sel_ver)
-    ax.set(xlabel='Solar transmissivity',
+    ax.set(xlabel='',
            ylabel='',
            yticklabels='',
            xlim=(0.45, 1),
            )
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
-    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
-                 fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
-    ax.grid()
-
-axs[0].set(yticklabels=['BACARDI',
+    ax.set(yticklabels=['BACARDI',
                         'ecRad Reference\nCosine (v15.1)',
                         'ecRad Reference\nNo cosine (v39.2)',
                         ])
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[1].set(
+    xlabel='Solar transmissivity'
+)
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_no_cosine_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
@@ -1032,7 +1045,7 @@ plt.close()
 # %% VarCloud - plot violinplot of solar transmissivity
 sel_ver = ['BACARDI_1s', 'v36', 'v37', 'v38']
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -1041,22 +1054,25 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label', ax=ax,
                    order=sel_ver)
-    ax.set(xlabel='Solar transmissivity',
+    ax.set(xlabel='',
            ylabel='',
            yticklabels='',
            xlim=(0.45, 1),
            )
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
-    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
-                 fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
-    ax.grid()
-
-axs[0].set(yticklabels=['BACARDI',
+    ax.set(yticklabels=['BACARDI',
                         'ecRad VarCloud\nFu-IFS (v36)',
                         'ecRad VarCloud\nYi2013 (v37)',
                         'ecRad VarCloud\nBaran2016 (v38)',
                         ])
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[1].set(
+    xlabel='Solar transmissivity'
+)
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_varcloud_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
