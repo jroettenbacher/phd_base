@@ -569,10 +569,10 @@ plt.show()
 plt.close()
 
 # %% 3-D effects - plot violinplot of solar transmissivity
-sel_ver = ['BACARDI', 'v15.1', 'v22.1', 'v18.1', 'v24.1']
+sel_ver = ['BACARDI', 'v15.1', 'v22.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 9 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -581,22 +581,25 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    order=sel_ver, ax=ax)
-    ax.set(xlabel='Solar transmissivity',
-           ylabel='',
-           yticklabels='',
-           xlim=(0.45, 1),
+    ax.set(
+        xlabel='',
+        ylabel='',
+        yticklabels='',
+        xlim=(0.45, 1),
            )
+    ax.set_yticklabels(['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad 3D on\nFu-IFS (v22.1)',
+                        ])
     ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.95, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set_yticklabels(['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad 3D on\nFu-IFS (v22.1)',
-                        'ecRad Reference\nBaran2016 (v18.1)',
-                        'ecRad 3D on\nBaran2016 (v24.1)'])
+axs[1].set(
+    xlabel='Solar transmissivity'
+)
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_3d_effects_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
