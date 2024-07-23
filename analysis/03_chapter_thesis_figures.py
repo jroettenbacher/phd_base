@@ -649,7 +649,9 @@ ax.set(ylabel=f"Solar irradiance ({h.plot_units['flux_dn_sw']})",
 # lower left panel - RF17 transmissivity
 ax = axs[2, 0]
 # ax.axhline(y=1, color="k")
-ax.plot(cum_distance, plot_ds["transmissivity_above_cloud"], label="Solar transmissivity", color=cbc[3])
+ax.plot(cum_distance, plot_ds["transmissivity_above_cloud"],
+        label="Solar transmissivity",
+        color=cbc[3])
 ax.grid()
 ax.text(box_xy[0], box_xy[1], "Below cloud", ha="right",
         transform=ax.transAxes, bbox=dict(boxstyle="Round", fc="white"))
