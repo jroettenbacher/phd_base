@@ -260,8 +260,8 @@ plt.show()
 plt.close()
 # %% plot single scattering albedo for terrestrial wavelengths
 h.set_cb_friendly_colors('petroff_6')
-rough = '000'
-wl_range = (3900, 100000)  # nm
+rough = 0
+wl_range = (200, 100000)  # nm
 shapes_sel = ['droxtal', 'plate', 'solid_column', 'column_8elements']
 selection1 = ((df['roughness'] == rough)
               & (df['wavelength'] > wl_range[0])
@@ -273,8 +273,8 @@ selection1 = ((df['roughness'] == rough)
 selection2 = ((df['roughness'] == rough)
               & (df['wavelength'] > wl_range[0])
               & (df['wavelength'] < wl_range[1])
-              & (df['shape'].isin(['plate', 'solid_column']))
-              & (df['d_max'].isin([2, 3, 5, 10, 100]))
+              & (df['shape'].isin(['plate']))#, 'solid_column']))
+              & (df['d_max'].isin([2, 5, 10, 100, 1000]))
               )
 
 df_plot = df[selection1].copy()
@@ -298,7 +298,9 @@ ax.grid()
 ax.set(xlabel='',
        ylabel='',
        xticklabels=[],
-       ylim=ylim)
+       ylim=ylim,
+       xscale='log',
+       )
 ax.yaxis.set_major_locator(mticker.MultipleLocator(0.25))
 handles, labels = ax.get_legend_handles_labels()
 labels = [x.capitalize().replace('_', '\n') for x in labels]
@@ -322,8 +324,11 @@ ax.text(0.02, 0.85, '(b)', transform=ax.transAxes)
 ax.grid()
 ax.set(xlabel=r'Wavelength ($\mu$m)',
        ylabel='',
-       ylim=ylim)
+       ylim=ylim,
+       xscale='log',
+       )
 ax.yaxis.set_major_locator(mticker.MultipleLocator(0.25))
+
 
 handles, labels = ax.get_legend_handles_labels()
 labels[3] = r'$D_{\text{max}}$'
@@ -335,3 +340,125 @@ figname = f'{plot_path}/01_single_scattering_albedo_NIR.pdf'
 plt.savefig(figname, bbox_inches='tight')
 plt.show()
 plt.close()
+
+# %% plot single scattering albedo for terrestrial wavelengths
+h.set_cb_friendly_colors('petroff_6')
+rough = 0
+wl_range = (200, 100000)  # nm
+shapes_sel = ['droxtal', 'plate', 'solid_column', 'column_8elements']
+selection1 = ((df['roughness'] == rough)
+              & (df['wavelength'] > wl_range[0])
+              & (df['wavelength'] < wl_range[1])
+              & df['shape'].isin(shapes_sel)
+              & (df['d_max'] == 40)
+              )
+
+selection2 = ((df['roughness'] == rough)
+              & (df['wavelength'] > wl_range[0])
+              & (df['wavelength'] < wl_range[1])
+              & (df['shape'].isin(['plate']))#, 'solid_column']))
+              & (df['d_max'].isin([2, 5, 10, 100, 1000]))
+              )
+
+df_plot = df[selection1].copy()
+df_plot['wavelength'] = df_plot.wavelength / 1000  # convert to mum
+plt.rc('font', size=10)
+ylim = (0.0, 5)
+fig, axs = plt.subplots(2, 1, layout='constrained',
+                        figsize=(15 * h.cm, 9 * h.cm))
+
+# first row - single scattering albedo vs wavelength for different shapes
+ax = axs[0]
+hue_order = ['plate', 'solid_column', 'droxtal', 'column_8elements']
+sns.lineplot(data=df_plot,
+             x='wavelength',
+             y='q_ext',
+             hue='shape',
+             hue_order=hue_order,
+             ax=ax)
+ax.text(0.02, 0.85, '(a)', transform=ax.transAxes)
+ax.grid()
+ax.set(xlabel='',
+       ylabel='',
+       xticklabels=[],
+       ylim=ylim,
+       xscale='log',
+       )
+# ax.yaxis.set_major_locator(mticker.MultipleLocator(0.25))
+handles, labels = ax.get_legend_handles_labels()
+labels = [x.capitalize().replace('_', '\n') for x in labels]
+labels[-1] = "Column\naggregate"
+ax.legend(handles=handles, labels=labels,
+          loc='upper left', bbox_to_anchor=(1.01, 1.01))
+
+# second row - single scattering albedo vs wavelength for different sizes
+df_plot = df[selection2].copy()
+df_plot['wavelength'] = df_plot.wavelength / 1000  # convert to mum
+ax = axs[1]
+hue_order = ['plate', 'solid_column']
+sns.lineplot(data=df_plot,
+             x='wavelength',
+             y='q_ext',
+             hue='shape',
+             hue_order=hue_order,
+             style='d_max',
+             ax=ax)
+ax.text(0.02, 0.85, '(b)', transform=ax.transAxes)
+ax.grid()
+ax.set(xlabel=r'Wavelength ($\mu$m)',
+       ylabel='',
+       ylim=ylim,
+       xscale='log',
+       )
+# ax.yaxis.set_major_locator(mticker.MultipleLocator(0.25))
+
+
+handles, labels = ax.get_legend_handles_labels()
+labels[3] = r'$D_{\text{max}}$'
+ax.legend(handles=handles[3:], labels=labels[3:],
+          bbox_to_anchor=(1.01, 1.01), loc='upper left')
+fig.supylabel(r'Extinction efficiency $Q_{\text{ext}}$', size=10)
+
+figname = f'{plot_path}/01_extinction_efficiency_NIR.pdf'
+plt.savefig(figname, bbox_inches='tight')
+plt.show()
+plt.close()
+
+
+# %% extinction efficiency
+import miepython
+
+# Constants
+wavelengths = np.logspace(-1, 2, 400)  # Wavelengths from 0.1 to 100 micrometers
+radius_values = [0.1, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]  # Different droplet radii in micrometers
+n_water = 1.33  # Refractive index of water droplets (simplified as constant)
+
+
+# Function to calculate extinction efficiency using Mie theory
+def extinction_efficiency(radius, wavelength, n_water):
+    x = 2 * np.pi * radius / wavelength
+    m = n_water
+    qext, qsca, qback, g = miepython.mie(m, x)
+    return qext
+
+
+# Calculate extinction efficiencies
+ext_efficiencies = {radius: [] for radius in radius_values}
+for radius in radius_values:
+    for wavelength in wavelengths:
+        qext = extinction_efficiency(radius, wavelength, n_water)
+        ext_efficiencies[radius].append(qext)
+
+# Plotting
+plt.figure(figsize=(10, 6))
+for radius in radius_values:
+    plt.plot(wavelengths, ext_efficiencies[radius], label=f'r = {radius} μm')
+
+plt.xscale('log')
+# plt.yscale('log')
+plt.xlabel('Wavelength (μm)')
+plt.ylabel('Extinction Efficiency')
+plt.title('Extinction Efficiency of Water Droplets')
+plt.legend()
+plt.grid(True)
+plt.show()
