@@ -181,9 +181,9 @@ date_title = ['11 April 2022', '12 April 2022']
 panel_label = ['(a)', '(b)']
 
 # %% prepare data for violin plots
-ecrad_var = 'flux_net_lw'
-label = 'flux_net_lw'
-bacardi_var = 'F_net_terrestrial'
+ecrad_var = 'flux_dn_lw'
+label = 'flux_dn_lw'
+bacardi_var = 'F_down_terrestrial'
 filepath = f'{save_path}/halo-ac3_{label}_boxplot_data.csv'
 df_lw = pd.DataFrame()
 for key in keys:
@@ -214,8 +214,6 @@ for key in keys:
                              'label': 'BACARDI',
                              'key': key}))
 
-    # add variable to original BACARDI data
-    bacardi_ds[key][bacardi_var] = bacardi_ds[key]['F_down_terrestrial'] - bacardi_ds[key]['F_up_terrestrial']
     dfs.append(pd.DataFrame({'values': (bacardi_ds[key][bacardi_var]
                                         .sel(time=slices[key]['below'])
                                         .dropna('time')
@@ -248,14 +246,14 @@ for v in df_save['label']:
         name.append(v)
         aerosol.append('Off')
 df_save = df_save.assign(name=name, aerosol=aerosol)
-df_save.to_csv(f'{save_path}/HALO-AC3_net_terrestrial_irradiance_stats.csv',
+df_save.to_csv(f'{save_path}/HALO-AC3_down_terrestrial_irradiance_stats.csv',
                index=False)
 
-# %% violinplot
+# %% plot f_dn_lw BCAARDI vs. ecRad - violinplot
 sel_ver = ['BACARDI', 'v15.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 6 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -264,21 +262,22 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=(-140, -40),
-           )
+           xlim=(75, 200),
+           yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        ])
     ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.91, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set(yticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        ])
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_violin.pdf'
+axs[1].set(
+    xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})'
+)
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
@@ -380,7 +379,7 @@ for v in ['v15.1', 'v18.1', 'v19.1']:
             bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'),
         )
 
-    figname = f'{plot_path}/05_HALO-AC3_RF17_RF18_bacardi_ecrad_f_up_lw_above_cloud_{v}.pdf'
+    figname = f'{plot_path}/05_HALO-AC3_RF17_RF18_bacardi_ecrad_f_up_lw_above_cloud_{v}.png'
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
@@ -478,10 +477,10 @@ plt.show()
 plt.close()
 
 # %% 3-D effect violinplot
-sel_ver = ['BACARDI', 'v15.1', 'v22.1', 'v18.1', 'v24.1']
+sel_ver = ['BACARDI', 'v15.1', 'v22.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 10 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -490,23 +489,26 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=(-140, -40),
+           xlim=(75, 200),
+           yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad 3D on\nFu-IFS (v22.1)',
+                        'ecRad Reference\nBaran2016 (v18.1)',
+                        'ecRad 3D on\nBaran2016 (v24.1)']
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set_yticklabels(['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad 3D on\nFu-IFS (v22.1)',
-                        'ecRad Reference\nBaran2016 (v18.1)',
-                        'ecRad 3D on\nBaran2016 (v24.1)'])
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_3d_effects_violin.pdf'
+
+axs[1].set(
+    xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})'
+)
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_3d_effects_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
@@ -519,7 +521,7 @@ print(df_print)
 sel_ver = ['BACARDI', 'v15.1', 'v30.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -528,22 +530,24 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=(-140, -40),
+           yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad aerosol on\nFu-IFS (v30.1)',
+                        ],
+           xlim=(75, 200),
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set(yticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad aerosol on\nFu-IFS (v30.1)',
-                        ])
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_aerosol_violin.pdf'
+axs[1].set(
+    xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})'
+)
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_aerosol_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
@@ -703,7 +707,7 @@ print(df_print)
 sel_ver = ['BACARDI', 'v15.1', 'v19.1', 'v18.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 11 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -712,23 +716,25 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=(-140, -40),
+           yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad Reference\nYi2013 (v19.1)',
+                        'ecRad Reference\nBaran2016 (v18.1)',
+                        ],
+           xlim=(75, 200),
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set(yticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad Reference\nYi2013 (v19.1)',
-                        'ecRad Reference\nBaran2016 (v18.1)',
-                        ],)
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_ice_optics_violin.pdf'
+axs[1].set(
+    xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})'
+)
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_ice_optics_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
@@ -741,7 +747,7 @@ print(df_print)
 sel_ver = ['BACARDI', 'v15.1', 'v36']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -750,33 +756,31 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=(-140, -20),
+           yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad VarCloud\nFu-IFS (v36)',
+                        ],
+           xlim=(75, 200),
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set(yticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad VarCloud\nFu-IFS (v36)',
-                        ],)
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_varcloud_violin.pdf'
+axs[1].set(xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})')
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_varcloud_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
 # %% VarCloud - plot violinplot - all ice optics
-sel_ver = ['BACARDI', 'v15.1', 'v36', 'v19.1', 'v37', 'v18.1', 'v38']
-xlims = [(-140, -90), (-140, -10)]
-locator = [10, 25]
+sel_ver = ['BACARDI', 'v15.1', 'v36', 'v37', 'v38']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 10 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 11 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -785,26 +789,28 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=xlims[i],
-           )
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(locator[i]))
-    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
-                 fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
-    ax.grid()
-
-axs[0].set(yticklabels=['BACARDI',
+           yticklabels=['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
                         'ecRad VarCloud\nFu-IFS (v36)',
-                        'ecRad Reference\nYi2013 (v19.1)',
+                        # 'ecRad Reference\nYi2013 (v19.1)',
                         'ecRad VarCloud\nYi2013 (v37)',
-                        'ecRad Reference\nBaran2016 (v18.1)',
+                        # 'ecRad Reference\nBaran2016 (v18.1)',
                         'ecRad VarCloud\nBaran2016 (v38)',
-                        ],)
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_varcloud_violin_all.pdf'
+                        ],
+           xlim=(75, 210),
+           )
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[1].set(
+    xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})',
+)
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_varcloud_violin_all.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
@@ -815,7 +821,7 @@ print(df_print)
 sel_ver = ['BACARDI', 'v15.1', 'v39.2']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -824,22 +830,22 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Net terrestrial irradiance\n({h.plot_units["flux_net_lw"]})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
-           xlim=(-140, -20),
+           yticklabels=['BACARDI',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        'ecRad no latitude\nFu-IFS (v39.2)',
+                        ],
+           xlim=(75, 200),
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(25))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set(yticklabels=['BACARDI',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad no latitude\nFu-IFS (v39.2)',
-                        ],)
-figname = f'05_HALO_AC3_RF17_RF18_flux_net_lw_BACARDI_ecRad_re_ice_latitude_violin.pdf'
+axs[1].set(xlabel=f'Downward terrestrial irradiance ({h.plot_units["flux_net_lw"]})')
+figname = f'05_HALO_AC3_RF17_RF18_flux_dn_lw_BACARDI_ecRad_re_ice_latitude_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
