@@ -533,6 +533,40 @@ plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
+# %% plot violinplot BACARDI vs ecRad
+sel_ver = ['BACARDI', 'v15.1']
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm),
+                      layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    df_plot = df[(df.key == key)
+                 & (df.label.isin(sel_ver))]
+    df_plot['label'] = (df_plot['label']
+                        .astype('category')
+                        .cat.reorder_categories(sel_ver))
+    sns.violinplot(df_plot, x='values', y='label', hue='label', ax=ax)
+    ax.set(
+        xlabel='',
+        ylabel='',
+        yticklabels=['BACARDI',
+                     'ecRad Reference\nsimulation (v15.1)'],
+        xlim=(0.35, 1),
+    )
+    ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
+                 fontsize=10)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
+    ax.grid()
+
+axs[1].set(xlabel='Solar transmissivity')
+figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_boxplot_v15.1.pdf'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
+# %% BACARDI vs ecRad - print stats
+df_print = st_stats.loc[pd.IndexSlice[:, ['BACARDI_org'] + sel_ver], :].sort_values('key')
+print(df_print)
+
 # %% sea ice - plot violinplot of below cloud transmissivity
 sel_ver = ['BACARDI', 'v15.1', 'v13', 'v13.2']
 h.set_cb_friendly_colors('petroff_6')
