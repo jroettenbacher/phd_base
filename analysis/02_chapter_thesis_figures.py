@@ -13,13 +13,20 @@ Plot of
 # %% import modules
 import os
 
+import cmasher as cm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+from metpy.constants import Rd
+from metpy.units import units as u
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import xarray as xr
 
 import pylim.helpers as h
+from pylim import ecrad
+
+cbc = h.get_cb_friendly_colors('petroff_6')
 
 # %% set paths
 if os.getcwd().startswith('/'):
@@ -29,6 +36,7 @@ else:
     lib_path = 'E:/Scattering_Libraries/IceScatPropLib'
 
 plot_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/figure'
+data_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data'
 
 wavelengths = ['Data_0.2_15.25', 'Data_16.4_99.0']
 shapes = ['column_8elements', 'droxtal',
@@ -130,6 +138,10 @@ if not os.path.isfile(tmp_filename):
     df_plot.to_csv(tmp_filename, index=False)
 else:
     df_plot = pd.read_csv(tmp_filename, header=0, sep=',')
+
+# %% read in effective diameter from Dela Torre Castro 2023
+ed = pd.read_csv(f'{data_path}/median_ed_delatorre2023.csv')
+ed['effective_radius'] = ed['effective_diameter'] / 2
 
 # %% plot single scattering albedo
 h.set_cb_friendly_colors('petroff_6')
@@ -462,3 +474,90 @@ plt.title('Extinction Efficiency of Water Droplets')
 plt.legend()
 plt.grid(True)
 plt.show()
+# %% plot minimum ice effective radius from Sun2001 parameterization together with median ed from delatorre2023
+latitudes = np.arange(0, 91)
+de2re = 0.64952  # from suecrad.f90
+min_ice = 60
+min_diameter_um = 20 + (min_ice - 20) * np.cos((np.deg2rad(latitudes)))
+min_radius_um = de2re * min_diameter_um
+
+plt.rc('font', size=10)
+_, ax = plt.subplots(figsize=(15 * h.cm, 6 * h.cm), layout='constrained')
+ax.plot(latitudes, min_radius_um, '-', label='Minimum $r_{\\text{eff, ice}}$ Sun (2001)')
+ed.plot(x='mid_latitude', y='effective_radius', ax=ax, label='Mean $r_{\\text{eff, ice}}$\nDe La Torre Castro et al. (2023)')
+ax.set(xlabel='Latitude (°N)',
+       ylabel='Ice effective radius ($\\mu m$)',
+       # ylim=(10, 40),
+       xlim=0)
+# ax.xaxis.set_major_locator(ticker.MultipleLocator(15))
+# ax.yaxis.set_major_locator(ticker.MultipleLocator(5))
+ax.grid()
+ax.legend()
+plt.savefig(f'{plot_path}/02_reice_min_latitude.pdf', dpi=300)
+plt.show()
+plt.close()
+
+# %% calculate ice effective radius for different IWC and T combinations covering the Arctic to the Tropics
+lats = [0, 18, 36, 54, 72, 90]
+iwc_kgkg = np.logspace(-5.5, -2.5, base=10, num=100)
+t = np.arange(182, 273)
+empty_array = np.empty((len(t), len(iwc_kgkg), len(lats)))
+for i, temperature in enumerate(t):
+    for j, iwc in enumerate(iwc_kgkg):
+        for k, lat in enumerate(lats):
+            empty_array[i, j, k] = ecrad.ice_effective_radius(25000, temperature, 1, iwc, 0, lat)
+
+da = xr.DataArray(empty_array * 1e6, coords=[('temperature', t), ('iwc_kgkg', iwc_kgkg * 1e3), ('Latitude', lats, {'units': '°N'})],
+                  name='re_ice')
+
+# convert kg kg-1 to g m-3
+air_density = 25000 * u('Pa') / (Rd * 182 * u('K'))
+air_density = air_density.to(u('g/m3'))
+iwc_gm3 = iwc_kgkg * air_density
+
+# %% plot re_ice iwc t combinations
+latitudes = [0, 18, 36, 54, 72, 90]
+de2re = 0.64952  # from suecrad.f90
+min_ice = 60
+min_diameter_um = 20 + (min_ice - 20) * np.cos((np.deg2rad(latitudes)))
+min_radius_um = de2re * min_diameter_um
+
+plt.rc('font', size=9)
+g = da.plot(col='Latitude', col_wrap=3,
+            cbar_kwargs=dict(label=r'Ice effective radius ($\mu$m)'),
+            cmap=cm.get_sub_cmap(cm.rainforest, 0.25, 1),
+            figsize=(15 * h.cm, 10 * h.cm))
+for i, ax in enumerate(g.axs.flat[::3]):
+    ax.set_ylabel('Temperature (K)')
+for i, ax in enumerate(g.axs.flat[3:]):
+    ax.set_xlabel('IWC (g/kg)')
+# 1st - 3rd panel
+for i, ax in enumerate(g.axs.flat[:3]):
+    cl = ax.contour(da.iwc_kgkg, da.temperature, da.isel(Latitude=i).to_numpy(),
+                    levels=[min_radius_um[i], 45, 60, 80, 100],
+                    colors='k', linestyles='--')
+    ax.clabel(cl, fmt='%.0f', inline=True, fontsize=8)
+# 4th and 5th panel
+for i, ax in enumerate(g.axs.flat[3:-1]):
+    cl = ax.contour(da.iwc_kgkg, da.temperature, da.isel(Latitude=i+3).to_numpy(),
+                    levels=[min_radius_um[i+3], 40, 60, 80, 100],
+                    colors='k', linestyles='--')
+    ax.clabel(cl, fmt='%.0f', inline=True, fontsize=8)
+# 6th panel
+ax = g.axs.flat[-1]
+cl = ax.contour(da.iwc_kgkg, da.temperature, da.isel(Latitude=5).to_numpy(),
+                levels=[min_radius_um[5], 20, 40, 60, 80, 100],
+                colors='k', linestyles='--')
+ax.clabel(cl, fmt='%.0f', inline=True, fontsize=8)
+# all panels
+for i, ax in enumerate(g.axs.flat):
+    ax.hlines(233, 0, 1e-2, color=cbc[2], ls='-')
+    ax.vlines(1e-2, 0, 233, color=cbc[2], ls='-')
+    ax.set_xscale('log')
+    ax.set_title(f'Latitude = {da.Latitude[i].to_numpy()}' + r'$\,^{\circ}$N',
+                 size=9)
+
+figname = f'{plot_path}/02_re_ice_parameterization_T-IWC-Lat_log.pdf'
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
