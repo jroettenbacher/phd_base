@@ -317,10 +317,10 @@ plt.show()
 plt.close()
 
 # %% plot violinplot of cre_total
-sel_ver = ['BACARDI_org', 'BACARDI_1s', 'BACARDI_1Min', 'v15.1']
+sel_ver = ['BACARDI_1Min', 'v15.1']
 h.set_cb_friendly_colors('petroff_6')
 plt.rc('font', size=10)
-_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 7.5 * h.cm),
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 10 * h.cm),
                       layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
@@ -330,22 +330,22 @@ for i, key in enumerate(keys):
     df_plot['label'] = df_plot['label'].astype('category')
     sns.violinplot(df_plot, x='values', y='label', hue='label',
                    ax=ax, order=sel_ver)
-    ax.set(xlabel=f'Total cloud radiative\neffect ({h.plot_units['cre_total']})',
+    ax.set(xlabel='',
            ylabel='',
-           yticklabels='',
+           yticklabels=['BACARDI',
+                        # 'BACARDI 1s',
+                        # 'BACARDI 1Min',
+                        'ecRad Reference\nFu-IFS (v15.1)',
+                        ],
            xlim=(-50, 70),
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
-    ax.text(0.01, 0.94, panel_label[i], transform=ax.transAxes)
+    ax.text(0.01, 0.89, panel_label[i], transform=ax.transAxes)
     ax.grid()
 
-axs[0].set(yticklabels=['BACARDI',
-                        'BACARDI 1s',
-                        'BACARDI 1Min',
-                        'ecRad Reference\nFu-IFS (v15.1)',
-                        ])
+axs[1].set(xlabel=f'Total cloud radiative effect ({h.plot_units['cre_total']})')
 figname = f'05_HALO_AC3_RF17_RF18_cre_total_BACARDI_ecRad_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
