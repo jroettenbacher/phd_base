@@ -5,11 +5,11 @@
 
 Plots for Model chapter
 """
+import os
 
 # %% import modules
-import pylim.helpers as h
-from pylim import ecrad
 import cmasher as cm
+import dill
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from metpy.constants import Rd
@@ -19,12 +19,19 @@ import pandas as pd
 import seaborn as sns
 import xarray as xr
 
+import pylim.helpers as h
+import pylim.halo_ac3 as meta
+from pylim import ecrad
+
 cbc = h.get_cb_friendly_colors('petroff_6')
 
 # %% set paths
 ecrad_path = 'E:/ecrad_sensitivity_studies'
 save_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data'
 plot_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/figure'
+
+campaign = 'halo-ac3'
+keys = ['RF17', 'RF18']
 
 # %% read in data
 ecrad_dict = dict()
@@ -33,6 +40,30 @@ for v in ['v1', 'v2', 'v3']:
 
 ecrad_dict['diff_v2'] = ecrad_dict['v1'] - ecrad_dict['v2']
 ecrad_dict['diff_v3'] = ecrad_dict['v1'] - ecrad_dict['v3']
+
+# %% read in BACARDI data
+bacardi_ds, ecrad_ds, slices, above_clouds, below_clouds = dict(), dict(), dict(), dict(), dict()
+for key in keys:
+    flight = meta.flight_names[key]
+    date = flight[9:17]
+    bacardi_path = h.get_path('bacardi', flight=flight, campaign=campaign)
+    ecrad_path2 = f'{h.get_path("ecrad", campaign=campaign)}/{date}'
+    ecrad_file = f'ecrad_merged_inout_{date}_v15.1.nc'
+    bacardi_file = f'HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR_v2.nc'
+
+    bacardi_ds[key] = xr.open_dataset(f'{bacardi_path}/{bacardi_file}')
+    ecrad_ds[key] = xr.open_dataset(f'{ecrad_path2}/{ecrad_file}')
+
+    # get flight segmentation and select below and above cloud section
+    loaded_objects = list()
+    filenames = [f'{key}_slices.pkl', f'{key}_above_cloud.pkl', f'{key}_below_cloud.pkl']
+    for filename in filenames:
+        with open(f'{save_path}/{filename}', 'rb') as f:
+            loaded_objects.append(dill.load(f))
+
+    slices[key] = loaded_objects[0]
+    above_clouds[key] = loaded_objects[1]
+    below_clouds[key] = loaded_objects[2]
 
 # %% plot profiles of sensitivity study - ice optics
 plt.rc('font', size=9)
@@ -234,3 +265,74 @@ sns.scatterplot(plot_df, x='q_ice', y='value', hue='latitude', style='version', 
 plt.show()
 plt.close()
 
+
+# %% plot comparison of above cloud irradiance between libRadtran and ecRad
+label = ['a)', 'b)']
+_, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    date = '2022-04-11' if key == 'RF17' else '2022-04-12'
+    plot_df = (bacardi_ds[key][['ecrad_fdw', 'F_down_solar_sim', 'alt', 'lat']]
+               # .sel(time=slices[key]['case'])
+               .to_pandas()
+               .dropna())
+    rmse = np.mean(np.sqrt((plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])**2))
+    bias = np.mean(plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])
+    ax.scatter(plot_df['F_down_solar_sim'], plot_df['ecrad_fdw'], color=cbc[3])
+    ax.axline((0, 0), slope=1, color='k', lw=2, transform=ax.transAxes)
+    ax.grid()
+    ax.set(
+        aspect='equal',
+        xlabel='libRadtran $F^{\\downarrow}_{\\text{solar}}$' + f' ({h.plot_units['flux_dn_sw']})',
+        ylabel='',
+        xlim=(150, 550),
+        ylim=(150, 550)
+    )
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(100))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
+    ax.text(
+        0.05,
+        0.95,
+        f'{label[i]} {key.replace('F', 'F ')}\n'
+        f'$n$ = {sum(~np.isnan(plot_df['F_down_solar_sim'])):,.0f}\n'
+        f'RMSE: {rmse:.0f} {h.plot_units['flux_dn_sw']}\n'
+        f'Bias: {bias:.0f} {h.plot_units['flux_dn_sw']}',
+        ha='left',
+        va='top',
+        transform=ax.transAxes,
+        bbox=dict(fc='white', ec='black', alpha=0.8, boxstyle='round'),
+    )
+
+axs[0].set(
+    ylabel='ecRad $F^{\\downarrow}_{\\text{solar}}$' f' ({h.plot_units['flux_dn_sw']})',
+)
+figname = f'04_libRadtran_vs_ecRad_cloud-free.pdf'
+plt.savefig(f'{plot_path}/{figname}')
+plt.show()
+plt.close()
+
+# %% plot comparison of above cloud irradiance between libRadtran and ecRad - time series
+label = ['a)', 'b)']
+_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    plot_df = (bacardi_ds[key][['ecrad_fdw', 'F_down_solar_sim', 'alt', 'lat']]
+               # .sel(time=slices[key]['case'])
+               .to_pandas()
+               .dropna())
+    plot_df['difference'] = plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw']
+    rmse = np.mean(np.sqrt((plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])**2))
+    bias = np.mean(plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])
+    # ax.plot(plot_df.index, plot_df['F_down_solar_sim'], label='libRadtran')
+    # ax.plot(plot_df.index, plot_df['ecrad_fdw'], label='ecRad')
+    ax.plot(plot_df.index, plot_df['difference'])
+    ax.grid()
+    ax.set(
+        xlabel='Time (UTC)',
+        ylabel='Downward solar irradiance (wm2)',
+    )
+
+figname = f'04_libRadtran_vs_ecRad_cloud-free_time_series.pdf'
+plt.savefig(f'{plot_path}/{figname}')
+plt.show()
+plt.close()
