@@ -62,7 +62,6 @@ for key in keys:
     bacardi_path = h.get_path('bacardi', flight, campaign)
     bahamas_path = h.get_path('bahamas', flight, campaign)
     ifs_path = f'{h.get_path('ifs', flight, campaign)}/{date}'
-    ecrad_path = f'{h.get_path('ecrad', flight, campaign)}/{date}'
     varcloud_path = h.get_path('varcloud', flight, campaign)
     radar_path = h.get_path("hamp_mira", flight, campaign)
     lidar_path = h.get_path("wales", flight, campaign)
