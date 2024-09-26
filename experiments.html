@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Experiments &mdash; Arctic Cirrus 0.9.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1bc1ca25"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Analysis" href="analysis.html" />
+    <link rel="prev" title="Quicklooks" href="quicklooks.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arctic Cirrus
+          </a>
+              <div class="version">
+                0.9.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">PhD Base Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html#license">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Experiments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ecrad-namelists-and-experiments">ecRad Namelists and Experiments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overlap-decorrelation-length-experiment">Overlap decorrelation length experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#varcloud-retrieval-input-experiment">Varcloud retrieval input experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ice-mass-mixing-ratio-experiment">Ice Mass Mixing Ratio Experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fixed-albedo-experiment">Fixed Albedo Experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#trace-gas-comparison">Trace gas comparison</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inhomogeneity-test-fractional-std">Inhomogeneity test (fractional_std)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#direct-sea-ice-albdeo">Direct sea ice albdeo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cams-aerosol-climatology">CAMS aerosol climatology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#d-effects-parameterization">3-D effects parameterization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#longwave-cloud-scattering">Longwave cloud scattering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#humidity-from-dropsondes">Humidity from dropsondes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ecrad-setups">ecRad Setups</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup-ala-hanno">Setup ala Hanno</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard-ifs-setup-for-haloac3">Standard IFS setup for HALO-(AC)<sup>3</sup></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#libradtran-setups-and-experiments">libRadtran Setups and Experiments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-bacardi-broadband-simulation-for-bacardi-nc-file">HALO-(AC)<sup>3</sup> BACARDI broadband simulation for BACARDI nc file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-bacardi-below-cloud-rf17">HALO-(AC)<sup>3</sup> BACARDI below cloud RF17</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-bacardi-smart-clear-sky-simulation-with-sea-ice">HALO-(AC)<sup>3</sup> BACARDI/SMART clear sky simulation with sea ice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-bacardi-smart-clear-sky-simulation-with-sea-ice-up-to-5000nm">HALO-(AC)<sup>3</sup> BACARDI/SMART clear sky simulation with sea ice up to 5000nm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-icecloud-over-sea-ice-experiment">HALO-(AC)<sup>3</sup> Icecloud over sea ice experiment</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-experiments.libradtran_write_input_file_icecloud">Icecloud Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-icecloud-along-flight-track-for-rf17">HALO-(AC)<sup>3</sup> Icecloud along flight track for RF17</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-experiments.libradtran_write_input_file_icecloud2">Icecloud 2 Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-varcloud-simulation-above-cloud">HALO-(AC)<sup>3</sup> Varcloud simulation above cloud</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-experiments.libradtran_write_input_file_varcloud">Varcloud Setup</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Experiments</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/experiments.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="experiments">
+<h1>Experiments<a class="headerlink" href="#experiments" title="Permalink to this heading"></a></h1>
+<p>Here different model setups and experiments are documented and discussed.
+A lot of knobs can be turned in models.
+This chapter is meant to track the different model setup used and their results.</p>
+<section id="ecrad-namelists-and-experiments">
+<h2>ecRad Namelists and Experiments<a class="headerlink" href="#ecrad-namelists-and-experiments" title="Permalink to this heading"></a></h2>
+<p>Namelists can be found in the corresponding date folder in the ecrad folder for each campaign (see <code class="docutils literal notranslate"><span class="pre">config.toml</span></code>).</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist.nam</span></code>: Namelist as used by Kevin</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr.nam</span></code>: Adjusted namelist for first runs by Johannes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_v2.nam</span></code>: Namelist with spectral short wave albedo enabled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_hanno_org.nam</span></code>: Used by Hanno</p></li>
+</ul>
+<p><strong>CIRRUS-HL 2021-06-29</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20210629a_v1.nam</span></code>: for flight 20210629a with Fu-IFS ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20210629a_v2.nam</span></code>: for flight 20210629a with Baran2017 ice model (deprecated)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20210629a_v3.nam</span></code>: for flight 20210629a with Baran2016 ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20210629a_v4.nam</span></code>: for flight 20210629a with Yi2013 ice model</p></li>
+</ul>
+<p>HALO-(AC)<sup>3</sup> <strong>2022-04-11</strong></p>
+<ul class="simple">
+<li><p>vxx.1: uses input version vx.1 instead of vx</p></li>
+<li><p>v6.1: with low clouds filtered</p></li>
+<li><p>v6.2: with low clouds filtered and cosine dependence of ice effective radius removed</p></li>
+<li><p>v7.1: instead of using the VarCloud retrieved re_ice use Sun &amp; Rikus to calculate it from the VarCloud IWC</p></li>
+<li><p>v7.2: instead of using the VarCloud retrieved re_ice use Sun &amp; Rikus to calculate it from the VarCloud IWC and remove cosine dependence of minimum re_ice</p></li>
+</ul>
+<table class="docutils align-default" id="id12">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">ecRad version overview</span><a class="headerlink" href="#id12" title="Permalink to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Version</p></th>
+<th class="head"><p>Input Version</p></th>
+<th class="head"><p>Ice Optics Parameterization</p></th>
+<th class="head"><p>3D Parameterization</p></th>
+<th class="head"><p>Aerosol Optics</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>v1</p></td>
+<td><p>v1</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v3.1</p></td>
+<td><p>v1</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v3.2</p></td>
+<td><p>v1</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v4</p></td>
+<td><p>v1</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v5</p></td>
+<td><p>v1</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v6</p></td>
+<td><p>v1</p></td>
+<td><p>Baran2016</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v7</p></td>
+<td><p>v1</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v8</p></td>
+<td><p>v2</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v9</p></td>
+<td><p>v2</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v10</p></td>
+<td><p>v3</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v11</p></td>
+<td><p>v4</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v12</p></td>
+<td><p>v1</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v13</p></td>
+<td><p>v5</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v13.1</p></td>
+<td><p>v5</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v13.2</p></td>
+<td><p>v5</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v14</p></td>
+<td><p>v9</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v15</p></td>
+<td><p>v6</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v16</p></td>
+<td><p>v7</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v17</p></td>
+<td><p>v8</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v18</p></td>
+<td><p>v6</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v19</p></td>
+<td><p>v6</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v20</p></td>
+<td><p>v7</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v21</p></td>
+<td><p>v8</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v22</p></td>
+<td><p>v6</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v23</p></td>
+<td><p>v8</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v24</p></td>
+<td><p>v6</p></td>
+<td><p>Baran2016</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v25</p></td>
+<td><p>v8</p></td>
+<td><p>Baran2016</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v26</p></td>
+<td><p>v7</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v27</p></td>
+<td><p>v7</p></td>
+<td><p>Baran2016</p></td>
+<td><p>On</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v28</p></td>
+<td><p>v7</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v29</p></td>
+<td><p>v8</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v30</p></td>
+<td><p>v6</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>On</p></td>
+</tr>
+<tr class="row-even"><td><p>v31</p></td>
+<td><p>v6</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>On</p></td>
+</tr>
+<tr class="row-odd"><td><p>v32</p></td>
+<td><p>v6</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>On</p></td>
+</tr>
+<tr class="row-even"><td><p>v33</p></td>
+<td><p>v7</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>On</p></td>
+</tr>
+<tr class="row-odd"><td><p>v34</p></td>
+<td><p>v7</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>On</p></td>
+</tr>
+<tr class="row-even"><td><p>v35</p></td>
+<td><p>v7</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>On</p></td>
+</tr>
+<tr class="row-odd"><td><p>v36</p></td>
+<td><p>v7</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v37</p></td>
+<td><p>v7</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v38</p></td>
+<td><p>v7</p></td>
+<td><p>Baran2016</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v39</p></td>
+<td><p>v6</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v40</p></td>
+<td><p>v6</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-even"><td><p>v41</p></td>
+<td><p>v7</p></td>
+<td><p>Fu-IFS</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+<tr class="row-odd"><td><p>v42</p></td>
+<td><p>v7</p></td>
+<td><p>Yi2013</p></td>
+<td><p>Off</p></td>
+<td><p>Off</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Input version</p></th>
+<th class="head"><p>Namelist version</p></th>
+<th class="head"><p>Short description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>1, 2, 3.1, 3.2, 4, 5, 6, 7, 12</p></td>
+<td><p>Original along track data from F1280 IFS output</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>8, 9</p></td>
+<td><p>Use VarCloud retrieval as iwc and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> input along flight track</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>10</p></td>
+<td><p>Use VarCloud retrieval for below cloud simulation</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>11</p></td>
+<td><p>Replace q_ice=sum(ciwc, cswc) with q_ice=ciwc</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>13</p></td>
+<td><p>Set albedo to open ocean (0.06)</p></td>
+</tr>
+<tr class="row-odd"><td><p>5.1</p></td>
+<td><p>13.1</p></td>
+<td><p>Set albedo to 0.99</p></td>
+</tr>
+<tr class="row-even"><td><p>5.2</p></td>
+<td><p>13.2</p></td>
+<td><p>Set albedo to BACARDI measurement below cloud</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>15, 18, 19, 22, 24</p></td>
+<td><p>Along track data from O1280 IFS output (used instead of v1)</p></td>
+</tr>
+<tr class="row-even"><td><p>6.1</p></td>
+<td><p>15.1, 18.1, 19.1, 22.1, 24.1, 30.1, 31.1, 32.1</p></td>
+<td><p>As above but filtered for low clouds</p></td>
+</tr>
+<tr class="row-odd"><td><p>6.2</p></td>
+<td><p>39.2, 40.2</p></td>
+<td><p>As above but with latitude set to 0 to remove cosine dependence of the ice effective radius</p></td>
+</tr>
+<tr class="row-even"><td><p>7</p></td>
+<td><p>16, 20, 26, 27, 28, 33, 34, 35, 36, 37, 38</p></td>
+<td><p>As v3 but with O1280 IFS output</p></td>
+</tr>
+<tr class="row-odd"><td><p>7.1</p></td>
+<td><p>16.1, 20.1, 26.1, 27.1, 28.1</p></td>
+<td><p>As above but using re_ice from Sun &amp; Rikus</p></td>
+</tr>
+<tr class="row-even"><td><p>7.2</p></td>
+<td><p>41.2, 42.2</p></td>
+<td><p>As above but with latitude set to 0 to remove cosine dependence of the ice effective radius</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>17, 21, 23, 25, 29</p></td>
+<td><p>As v2 but with O1280 IFS output</p></td>
+</tr>
+<tr class="row-even"><td><p>9</p></td>
+<td><p>14</p></td>
+<td><p>Turn on aerosol and use CAMS data for it</p></td>
+</tr>
+<tr class="row-odd"><td><p>10</p></td>
+<td><p>43.1</p></td>
+<td><p>Use specific humidity from dropsondes</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v1.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v2.nam</span></code>: for RF17 with <strong>Baran2017</strong> ice model (deprecated)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v3.1.nam</span></code>: for RF17 with Fu-IFS ice model and <cite>overlap_decorr_length = 1028 m</cite></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v3.2.nam</span></code>: for RF17 with Fu-IFS ice model and <cite>overlap_decorr_length = 450 m</cite></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v4.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v5.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model and <strong>3D</strong> parameterizations enabled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v6.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model and <strong>3D</strong> parameterizations enabled</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v7.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v8.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version v2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v9.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version v2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v10.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using <strong>VarCloud</strong> retrieval for q_ice and re_ice for the <strong>below cloud</strong> section as well (input version v3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v11.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using ciwc as q_ice instead of sum(ciwc, cswc) (input version v4)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v12.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using general cloud optics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v13.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model setting albedo to open ocean (input version v5)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v13.1.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model setting albedo to 0.99 (input version v5.1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v13.2.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model setting albedo to BACARDI measurements belwo cloud (input version v5.2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v14.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model including aerosol in run (TBD, input version v9)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v15.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v16.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input for the <strong>below cloud</strong> section (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v17.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v18.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS data (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v19.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS data (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v20.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS data and the <strong>VarCloud</strong> retrieval for q_ice and re_ice input for the <strong>below cloud</strong> section (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v21.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS data and the <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v22.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>3D</strong> parameterizations enabled (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v23.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>3D</strong> parameterizations enabled (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v24.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>3D</strong> parameterizations enabled (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v25.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>3D</strong> parameterizations enabled (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v26.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong> and <strong>3D</strong> parameterizations enabled (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v27.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong> and <strong>3D</strong> parameterizations enabled (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v28.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong> (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v29.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v30.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS and <strong>aerosols</strong> turned on (input version <strong>v6.1</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v31.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>aerosols</strong> turned on (input version <strong>v6.1</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v32.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>aerosols</strong> turned on (input version <strong>v6.1</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v33.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>aerosols</strong> turned on (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v34.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>aerosols</strong> turned on (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v35.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>aerosols</strong> turned on (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v36.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v37.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v38.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v39.2.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version <strong>v6.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v40.2.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version <strong>v6.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v41.2.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice input for the <strong>below cloud</strong> section, re_ice is calculated with Sun &amp; Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version <strong>v7.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v42.2.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice input for the <strong>below cloud</strong> section, re_ice is calculated with Sun &amp; Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version <strong>v7.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v43.1.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS data (input version <strong>v10</strong>)</p></li>
+</ul>
+<p>HALO-(AC)<sup>3</sup> <strong>2022-04-12</strong></p>
+<ul class="simple">
+<li><p>vxx.1: uses input version vx.1 instead of vx</p></li>
+<li><p>v6.1: with low clouds filtered</p></li>
+<li><p>v7.1: instead of using the VarCloud retrieved re_ice use Sun &amp; Rikus to calculate it</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v1.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v8.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using <strong>VarCloud</strong> retrieval for q_ice and re_ice input</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v11.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using ciwc as q_ice instead of sum(ciwc, cswc)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v15.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v16.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input for the <strong>below cloud</strong> section (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v17.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v18.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS data (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v19.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS data (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v20.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS data and the <strong>VarCloud</strong> retrieval for q_ice and re_ice input for the <strong>below cloud</strong> section (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v21.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS data and the <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v22.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>3D</strong> parameterizations enabled (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v23.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>3D</strong> parameterizations enabled (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v24.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>3D</strong> parameterizations enabled (input version <strong>v6</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v25.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>3D</strong> parameterizations enabled (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v26.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data and <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong> and <strong>3D</strong> parameterizations enabled (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v27.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong> and <strong>3D</strong> parameterizations enabled (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v28.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong> (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v29.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice and re_ice input (input version <strong>v8</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v30.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS and <strong>aerosols</strong> turned on (input version <strong>v6.1</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v31.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>aerosols</strong> turned on (input version <strong>v6.1</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v32.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS and <strong>aerosols</strong> turned on (input version <strong>v6.1</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v33.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>aerosols</strong> turned on (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v34.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>aerosols</strong> turned on (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v35.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input and <strong>aerosols</strong> turned on (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v36.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v37.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v38.nam</span></code>: for RF18 with <strong>Baran2016</strong> ice model using O1280 IFS, <strong>VarCloud</strong> retrieval for q_ice and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v39.2.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version <strong>v6.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v40.2.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version <strong>v6.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v41.2.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice input for the <strong>below cloud</strong> section, re_ice is calculated with Sun &amp; Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version <strong>v7.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v42.2.nam</span></code>: for RF18 with <strong>Yi2013</strong> ice model using O1280 IFS and <strong>VarCloud</strong> retrieval for q_ice input for the <strong>below cloud</strong> section, re_ice is calculated with Sun &amp; Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version <strong>v7.2</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v43.1.nam</span></code>: for RF18 with <strong>Fu-IFS</strong> ice model using O1280 IFS data (input version <strong>v10</strong>)</p></li>
+</ul>
+<section id="overlap-decorrelation-length-experiment">
+<h3>Overlap decorrelation length experiment<a class="headerlink" href="#overlap-decorrelation-length-experiment" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">ecrad_experiment_v3_x.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_experiment_v3_x"></span><p>Evaluation of the influence of the overlap decorrelation length parameter</p>
+<p><strong>Problem</strong>: The parameterization of cloud overlap in ecRad, the so-called cloud overlap decorrelation length, can only be given in the Fortran namelist but changes with latitude.
+It should be avoided to create a new namelist for each time step of the along track simulation.</p>
+<p>Here the influence of the overlap decorrelation length on the RF17 case study of single layer Arctic cirrus is investigated.
+Two simulations are performed using the maximum and minimum calculated overlap decorrelation length after <span id="id1">Shonk <em>et al.</em> [<a class="reference internal" href="references.html#id5" title="Jonathan K. P. Shonk, Robin J. Hogan, John M. Edwards, and Gerald G. Mace. Effect of improving representation of horizontal and vertical cloud structure on the Earth's global radiation budget. Part I: Review and parametrization. Q. J. R. Meteorolog. Soc., 136(650):1191–1204, July 2010. doi:10.1002/qj.647.">2010</a>]</span> along the flight path.
+See <cite>/projekt_agmwend/data/HALO-AC3/09_IFS_ECMWF/20220411/20220411_decorrelation_length.csv</cite> for values in km.
+Input file from dropsonde location at 11:01 UTC: <cite>ecrad_input_standard_39660.0_sod_v1.nc</cite></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v3.1.nam</span></code>: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and <cite>overlap_decorr_length = 1028 m</cite></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v3.2.nam</span></code>: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and <cite>overlap_decorr_length = 450 m</cite></p></li>
+</ul>
+<p><strong>Results</strong></p>
+<p>The actual calculated overlap decorrelation length for the location at 11:01 UTC is 482.19 m.</p>
+<figure class="align-default" id="id13">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_overlap_decorrelation_length.png" src="_images/HALO-AC3_20220411_HALO_RF17_overlap_decorrelation_length.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 7 </span><span class="caption-text">Overlap decorrelation length along the flight track of RF17.
+The minimum can be seen at the most northerly point while the maximum is located at the end and beginning of the flight in Kiruna.</span><a class="headerlink" href="#id13" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id14">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v3.1-v3.2_difference.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v3.1-v3.2_difference.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 8 </span><span class="caption-text">ecRad broadband irradiance difference between v3.1 and v3.2 over model half levels.</span><a class="headerlink" href="#id14" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Looking at the differences between the two simulations we can see differences in the solar downward flux of over <span class="math notranslate nohighlight">\(1.25\,\text{W}\,\text{m}^{-2}\)</span>.
+The values used to calculate the difference are the means of the 33 columns simulated.
+However, the plot would not look any different even when only one column is selected.</p>
+<p>The difference starts to increase with the simulated cloud top showing the influence of the cloud overlap decorrelation length even for single layer clouds.
+Thus, it is important to choose a realistic value for the case study when HALO flew first above and then below the cirrus.
+One option is to calculate the cloud overlap parameter <span class="math notranslate nohighlight">\(\alpha\)</span> according to Eq. 2.3 of the ecRad documentation:</p>
+<div class="math notranslate nohighlight">
+\[\alpha_{i+\frac{1}{2}} = \frac{C_{\text{rand}} - C}{C_{\text{max}} -C}\]</div>
+<p>with <span class="math notranslate nohighlight">\(i\)</span> being the model level, <span class="math notranslate nohighlight">\(C\)</span> being the true combined cloud cover of <span class="math notranslate nohighlight">\(i\)</span> and <span class="math notranslate nohighlight">\(i+1\)</span> and
+<span class="math notranslate nohighlight">\(C_{\text{rand}}\)</span> and <span class="math notranslate nohighlight">\(C_{\text{max}}\)</span> the combined cloud covers assuming random and maximum overlap respectively.
+See Eq. 2.4 and Eq. 2.5 of the ecRad Documentation for details.
+This would make the parameterization of the cloud overlap via the cloud overlap decorrelation length obsolete and cloud overlap could be provided for each timestep with the input netCDF file.
+However, <span class="math notranslate nohighlight">\(C\)</span> cannot be known from model data alone and thus the overlap parameter cannot be calculated.</p>
+<p>The other option is to use the mean cloud overlap decorrelation length calculated for the case study period.</p>
+<div class="line-block">
+<div class="line">Case study period for RF17: 2022-04-11 10:48:47 - 2022-04-11 12:00:32</div>
+<div class="line">Mean cloud overlap decorrelation length for case study period: <strong>482.87 m</strong></div>
+</div>
+<div class="line-block">
+<div class="line">Case study period for RF18: 2022-04-12 11:03:36 - 2022-04-12 12:15:45</div>
+<div class="line">Mean overlap decorrelation length for case study period: <strong>453.10 m</strong></div>
+</div>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="varcloud-retrieval-input-experiment">
+<h3>Varcloud retrieval input experiment<a class="headerlink" href="#varcloud-retrieval-input-experiment" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_write_input_files_v2.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_write_input_files_v2"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 23-03-2023</div>
+</div>
+<p>Use a processed IFS output file and the Varcloud retrieval from Florian Ewald, LMU and generate one ecRad input file for each time step along the flight path of HALO.
+Instead of the <em>CIWC</em> and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> from the IFS use the retrieved variables from the Varcloud lidar/radar retrieval.</p>
+<p><strong>Required User Input:</strong></p>
+<p>All options can be set in the script or given as command line key=value pairs.
+The first possible option is the default.</p>
+<ul class="simple">
+<li><p>campaign (halo-ac3, cirrus-hl)</p></li>
+<li><p>key (RF17), flight key</p></li>
+<li><p>t_interp (False), interpolate time or use the closest time step</p></li>
+<li><p>init_time (00, 12, yesterday), initialization time of the IFS model run</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>well documented ecRad input file in netCDF format for each time step with retrieved <em>CIWC</em> and <span class="math notranslate nohighlight">\(re_{eff, ice}\)</span></p></li>
+</ul>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_experiment_v8.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_experiment_v8"></span><div class="line-block">
+<div class="line"><em>author:</em> Johannes Röttenbacher</div>
+<div class="line"><em>created:</em> 24-03-2023</div>
+</div>
+<p>Comparison between using the VarCloud retrieval for <em>IWC</em> and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> or the forecasted values from the IFS as input for an ecRad simulation using the Fu-IFS ice optic parameterization.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v1.nam</span></code>: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v8.nam</span></code>: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and VarCloud input</p></li>
+</ul>
+<p>Focus is on the above cloud section in the high north before the below cloud section where no VarCloud retrieval is available anymore.</p>
+<figure class="align-default" id="id15">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v8_iwc_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v8_iwc_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text">Retrieved ice water content from VarCloud retrieval interpolated to IFS full level pressure altitudes.</span><a class="headerlink" href="#id15" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id16">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 10 </span><span class="caption-text">Difference between IWC IFS and IWC VarCloud.</span><a class="headerlink" href="#id16" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id17">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_re_ice_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_re_ice_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 11 </span><span class="caption-text">Difference between <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> IFS and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> VarCloud.</span><a class="headerlink" href="#id17" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>From the two figures above it can be seen that the VarCloud retrieval produces a higher IWC and larger <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span>.
+The histograms show the same picture.</p>
+<figure class="align-default" id="id18">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_hist.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_iwc_hist.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 12 </span><span class="caption-text">Histogramm of difference between IWC IFS and IWC VarCloud.</span><a class="headerlink" href="#id18" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id19">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v1_v8_re_ice_psd.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v1_v8_re_ice_psd.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 13 </span><span class="caption-text">Histogramm of <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> used in the IFS run and the VarCloud run.</span><a class="headerlink" href="#id19" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The differences in microphysical properties also translate to differences in optical properties of the cloud such as higher total optical depth (integrated over all bands) in the IFS run.</p>
+<figure class="align-default" id="id20">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_od_int_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_od_int_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 14 </span><span class="caption-text">Difference in total optical depth integrated over all shortwave bands between the IFS run and the VarCloud run.</span><a class="headerlink" href="#id20" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Finally, due to larger <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> the ice cloud from the retrieval is less absorbing/reflecting than the IFS forecasted ice cloud.</p>
+<figure class="align-default" id="id21">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 15 </span><span class="caption-text">Difference in broadband solar downward irradiance between IFS and VarCloud.</span><a class="headerlink" href="#id21" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id22">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 16 </span><span class="caption-text">Histogramm of difference in broadband solar downward irradiance between IFS and VarCloud.</span><a class="headerlink" href="#id22" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="ice-mass-mixing-ratio-experiment">
+<h3>Ice Mass Mixing Ratio Experiment<a class="headerlink" href="#ice-mass-mixing-ratio-experiment" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_write_input_files_v4.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_write_input_files_v4"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 05-04-2023</div>
+</div>
+<p>Instead of summing up Cloud Ice Water Content (ciwc) and Cloud Snow Water Content (cswc) for the ice mass mixing ratio (<span class="math notranslate nohighlight">\(q_{ice}\)</span>), use only ciwc as <span class="math notranslate nohighlight">\(q_{ice}\)</span>.</p>
+<p><strong>Required User Input:</strong></p>
+<p>All options can be set in the script or given as command line key=value pairs.
+The first possible option is the default.</p>
+<ul class="simple">
+<li><p>key (RF17), flight key</p></li>
+<li><p>t_interp (False), interpolate time or use the closest time step</p></li>
+<li><p>init_time (00, 12, yesterday), initialization time of the IFS model run</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>well documented ecRad input file in netCDF format for each time step with q_ice = ciwc</p></li>
+</ul>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_experiment_v11.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_experiment_v11"></span><div class="line-block">
+<div class="line"><em>author:</em> Johannes Röttenbacher</div>
+<div class="line"><em>created:</em> 05-04-2023</div>
+</div>
+<p>Analyze the impact of using only Cloud Ice Water Content (ciwc) as ice mass mixing ratio (<span class="math notranslate nohighlight">\(q_{ice}\)</span>) instead of summing up  ciwc and Cloud Snow Water Content (cswc) for <span class="math notranslate nohighlight">\(q_{ice}\)</span>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v1.nam</span></code>: for flight RF17 with Fu-IFS ice model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v11.nam</span></code>: for flight RF17 with Fu-IFS ice model and ciwc as q_ice</p></li>
+</ul>
+<p><strong>Problem statement:</strong> Using the Varcloud retrieval as input for IWC (converted to <span class="math notranslate nohighlight">\(q_{ice}\)</span>) seemed to explain the overestimation of optical depth in the IFS.
+However, RF18 did not show the same bias in downward solar irradiance below the cloud as RF17.
+One possible reason to explain this inconsistency could be the cswc which increased the clouds size in both cases but more so in RF18.
+Thus, we investigate the impact of removing it from the simulation.</p>
+<p>Focus is on the case study in the high north.
+First let’s look at the difference in <span class="math notranslate nohighlight">\(q_{ice}\)</span> for v1 where <span class="math notranslate nohighlight">\(q_{ice} = ciwc + cswc\)</span> and v11 where <span class="math notranslate nohighlight">\(q_{ice} = ciwc\)</span>.</p>
+<figure class="align-default" id="id23">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v1_q_ice_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v1_q_ice_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 17 </span><span class="caption-text">Ice mass mixing ration for v1.</span><a class="headerlink" href="#id23" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id24">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v11_q_ice_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v11_q_ice_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 18 </span><span class="caption-text">Ice mass mixing ration for v11.</span><a class="headerlink" href="#id24" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The interesting question is now if ecRad also sees a cloud with the extent of <span class="math notranslate nohighlight">\(q_{ice}\)</span> in v1.
+It could well be that it doesn’t because there is no <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> simulated there.
+Or to be more precise only a fill value (5.196162e-05) is set.</p>
+<figure class="align-default" id="id25">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v1_re_ice_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v1_re_ice_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 19 </span><span class="caption-text">Ice effective radius for v1. White areas are filled with a fill value for the simulation.</span><a class="headerlink" href="#id25" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Let’s take a look at the difference in downward solar irradiance for the case study period (v1 - v11).</p>
+<figure class="align-default" id="id26">
+<span id="fluxdnsw-diff"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track1.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track1.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 20 </span><span class="caption-text">Difference in downward solar irradiance between v1 and v11.</span><a class="headerlink" href="#id26" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The difference here seems to come from the <span class="math notranslate nohighlight">\(q_{ice}\)</span> difference in the core of the cloud (see <a class="reference internal" href="#qice-diff"><span class="std std-numref">Fig. 21</span></a>).</p>
+<figure class="align-default" id="id27">
+<span id="qice-diff"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_q_ice_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_q_ice_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 21 </span><span class="caption-text">Difference in <span class="math notranslate nohighlight">\(q_{ice}\)</span> between v1 and v11.</span><a class="headerlink" href="#id27" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>So although the cswc increases the size of the cloud it does not affect the simulation outside the cloud since there is no <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> simulated there.
+It, thus, only increases <span class="math notranslate nohighlight">\(q_{ice}\)</span> inside the actual cloud which leads to higher optical depth of the cloud and thus more scattering/absorption.
+This can be seen in the reduced downward solar irradiance below the cloud in <a class="reference internal" href="#fluxdnsw-diff"><span class="std std-numref">Fig. 20</span></a>.</p>
+</section>
+<section id="fixed-albedo-experiment">
+<h3>Fixed Albedo Experiment<a class="headerlink" href="#fixed-albedo-experiment" title="Permalink to this heading"></a></h3>
+<p><strong>Input files for ecRad</strong></p>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_write_input_files_v5.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_write_input_files_v5"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 15-04-2023</div>
+</div>
+<p>Replace sw_albedo calculated according to <span id="id2">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span> with open ocean albedo (0.06) for the whole flight.</p>
+<p><strong>Required User Input:</strong></p>
+<p>All options can be set in the script or given as command line key=value pairs.
+The first possible option is the default.</p>
+<ul class="simple">
+<li><p>key (RF17), flight key</p></li>
+<li><p>t_interp (False), interpolate time or use the closest time step</p></li>
+<li><p>init_time (00, 12, yesterday), initialization time of the IFS model run</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>well documented ecRad input file in netCDF format for each time step with sw_albedo = 0.06</p></li>
+</ul>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_write_input_files_v5_1.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_write_input_files_v5_1"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 15-04-2023</div>
+</div>
+<p>Replace sw_albedo calculated according to <span id="id3">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span> with a maximum albedo (0.99) for the whole flight and scale all bands according to the differences in the original sw_albedo.</p>
+<p><strong>Required User Input:</strong></p>
+<p>All options can be set in the script or given as command line key=value pairs.
+The first possible option is the default.</p>
+<ul class="simple">
+<li><p>key (RF17), flight key</p></li>
+<li><p>t_interp (False), interpolate time or use the closest time step</p></li>
+<li><p>init_time (00, 12, yesterday), initialization time of the IFS model run</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>well documented ecRad input file in netCDF format for each time step with scaled sw_albedo and a maximum of 0.99</p></li>
+</ul>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_write_input_files_v5_2.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_write_input_files_v5_2"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 05-09-2023</div>
+</div>
+<p>Scale the BACARDI measured broadband albedo for the below cloud section with the sw_albedo calculated according to <span id="id4">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span>.</p>
+<p><strong>Required User Input:</strong></p>
+<p>All options can be set in the script or given as command line key=value pairs.
+The first possible option is the default.</p>
+<ul class="simple">
+<li><p>key (RF17), flight key</p></li>
+<li><p>t_interp (False), interpolate time or use the closest time step</p></li>
+<li><p>init_time (00, 12, yesterday), initialization time of the IFS model run</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>well documented ecRad input file in netCDF format for each time step below cloud with sw_albedo according to the BACARDI measurement</p></li>
+</ul>
+<p><strong>Analysis</strong></p>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_experiment_v13.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_experiment_v13"></span><div class="line-block">
+<div class="line"><em>author:</em> Johannes Röttenbacher</div>
+<div class="line"><em>created:</em> 15-04-2023</div>
+</div>
+<p>Set the albedo during the whole flight to open ocean (diffuse: 0.06, direct: Taylor et al. 1996) or scale it to 0.99 (maximum albedo) and analyze the impact on the offset between simulation and measurement during the below cloud section of RF17.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v13.nam</span></code>: for flight RF17 with Fu-IFS ice model setting albedo to open ocean (input version v5)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v13.1.nam</span></code>: for flight RF17 with Fu-IFS ice model setting albedo to 0.99 (input version v5.1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v13.2.nam</span></code>: for flight RF17 with Fu-IFS ice model setting albedo BACARDI measurement from below cloud section (input version v5.2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v15.1.nam:</span></code>: for RF17 with Fu-IFS ice model using O1280 IFS data (input version v6.1) (<strong>reference simulation</strong>)</p></li>
+</ul>
+<p><strong>Problem statement:</strong> A clear offset can be observed in the solar downward irradiance below the cloud between ecRad and BACARDI with ecRad showing lower values than BACARDI.
+One idea is that multiple scattering from the sea ice surface to the cloud and back down plays is a process not captured by the model.
+By setting the albedo to open ocean we can eliminate this multiple backscattering between cloud and surface.
+Comparing this experiment with the standard experiment can show us the potential impact of multiple scattering.
+We also run an experiment where we scale the albedo to 0.99 to see how much more downward irradiance we can observe that way.</p>
+<p><strong>Extension:</strong> We extend the analysis and use the scaled measured below cloud albedo from BACARDI as input.</p>
+<p>We will focus on the above and below cloud section in the far north.
+The corresponding spectral surface albedo as used in the IFS can be seen in <a class="reference internal" href="#surface-albedo-cs"><span class="std std-numref">Fig. 22</span></a>.</p>
+<figure class="align-default" id="id28">
+<span id="surface-albedo-cs"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v15.1.png" src="_images/HALO-AC3_20220411_HALO_RF17_sw_albedo_along_track_v15.1.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 22 </span><span class="caption-text">Short wave albedo along track above and below cloud for all six spectral bands after <span id="id5">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span>.</span><a class="headerlink" href="#id28" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>At first, we look at the difference in solar upward and downward irradiance between v15.1 (IFS albedo after <span id="id6">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span>) and v13 (ocean albedo).</p>
+<figure class="align-default" id="id29">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 23 </span><span class="caption-text">Difference in solar upward irradiance between v15.1 and v13.</span><a class="headerlink" href="#id29" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id30">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track2.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track2.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 24 </span><span class="caption-text">Difference in solar downward irradiance between v15.1 and v13.</span><a class="headerlink" href="#id30" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>We can see an unsurprising substantial difference in upward irradiance which then propagates to a smaller but still relevant difference in downward irradiance.
+This is especially pronounced for the thicker section of the cirrus at around 11:15 UTC.</p>
+<p>An interesting side note: Although the surface albedo is now set to an open ocean value the emissivity and skin temperature are still the same.
+Thus, there is only a minor change in the terrestrial upward irradiance.</p>
+<p>So how much difference does multiple scattering between the surface and cloud make?
+For this we can take a look at the histogramm of differences and some statistics.</p>
+<figure class="align-default" id="id31">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist1.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist1.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 25 </span><span class="caption-text">Histogram of differences between v15.1 and v13.</span><a class="headerlink" href="#id31" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>We see that a lot of values are rather small.
+They correspond to the area above the cloud where only the atmosphere causes some minor scattering.
+The median and mean of the distribution, however, are around <span class="math notranslate nohighlight">\(10\,Wm^{-2}\)</span>, which is quite substantial.</p>
+<p>So albedo does obviously have a major influence on the downward irradiance in this scenario.
+The next question now is, whether we can reduce the bias by increasing the surface albedo?
+For this we take a look at experiment v13.1 with a scaled albedo of 0.99.
+The albedo is scaled in such a way that the maximum albedo in the first short wave albedo band is set to 0.99 and the following bands are scaled according to the relative differences between the original short wave albedo bands.
+See the script for details.</p>
+<figure class="align-default" id="id32">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff1_flux_dn_sw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff1_flux_dn_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 26 </span><span class="caption-text">Difference in solar downward irradiance between v15.1 and v13.1 (albedo = 0.99).</span><a class="headerlink" href="#id32" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>By scaling the albedo to an unrealistic value of 0.99 we get a maximum of <span class="math notranslate nohighlight">\(0.45\,Wm^{-2}\)</span> difference in solar downward irradiance.
+Comparing the spectral albedo of each experiment in <a class="reference internal" href="#spectral-albedo-all-experiments"><span class="std std-numref">Fig. 27</span></a> we can also see, that the standard albedo for the scene is already high.
+So increasing it does not seem to be a sensible idea.</p>
+<figure class="align-default" id="id33">
+<span id="spectral-albedo-all-experiments"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_IFS_sw_albedo_spectrum_1100.png" src="_images/HALO-AC3_20220411_HALO_RF17_IFS_sw_albedo_spectrum_1100.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 27 </span><span class="caption-text">Spectral albedo for all four experiments at one timestep below cloud.</span><a class="headerlink" href="#id33" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>However, what happens if we use the measured broadband albedo from BACARDI for the below cloud simulation which is lower than the one in the IFS but not as low as for open ocean?</p>
+<figure class="align-default" id="id34">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff2_flux_dn_sw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff2_flux_dn_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 28 </span><span class="caption-text">Difference in solar downward irradiance between v15.1 and v13.2 (albedo from BACARDI).</span><a class="headerlink" href="#id34" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Looking at the difference in solar downward irradiance we can see that it is still a positive difference meaning the predicted downward irradiance is still smaller compared to the IFS run.
+The comparison with the measurements also shows a worse match compared to v15.1.</p>
+<figure class="align-default">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_flux_dn_sw_below_cloud_boxplot.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_flux_dn_sw_below_cloud_boxplot.png" />
+</figure>
+<p>From all this we can conclude that <strong>the albedo does not seem to be the major problem</strong> in this scene.
+Or at least, we cannot tweak it in any reasonable way to improve the simulations.</p>
+</section>
+<section id="trace-gas-comparison">
+<span id="trace-gases"></span><h3>Trace gas comparison<a class="headerlink" href="#trace-gas-comparison" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_trace_gases.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_trace_gases"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 13.10.2023</div>
+</div>
+<p>Compare standard simulation (input v6, namelist v15) before and after implementing the CAMS trace gas climatology.</p>
+<p>Input files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ecrad_merged_inout_20220411_v15_old.nc</span></code> -&gt; fixed trace gases, ozone sonde</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ecrad_merged_inout_20220411_v15.nc</span></code> -&gt; CAMS climatology trace gases</p></li>
+</ul>
+<p>First, let’s compare the mean profiles of trace gases in the case study region.</p>
+<figure class="align-default" id="id35">
+<img alt="_images/profile_comparison.png" src="_images/profile_comparison.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 29 </span><span class="caption-text">Mean profiles of trace gases in the case study region. Fixed values are replicated over height.</span><a class="headerlink" href="#id35" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Apart from O3 and CO2 all trace gases decrease with altitude in the CAMS climatology whereas the constant values are also high in the upper atmosphere.
+For CO2 there is not much difference apart from the values at ground.
+O3 does show a difference in the upper atomsphere where there are no more sonde measurements and the values are set to 0 in the old run.
+In the region where the sonde is available the climatology shows a good match.
+It would thus be better to use the climatology as it extends the O3 profile through the whole atmosphere.
+A mixture of both could also be possible.</p>
+<p>Let’s look at the impact of the differet sources of trace gases on the radiative fluxes.
+We will look at the difference of new - old, so v15 - v15_old.</p>
+<figure class="align-default" id="id36">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track3.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_along_track3.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 30 </span><span class="caption-text">Difference in solar downward irradiance between the simulations using the CAMS climatology (v15) and the ones using the fixed values (v15_old).</span><a class="headerlink" href="#id36" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Especially above cloud we see a substantial difference of up to <span class="math notranslate nohighlight">\(-12\,Wm^{-2}\)</span>.</p>
+<figure class="align-default" id="id37">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist2.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_sw_hist2.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 31 </span><span class="caption-text">Hisotgram of differences of solar downward irradiance between the simulations using the CAMS climatology (v15) and the ones using the fixed values (v15_old).</span><a class="headerlink" href="#id37" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Looking at the histogram of differences we see a mean of <span class="math notranslate nohighlight">\(-10\,Wm^{-2}\)</span> and a minumum at <span class="math notranslate nohighlight">\(-7\,Wm^{-2}\)</span>.
+From this we can conclude that more realistic profiles of trace gases in the simulations lead to less solar downward irradiance.
+This is probably due to more scattering in the upper atmosphere.
+The main cause for this is probably the ozone (O3) profile.
+More sensitivity studies are needed to pinpoint this, however.</p>
+</section>
+<section id="inhomogeneity-test-fractional-std">
+<h3>Inhomogeneity test (fractional_std)<a class="headerlink" href="#inhomogeneity-test-fractional-std" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_experiment_v36.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_experiment_v36"></span><div class="line-block">
+<div class="line"><em>author:</em> Johannes Röttenbacher</div>
+<div class="line"><em>created:</em> 19-01-2024</div>
+</div>
+<p>Set the fractional standard deviation to 0.
+This will remove any subgrid scale variability of IWC.
+Thus, the cloud is homogeneous in each grid cell.
+Using the VarCloud input for these simulations would then have the effect of representing the measured inhomogeneity of the cloud field.</p>
+<p>Namelists used:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v36.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS, <strong>varcloud</strong> retrieval for ciwc and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v37.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS, <strong>varcloud</strong> retrieval for ciwc and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v38.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS, <strong>varcloud</strong> retrieval for ciwc and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v36.nam</span></code>: for RF17 with <strong>Fu-IFS</strong> ice model using O1280 IFS, <strong>varcloud</strong> retrieval for ciwc and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v37.nam</span></code>: for RF17 with <strong>Yi2013</strong> ice model using O1280 IFS, <strong>varcloud</strong> retrieval for ciwc and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220412_v38.nam</span></code>: for RF17 with <strong>Baran2016</strong> ice model using O1280 IFS, <strong>varcloud</strong> retrieval for ciwc and re_ice input <strong>below cloud</strong>, turned fractional standard deviation to 0 (measure for inhomogeneity) (input version <strong>v7</strong>)</p></li>
+</ul>
+<p>We will compare these simulations with the original VarCloud simulations (v16, v28, v20).
+First we start with the solar downward irradiance to see at which altitude changes start to appear.</p>
+<figure class="align-default" id="id38">
+<img alt="_images/RF17_ecrad_diff_flux_dn_sw_along_track.png" src="_images/RF17_ecrad_diff_flux_dn_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 32 </span><span class="caption-text">Difference in short wave downward irradiance along track for RF 17.</span><a class="headerlink" href="#id38" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id39">
+<img alt="_images/RF18_ecrad_diff_flux_dn_sw_along_track.png" src="_images/RF18_ecrad_diff_flux_dn_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 33 </span><span class="caption-text">Difference in short wave downward irradiance along track for RF 18.</span><a class="headerlink" href="#id39" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>As expected the changes only start to appear at cloud top.
+Another comparison can be done using the upward solar irradiance.</p>
+<figure class="align-default" id="id40">
+<img alt="_images/RF17_ecrad_diff_flux_up_sw_along_track.png" src="_images/RF17_ecrad_diff_flux_up_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 34 </span><span class="caption-text">Difference in short wave upward irradiance along track for RF 17.</span><a class="headerlink" href="#id40" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id41">
+<img alt="_images/RF18_ecrad_diff_flux_up_sw_along_track.png" src="_images/RF18_ecrad_diff_flux_up_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 35 </span><span class="caption-text">Difference in short wave upward irradiance along track for RF 18.</span><a class="headerlink" href="#id41" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>We can also take a look on the effect the reduced variability has on the solar transmissivity below cloud.</p>
+<figure class="align-default" id="id42">
+<img alt="_images/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_transmissivity_below_cloud_PDF_ice_optics.png" src="_images/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_transmissivity_below_cloud_PDF_ice_optics.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 36 </span><span class="caption-text">Solar transmissivity below cloud for RF 17 and RF 18 using the three different ice optic parameterizations Fu-IFS, Yi213 and Baran2016 (from left to right).</span><a class="headerlink" href="#id42" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Although only minute, a small shift to lower transmissivities can be seen.
+All in all, the change to a fractional standard deviation of 0 leads to a minor change of the radiative fluxes.
+Turning the artificially introduced inhomogeneity off, is a better representation of the actual cloud field.
+Therefore, these new versions are used in the paper and the thesis.</p>
+</section>
+<section id="direct-sea-ice-albdeo">
+<h3>Direct sea ice albdeo<a class="headerlink" href="#direct-sea-ice-albdeo" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_new_direct_sea_ice_albedo.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_new_direct_sea_ice_albedo"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 05.02.2024</div>
+</div>
+<p>Here we investigate the impact the switch to the direct sea ice albedo according to <span id="id7">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span> has during the case study section of RF 17.
+For this we only compare the two reference simulations using the old (v15.1_old_ci_albedo) and the new (v15.1) way of calculating the <code class="docutils literal notranslate"><span class="pre">sw_albedo_direct</span></code> variable.</p>
+<p>At first, we look at the <code class="docutils literal notranslate"><span class="pre">sw_albedo_direct</span></code> variable used in the simulations and the difference between them.</p>
+<figure class="align-default" id="id43">
+<img alt="_images/sw_albedo_direct_old_vs_new.png" src="_images/sw_albedo_direct_old_vs_new.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 37 </span><span class="caption-text">Old and new <code class="docutils literal notranslate"><span class="pre">sw_albedo_direct</span></code> variable and the difference between them.</span><a class="headerlink" href="#id43" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>We can see up to 10% higher values using the new <code class="docutils literal notranslate"><span class="pre">sw_albedo_direct</span></code>.
+This also has an impact on the simulated irradiance, which is shown below.</p>
+<figure class="align-default" id="id44">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track1.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_sw_along_track1.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 38 </span><span class="caption-text">Difference in solar upward flux between old and new <code class="docutils literal notranslate"><span class="pre">sw_albedo_direct</span></code>.</span><a class="headerlink" href="#id44" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The influence on the solar transmissivity, however, is rather small as can be seen when comparing the PDFs of the below cloud values.</p>
+<figure class="align-default" id="id45">
+<img alt="_images/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_transmissivity_below_cloud_PDF_ci_albedo_exp.png" src="_images/HALO-AC3_HALO_RF17_RF18_bacardi_ecrad_transmissivity_below_cloud_PDF_ci_albedo_exp.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 39 </span><span class="caption-text">PDFs of solar transmissivity below cloud for the two cases.</span><a class="headerlink" href="#id45" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="cams-aerosol-climatology">
+<h3>CAMS aerosol climatology<a class="headerlink" href="#cams-aerosol-climatology" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_experiment_aerosol.py</span></code></p>
+</section>
+<section id="d-effects-parameterization">
+<h3>3-D effects parameterization<a class="headerlink" href="#d-effects-parameterization" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_3D_case_study.py</span></code></p>
+</section>
+<section id="longwave-cloud-scattering">
+<h3>Longwave cloud scattering<a class="headerlink" href="#longwave-cloud-scattering" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_lw_cloud_scattering.py</span></code></p>
+<span class="target" id="module-experiments.ecrad_lw_cloud_scattering"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 27.05.2024</div>
+</div>
+<p>In the ecRad namelist the longwave cloud scattering can be turned off and on (<cite>do_lw_cloud_scattering</cite>), with on being the default according to the documentation.
+Here we look at the difference this option makes for the Fu-IFS reference simulation (v15.1).
+To make sure that this does not affect the short wave calculations, we start with the net short wave flux difference between the new (with lw scattering) and the old simulations.</p>
+<figure class="align-default" id="id46">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_net_sw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_net_sw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 40 </span><span class="caption-text">Difference in net short wave irradiance between the new (with lw scattering) and the old simulations.</span><a class="headerlink" href="#id46" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>As we can see, there is no difference in the shortwave flux.</p>
+<p>We now move on to the difference in longwave downward irradiance.</p>
+<figure class="align-default" id="id47">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_lw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_dn_lw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 41 </span><span class="caption-text">Difference in longwave downward irradiance along flight track between simulations with longwave cloud scattering and without.</span><a class="headerlink" href="#id47" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>It can be seen that the longwave cloud scattering causes an increased downward irradiance.
+Thus, more irradiance is scattered by the cloud than absorbed, which is to be expected from this option.
+The main emitter in the longwave is the surface.
+Therefore, the longwave upward irradiance should be reduced above the cloud.
+This can be seen in the next figure.</p>
+<figure class="align-default" id="id48">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_lw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_up_lw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 42 </span><span class="caption-text">Difference in longwave upward irradiance along flight track between simulations with longwave cloud scattering and without.</span><a class="headerlink" href="#id48" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The net longwave flux is generally negative for cirrus cloud scenes.
+Knowing this the positive difference in net longwave flux shown below means that the net longwave flux with the longwave cloud scattering is less negative.
+More scattering means less absorption but also less upward irradiance and thus less cooling.
+<strong>Thus, simulations including longwave scattering show less terrestrial cooling for cirrus clouds.</strong>
+As it is the default option, <strong>longwave cloud scattering will be turned on</strong> in all simulations.</p>
+<figure class="align-default" id="id49">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_net_lw_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_diff_flux_net_lw_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 43 </span><span class="caption-text">Difference in net longwave irradiance along flight track between simulations with longwave cloud scattering and without.</span><a class="headerlink" href="#id49" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="humidity-from-dropsondes">
+<h3>Humidity from dropsondes<a class="headerlink" href="#humidity-from-dropsondes" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.ecrad_humidity_from_dropsonde.py</span></code></p>
+</section>
+</section>
+<section id="ecrad-setups">
+<h2>ecRad Setups<a class="headerlink" href="#ecrad-setups" title="Permalink to this heading"></a></h2>
+<section id="setup-ala-hanno">
+<h3>Setup ala Hanno<a class="headerlink" href="#setup-ala-hanno" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>manually enter decorrelation length in namelist depending on latitude (output from <a class="reference internal" href="processing.html#module-processing.ecrad_read_ifs"><span class="std std-ref">ecrad_read_ifs.py</span></a>)</p></li>
+<li><p>solar constant: distance sun-earth from <a class="reference external" href="https://www.heavens-above.com/sun.aspx?lat=0&amp;lng=0&amp;loc=Unspecified&amp;alt=0&amp;tz=UCT">heavens above website</a>, calculate solar constant in Excel ({campaign}_solar_constant.xlsx)</p></li>
+<li><p>use ozone data from ozone sondes → <a class="reference external" href="http://www.ndaccdemo.org/">http://www.ndaccdemo.org/</a></p></li>
+</ul>
+</section>
+<section id="standard-ifs-setup-for-haloac3">
+<h3>Standard IFS setup for HALO-(AC)<sup>3</sup><a class="headerlink" href="#standard-ifs-setup-for-haloac3" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>namelists: <code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v15.nam</span></code>, …</p></li>
+<li><p>manually entered mean decorrelation length for case study region</p></li>
+<li><p>solar constant given</p></li>
+<li><p>ozone data from trace gas climatology</p></li>
+<li><p>aerosol disabled</p></li>
+</ul>
+</section>
+</section>
+<section id="libradtran-setups-and-experiments">
+<h2>libRadtran Setups and Experiments<a class="headerlink" href="#libradtran-setups-and-experiments" title="Permalink to this heading"></a></h2>
+<section id="haloac3-bacardi-broadband-simulation-for-bacardi-nc-file">
+<h3>HALO-(AC)<sup>3</sup> BACARDI broadband simulation for BACARDI nc file<a class="headerlink" href="#haloac3-bacardi-broadband-simulation-for-bacardi-nc-file" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>use Longyearbyen radiosonde for vertical profile of relative humidity</p></li>
+<li><dl class="simple">
+<dt>surface temperature → unclear, ask Anna</dt><dd><ul>
+<li><p>set to 293.15K in script but might have been different for Anna’s simulation</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>for details see: <code class="xref py py-mod docutils literal notranslate"><span class="pre">processing.libradtran_write_input_file_bacardi.py</span></code></p></li>
+<li><p>filename: <cite>HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_[solar/terrestrial]_[yyyymmdd]_RF[xx].nc</cite></p></li>
+</ul>
+</section>
+<section id="haloac3-bacardi-below-cloud-rf17">
+<h3>HALO-(AC)<sup>3</sup> BACARDI below cloud RF17<a class="headerlink" href="#haloac3-bacardi-below-cloud-rf17" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_write_input_file_below_cloud.py</span></code>
+<em>Folder:</em> <code class="docutils literal notranslate"><span class="pre">exp0</span></code></p>
+<p>Simulate a clearsky situation above/below the cirrus while HALO was below/above it.
+This can be used to compare the above and below cloud simulation at the same time to derive the atmospheric absorption.
+Using this the actual influence of the cirrus can be derived.</p>
+<ul class="simple">
+<li><p>use dropsonde profiles as input</p></li>
+<li><p>use the IFS sea ice albedo parameterization (TODO)</p></li>
+</ul>
+</section>
+<section id="haloac3-bacardi-smart-clear-sky-simulation-with-sea-ice">
+<h3>HALO-(AC)<sup>3</sup> BACARDI/SMART clear sky simulation with sea ice<a class="headerlink" href="#haloac3-bacardi-smart-clear-sky-simulation-with-sea-ice" title="Permalink to this heading"></a></h3>
+<p><em>Scripts:</em></p>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_write_input_file_seaice.py</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_run_uvspec_seaice.py</span></code></p></li>
+</ul>
+<p><em>Folders:</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">seaice_smart</span></code>: The first run of this experiment was done for the wavelength range 250 - 2225 nm on accident</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seaice_solar</span></code>, <code class="docutils literal notranslate"><span class="pre">seaice_thermal</span></code></p></li>
+</ul>
+<span class="target" id="module-experiments.libradtran_write_input_file_seaice"></span><p>Set up libRadtran for clearsky simulation along flight path for BACARDI with sea ice albedo included</p>
+<p>Input:</p>
+<ul class="simple">
+<li><p>Dropsonde profiles from the flight</p></li>
+<li><p>sea ice albedo parameterization from the IFS</p></li>
+<li><p>sea ice concentration from IFS</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight_key (e.g. ‘RF17’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>solar_flag</p></li>
+<li><p>integrate flag</p></li>
+<li><p>input_path, this is where the files will be saved to be executed by uvspec</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to “None” if you don’t want to use them.</p>
+<p>Furthermore, an albedo file is generated for the solar simulation using the sea ice albedo parameterization from <span id="id8">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span> and the open ocean albedo parameterization from <span id="id9">Taylor <em>et al.</em> [<a class="reference internal" href="references.html#id2" title="J. P. Taylor, J. M. Edwards, M. D. Glew, P. Hignett, and A. Slingo. Studies with a flexible new radiation code. II: Comparisons with aircraft short-wave observations. Q. J. R. Meteorolog. Soc., 122(532):839–861, April 1996. doi:10.1002/qj.49712253204.">1996</a>]</span>.
+To allow simulations in the thermal infrared region an additional albedo band between 2501 and 4400 nm is added.
+The sea ice albedo is set to 0 in this band.</p>
+<p>For the terrestrial simulation the albedo is set to a constant value depending on surface type over all wavelengths.</p>
+<p>The atmosphere is provided by the closest dropsonde measurement from HALO which was converted to the right input format by an IDL script.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="haloac3-bacardi-smart-clear-sky-simulation-with-sea-ice-up-to-5000nm">
+<h3>HALO-(AC)<sup>3</sup> BACARDI/SMART clear sky simulation with sea ice up to 5000nm<a class="headerlink" href="#haloac3-bacardi-smart-clear-sky-simulation-with-sea-ice-up-to-5000nm" title="Permalink to this heading"></a></h3>
+<p><em>Scripts:</em></p>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_write_input_file_seaice_2.py</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_run_uvspec_seaice.py</span></code></p></li>
+</ul>
+<p><em>Folders:</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">seaice_2_solar</span></code></p></li>
+</ul>
+<p><em>Notes:</em></p>
+<p>The same execution script is used as for the previous sea ice experiment.
+Only <code class="docutils literal notranslate"><span class="pre">libradtran_dir</span></code> in line 40 and <code class="docutils literal notranslate"><span class="pre">nc_filepath</span></code> in line 208 are adjusted.</p>
+<span class="target" id="module-experiments.libradtran_write_input_file_seaice_2"></span><p>Set up libRadtran for clearsky simulation along flight path for BACARDI with sea ice albedo included up to 5000nm</p>
+<p>Input:</p>
+<ul class="simple">
+<li><p>Dropsonde profiles from the flight</p></li>
+<li><p>sea ice albedo parameterization from the IFS</p></li>
+<li><p>sea ice concentration from IFS</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight_key (e.g. ‘RF17’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>solar_flag</p></li>
+<li><p>integrate flag</p></li>
+<li><p>input_path, this is where the files will be saved to be executed by uvspec</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to “None” if you don’t want to use them.</p>
+<p>Furthermore, an albedo file is generated for the solar simulation using the sea ice albedo parameterization from <span id="id10">Ebert and Curry [<a class="reference internal" href="references.html#id3" title="Elizabeth E. Ebert and Judith A. Curry. An intermediate one-dimensional thermodynamic sea ice model for investigating ice-atmosphere interactions. Journal of Geophysical Research: Oceans, 98(C6):10085–10109, 1993. doi:10.1029/93JC00656.">1993</a>]</span> and the open ocean albedo parameterization from <span id="id11">Taylor <em>et al.</em> [<a class="reference internal" href="references.html#id2" title="J. P. Taylor, J. M. Edwards, M. D. Glew, P. Hignett, and A. Slingo. Studies with a flexible new radiation code. II: Comparisons with aircraft short-wave observations. Q. J. R. Meteorolog. Soc., 122(532):839–861, April 1996. doi:10.1002/qj.49712253204.">1996</a>]</span>.
+To allow simulations in the thermal infrared region an additional albedo band between 2501 and 4500 nm is added.
+The sea ice albedo is set to 0 in this band.</p>
+<p>For the terrestrial simulation the albedo is set to a constant value depending on surface type over all wavelengths.</p>
+<p>The atmosphere is provided by a dropsonde measurement which was converted to the right input format by an IDL script.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="haloac3-icecloud-over-sea-ice-experiment">
+<h3>HALO-(AC)<sup>3</sup> Icecloud over sea ice experiment<a class="headerlink" href="#haloac3-icecloud-over-sea-ice-experiment" title="Permalink to this heading"></a></h3>
+<p><strong>Name:</strong> iceloud</p>
+<p><em>Scripts:</em></p>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_write_input_file_icecloud.py</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_run_uvspec_experiment.py</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_icecloud_sensitivity_study.py</span></code></p></li>
+</ul>
+<p><em>Folders:</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">icecloud</span></code></p></li>
+</ul>
+<section id="module-experiments.libradtran_write_input_file_icecloud">
+<span id="icecloud-setup"></span><h4>Icecloud Setup<a class="headerlink" href="#module-experiments.libradtran_write_input_file_icecloud" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 22-02-2023</div>
+</div>
+<p>Set up libRadtran like ecRad using input from the IFS and defining an ice cloud for a sensitivity study</p>
+<p>Input:</p>
+<ul class="simple">
+<li><p>IFS processed input file from <code class="xref py py-mod docutils literal notranslate"><span class="pre">ecrad_read_ifs.py</span></code></p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight_key (e.g. ‘RF17’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>integrate flag</p></li>
+<li><p>input_path, this is where the files will be saved to be executed by uvspec</p></li>
+<li><p>different iwc and re_ice values</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to “None” if you don’t want to use them.</p>
+<p>Furthermore, an atmosphere, an albedo and an ice cloud file are generated.</p>
+<p>Variables to add to the atmosphere files:</p>
+<p>1 Altitude above sea level in km → IFS
+2 Pressure in hPa → IFS
+3 Temperature in K → IFS
+4 air density in cm−3 → IFS
+5 Ozone density in cm−3 → sonde (CAMS)
+6 Oxygen density in cm−3 → constant
+7 Water vapour density in cm−3 → IFS
+8 CO2 density in cm−3 → constant (CAMS)</p>
+<p>Variables to add to the albedo files:</p>
+<ul class="simple">
+<li><p>spectral albedo from IFS</p></li>
+</ul>
+<p>Variables to add to the cloud files:</p>
+<ul class="simple">
+<li><p>cloud fraction (cloud fraction file)</p></li>
+<li><p>ice water content, ice effective radius (ice cloud file)</p></li>
+</ul>
+<span class="target" id="module-experiments.libradtran_icecloud_sensitivity_study"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 01.03.2023</div>
+</div>
+<section id="results-of-icecloud-sensitivity-simulations-with-libradtran">
+<h5>Results of icecloud sensitivity simulations with libRadtran<a class="headerlink" href="#results-of-icecloud-sensitivity-simulations-with-libradtran" title="Permalink to this heading"></a></h5>
+</section>
+</section>
+</section>
+<section id="haloac3-icecloud-along-flight-track-for-rf17">
+<h3>HALO-(AC)<sup>3</sup> Icecloud along flight track for RF17<a class="headerlink" href="#haloac3-icecloud-along-flight-track-for-rf17" title="Permalink to this heading"></a></h3>
+<p><strong>Name:</strong> icecloud2</p>
+<p><em>Scripts:</em></p>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_write_input_file_icecloud2.py</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_run_uvspec_experiment.py</span></code></p></li>
+</ul>
+<p><em>Folders:</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">icelcoud2</span></code></p></li>
+</ul>
+<section id="module-experiments.libradtran_write_input_file_icecloud2">
+<span id="icecloud-2-setup"></span><h4>Icecloud 2 Setup<a class="headerlink" href="#module-experiments.libradtran_write_input_file_icecloud2" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 03-03-2023</div>
+</div>
+<p>Set up libRadtran like ecRad using input from the IFS and defining an ice cloud along track for a sensitivity study</p>
+<p>Simulate an ice cloud along the case study period of RF17 (2022-04-11 10:30 - 12:30 UTC) with different IWC and
+<span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> at 6.5 to 7.5 km altitude.
+Generate output at every 100m in the vertical.</p>
+<p>Input:</p>
+<ul class="simple">
+<li><p>IFS processed input file from <code class="xref py py-mod docutils literal notranslate"><span class="pre">ecrad_read_ifs.py</span></code></p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight_key (e.g. ‘RF17’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>integrate flag</p></li>
+<li><p>input_path, this is where the files will be saved to be executed by uvspec</p></li>
+<li><p>different iwc and re_ice values</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to “None” if you don’t want to use them.</p>
+<p>Furthermore, an atmosphere, an albedo and an ice cloud file are generated.</p>
+<p>Variables to add to the atmosphere files:</p>
+<p>1 Altitude above sea level in km → IFS
+2 Pressure in hPa → IFS
+3 Temperature in K → IFS
+4 air density in cm−3 → IFS
+5 Ozone density in cm−3 → sonde (CAMS)
+6 Oxygen density in cm−3 → constant
+7 Water vapour density in cm−3 → IFS
+8 CO2 density in cm−3 → constant (CAMS)</p>
+<p>Variables to add to the albedo files:</p>
+<ul class="simple">
+<li><p>spectral albedo from IFS</p></li>
+</ul>
+<p>Variables to add to the cloud files:</p>
+<ul class="simple">
+<li><p>cloud fraction (cloud fraction file)</p></li>
+<li><p>ice water content, ice effective radius (ice cloud file)</p></li>
+</ul>
+</section>
+</section>
+<section id="haloac3-varcloud-simulation-above-cloud">
+<h3>HALO-(AC)<sup>3</sup> Varcloud simulation above cloud<a class="headerlink" href="#haloac3-varcloud-simulation-above-cloud" title="Permalink to this heading"></a></h3>
+<p><strong>Name:</strong> varcloud</p>
+<p><em>Scripts:</em></p>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_write_input_file_varcloud.py</span></code></p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">experiments.libradtran_run_uvspec_experiment.py</span></code></p></li>
+</ul>
+<p><em>Folders:</em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">varcloud</span></code></p></li>
+</ul>
+<section id="module-experiments.libradtran_write_input_file_varcloud">
+<span id="varcloud-setup"></span><h4>Varcloud Setup<a class="headerlink" href="#module-experiments.libradtran_write_input_file_varcloud" title="Permalink to this heading"></a></h4>
+<div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 28-03-2023</div>
+</div>
+<p>Set up libRadtran like ecRad using input from the IFS and defining an ice cloud along track using the VarCloud output from Florian Ewald, LMU.</p>
+<p>Simulate an ice cloud along the above cloud section RF17 (2022-04-11 10:48:47 - 11:07:14 UTC) with IWC and
+<span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> from the VarCloud retrieval.
+Generate output at every height level defined by the VarCloud input.</p>
+<p>Input:</p>
+<ul class="simple">
+<li><p>IFS processed input file from <code class="xref py py-mod docutils literal notranslate"><span class="pre">ecrad_read_ifs.py</span></code></p></li>
+<li><p>VarCloud output file provided by Florian Ewald</p></li>
+</ul>
+<p><strong>Required User Input:</strong></p>
+<ul class="simple">
+<li><p>campaign</p></li>
+<li><p>flight_key (e.g. ‘RF17’)</p></li>
+<li><p>time_step (e.g. ‘minutes=1’)</p></li>
+<li><p>use_smart_ins flag</p></li>
+<li><p>integrate flag</p></li>
+<li><p>input_path, this is where the files will be saved to be executed by uvspec</p></li>
+</ul>
+<p><strong>Output:</strong></p>
+<ul class="simple">
+<li><p>log file</p></li>
+<li><p>input files for libRadtran simulation along flight track</p></li>
+</ul>
+<p>The idea for this script is to generate a dictionary with all options that should be set in the input file.
+New options can be manually added to the dictionary.
+The options are linked to the page in the manual where they are described in more detail.
+Set options to “None” if you don’t want to use them.</p>
+<p>Furthermore, an atmosphere, an albedo and an ice cloud file are generated.</p>
+<p>Variables to add to the atmosphere files:</p>
+<p>1 Altitude above sea level in km → IFS
+2 Pressure in hPa → IFS
+3 Temperature in K → IFS
+4 air density in cm−3 → IFS
+5 Ozone density in cm−3 → sonde (CAMS)
+6 Oxygen density in cm−3 → constant
+7 Water vapour density in cm−3 → IFS
+8 CO2 density in cm−3 → constant (CAMS)</p>
+<p>Variables to add to the albedo files:</p>
+<ul class="simple">
+<li><p>spectral albedo from IFS</p></li>
+</ul>
+<p>Variables to add to the cloud files:</p>
+<ul class="simple">
+<li><p>cloud fraction (cloud fraction file)</p></li>
+<li><p>ice water content, ice effective radius (ice cloud file)</p></li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quicklooks.html" class="btn btn-neutral float-left" title="Quicklooks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="analysis.html" class="btn btn-neutral float-right" title="Analysis" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

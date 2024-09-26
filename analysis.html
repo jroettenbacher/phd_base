@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis &mdash; Arctic Cirrus 0.9.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1bc1ca25"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Documentation" href="api_documentation.html" />
+    <link rel="prev" title="Experiments" href="experiments.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arctic Cirrus
+          </a>
+              <div class="version">
+                0.9.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">PhD Base Project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html#license">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quicklooks.html">Quicklooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="experiments.html">Experiments</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cirrus-hl">CIRRUS-HL</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cirrus-hl-laboratory-calibration-comparison">CIRRUS-HL laboratory calibration comparison</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_campaign_analysis">cirrus_hl_campaign_analysis.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210625a">cirrus_hl_case_study_20210625a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210629a">cirrus_hl_case_study_20210629a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210712a">cirrus_hl_case_study_20210712a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_case_study_20210715a">cirrus_hl_case_study_20210715a.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.cirrus_hl_overview">cirrus_hl_overview.py</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#haloac3">HALO-(AC)<sup>3</sup></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-laboratory-calibration-comparison">HALO-(AC)<sup>3</sup> Laboratory Calibration comparison</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#timeline">Timeline</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#results-halo-ac-3">Results HALO-(AC)³</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-transfer-calibrations">HALO-(AC)<sup>3</sup> Transfer Calibrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-swir-offset-investigation">HALO-(AC)<sup>3</sup> SWIR Offset Investigation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-radiation-square-investigation-2022-04-12">HALO-(AC)<sup>3</sup> Radiation Square Investigation 2022-04-12</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-bacardi-measurement-investigation">HALO-(AC)<sup>3</sup> BACARDI Measurement Investigation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-bahamas-pitch-filter-assessment">HALO-(AC)<sup>3</sup> BAHAMAS Pitch Filter Assessment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#haloac3-ecrad-varcloud-retrieval">HALO-(AC)<sup>3</sup> ecRad VarCloud retrieval</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Results</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#smart">SMART</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.smart_cosine_calibration">smart_cosine_calibration.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.smart_cosine_calibration_v2">smart_cosine_calibration_v2.py</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#results-cosine-resopnse-calibration">Results Cosine Resopnse Calibration</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-analysis.smart_effective_receiving_area">smart_effective_receiving_area.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_documentation.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="references.html">References</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arctic Cirrus</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="analysis">
+<h1>Analysis<a class="headerlink" href="#analysis" title="Permalink to this heading"></a></h1>
+<p>Here each analysis script is described in a short summary and by its doc string.</p>
+<section id="cirrus-hl">
+<h2>CIRRUS-HL<a class="headerlink" href="#cirrus-hl" title="Permalink to this heading"></a></h2>
+<section id="cirrus-hl-laboratory-calibration-comparison">
+<h3>CIRRUS-HL laboratory calibration comparison<a class="headerlink" href="#cirrus-hl-laboratory-calibration-comparison" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">cirrus_hl_smart_compare_lab_calibs.py</span></code></p>
+<span class="target" id="module-analysis.cirrus_hl_smart_compare_lab_calibs"></span><p>CIRRUS-HL: Compare laboratory calibrations of SMART</p>
+<p>For CIRRUS-HL two laboratory calibrations were done. Here the two calibrations are compared to each other.</p>
+<p>The first lab calibration did not have the final optical fiber and inlet setting as were used during CIRRUS-HL.
+Thus, a difference between the after and before campaign calibration is to be expected.
+In addition to that, the optical fibers were unplugged after the campaign for the transport of SMART to Leipzig.</p>
+<p>Each lab calibration is processed with <cite>smart_process_lab_calib.py</cite> to correct the files for the dark current.
+After that the calibration factors are calculated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.smart_calib_lab_ASP06.py</span></code> for ASP06 and <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.smart_calib_lab_ASP07.py</span></code> for ASP07.</p>
+<ul class="simple">
+<li><p>compare calibration factors</p></li>
+<li><p>compare Ulli measurements</p></li>
+</ul>
+<section id="results">
+<h4>Results<a class="headerlink" href="#results" title="Permalink to this heading"></a></h4>
+<figure class="align-default" id="id2">
+<img alt="_images/ASP06_lab_calib_comparison.png" src="_images/ASP06_lab_calib_comparison.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 44 </span><span class="caption-text">Comparison of the lab calibration factors before and after CIRRUS-HL for the four channels on ASP06.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Comparing the calibration factors of ASP06 between the before and after calibration shows that the after calibration (red) has a higher magnitude.
+This is due to fewer counts being measured during the after calibration.
+A possible cause of this is that the cable used in the after calibration was longer and also showed signs of damage leading to a loss of photons on the way from the inlet to the spectrometer.
+To account for that a higher calibration factor is needed to calculate the given irradiance which did not change between the calibrations.
+The same result can be observed for the calibrations for ASP07.</p>
+<figure class="align-default" id="id3">
+<img alt="_images/ASP07_lab_calib_comparison.png" src="_images/ASP07_lab_calib_comparison.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 45 </span><span class="caption-text">Comparison of the lab calibration factors before and after CIRRUS-HL for the two channels on ASP07.</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Ulli measurements</strong></p>
+<p>Taking a look at ASP06’s measurements of the Ulbricht sphere (Ulli) shows the same difference in magnitude between the calibrations when comparing the dark current corrected counts.</p>
+<figure class="align-default" id="id4">
+<img alt="_images/ASP06_lab_calib_comparison_s-ulli.png" src="_images/ASP06_lab_calib_comparison_s-ulli.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 46 </span><span class="caption-text">Dark current corrected count measurements of the Ulli transfer sphere from ASP06.</span><a class="headerlink" href="#id4" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id5">
+<img alt="_images/ASP07_lab_calib_comparison_s-ulli.png" src="_images/ASP07_lab_calib_comparison_s-ulli.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 47 </span><span class="caption-text">Dark current corrected count measurements of the Ulli transfer sphere from ASP07.</span><a class="headerlink" href="#id5" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>It can clearly be seen that during the after calibration less photons reached the spectrometers.
+However, this should still result in the same irradiance as long as the Ulli sphere is run with the same power source and the same settings.
+Just like the output of the 1000W calibration lamp should not change between the calibration, so should the output of the Ulli sphere not change.
+Nonetheless, when looking at the calculated irradiance using the corresponding laboratory calibration factors clear differences can be observed for the downward measurements.</p>
+<figure class="align-default" id="id6">
+<img alt="_images/ASP06_lab_calib_comparison_f-ulli.png" src="_images/ASP06_lab_calib_comparison_f-ulli.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 48 </span><span class="caption-text">Calculated irradiance of the Ulli transfer sphere from ASP06.</span><a class="headerlink" href="#id6" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id7">
+<img alt="_images/ASP07_lab_calib_comparison_I-ulli.png" src="_images/ASP07_lab_calib_comparison_I-ulli.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 49 </span><span class="caption-text">Calculated radiance of the Ulli transfer sphere from ASP07.</span><a class="headerlink" href="#id7" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Plotting the actual difference between the two shows a more detailed picture.</p>
+<figure class="align-default" id="id8">
+<img alt="_images/ASP06_lab_calib_comparison_f-ulli-diff.png" src="_images/ASP06_lab_calib_comparison_f-ulli-diff.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 50 </span><span class="caption-text">Difference between measured irradiances from Ulli sphere (before - after).</span><a class="headerlink" href="#id8" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id9">
+<img alt="_images/ASP07_lab_calib_comparison_I-ulli-diff.png" src="_images/ASP07_lab_calib_comparison_I-ulli-diff.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 51 </span><span class="caption-text">Difference between measured radiances from Ulli sphere (before - after).</span><a class="headerlink" href="#id9" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="module-analysis.cirrus_hl_campaign_analysis">
+<span id="cirrus-hl-campaign-analysis-py"></span><h3>cirrus_hl_campaign_analysis.py<a class="headerlink" href="#module-analysis.cirrus_hl_campaign_analysis" title="Permalink to this heading"></a></h3>
+<p>Analysis script for statistics about the whole campaign</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210625a">
+<span id="cirrus-hl-case-study-20210625a-py"></span><h3>cirrus_hl_case_study_20210625a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210625a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL
+* 25.06.2021: Radiation Square for BACARDI
+author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210629a">
+<span id="cirrus-hl-case-study-20210629a-py"></span><h3>cirrus_hl_case_study_20210629a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210629a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL - 29. June 2021</p>
+<p>Cirrus over Atlantic west and north of Iceland</p>
+<p>-&gt; Poster HALO Status Colloquium 2021
+-&gt; Presentation for CIRRUS-HL workshop 2. - 3.12.2021
+-&gt; 1. PhD Talk
+-&gt; Presentation for CIRRUS-HL workshop 30. - 31.05.2022</p>
+<p><strong>author</strong>: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210712a">
+<span id="cirrus-hl-case-study-20210712a-py"></span><h3>cirrus_hl_case_study_20210712a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210712a" title="Permalink to this heading"></a></h3>
+<p>Case study for Cirrus-HL
+* 12.07.2021: First day with SMART fixed
+author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_case_study_20210715a">
+<span id="cirrus-hl-case-study-20210715a-py"></span><h3>cirrus_hl_case_study_20210715a.py<a class="headerlink" href="#module-analysis.cirrus_hl_case_study_20210715a" title="Permalink to this heading"></a></h3>
+<p>Case study for CIRRUS-HL Flight_20210715a</p>
+<ul class="simple">
+<li><p>15.07.2021 SMART fixed - contrail outbreak over Spain - Radiation Square</p></li>
+</ul>
+<p>See <code class="docutils literal notranslate"><span class="pre">CIRRUS-HL_radiation_square_SMART.pptx</span></code> in <code class="docutils literal notranslate"><span class="pre">campaigns/CIRRUS-HL/case_studies/Flight_20210715a</span></code> for results.</p>
+<p>author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.cirrus_hl_overview">
+<span id="cirrus-hl-overview-py"></span><h3>cirrus_hl_overview.py<a class="headerlink" href="#module-analysis.cirrus_hl_overview" title="Permalink to this heading"></a></h3>
+<p>Prepare overview plots for each flight
+author: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="haloac3">
+<h2>HALO-(AC)<sup>3</sup><a class="headerlink" href="#haloac3" title="Permalink to this heading"></a></h2>
+<section id="haloac3-laboratory-calibration-comparison">
+<h3>HALO-(AC)<sup>3</sup> Laboratory Calibration comparison<a class="headerlink" href="#haloac3-laboratory-calibration-comparison" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_smart_compare_lab_calibs.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_smart_compare_lab_calibs"></span><p>HALO-(AC)³: Compare laboratory calibrations of SMART</p>
+<p>For HALO-(AC)³ two laboratory calibrations were done. Here the two calibrations are compared to each other.</p>
+<p><strong>Important:</strong> It was decided to use the other spectrometer pair (J5, J6) because the dark current looks better and does not have as many high offsets on some pixels. Also see the note on the effective receiving area!
+Due to technical difficulties the spectrometer pair J3, J4 was used during HALO-AC3. This calibration was therefore used for the transfer calibration. However, a different inlet was used (VN05). The first calib was done with inlet VN11.</p>
+<p><strong>Note on effective receiving area:</strong> Effective receiving area is in front of inlet not inside it, but was interpreted otherwise. Thus, the distance between the effective receiving area and the lamp is off by 44mm!</p>
+<section id="timeline">
+<h4>Timeline<a class="headerlink" href="#timeline" title="Permalink to this heading"></a></h4>
+<ul class="simple">
+<li><p><strong>15.11.2021</strong>: First lab calibration before → Used wrong inlet VN11, channels J3 and J4, assumed wrong effective receiving area</p></li>
+<li><p><strong>23.11.2021</strong>: Second lab calibration before → Used wrong inlet VN11, channels J5 and J6</p></li>
+<li><p><strong>15.02.2022</strong>: First transfer calibration in Oberpfaffenhofen with Ulli2 (packed in container for Kiruna afterwards) and Ulli3 (stays in Oberpfaffenhofen) using VN05 and J5 and J6</p></li>
+<li><p><strong>21.02.2022</strong>: EMI test flight → J3, J4</p></li>
+<li><p><strong>22.02.2022</strong>: saved new offsets for SMART stabilization, transfer calibration with Ulli2 and multiple integration times → J5, J6</p></li>
+<li><p><strong>25.02.2022</strong>: Scientific test flight → J5, J6</p></li>
+<li><p><strong>11.03.2022</strong>: Transfer flight to Kiruna → J3, J4</p></li>
+<li><p><strong>13.03.2022</strong>: First transfer calibration in Kiruna → J3, J4</p></li>
+<li><p><strong>11.04.2022</strong>: Final transfer calibration in Kiruna</p></li>
+<li><p><strong>02.05.2022</strong>: Transfer calibration in lab in Leipzig (optical fibers were detached from Spectrometers in between)</p></li>
+<li><p><strong>02.05.2022</strong>: Laboratory calibration after campaign → VN05, channels J3 and J4</p></li>
+<li><p><strong>06.05.2022</strong>: Wavelength calibration</p></li>
+</ul>
+<p>The second lab calibration after the campaign was done with the correct inlet and the correct channels: VN05 and J3, J4</p>
+<p>Each lab calibration is processed with <code class="xref py py-mod docutils literal notranslate"><span class="pre">smart_process_lab_calib_halo_ac3.py</span></code> to correct the files for the dark current.
+After that the calibration factors are calculated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.smart_calib_lab_ASP06_halo_ac3.py</span></code> for ASP06.</p>
+<ul class="simple">
+<li><p>compare calibration factors</p></li>
+<li><p>compare Ulli measurements</p></li>
+</ul>
+</section>
+<section id="results-halo-ac-3">
+<h4>Results HALO-(AC)³<a class="headerlink" href="#results-halo-ac-3" title="Permalink to this heading"></a></h4>
+<figure class="align-default" id="id10">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 52 </span><span class="caption-text">Comparison of the lab calibration factors before and after HALO-(AC)³ for the two channels on ASP06.</span><a class="headerlink" href="#id10" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Comparing the calibration factors of ASP06 between the before and after calibration shows that the after calibration (red) has a lower magnitude in the wavelength range from 250 to 350 nm for the VNIR channel.
+This means less signal in the before calibration for those pixels.</p>
+<p><strong>Ulli measurements</strong></p>
+<p>Taking a look at ASP06’s measurements of the Ulbricht sphere (Ulli2) shows only a minor difference in magnitude between the calibrations when comparing the dark current corrected and normalized counts.
+Especially in the VNIR part between 180 and 350nm a lot of noise can be seen, which might already explain the difference in calibration factors for those wavelengths.</p>
+<figure class="align-default" id="id11">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison_s-ulli2.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison_s-ulli2.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 53 </span><span class="caption-text">Dark current corrected, normalized count measurements of the Ulli transfer sphere (Ulli2) from ASP06.</span><a class="headerlink" href="#id11" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id12">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 54 </span><span class="caption-text">Calculated irradiance of the Ulli transfer sphere (Ulli2) from ASP06 measurements.</span><a class="headerlink" href="#id12" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Plotting the actual difference between the two shows a more detailed picture.</p>
+<figure class="align-default" id="id13">
+<img alt="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2-diff.png" src="_images/HALO-AC3_ASP06_lab_calib_comparison_f-ulli2-diff.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 55 </span><span class="caption-text">Difference between measured irradiances from Ulli sphere (Ulli2) (before - after).</span><a class="headerlink" href="#id13" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The after campaign calibration shows a higher irradiance with increasing wavelength in the VNIR channel (J4).</p>
+<p>There were several problems with the before calibration on 15. November 2021:</p>
+<ul class="simple">
+<li><p>wrong inlet used (VN11 instead of VN05)</p></li>
+<li><p>the effective receiving area was wrongly interpreted leading to an offset of 44mm in the distance between the calibration lamp and the inlet (should be 50cm)</p></li>
+<li><p>the power supply for Ulli3 had a voltage limit in place instead of a current limit → only relevant for the transfer calibration at Oberpfaffenhofen before the campaign</p></li>
+</ul>
+<p>Thus, it is decided to use the after campaign calibration for all transfer calibrations.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="haloac3-transfer-calibrations">
+<h3>HALO-(AC)<sup>3</sup> Transfer Calibrations<a class="headerlink" href="#haloac3-transfer-calibrations" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_smart_check_transfer_calibrations.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_smart_check_transfer_calibrations"></span><p>Go through all transfer calibrations and check the quality of the calibration</p>
+<figure class="align-default" id="id14">
+<img alt="_images/SMART_calib_c_field_after_Fdw_SWIR_zoom.png" src="_images/SMART_calib_c_field_after_Fdw_SWIR_zoom.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 56 </span><span class="caption-text">Field calibration factors for all transfer calibrations using the after campaign lab calibration.</span><a class="headerlink" href="#id14" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>It can be seen that the first and last transfer calibration result in quite different calibration factors.
+However, the first transfer calibration was done with different spectrometers and the last transfer calibration happened after the optical fibers were detached and reattached to the spectrometers.
+The difference is thus not surprising.
+The performance of the spectrometers throughout the campaign was stable.
+Judging from the steep increase in the field calibration factor at the borders of the spectrometers <strong>950 nm</strong> seems to be a reasonable wavelength to switch from VNIR to SWIR for the combined output data.</p>
+<figure class="align-default" id="id15">
+<img alt="_images/SMART_calib_c_field_after_Fdw_VNIR_zoom.png" src="_images/SMART_calib_c_field_after_Fdw_VNIR_zoom.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 57 </span><span class="caption-text">Field calibration factors for all transfer calibrations using the after campaign lab calibration.</span><a class="headerlink" href="#id15" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="haloac3-swir-offset-investigation">
+<h3>HALO-(AC)<sup>3</sup> SWIR Offset Investigation<a class="headerlink" href="#haloac3-swir-offset-investigation" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_smart_SWIR_offset_investigation.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_smart_SWIR_offset_investigation"></span><p>Investigate offset of SWIR spectrometer during HALO-(AC)<sup>3</sup></p>
+<p>After the first final calibration for HALO-(AC)<sup>3</sup> (September 2022) it was discovered that the SWIR spectrometer data consistently shows too low values compared to the VNIR spectrometer.
+The VNIR spectrometer is closer to the libRadtran clearsky simulation and can thus be considered to be “true”.
+To investigate this offset RF14 is used as it was a flight with a lot of long straight legs.
+One of which was heading far north and thus experiencing high solar zenith angles.</p>
+<p><strong>Steps:</strong></p>
+<ul class="simple">
+<li><p>Checked all SWIR dark current → no change over flight (see <code class="docutils literal notranslate"><span class="pre">.../quicklooks/SMART_SWIR_dark_current</span></code>)</p></li>
+<li><p>VNIR dark current comes from transfer calibration → looks good (see <a class="reference internal" href="#dark-current"><span class="std std-numref">Fig. 58</span></a>)</p></li>
+<li><p>Plot minutely averaged spectra → offset between spectrometers gets smaller with higher wavelengths (see <code class="docutils literal notranslate"><span class="pre">.../case_studies/...RF14/spectra</span></code>)</p></li>
+<li><p>Check mean difference between VNIR and SWIR for different wavelengths (see <a class="reference internal" href="#table"><span class="std std-numref">Table 2</span></a>)</p></li>
+<li><p>Look at other flights and plot the spectra of those (RF17)</p></li>
+<li><p>look at difference between VNIR and SWIR for 985nm for all flights (see <a class="reference internal" href="#diff-985-all"><span class="std std-numref">Fig. 61</span></a>)</p></li>
+</ul>
+<figure class="align-default" id="id16">
+<span id="dark-current"></span><img alt="_images/2022_04_07_09_08.Fdw_VNIR.dat_dark_current.png" src="_images/2022_04_07_09_08.Fdw_VNIR.dat_dark_current.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 58 </span><span class="caption-text">Dark current used for correction of VNIR measurements during RF14.</span><a class="headerlink" href="#id16" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Dark current correction works as expected.
+The dark current is also correctly written into the calibrated netCDF files.
+The field calibration factor looks stable between 950 and 2100 nm for the SWIR spectrometer.
+The VNIR field calibration factor shows a strong increase towards higher wavelengths.</p>
+<figure class="align-default" id="id17">
+<img alt="_images/HALO-AC3_20220407_HALO_RF14_c_field_VNIR_SWIR.png" src="_images/HALO-AC3_20220407_HALO_RF14_c_field_VNIR_SWIR.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 59 </span><span class="caption-text">Field calibration factor for the VNIR and the SWIR spectrometer for RF14.
+Wavelength cutoffs at 400, 950 and 2100 nm.</span><a class="headerlink" href="#id17" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Looking at minutely averaged spectra from both spectrometers shows that the offset between the two is less for higher wavelengths.
+Thus, 975nm is tried as a cutoff between the two.
+The difference between the two 975nm measurements is shown below.
+It can be seen that the VNIR spectrometer is usually between 0.02 and 0.05 <span class="math notranslate nohighlight">\(W\,m^{-2}\,nm^{-1}\)</span> higher than the SWIR spectrometer.</p>
+<figure class="align-default" id="id18">
+<img alt="_images/HALO-AC3_20220407_HALO_RF14_diff_VNIR-SWIR_975nm.png" src="_images/HALO-AC3_20220407_HALO_RF14_diff_VNIR-SWIR_975nm.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 60 </span><span class="caption-text">Difference between VNIR and SWIR spectrometer for 975nm during RF14.
+Exact wavelengths differ slightly, 974.8nm and 972.8nm (VNIR, SWIR).</span><a class="headerlink" href="#id18" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Looking at different wavelengths and calculating the mean difference yields the following results fro RF14.</p>
+<span id="table"></span><table class="docutils align-default" id="id19">
+<caption><span class="caption-number">Table 2 </span><span class="caption-text">Mean difference between selected wavelengths measured with the VNIR and the SWIR spectrometer at the closest corresponding wavelength fro RF14.</span><a class="headerlink" href="#id19" title="Permalink to this table"></a></caption>
+<thead>
+<tr class="row-odd"><th class="head"><p>Wavelength</p></th>
+<th class="head"><p>VNIR wavelength</p></th>
+<th class="head"><p>SWIR wavelength</p></th>
+<th class="head"><p>Mean difference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>950</p></td>
+<td><p>949.72</p></td>
+<td><p>946.88</p></td>
+<td><p>0.029</p></td>
+</tr>
+<tr class="row-odd"><td><p>955</p></td>
+<td><p>954.80</p></td>
+<td><p>953.39</p></td>
+<td><p>0.026</p></td>
+</tr>
+<tr class="row-even"><td><p>960</p></td>
+<td><p>959.85</p></td>
+<td><p>959.88</p></td>
+<td><p>0.028</p></td>
+</tr>
+<tr class="row-odd"><td><p>965</p></td>
+<td><p>964.85</p></td>
+<td><p>966.36</p></td>
+<td><p>0.020</p></td>
+</tr>
+<tr class="row-even"><td><p>970</p></td>
+<td><p>969.82</p></td>
+<td><p>972.81</p></td>
+<td><p>0.016</p></td>
+</tr>
+<tr class="row-odd"><td><p>975</p></td>
+<td><p>974.75</p></td>
+<td><p>972.81</p></td>
+<td><p>0.021</p></td>
+</tr>
+<tr class="row-even"><td><p>980</p></td>
+<td><p>980.34</p></td>
+<td><p>979.25</p></td>
+<td><p>0.012</p></td>
+</tr>
+<tr class="row-odd"><td><p>985</p></td>
+<td><p>985.18</p></td>
+<td><p>985.68</p></td>
+<td><p><strong>0.008</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>990</p></td>
+<td><p>989.98</p></td>
+<td><p>992.09</p></td>
+<td><p>0.013</p></td>
+</tr>
+<tr class="row-odd"><td><p>995</p></td>
+<td><p>994.73</p></td>
+<td><p>992.09</p></td>
+<td><p>0.010</p></td>
+</tr>
+<tr class="row-even"><td><p>990</p></td>
+<td><p>989.98</p></td>
+<td><p>992.09</p></td>
+<td><p>0.013</p></td>
+</tr>
+<tr class="row-odd"><td><p>995</p></td>
+<td><p>994.73</p></td>
+<td><p>992.09</p></td>
+<td><p>0.010</p></td>
+</tr>
+</tbody>
+</table>
+<p>The mean difference between 985nm is lowest.
+At this wavelength also the VNIR and SWIR wavelengths are close to each other, only 0.5nm difference.
+However, at 960nm the difference is only 0.08nm but the difference in measurement is 0.028 <span class="math notranslate nohighlight">\(W\,m^{-2}\,nm^{-1}\)</span>.</p>
+<p>The analysis is repeated for each flight and the difference between the 985nm pixel from the two spectrometers is shown in <a class="reference internal" href="#diff-985-all"><span class="std std-numref">Fig. 61</span></a>.
+The single txt files for all wavelengths for one flight can be found in the respective case study folders.
+One csv file with all flights has been saved in the <code class="docutils literal notranslate"><span class="pre">case_studies</span></code> folder (<code class="docutils literal notranslate"><span class="pre">mean_diff_VNIR-SWIR.csv</span></code>).</p>
+<figure class="align-default" id="id20">
+<span id="diff-985-all"></span><img alt="_images/HALO-AC3_mean_diff_VNIR-SWIR_985nm.png" src="_images/HALO-AC3_mean_diff_VNIR-SWIR_985nm.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 61 </span><span class="caption-text">Mean difference between the 985nm measurement from the VNIR (985.18nm) and the SWIR (985.68nm) spectrometer for each research flight.</span><a class="headerlink" href="#id20" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>This plot is produced for each wavelength between 950 and 995nm.
+They can be found in <code class="docutils literal notranslate"><span class="pre">.../case_studies/spectrometer_overlap</span></code>.
+Looking through those plots it becomes apparent that the 990nm wavelength shows the lowest difference between the two spectrometers on average.</p>
+<figure class="align-default" id="id21">
+<span id="diff-990-all"></span><img alt="_images/HALO-AC3_mean_diff_VNIR-SWIR_990nm.png" src="_images/HALO-AC3_mean_diff_VNIR-SWIR_990nm.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 62 </span><span class="caption-text">Mean difference between the 990nm measurement from the VNIR (989.98nm) and the SWIR (992.09nm) spectrometer for each research flight.</span><a class="headerlink" href="#id21" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Due to this result the wavelength at which the two spectra are merged is set to <strong>990</strong> nm.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="haloac3-radiation-square-investigation-2022-04-12">
+<h3>HALO-(AC)<sup>3</sup> Radiation Square Investigation 2022-04-12<a class="headerlink" href="#haloac3-radiation-square-investigation-2022-04-12" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_smart_case_study_20220412_radiation_square.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_smart_case_study_20220412_radiation_square"></span><p>Find correction offsets for SMART</p>
+<p>During RF18 the SMART INS system had an error and the stabilization had to be fixed to keep on measuring.
+Looking at the stabilization table measurements one can see the values start to drift after the stabilization was turned on again after the radar calibration maneuvers.</p>
+<figure class="align-default" id="stabbi-performance-pitch">
+<img alt="_images/HALO-AC3_20220412_HALO_RF18_stabbi_performance_pitch.png" src="_images/HALO-AC3_20220412_HALO_RF18_stabbi_performance_pitch.png" />
+</figure>
+<p>The stabbi was turned on again at 10:13:22. And shortly after (10:35 UTC) the stabilization table was fixed to the following position:</p>
+<ul class="simple">
+<li><p>Roll <strong>0.07</strong></p></li>
+<li><p>Pitch <strong>-2.38</strong></p></li>
+</ul>
+<p>This should account for the usual position of the aircraft in flight. (HALO’s nose is usually pointing a bit up during flight thus the table needs to counter this)</p>
+<p>Looking at the BAHAMAS data filtered for roll angles greater 1 we can see that leg two in the polygon shows some high roll angles.
+<a class="reference internal" href="#bahamas-overview"><span class="std std-numref">Fig. 63</span></a> also shows that the heading did not stay constant during each leg.</p>
+<figure class="align-default" id="id22">
+<span id="bahamas-overview"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_roll_heading_saa_altitude_rad_square_filtered.png" src="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_roll_heading_saa_altitude_rad_square_filtered.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 63 </span><span class="caption-text">BAHAMAS aircraft data filtered for roll angles greater 1 and the calculated solar azimuth angle (first row).
+BAHAMAS altitude (second row).</span><a class="headerlink" href="#id22" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>During the time when SMART was fixed in position the incoming direct solar irradiance can be corrected for the aircraft attitude.
+This correction can take an offset between the fixed position of SMART and the aircraft fuselage into account.
+To figure out this possible offset one can use a so-called radiation square where HALO flies into four different direction.
+Ideally HALO would fly once towards the direction of the sun and then do three 90 degree turns.
+From this pattern one can figure out the offset.
+However, here we only have a polygon pattern at hand with less than 90 degree turns and also did not fly directly into the direction of the sun (see <a class="reference internal" href="#angle-towards-sun"><span class="std std-numref">Fig. 64</span></a>).</p>
+<figure class="align-default" id="id23">
+<span id="angle-towards-sun"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_sun-angle_filtered.png" src="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_sun-angle_filtered.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 64 </span><span class="caption-text">Angle of HALO towards sun during the polygon pattern and BAHAMAS heading (HDG) and solar azimuth angle (SAA).</span><a class="headerlink" href="#id23" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Using the Jupyter notebook <code class="docutils literal notranslate"><span class="pre">halo_ac3_20220412_radiation_square_investiagtion.ipynb</span></code> different offsets can be tried out using an interactive widget.
+Going through different offsets the fit to the simulation does not get better than using no offset.
+Thus, the inlet seems to be well aligned with the horizontal plane of the aircraft and <strong>no offset</strong> is applied to the attitude correction.
+Some plots can be found in <code class="docutils literal notranslate"><span class="pre">.../case_studies/HALO-AC3_20220412_HALO_RF18/</span></code>.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="haloac3-bacardi-measurement-investigation">
+<h3>HALO-(AC)<sup>3</sup> BACARDI Measurement Investigation<a class="headerlink" href="#haloac3-bacardi-measurement-investigation" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_bacardi_measurement_investigation.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_bacardi_measurement_investigation"></span><p>BACARDI measurement investigation</p>
+<p>Using RF17 the measurement performance of BACARDI is investigated.
+The data is filtered using motion angles measured by BAHAMAS.
+As the roll angle is centered around 0 (median for RF17: 0.0571659 deg) a simple roll threshold of <strong>0.5</strong> is used here and implemented by comparing the absolute roll angle with the threshold.
+The pitch angle of HALO, however, is centered on 2.28 (median for RF17: 2.28605413 deg) and thus the absolute value of the measurement minus the center is compared with the pitch threshold of <strong>0.34</strong>.
+The pitch threshold is set by iterating the polar plot showing the relation between the BACARDI measured downward irradiance and the libRadtran clearsky simulation according to viewing angle of HALO (see <a class="reference internal" href="#bacardi-polar"><span class="std std-numref">Fig. 65</span></a>).
+There is one point in the dataset which shows an abnormal low relation.
+This point is removed when the pitch threshold is set to 0.34.
+It can thus be said that the low relation value is caused by a pitch motion of HALO.</p>
+<figure class="align-default" id="id24">
+<span id="bacardi-polar"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_inlet_directional_dependence.png" src="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_inlet_directional_dependence.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 65 </span><span class="caption-text">Relation between BACARDI measurement and libRadtran clearsky simulation depending on viewing direction of HALO.
+BACARDI data is filtered for aircraft motion.
+Red dots denote the section when HALO was below a cirrus cloud.</span><a class="headerlink" href="#id24" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Plotting the same relation against the solar zenith angle (<a class="reference internal" href="#bacardi-relation-sza-all"><span class="std std-numref">Fig. 66</span></a>) shows that there is some part of the flight when the relation exceeds 1 and HALO is above any cloud.
+However, due to the below cloud section not many details can be observed.</p>
+<figure class="align-default" id="id25">
+<span id="bacardi-relation-sza-all"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_inlet_sza_dependence.png" src="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_inlet_sza_dependence.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 66 </span><span class="caption-text">Relation between BACARDI measurement and libRadtran clearsky simulation depending on solar zenith angle.
+BACARDI data is filtered for aircraft motion.
+Blue dots denote the section when HALO was below a cirrus cloud.</span><a class="headerlink" href="#id25" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>More details can be seen in <a class="reference internal" href="#bacardi-relation-sza"><span class="std std-numref">Fig. 67</span></a>.
+Here a maximum deviation of 3% can be observed, which is not much considering the motion thresholds.</p>
+<figure class="align-default" id="id26">
+<span id="bacardi-relation-sza"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_inlet_sza_dependence_without_below_cloud.png" src="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_inlet_sza_dependence_without_below_cloud.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 67 </span><span class="caption-text">Relation between BACARDI measurement and libRadtran clearsky simulation depending on solar zenith angle.
+BACARDI data is filtered for aircraft motion and the below cloud section.</span><a class="headerlink" href="#id26" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Looking at the time evolution of the relation (<a class="reference internal" href="#bacardi-relation-time"><span class="std std-numref">Fig. 68</span></a>) we can see that the high deviations happen close to times when the data is filtered due to high motion angles and just before the start of the below cloud section.</p>
+<figure class="align-default" id="id27">
+<span id="bacardi-relation-time"></span><img alt="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_simulation_relation_without_below_cloud.png" src="_images/HALO-AC3_20220411_HALO_RF17_BACARDI_simulation_relation_without_below_cloud.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 68 </span><span class="caption-text">Relation between BACARDI measurement and libRadtran clearsky simulation depending on time.
+BACARDI data is filtered for aircraft motion and the below cloud section.</span><a class="headerlink" href="#id27" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+<section id="haloac3-bahamas-pitch-filter-assessment">
+<h3>HALO-(AC)<sup>3</sup> BAHAMAS Pitch Filter Assessment<a class="headerlink" href="#haloac3-bahamas-pitch-filter-assessment" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">halo_ac3_bahamas_pitch_filter.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_bahamas_pitch_filter"></span><div class="line-block">
+<div class="line"><em>author</em>: Johannes Röttenbacher</div>
+<div class="line"><em>created</em>: 20-02-2023</div>
+</div>
+<p>Investigate pitch angle of HALO measured by BAHAMAS during HALO-(AC)<sup>3</sup></p>
+<p>HALO’s pitch angle changes during the flight as it loses weight by burning fuel or when it changes altitude and speed.
+Using a static median pitch value to calculate a pitch threshold for motion filtering measurements is thus not sufficient.
+This can be seen in <a class="reference internal" href="#pitch-all"><span class="std std-numref">Fig. 69</span></a>, where the ten-minute median pitch angle decreases from 2.8° to 1.8° during RF18.
+Using the static pitch thresholds would thus filter the wrong values.
+Especially, the above cloud section during the pentagram pattern in the far north, denoted as case study, suffers from this static threshold.
+However, <a class="reference internal" href="#pitch-all"><span class="std std-numref">Fig. 69</span></a> already shows a problem with a rolling median: During large ascents and descents the median follows the extreme values.
+One could either use an absolute threshold for such extreme values or look at the change of pitch over time to filter such events.
+The flight segmentation could also help to remove these events.
+Using a longer time window also shows good results.</p>
+<figure class="align-default" id="id28">
+<span id="pitch-all"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_all.png" src="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_all.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 69 </span><span class="caption-text">BAHAMAS pitch angle during RF18 with whole flight median and 10 minute rolling median.
+Red dots show the roll filtered values.</span><a class="headerlink" href="#id28" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p><strong>Which time range is best for the median?</strong></p>
+<figure class="align-default" id="id29">
+<span id="median-time"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_rolling_median.png" src="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_rolling_median.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 70 </span><span class="caption-text">Rolling median of pitch using different time windows.</span><a class="headerlink" href="#id29" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>Judging from RF18 30 minutes seem to be a good time window for the rolling median.
+Since it is mostly longer than large ascents and descents they are still averaged over.
+For case study like periods, however, it still follows the general trend of the data.</p>
+<p><strong>What threshold is best for the pitch?</strong></p>
+<p>To answer this we can have a look at the rolling standard deviation of the pitch in <a class="reference internal" href="#rolling-std"><span class="std std-numref">Fig. 71</span></a>.</p>
+<figure class="align-default" id="id30">
+<span id="rolling-std"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_all_rolling_std.png" src="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_all_rolling_std.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 71 </span><span class="caption-text">Pitch and 30-minute rolling median pitch with standard deviation.</span><a class="headerlink" href="#id30" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>We see that the rolling standard deviation is actually quite small during time when HALO is flying steady.
+The median value of the 30-minute standard deviation is <span class="math notranslate nohighlight">\(0.173^{\circ}\)</span>.
+Thus, <span class="math notranslate nohighlight">\(0.17^{\circ}\)</span> looks like a good threshold then.
+First result of calculating a dynamic pitch threshold can be seen in <a class="reference internal" href="#dynamic-pitch"><span class="std std-numref">Fig. 72</span></a>.</p>
+<figure class="align-default" id="id31">
+<span id="dynamic-pitch"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_all_dynamic_threshold.png" src="_images/HALO-AC3_20220412_HALO_RF18_BAHAMAS_pitch_angle_all_dynamic_threshold.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 72 </span><span class="caption-text">Different dynamic pitch thresholds for a 30-minute rolling median.</span><a class="headerlink" href="#id31" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>From this we can see that the <span class="math notranslate nohighlight">\(0.5^{\circ}\)</span> threshold from the roll angle is too high for the pitch angle.
+The <span class="math notranslate nohighlight">\(0.1^{\circ}\)</span> threshold would cut off to many values during the steady flight sections.</p>
+<p><strong>Evaluation using BACARDI broadband measurements</strong></p>
+<p>BACARDI data is already filtered during the attitude correction.
+However, some errors remain as can be seen in <a class="reference internal" href="#bacardi-raw"><span class="std std-numref">Fig. 73</span></a>.</p>
+<figure class="align-default" id="id32">
+<span id="bacardi-raw"></span><img alt="_images/HALO-AC3_20220412_HALO_RF18_BACARDI_fluxes_raw_case_study.png" src="_images/HALO-AC3_20220412_HALO_RF18_BACARDI_fluxes_raw_case_study.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 73 </span><span class="caption-text">Original filtered BACARDI values as returned from the calibration processing for the case study period.
+Note the peaks just before filters are applied.</span><a class="headerlink" href="#id32" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="haloac3-ecrad-varcloud-retrieval">
+<h3>HALO-(AC)<sup>3</sup> ecRad VarCloud retrieval<a class="headerlink" href="#haloac3-ecrad-varcloud-retrieval" title="Permalink to this heading"></a></h3>
+<p><em>Script:</em> <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis.halo_ac3_case_study_ecrad_varcloud_v2.py</span></code></p>
+<span class="target" id="module-analysis.halo_ac3_case_study_ecrad_varcloud_v2"></span><div class="line-block">
+<div class="line"><em>author:</em> Johannes Röttenbacher</div>
+<div class="line"><em>created:</em> 12-07-2023</div>
+</div>
+<p>Comparison between using the VarCloud retrieval for <em>IWC</em> and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> or the forecasted values from the IFS as input for an ecRad simulation using the Fu-IFS ice optic parameterization.
+In addition, an experiment is run where the above cloud retrieved IWC and <span class="math notranslate nohighlight">\(r_{eff, ice}\)</span> is used as input for the below cloud section.
+This allows for a comparison between measurements and simulations.
+The assumption is that the cloud does not change in the 30 minutes it takes to reach the below cloud section.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v15.nam</span></code>: for flight RF17 with Fu-IFS ice model using IFS data from its original O1280 grid (input version v6)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v16.nam</span></code>: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input for the below cloud section (input version v7)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IFS_namelist_jr_20220411_v17.nam</span></code>: for flight RF17 with Fu-IFS ice model using O1280 IFS data and varcloud retrieval for ciwc and re_ice input (input version v8)</p></li>
+</ul>
+<figure class="align-default" id="id33">
+<img alt="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v16_iwc_along_track.png" src="_images/HALO-AC3_20220411_HALO_RF17_ecrad_v16_iwc_along_track.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 74 </span><span class="caption-text">Retrieved ice water content from VarCloud retrieval interpolated to IFS full level pressure altitudes.</span><a class="headerlink" href="#id33" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<section id="id1">
+<h4>Results<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h4>
+</section>
+</section>
+</section>
+<section id="smart">
+<h2>SMART<a class="headerlink" href="#smart" title="Permalink to this heading"></a></h2>
+<section id="module-analysis.smart_cosine_calibration">
+<span id="smart-cosine-calibration-py"></span><h3>smart_cosine_calibration.py<a class="headerlink" href="#module-analysis.smart_cosine_calibration" title="Permalink to this heading"></a></h3>
+<p>Cosine Response Calibration of irradiance inlets of SMART for CIRRUS-HL and HALO-(AC)3</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 16.11.2021: </span>The measurements were done with the inlets switched and not all measurements were performed so it was
+decided to repeat the whole calibration (see <a class="reference internal" href="#module-analysis.smart_cosine_calibration_v2"><span class="std std-ref">smart_cosine_calibration_v2.py</span></a>).
+This script is kept for archiving only.</p>
+</div>
+<ul class="simple">
+<li><p>ASP06 J3, J4 (Fdw) with inlet ASP02 done on 5th November 2021 by Anna Luebke and Johannes Röttenbacher</p></li>
+<li><p>ASP06 J6, J6 (Fup) with inlet ASP01 done on 8th November 2021 by Anna Luebke and Johannes Röttenbacher</p></li>
+</ul>
+<p>Lamp used: FEL-1587</p>
+<p>The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
+Each measurement lasted about 30 seconds with 1000 ms integration time.
+Data is stored in folders which denote the angle the inlet was turned to.</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_turned</span></code>: The inlet was turned 90deg around the horizontal axis to evaluate all four azimuth directions</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_diffuse</span></code>: A baffle was placed before the inlet to shade it (dark measurements)</p></li>
+</ul>
+<p>author: Johannes Röttenbacher</p>
+</section>
+<section id="module-analysis.smart_cosine_calibration_v2">
+<span id="smart-cosine-calibration-v2-py"></span><h3>smart_cosine_calibration_v2.py<a class="headerlink" href="#module-analysis.smart_cosine_calibration_v2" title="Permalink to this heading"></a></h3>
+<p>Cosine Response Calibration of irradiance inlets of SMART for CIRRUS-HL and HALO-(AC)3 2nd try</p>
+<ul class="simple">
+<li><p>ASP06 J3, J4 (Fdw) with inlet VN05 (ASP_01) done on 16th November 2021 by Anna Luebke and Johannes Röttenbacher and finished on 22th November by Benjamin Kirbus and Johannes</p></li>
+<li><p>ASP06 J5, J6 (Fup) with inlet VN11 (ASP_02) done on 22th November 2021 by Benjamin Kirbus and Johannes Röttenbacher</p></li>
+</ul>
+<p>Lamp used: cheap 1000W lamp
+optical fiber: 22b
+-&gt; 21b has very little output from the SWIR fiber, thus the 22b fiber was chosen for both inlets as it is identical to 21b</p>
+<p>The inlet was rotated at 5° increments in both directions away from the lamp. Clockwise is positive.
+Each measurement lasted about 42 seconds with 700 ms integration time for VN05 and about 48s with 800ms integration time
+for VN11.
+Data is stored in folders which denote the angle the inlet was turned to.</p>
+<ul class="simple">
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_turned</span></code>: The inlet was turned 90deg clockwise around the horizontal axis to evaluate all four azimuth directions</p></li>
+<li><p><code class="file docutils literal notranslate"><em><span class="pre">angle</span></em><span class="pre">_diffuse</span></code>: A baffle was placed before the inlet to shade it (dark measurements)</p></li>
+</ul>
+<section id="results-cosine-resopnse-calibration">
+<h4>Results Cosine Resopnse Calibration<a class="headerlink" href="#results-cosine-resopnse-calibration" title="Permalink to this heading"></a></h4>
+<p>See PowerPoint <cite>20211122_SMART_cosine_calibration.pptx</cite> under <cite>instruments/SMART</cite>.</p>
+<p><em>author</em>: Johannes Röttenbacher</p>
+</section>
+</section>
+<section id="module-analysis.smart_effective_receiving_area">
+<span id="smart-effective-receiving-area-py"></span><h3>smart_effective_receiving_area.py<a class="headerlink" href="#module-analysis.smart_effective_receiving_area" title="Permalink to this heading"></a></h3>
+<p>Calculate the effective receiving area of an irradiance inlet according to the R^2 law</p>
+<p>author: Johannes Röttenbacher</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="experiments.html" class="btn btn-neutral float-left" title="Experiments" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api_documentation.html" class="btn btn-neutral float-right" title="API Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-, Johannes Röttenbacher.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
