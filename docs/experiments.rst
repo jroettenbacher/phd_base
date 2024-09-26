@@ -53,6 +53,7 @@ Input version   Namelist version                                Short descriptio
 7.2             41.2, 42.2                                      As above but with latitude set to 0 to remove cosine dependence of the ice effective radius
 8               17, 21, 23, 25, 29                              As v2 but with O1280 IFS output
 9               14                                              Turn on aerosol and use CAMS data for it
+10              43.1                                            Use specific humidity from dropsondes
 =============   ==============================================  ===========================================================================================
 
 * ``IFS_namelist_jr_20220411_v1.nam``: for RF17 with **Fu-IFS** ice model
@@ -100,6 +101,7 @@ Input version   Namelist version                                Short descriptio
 * ``IFS_namelist_jr_20220411_v40.2.nam``: for RF17 with **Yi2013** ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version **v6.2**)
 * ``IFS_namelist_jr_20220411_v41.2.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
 * ``IFS_namelist_jr_20220411_v42.2.nam``: for RF17 with **Yi2013** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
+* ``IFS_namelist_jr_20220411_v43.1.nam``: for RF17 with **Fu-IFS** ice model using O1280 IFS data (input version **v10**)
 
 |haloac3| **2022-04-12**
 
@@ -138,6 +140,7 @@ Input version   Namelist version                                Short descriptio
 * ``IFS_namelist_jr_20220412_v40.2.nam``: for RF18 with **Yi2013** ice model using O1280 IFS, turned of cosine dependence of minimum re_ice (input version **v6.2**)
 * ``IFS_namelist_jr_20220412_v41.2.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
 * ``IFS_namelist_jr_20220412_v42.2.nam``: for RF18 with **Yi2013** ice model using O1280 IFS and **VarCloud** retrieval for q_ice input for the **below cloud** section, re_ice is calculated with Sun & Rikus from VarCloud IWC but with turned of cosine dependence of minimum re_ice (input version **v7.2**)
+* ``IFS_namelist_jr_20220412_v43.1.nam``: for RF18 with **Fu-IFS** ice model using O1280 IFS data (input version **v10**)
 
 Overlap decorrelation length experiment
 ---------------------------------------
@@ -238,6 +241,12 @@ Longwave cloud scattering
 
 .. automodule:: experiments.ecrad_lw_cloud_scattering
 
+Humidity from dropsondes
+------------------------
+
+*Script:* :py:mod:`experiments.ecrad_humidity_from_dropsonde.py`
+
+.. automodule:: experiments.ecrad_humidity_from_dropsonde
 
 ecRad Setups
 ============
