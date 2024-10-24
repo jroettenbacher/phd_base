@@ -41,7 +41,6 @@ if __name__ == "__main__":
     from collections import Counter
 
     # plotting variables
-    cm = 1 / 2.54
     cbc = h.get_cb_friendly_colors()
     h.set_cb_friendly_colors()
     plt.rc("font", size=12)
@@ -98,7 +97,7 @@ if __name__ == "__main__":
 
 # %% read in ifs data
     ifs_o1280 = xr.open_dataset(f"{ifs_path}/ifs_20220411_00_ml_O1280_processed.nc")
-    ifs_f1280 = xr.open_dataset(f"{ifs_path}/ifs_20220411_00_ml_processed.nc")
+    ifs_f1280 = xr.open_dataset(f"{ifs_path}/ifs_20220411_00_ml_F1280_processed.nc")
     ifs_o1280 = ifs_o1280.set_index(rgrid=["lat", "lon"])
 
 # %% plot IFS data and grid points in case study region on O1280 and F1280 grid
@@ -137,6 +136,7 @@ if __name__ == "__main__":
 
     ax.legend(loc=2)
     ax.set_title("IFS skin temperature on original O1280 grid")
+
     # F1280
     ax = axs[1]
     x, y = np.meshgrid(ds_plot2.lon, ds_plot2.lat)
