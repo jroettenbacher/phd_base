@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 | *author*: Johannes Röttenbacher
-| *created*: 01.03.2023
+| *created*: 01-03-2023
 
 Results of icecloud sensitivity simulations with libRadtran
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -21,37 +21,38 @@ if __name__ == "__main__":
     import numpy as np
     import matplotlib.pyplot as plt
 
-    cm = 1/2.54
     cbc = h.get_cb_friendly_colors()
 
     # %% set paths
     campaign = "halo-ac3"
-    flight_key = "RF17"
-    flight = meta.flight_names[flight_key]
+    key = "RF17"
+    flight = meta.flight_names[key]
     date = flight[9:17]
 
-    plot_path = "./docs/figures/icecloud"
+    plot_path = f"{h.get_path('plot', campaign)}/icecloud_sensitivity_study"
+    fig_path = "./docs/figures/icecloud"
     libradtran_path = h.get_path("libradtran_exp", flight, campaign)
-    libradtran_file = f"HALO-AC3_HALO_libRadtran_simulation_icecloud_{date}_{flight_key}.nc"
+    libradtran_file = f"HALO-AC3_HALO_libRadtran_simulation_icecloud_{date}_{key}.nc"
+    smart_path = h.get_path("calibrated", flight, campaign)
+    smart_file = f"HALO-AC3_HALO_SMART_spectral-irradiance-Fdw_{date}_{key}_v1.0.nc"
 
     # %% plotting meta
     h.set_cb_friendly_colors()
     plt.rc("font", size=12)
-    figsize_wide = (24 * cm, 12 * cm)
-    figsize_equal = (12 * cm, 12 * cm)
     cloud_top = 7500  # m
     cloud_base = 6500  # m
 
-    # %% read in libradtran file
+# %% read in libradtran and SMART file
     ds = xr.open_dataset(f"{libradtran_path}/{libradtran_file}")
+    smart_ds = xr.open_dataset(f"{smart_path}/{smart_file}")
 
-    # %% plot all combinations of IWC and re_eff_ice
+# %% plot all combinations of IWC and re_eff_ice
     ds_plot = ds
     nr_iwc = ds.iwc.shape[0]
-    _, ax = plt.subplots(figsize=figsize_wide)
+    _, ax = plt.subplots(figsize=h.figsize_wide)
     for i in range(ds.re_ice.shape[0]):
         x = np.repeat(ds.re_ice[i].values, nr_iwc)
-        ax.plot(x, ds.iwc, "o", ls="")
+        ax.plot(x, ds.iwc, "o", ls="", markersize=10)
     ax.set_xlim(0, 70)
     ax.set_xticks(np.arange(0, 70, 10))
     ax.set_yscale("log")
@@ -65,13 +66,13 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% integrate spectral simulations
+# %% integrate spectral simulations
     ds["eglo_int"] = ds.eglo.integrate("wavelength")
 
-    # %% calculate difference in spectra above and below cloud
+# %% calculate difference in spectra above and below cloud
     ds["eglo_diff"] = ds.eglo.sel(altitude=cloud_top) - ds.eglo.sel(altitude=cloud_base)
 
-    # %% plot spectral difference between above and below
+# %% plot spectral difference between above and below
     ds_plot = ds["eglo_diff"]
     g = ds_plot.isel(time=0, drop=True).plot(x="wavelength", hue="iwc", col="re_ice", col_wrap=3, add_legend=True)
     for i, ax in enumerate(g.axes.flat):
