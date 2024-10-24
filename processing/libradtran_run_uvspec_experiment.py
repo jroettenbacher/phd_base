@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # get all flights from dictionary
     all_flights = [key for key in meta.transfer_calibs.keys()] if campaign == "cirrus-hl" else list(
         meta.flight_names.values())
-    all_flights = all_flights[19:20]  # select specific flight[s] if needed
+    all_flights = all_flights[18:20]  # select specific flight[s] if needed
 
     uvspec_exe = "/opt/libradtran/2.0.4/bin/uvspec"
     solar_flag = True
@@ -76,7 +76,7 @@ if __name__ == "__main__":
                  f"experiment: {experiment}\n"
                  f"solar_flag: {solar_flag}\n"
                  f"uvspec_exe: {uvspec_exe}\n"
-                 f"Script started: {dt.datetime.now(dt.datetime.UTC):%c UTC}\n"
+                 f"Script started: {dt.datetime.now(dt.UTC):%c UTC}\n"
                  f"wkdir: {libradtran_path}")
 
         # %% call uvspec for all files
