@@ -127,7 +127,7 @@ if __name__ == '__main__':
             ds = ds.assign_coords({'sw_albedo_band': range(1, 7)})
             ecrad_dict[v] = ds.copy()
 
-        ecrad_dicts[key] = ecrad_dict.copy()
+        ecrad_dicts[key] = ecrad_dict
 
 # %% fill up nan values in specific humidity from dropsonde measurements
     key = 'RF17'
