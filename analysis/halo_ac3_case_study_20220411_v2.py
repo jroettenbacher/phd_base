@@ -72,7 +72,7 @@ ecrad_file = "ecrad_merged_inout_20220411_v1_mean.nc"
 radar_path = h.get_path("hamp_mira", halo_flight, campaign)
 radar_file = "radar_20220411_v1.6.nc"
 lidar_path = h.get_path("wales", halo_flight, campaign)
-bsrgl_file = "HALO-AC3_HALO_WALES_bsrgl_20220411_RF17_V1.nc"
+bsrgl_file = f"HALO-AC3_HALO_WALES_bsrgl_20220411_{halo_key}_V2.0.nc"
 ecrad_baran2016_file = f"ecrad_merged_output_{date}_v7_mean.nc"
 ecrad_yi_file = f"ecrad_merged_output_{date}_v4_mean.nc"
 
@@ -186,65 +186,30 @@ n = 0
 for n in tqdm(range(17)):
     # fill gaps 17 times
     radar_mask = despeckle(radar_mask, 50)  # fill gaps again
-    plt.pcolormesh(radar_mask.T)
-    plt.title(n + 1)
-    plt.savefig(f"{plot_path}/tmp/radar_fill_gaps_{n + 1}.png")
-    plt.close()
+    # plt.pcolormesh(radar_mask.T)
+    # plt.title(n + 1)
+    # plt.savefig(f"{plot_path}/tmp/radar_fill_gaps_{n + 1}.png")
+    # plt.close()
 
 radar_ds["fill_mask"] = (["time", "height"], radar_mask)
 
-# %% read in lidar data
-lidar_ds = xr.open_dataset(f"{lidar_path}/{bsrgl_file}")  # sensitive to clouds
-lidar_ds_res = xr.open_dataset(f"{lidar_path}/{bsrgl_file.replace('.nc', '_1s.nc')}").reset_coords("altitude")
-# lidar_ds_res = lidar_ds.resample(time="1S").asfreq()
-# lidar_ds_res.to_netcdf(f"{lidar_path}/{bsrgl_file.replace('.nc', '_1s_.nc')}")
+# %% read in lidar data V2
+lidar_ds = xr.open_dataset(f"{lidar_path}/{bsrgl_file}")
+lidar_ds["altitude"] = lidar_ds["altitude"] / 1000
+lidar_ds = lidar_ds.rename(altitude="height").transpose("time", "height")
+
 # convert lidar data to radar convention: [time, height], ground = 0m
-lidar_ds_res = lidar_ds_res.rename(range="height").transpose("time", "height")
-lidar_height = lidar_ds_res.height
-# flip height coordinate
-lidar_ds_res = lidar_ds_res.assign_coords(height=np.flip(lidar_height)).isel(height=slice(None, None, -1))
-
-# %% despeckle lidar data and add a speckle mask to the data set
-lidar_ds_res["mask"] = ~(lidar_ds_res.backscatter_ratio > 1.1)
-lidar_mask = lidar_ds_res["mask"].values
-n = 0
-for n in tqdm(range(17)):
-    # despeckle 17 times
-    lidar_mask = despeckle(lidar_mask, 50)  # despeckle again
-    # plt.pcolormesh(lidar_mask.T)
-    # plt.title(n + 1)
-    # plt.savefig(f"{plot_path}/tmp/despeckle_{n + 1}.png")
-    # plt.close()
-
-lidar_ds_res["spklmask"] = (["time", "height"], lidar_mask)
-
-# %% use despeckle the reverse way to fill signal gaps in lidar data and add it as a mask
-lidar_mask = ~lidar_ds_res["spklmask"].values
-n = 0
-for n in tqdm(range(17)):
-    # fill gaps 17 times
-    lidar_mask = despeckle(lidar_mask, 50)  # fill gaps again
-    # plt.pcolormesh(lidar_mask.T)
-    # plt.title(n + 1)
-    # plt.savefig(f"{plot_path}/tmp/fill_gaps_{n + 1}.png")
-    # plt.close()
-
-lidar_ds_res["fill_mask"] = (["time", "height"], lidar_mask)
-
-# %% despeckle fill mask
-lidar_mask = ~lidar_ds_res["fill_mask"].values
-for n in tqdm(range(8)):
-    # plt.pcolormesh(lidar_mask.T)
-    # plt.title(n + 1)
-    # plt.savefig(f"{plot_path}/tmp/fill_gaps_despeckled_{n + 1}.png")
-    # plt.close()
-    lidar_mask = despeckle(lidar_mask, 50)  # despeckle again
-
-lidar_ds_res["fill_mask"] = (["time", "height"], ~lidar_mask)
+lidar_height = lidar_ds.height
 
 # %% interpolate lidar data onto radar range resolution
 new_range = radar_ds.height.values
-lidar_ds_res_r = lidar_ds_res.interp(height=new_range)
+lidar_ds_r = lidar_ds.interp(height=np.flip(new_range))
+lidar_ds_r = lidar_ds_r.assign_coords(height=np.flip(new_range)).isel(height=slice(None, None, -1))
+
+# %% combine radar and lidar mask
+lidar_mask = lidar_ds_r["backscatter_ratio"] > 1.2
+lidar_mask = lidar_mask.where(lidar_mask == 0, 2).resample(time="1s").first()
+radar_lidar_mask = radar_ds["mask"] + lidar_mask
 
 # %% cut data to smart time
 time_slice = slice(smart_ds.time[0].values, smart_ds.time[-1].values)
@@ -295,10 +260,10 @@ ecrad_ds["albedo_lw_cls"] = ecrad_ds["flux_up_sw"] / ecrad_ds["flux_dn_lw_clear"
 # %% calculate broadband irradiance from ecRad band 1-13
 sw_bands = ecrad_ds.band_sw
 lw_bands = ecrad_ds.band_lw
-ecrad_ds["flux_dn_sw_2"] = ecrad_ds["spectral_flux_dn_sw"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
-ecrad_ds["flux_up_sw_2"] = ecrad_ds["spectral_flux_up_sw"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
-ecrad_ds["flux_dn_sw_clear_2"] = ecrad_ds["spectral_flux_dn_sw_clear"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
-ecrad_ds["flux_up_sw_clear_2"] = ecrad_ds["spectral_flux_up_sw_clear"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
+# ecrad_ds["flux_dn_sw_2"] = ecrad_ds["spectral_flux_dn_sw"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
+# ecrad_ds["flux_up_sw_2"] = ecrad_ds["spectral_flux_up_sw"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
+# ecrad_ds["flux_dn_sw_clear_2"] = ecrad_ds["spectral_flux_dn_sw_clear"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
+# ecrad_ds["flux_up_sw_clear_2"] = ecrad_ds["spectral_flux_up_sw_clear"].isel(band_sw=sw_bands[:13]).sum(dim="band_sw")
 
 # %% calculate transmissivity BACARDI/libRadtran and ecRad
 bacardi_ds["transmissivity_solar"] = bacardi_ds["F_down_solar"] / fdw_inp
@@ -401,8 +366,8 @@ bacardi_ds_res["cre_terrestrial"] = (bacardi_ds_res.F_down_terrestrial - bacardi
 bacardi_ds_res["cre_total"] = bacardi_ds_res["cre_solar"] + bacardi_ds_res["cre_terrestrial"]
 
 # %% calculate broadband cloud radiative effect from ecRad
-ecrad_ds["cre_sw"] = (ecrad_ds.flux_dn_sw_2 - ecrad_ds.flux_up_sw_2) - (ecrad_ds.flux_dn_sw_clear_2
-                                                                        - ecrad_ds.flux_up_sw_clear_2)
+ecrad_ds["cre_sw"] = (ecrad_ds.flux_dn_sw - ecrad_ds.flux_up_sw) - (ecrad_ds.flux_dn_sw_clear
+                                                                        - ecrad_ds.flux_up_sw_clear)
 ecrad_ds["cre_lw"] = (ecrad_ds.flux_dn_lw - ecrad_ds.flux_up_lw) - (ecrad_ds.flux_dn_lw_clear
                                                                     - ecrad_ds.flux_up_lw_clear)
 ecrad_ds["cre_total"] = ecrad_ds["cre_sw"] + ecrad_ds["cre_lw"]
@@ -2089,11 +2054,11 @@ plt.show()
 plt.close()
 
 # %% plot CRE ecRad
-ecrad_plot = ecrad_ds.isel(half_level=height_level_da).sel(time=case_slice)
+ecrad_plot = ecrad_ds.isel(half_level=137).sel(time=case_slice)
 _, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(ecrad_plot.time, ecrad_plot.cre_sw, label="CRE$_{sw}$", color=cbc[2], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.cre_lw, label="CRE$_{lw}$", color=cbc[3], marker=".")
-ax.plot(ecrad_plot.time, ecrad_plot.cre_total, label="CRE$_{net}$", color=cbc[5], marker=".")
+ax.plot(ecrad_plot.time, ecrad_plot.cre_total, label="CRE$_{total}$", color=cbc[5], marker=".")
 ax.axvline(x=above_cloud["end"], label="End above cloud section", color=cbc[-2])
 ax.axvline(x=below_cloud["start"], label="Start below cloud section", color=cbc[-1])
 ax.legend()
@@ -2103,7 +2068,7 @@ ax.set_title("Cloud radiative effect from ecRad simulation")
 ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Cloud Radiative Effect (W$\,$m$^{-2}$)")
 plt.tight_layout()
-figname = f"{plot_path}/{halo_flight}_ecRad_cre_time_series.png"
+figname = f"{plot_path}/{halo_flight}_ecRad_cre_toa_time_series.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
@@ -2611,10 +2576,10 @@ plt.ylim(0, 5000)
 plt.show()
 plt.close()
 
-# %% plot 1s lidar data whole flight
-lidar_plot = lidar_ds_res.backscatter_ratio
+# %% plot lidar data whole flight
+lidar_plot = lidar_ds.backscatter_ratio
 _, ax = plt.subplots(figsize=h.figsize_wide)
-lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+lidar_plot.plot(x="time", y="height", robust=True, cmap=cmr.chroma, ax=ax)
 ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
 ax.legend(loc=2)
 h.set_xticks_and_xlabels(ax, time_extend)
@@ -2656,61 +2621,61 @@ plt.show()
 plt.close()
 
 # %% plot filtered 1s lidar data whole flight as used for cloud mask
-for mask_value in [1.1]:  # , 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
-    lidar_plot = lidar_ds_res.backscatter_ratio.where(lidar_ds_res.backscatter_ratio > mask_value)
-    _, ax = plt.subplots(figsize=h.figsize_wide)
-    lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
-    ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
-    ax.legend(loc=2)
-    h.set_xticks_and_xlabels(ax, time_extend)
-    ax.set_xlabel("Time (UTC)")
-    ax.set_ylabel("Altitude (m)")
-    ax.set_title(
-        f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with {mask_value}")
-    plt.tight_layout()
-    figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_cloud_mask_{mask_value}.png"
-    plt.savefig(figname, dpi=300)
-    plt.show()
-    plt.close()
+# for mask_value in [1.1]:  # , 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2]:
+#     lidar_plot = lidar_ds_res.backscatter_ratio.where(lidar_ds_res.backscatter_ratio > mask_value)
+#     _, ax = plt.subplots(figsize=h.figsize_wide)
+#     lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+#     ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+#     ax.legend(loc=2)
+#     h.set_xticks_and_xlabels(ax, time_extend)
+#     ax.set_xlabel("Time (UTC)")
+#     ax.set_ylabel("Altitude (m)")
+#     ax.set_title(
+#         f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with {mask_value}")
+#     plt.tight_layout()
+#     figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_cloud_mask_{mask_value}.png"
+#     plt.savefig(figname, dpi=300)
+#     plt.show()
+#     plt.close()
 
 # %% plot despeckled lidar data
-lidar_plot = lidar_ds_res.backscatter_ratio.where(~lidar_ds_res["mask"]).where(~lidar_ds_res["spklmask"])
-_, ax = plt.subplots(figsize=h.figsize_wide)
-lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
-ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
-ax.legend(loc=2)
-h.set_xticks_and_xlabels(ax, time_extend)
-ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Altitude (m)")
-ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled")
-plt.tight_layout()
-figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_despeckled.png"
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
+# lidar_plot = lidar_ds_res.backscatter_ratio.where(~lidar_ds_res["mask"]).where(~lidar_ds_res["spklmask"])
+# _, ax = plt.subplots(figsize=h.figsize_wide)
+# lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+# ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+# ax.legend(loc=2)
+# h.set_xticks_and_xlabels(ax, time_extend)
+# ax.set_xlabel("Time (UTC)")
+# ax.set_ylabel("Altitude (m)")
+# ax.set_title(f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled")
+# plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_despeckled.png"
+# plt.savefig(figname, dpi=300)
+# plt.show()
+# plt.close()
 
 # %% plot interpolated lidar data
-lidar_mask = (lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"])
-lidar_plot = lidar_ds_res_r.backscatter_ratio.where(~lidar_mask)
-_, ax = plt.subplots(figsize=h.figsize_wide)
-lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
-ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
-ax.legend(loc=2)
-h.set_xticks_and_xlabels(ax, time_extend)
-ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Altitude (m)")
-ax.set_title(
-    f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled, interpolated")
-plt.tight_layout()
-figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_30m.png"
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
+# lidar_mask = (lidar_ds_res_r["mask"] & lidar_ds_res_r["spklmask"])
+# lidar_plot = lidar_ds_res_r.backscatter_ratio.where(~lidar_mask)
+# _, ax = plt.subplots(figsize=h.figsize_wide)
+# lidar_plot.plot(x="time", y="height", robust=True, cmap="plasma", ax=ax)
+# ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+# ax.legend(loc=2)
+# h.set_xticks_and_xlabels(ax, time_extend)
+# ax.set_xlabel("Time (UTC)")
+# ax.set_ylabel("Altitude (m)")
+# ax.set_title(
+#     f"{halo_key} WALES backscatter ratio 532 nm low sensitivity\nresampled to 1s, masked with 1.1, despeckled, interpolated")
+# plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_WALES_backscatter_ratio_532_ls_1s_30m.png"
+# plt.savefig(figname, dpi=300)
+# plt.show()
+# plt.close()
 
 # %% combine radar and lidar mask
-lidar_mask = lidar_ds_res_r["fill_mask"]
-lidar_mask = lidar_mask.where(lidar_mask == 0, 2)
-radar_lidar_mask = radar_ds["mask"] + lidar_mask
+# lidar_mask = lidar_ds_res_r["fill_mask"]
+# lidar_mask = lidar_mask.where(lidar_mask == 0, 2)
+# radar_lidar_mask = radar_ds["mask"] + lidar_mask
 
 # %% plot combined radar and lidar mask
 plot_ds = radar_lidar_mask
@@ -2729,66 +2694,66 @@ ax.set_xlabel("Time (UTC)")
 ax.set_ylabel("Altitude (m)")
 ax.set_title(f"{halo_key} combined radar lidar mask")
 plt.tight_layout()
-figname = f"{plot_path}/{halo_flight}_radar_lidar_mask.png"
+figname = f"{plot_path}/{halo_flight}_radar_lidar_mask_cs.png"
 plt.savefig(figname, dpi=300)
 plt.show()
 plt.close()
 
 # %% find cloud bases and tops from lidar mask
-mask = ~lidar_ds_res["fill_mask"]
-cloud_props_lidar, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
-bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
+# mask = ~lidar_ds_res["fill_mask"]
+# cloud_props_lidar, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
+# bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
 
 # %% plot bases tops
-plot_ds = bases_tops
-clabel = list(["bases", "no data", "tops"])
-cbar = list([cbc[1], "#ffffff", cbc[-2]])
-cmap = colors.ListedColormap(cbar)
-_, ax = plt.subplots(figsize=h.figsize_wide)
-pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
-pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
-ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
-ax.legend(loc=2)
-h.set_xticks_and_xlabels(ax, time_extend)
-ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Altitude (m)")
-ax.set_title(f"{halo_key} cloud bases and tops")
-plt.tight_layout()
-figname = f"{plot_path}/{halo_flight}_bases_tops_lidar.png"
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
+# plot_ds = bases_tops
+# clabel = list(["bases", "no data", "tops"])
+# cbar = list([cbc[1], "#ffffff", cbc[-2]])
+# cmap = colors.ListedColormap(cbar)
+# _, ax = plt.subplots(figsize=h.figsize_wide)
+# pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
+# pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+# ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+# ax.legend(loc=2)
+# h.set_xticks_and_xlabels(ax, time_extend)
+# ax.set_xlabel("Time (UTC)")
+# ax.set_ylabel("Altitude (m)")
+# ax.set_title(f"{halo_key} cloud bases and tops")
+# plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_bases_tops_lidar.png"
+# plt.savefig(figname, dpi=300)
+# plt.show()
+# plt.close()
 
-# %% find cloud bases and tops from lidar mask resampled to 30m
-mask = ~lidar_ds_res_r["fill_mask"]
-cloud_props, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
-bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
+# # %% find cloud bases and tops from lidar mask resampled to 30m
+# mask = ~lidar_ds_res_r["fill_mask"]
+# cloud_props, bases_tops = h.find_bases_tops(mask.values, mask.height.values)
+# bases_tops = xr.DataArray(bases_tops, dims=["time", "height"], coords=dict(time=mask.time, height=mask.height))
 
-# %% plot bases tops
-plot_ds = bases_tops
-clabel = list(["bases", "no data", "tops"])
-cbar = list([cbc[1], "#ffffff", cbc[-2]])
-cmap = colors.ListedColormap(cbar)
-_, ax = plt.subplots(figsize=h.figsize_wide)
-pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
-pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
-ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
-ax.legend(loc=2)
-h.set_xticks_and_xlabels(ax, time_extend)
-ax.set_xlabel("Time (UTC)")
-ax.set_ylabel("Altitude (m)")
-ax.set_title(f"{halo_key} cloud bases and tops")
-plt.tight_layout()
-figname = f"{plot_path}/{halo_flight}_bases_tops.png"
-plt.savefig(figname, dpi=300)
-plt.show()
-plt.close()
+# # %% plot bases tops
+# plot_ds = bases_tops
+# clabel = list(["bases", "no data", "tops"])
+# cbar = list([cbc[1], "#ffffff", cbc[-2]])
+# cmap = colors.ListedColormap(cbar)
+# _, ax = plt.subplots(figsize=h.figsize_wide)
+# pcm = plot_ds.plot(x="time", y="height", cmap=cmap, vmin=-1.5, vmax=len(cbar) - 1.5)
+# pcm.colorbar.set_ticks(np.arange(len(clabel)) - 1, labels=clabel)
+# ax.plot(bahamas_unfiltered.time, bahamas_unfiltered["IRS_ALT"], color="k", label="HALO altitude")
+# ax.legend(loc=2)
+# h.set_xticks_and_xlabels(ax, time_extend)
+# ax.set_xlabel("Time (UTC)")
+# ax.set_ylabel("Altitude (m)")
+# ax.set_title(f"{halo_key} cloud bases and tops")
+# plt.tight_layout()
+# figname = f"{plot_path}/{halo_flight}_bases_tops.png"
+# plt.savefig(figname, dpi=300)
+# plt.show()
+# plt.close()
 
-# %% investigate bases tops
-bases_tops.sum()  # if it adds up to 0 every base has a corresponding top
-(bases_tops == 1).sum(dim="height").plot(x="time")
-plt.show()
-plt.close()
+# # %% investigate bases tops
+# bases_tops.sum()  # if it adds up to 0 every base has a corresponding top
+# (bases_tops == 1).sum(dim="height").plot(x="time")
+# plt.show()
+# plt.close()
 
 # %% find cloud bases and tops from radar mask
 mask = ~radar_ds["fill_mask"]

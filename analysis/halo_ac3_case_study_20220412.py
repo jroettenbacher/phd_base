@@ -127,9 +127,6 @@ ecrad_ds = xr.open_dataset(f"{ecrad_path}/{ecrad_file}")
 # replace numeric nan values with nan
 ecrad_ds["re_ice"] = ecrad_ds.re_ice.where(ecrad_ds.re_ice != 5.196162e-05, np.nan)
 ecrad_ds["re_liquid"] = ecrad_ds.re_liquid.where(ecrad_ds.re_liquid != 4.000001e-06, np.nan)
-# mean or std over columns
-# ecrad_ds = ecrad_ds.mean std(dim="column")
-# ecrad_ds.to_netcdf(f"{ecrad_path}/{ecrad_file.replace('.nc', '_mean std.nc')}")
 
 # %% filter values which are not stabilized or which exceeded certain motion threshold
 stabbi_filter = smart_ds.stabilization_flag == 0
@@ -249,7 +246,8 @@ h.set_cb_friendly_colors()
 plt.rc("font", size=12)
 
 # %% calculate pressure height for ecrad data
-ecrad_ds = ecrad.calculate_pressure_height(ecrad_ds)
+if "press_height_full" not in ecrad_ds:
+    ecrad_ds = ecrad.calculate_pressure_height(ecrad_ds)
 
 # %% get height level of actual flight altitude in ecRad model on half levels
 ins_tmp = ins_res.sel(time=ecrad_ds.time, method="nearest")
@@ -288,11 +286,11 @@ ecrad_ds["cre_lw"] = (ecrad_ds.flux_dn_lw - ecrad_ds.flux_up_lw) - (ecrad_ds.flu
                                                                     - ecrad_ds.flux_up_lw_clear)
 ecrad_ds["cre_total"] = ecrad_ds["cre_sw"] + ecrad_ds["cre_lw"]
 
-# %% plotting dictionaries for BACARDI
+# %% plotting dictionaries and lists for BACARDI and ecrad
 labels = dict(F_down_solar=r"$F_{\downarrow, solar}$", F_down_terrestrial=r"$F_{\downarrow, terrestrial}$",
               F_up_solar=r"$F_{\uparrow, solar}$", F_up_terrestrial=r"$F_{\uparrow, terrestrial}$")
 
-# %% prepare metadata for comparing ecRad and BACARDI
+# prepare metadata for comparing ecRad and BACARDI
 titles = ["Solar Downward Irradiance", "Terrestrial Downward Irradiance", "Solar Upward Irradiance",
           "Terrestrial Upward Irradiance"]
 names = ["Fdw_solar", "Fdw_terrestrial", "Fup_solar", "Fup_terrestrial"]
@@ -1652,7 +1650,7 @@ df = df.sort_values(by="viewing_dir")
 # %% plot difference between ecRad simulation and BACARDI measurement depending on viewing angle as polarplot
 h.set_cb_friendly_colors()
 plt.rc("font", size=12, family="serif")
-_ ax = plt.subplots(figsize=h.figsize_wide, subplot_kw={'projection': 'polar'})
+_, ax = plt.subplots(figsize=h.figsize_wide, subplot_kw={'projection': 'polar'})
 ax.scatter(np.deg2rad(df["viewing_dir"]), df["difference"], label="0 = facing sun\n180 = facing away from sun")
 # df_plot = df[((below_cloud["start"] < df.index) & (df.index < below_cloud["end"]))]
 # ax.scatter(np.deg2rad(df_plot["viewing_dir"]), df_plot["relation"], label="below cloud")
@@ -1675,7 +1673,7 @@ plt.close()
 # %% plot relation as function of SZA
 h.set_cb_friendly_colors()
 plt.rc("font", size=14, family="serif")
-_ ax = plt.subplots(figsize=(10, 6))
+_, ax = plt.subplots(figsize=(10, 6))
 df_tmp = df
 ax.scatter(df_tmp["sza"], df_tmp["relation"])
 # df_tmp = df[~((below_cloud["start"] < df.index) & (df.index < below_cloud["end"]))]
@@ -1904,7 +1902,7 @@ plt.show()
 plt.close()
 
 # %% plot solar CRE components ecRad
-_ ax = plt.subplots(figsize=h.figsize_wide)
+_, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw_2, label="F$_{\downarrow, sw}$", c=cbc[1], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.flux_up_sw_2, label="F$_{\\uparrow, sw}$", c=cbc[0], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw_clear_2, label="F$_{\downarrow, sw, cls}$", c=cbc[1], ls="--",
@@ -1926,7 +1924,7 @@ plt.show()
 plt.close()
 
 # %% plot lw CRE components ecRad
-_ ax = plt.subplots(figsize=h.figsize_wide)
+_, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_lw, label="F$_{\downarrow, lw}$", c=cbc[1], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.flux_up_lw, label="F$_{\\uparrow, lw}$", c=cbc[0], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_lw_clear, label="F$_{\downarrow, lw, cls}$", c=cbc[1], ls="--", marker=".")
@@ -1968,7 +1966,7 @@ plt.close()
 
 # %% plot solar CRE components BACARDI, libRadtran
 sim_plot = bb_sim_solar_si.sel(time=case_slice)
-_ ax = plt.subplots(figsize=h.figsize_wide)
+_, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(bacardi_plot.time, bacardi_plot.F_down_solar, label="F$_{\downarrow, solar}$", c=cbc[1], marker=".")
 ax.plot(bacardi_plot.time, bacardi_plot.F_up_solar, label="F$_{\\uparrow, solar}$", c=cbc[0], marker=".")
 ax.plot(sim_plot.time, sim_plot.fdw, label="F$_{\downarrow, solar, cls}$", c=cbc[1], ls="--")
@@ -1990,7 +1988,7 @@ plt.close()
 
 # %% plot lw CRE components BACARDI, libRadtran
 sim_plot = bb_sim_thermal_si.sel(time=case_slice)
-_ ax = plt.subplots(figsize=h.figsize_wide)
+_, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(bacardi_plot.time, bacardi_plot.F_down_terrestrial, label="F$_{\downarrow, terrestrial}$", c=cbc[1], marker=".")
 ax.plot(bacardi_plot.time, bacardi_plot.F_up_terrestrial, label="F$_{\\uparrow, terrestrial}$", c=cbc[0], marker=".")
 ax.plot(sim_plot.time, sim_plot.edn, label="F$_{\downarrow, terrestrial, cls}$", c=cbc[1], ls="--")
@@ -2309,7 +2307,7 @@ plt.close()
 # %% plot solar CRE components BACARDI, libRadtran with flags colored
 sim_plot = bb_sim_solar_si
 bacardi_plot = bacardi_ds_res
-_ ax = plt.subplots(figsize=h.figsize_wide)
+_, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(bacardi_plot.time, bacardi_plot.F_down_solar, label="F$_{\downarrow, solar}$", c=cbc[0], marker=".")
 ax.plot(bacardi_plot.time, bacardi_plot.F_up_solar, label="F$_{\\uparrow, solar}$", c=cbc[2], marker=".")
 ax.plot(sim_plot.time, sim_plot.fdw, label="F$_{\downarrow, solar, cls}$", c=cbc[0], ls="--")
@@ -2336,7 +2334,7 @@ plt.close()
 
 # %% plot sw CRE components ecRad
 ecrad_plot = ecrad_ds.isel(half_level=height_level_da)
-_ ax = plt.subplots(figsize=h.figsize_wide)
+_, ax = plt.subplots(figsize=h.figsize_wide)
 ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw, label="F$_{\downarrow, sw}$", c=cbc[0], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.flux_up_sw, label="F$_{\\uparrow, sw}$", c=cbc[2], marker=".")
 ax.plot(ecrad_plot.time, ecrad_plot.flux_dn_sw_clear, label="F$_{\downarrow, sw, cls}$", c=cbc[0], ls="--")
