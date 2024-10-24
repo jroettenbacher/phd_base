@@ -140,8 +140,15 @@ else:
     df_plot = pd.read_csv(tmp_filename, header=0, sep=',')
 
 # %% read in effective diameter from Dela Torre Castro 2023
-ed = pd.read_csv(f'{data_path}/median_ed_delatorre2023.csv')
-ed['effective_radius'] = ed['effective_diameter'] / 2
+ed = pd.read_csv(f'{data_path}/dataCIRRUS_HLpaper2sec.csv')
+ed['effective_radius'] = ed['ED'] / 2
+lat_bins = np.arange(np.min(ed['latitude'].round(0)),
+                     np.max(ed['latitude'].round(0))+1,
+                     1)
+ed['latitude_bin'] = pd.cut(ed['latitude'], bins=lat_bins)
+stats = ed.groupby('latitude_bin')['effective_radius'].median().reset_index()
+stats['mid_latitude'] = stats['latitude_bin'].cat.categories.mid
+stats['effective_radius'] = stats['effective_radius'].where(stats['effective_radius'] > 5)
 
 # %% plot single scattering albedo
 h.set_cb_friendly_colors('petroff_6')
@@ -206,7 +213,7 @@ ax.set(xlabel='Wavelength (nm)',
 # ax.yaxis.set_major_locator(mticker.MultipleLocator(0.05))
 handles, labels = ax.get_legend_handles_labels()
 labels = [x.capitalize().replace('_', ' ') for x in labels]
-labels[3] = r'$D_{\text{max}}$ ($\mu m$)'
+labels[3] = r'$D_{\text{max}}$ ($\mathregular{\mu}$m)'
 handles.insert(3, plt.plot([], ls='')[0])
 labels.insert(3, '')
 handles.insert(3, plt.plot([], ls='')[0])
@@ -214,7 +221,7 @@ labels.insert(3, '')
 ax.legend(handles=handles, labels=labels, ncols=2)
 fig.supylabel(r'Single scattering albedo $\tilde{\omega}$', size=9)
 
-figname = f'{plot_path}/01_single_scattering_albedo.pdf'
+figname = f'{plot_path}/02_single_scattering_albedo.pdf'
 plt.savefig(figname, bbox_inches='tight')
 plt.show()
 plt.close()
@@ -266,7 +273,7 @@ ax.set(xlabel='',
        )
 fig.supxlabel('Scattering angle $\\vartheta$ (deg)', size=9)
 
-figname = f'{plot_path}/01_phase_function.pdf'
+figname = f'{plot_path}/02_phase_function.pdf'
 plt.savefig(figname, bbox_inches='tight')
 plt.show()
 plt.close()
@@ -348,7 +355,7 @@ ax.legend(handles=handles[3:], labels=labels[3:],
           bbox_to_anchor=(1.01, 1.01), loc='upper left')
 fig.supylabel(r'Single scattering albedo $\tilde{\omega}$', size=10)
 
-figname = f'{plot_path}/01_single_scattering_albedo_NIR.pdf'
+figname = f'{plot_path}/02_single_scattering_albedo_NIR.pdf'
 plt.savefig(figname, bbox_inches='tight')
 plt.show()
 plt.close()
@@ -431,7 +438,7 @@ ax.legend(handles=handles[3:], labels=labels[3:],
           bbox_to_anchor=(1.01, 1.01), loc='upper left')
 fig.supylabel(r'Extinction efficiency $Q_{\text{ext}}$', size=10)
 
-figname = f'{plot_path}/01_extinction_efficiency_NIR.pdf'
+figname = f'{plot_path}/02_extinction_efficiency_NIR.pdf'
 plt.savefig(figname, bbox_inches='tight')
 plt.show()
 plt.close()
@@ -484,9 +491,9 @@ min_radius_um = de2re * min_diameter_um
 plt.rc('font', size=10)
 _, ax = plt.subplots(figsize=(15 * h.cm, 6 * h.cm), layout='constrained')
 ax.plot(latitudes, min_radius_um, '-', label='Minimum $r_{\\text{eff, ice}}$ Sun (2001)')
-ed.plot(x='mid_latitude', y='effective_radius', ax=ax, label='Mean $r_{\\text{eff, ice}}$\nDe La Torre Castro et al. (2023)')
+stats.plot(x='mid_latitude', y='effective_radius', ax=ax, label='Mean $r_{\\text{eff, ice}}$\nDe La Torre Castro et al. (2023)')
 ax.set(xlabel='Latitude (°N)',
-       ylabel='Ice effective radius ($\\mu m$)',
+       ylabel='Ice effective radius ($\\mathrm{\\mu}$m)',
        # ylim=(10, 40),
        xlim=0)
 # ax.xaxis.set_major_locator(ticker.MultipleLocator(15))
@@ -524,7 +531,7 @@ min_radius_um = de2re * min_diameter_um
 
 plt.rc('font', size=9)
 g = da.plot(col='Latitude', col_wrap=3,
-            cbar_kwargs=dict(label=r'Ice effective radius ($\mu$m)'),
+            cbar_kwargs=dict(label=r'Ice effective radius ($\mathrm{\mu}$m)'),
             cmap=cm.get_sub_cmap(cm.rainforest, 0.25, 1),
             figsize=(15 * h.cm, 10 * h.cm))
 for i, ax in enumerate(g.axs.flat[::3]):
