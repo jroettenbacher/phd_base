@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-"""BACARDI measurement investigation
+"""
+
+| *author*: Johannes Röttenbacher
+| *created*: 25-10-2022
+
+BACARDI measurement investigation
 
 Using RF17 the measurement performance of BACARDI is investigated.
 The data is filtered using motion angles measured by BAHAMAS.
@@ -48,21 +53,30 @@ Looking at the time evolution of the relation (:numref:`bacardi-relation-time`) 
     Relation between BACARDI measurement and libRadtran clearsky simulation depending on time.
     BACARDI data is filtered for aircraft motion and the below cloud section.
 
-*author*: Johannes Röttenbacher
+The same analysis can be done using the whole BACARDI |haloac3| data set using only the above cloud measurements.
+
+
 """
 
 if __name__ == "__main__":
-    # %% import modules
+# %% import modules
     import pylim.helpers as h
     from pylim import reader
+    from pylim.bahamas import preprocess_bahamas
     import ac3airborne
     from ac3airborne.tools import flightphase
     import xarray as xr
     import pandas as pd
     import numpy as np
     import matplotlib.pyplot as plt
+    from matplotlib import colors
+    import seaborn as sns
+    import os
+    import cmasher as cmr
 
-    # %% set paths
+    cbc = h.get_cb_friendly_colors()
+
+# %% set paths
     campaign = "halo-ac3"
     date = "20220411"
     halo_key = "RF17"
@@ -82,7 +96,7 @@ if __name__ == "__main__":
     # bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{halo_key}_R1_1s.nc"
     bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{halo_key}_R1.nc"
 
-    # %% get flight segmentation and select below and above cloud section
+# %% get flight segmentation and select below and above cloud section
     meta = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{halo_key}"]
     segments = flightphase.FlightPhaseFile(meta)
     above_cloud, below_cloud = dict(), dict()
@@ -101,14 +115,14 @@ if __name__ == "__main__":
         above_slice = slice(above_cloud["start"], above_cloud["end"])
         below_slice = slice(below_cloud["start"], below_cloud["end"])
 
-    # %% read in libRadtran simulation
+# %% read in libRadtran simulation
     spectral_sim = xr.open_dataset(f"{libradtran_path}/{libradtran_spectral}")
     bb_sim_solar = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_solar}")
     bb_sim_thermal = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_thermal}")
     bb_sim_solar_si = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_solar_si}")
     bb_sim_thermal_si = xr.open_dataset(f"{libradtran_path}/{libradtran_bb_thermal_si}")
 
-    # %% read in BACARDI and BAHAMAS data and resample to 1 sec
+# %% read in BACARDI and BAHAMAS data and resample to 1 sec
     bacardi_ds = xr.open_dataset(f"{bacardi_path}/{bacardi_file}")
     # bahamas_ds = xr.open_dataset(f"{bahamas_path}/{bahamas_file}")
     bahamas_ds = reader.read_bahamas(f"{bahamas_path}/{bahamas_file}")
@@ -118,12 +132,12 @@ if __name__ == "__main__":
     # bacardi_ds.to_netcdf(f"{bacardi_path}/{bacardi_file.replace('.nc', '_1s.nc')}")
     # bahamas_ds.to_netcdf(f"{bahamas_path}/{bahamas_file.replace('.nc', '_1s.nc')}")
 
-    # %% remove landing and final parts of the flight due to very low sun
+# %% remove landing and final parts of the flight due to very low sun
     time_slice = slice(bahamas_ds.time[0], pd.Timestamp(2022, 4, 11, 15, 30))
     bahamas_ds = bahamas_ds.sel(time=time_slice)
     bacardi_ds = bacardi_ds.sel(time=time_slice)
 
-    # %% filter values which exceeded certain motion threshold
+# %% filter values which exceeded certain motion threshold
     roll_center = np.abs(bahamas_ds["IRS_PHI"].median())
     roll_threshold = 0.5
     pitch_center = np.abs(bahamas_ds["IRS_THE"].median())
@@ -135,14 +149,14 @@ if __name__ == "__main__":
     motion_filter = roll_filter & pitch_filter
     bacardi_ds = bacardi_ds.where(motion_filter)
 
-    # %% Relation of BACARDI to simulation depending on viewing angle of HALO
+# %% Relation of BACARDI to simulation depending on viewing angle of HALO
     relation_bacardi_libradtran = bacardi_ds["F_down_solar"] / bacardi_ds["F_down_solar_sim"]
-    # %% viewing direction of halo: 0 = towards sun, 180 = away from sun
+# %% viewing direction of halo: 0 = towards sun, 180 = away from sun
     heading = bahamas_ds.IRS_HDG
     viewing_dir = bacardi_ds.saa - heading
     viewing_dir = viewing_dir.where(viewing_dir > 0, viewing_dir + 360)
 
-    # %% merge information in dataframe
+# %% merge information in dataframe
     df1 = viewing_dir.to_dataframe(name="viewing_dir")
     df2 = relation_bacardi_libradtran.to_dataframe(name="relation")
     df = df1.merge(df2, on="time")
@@ -151,11 +165,12 @@ if __name__ == "__main__":
     # df = df[df.relation > 0.7]
     df = df.sort_values(by="viewing_dir")
 
-    # %% plotting aesthetics
-    time_extend = pd.to_timedelta((bahamas_ds.time[-1] - bahamas_ds.time[0]).values)  # get time extend for x-axis labeling
+# %% plotting aesthetics
+    time_extend = pd.to_timedelta(
+        (bahamas_ds.time[-1] - bahamas_ds.time[0]).values)  # get time extend for x-axis labeling
     time_extend_cs = below_cloud["end"] - above_cloud["start"]  # time extend for case study
 
-    # %% plot relation between BACARDI measurement and simulation depending on viewing angle as polarplot
+# %% plot relation between BACARDI measurement and simulation depending on viewing angle as polarplot
     h.set_cb_friendly_colors()
     plt.rc("font", size=12, family="serif")
     fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={'projection': 'polar'})
@@ -178,10 +193,10 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% plot relation as function of SZA
+# %% plot relation as function of SZA
     h.set_cb_friendly_colors()
     plt.rc("font", size=14, family="serif")
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _, ax = plt.subplots(figsize=(10, 6))
     df_tmp = df[((below_cloud["start"] < df.index) & (df.index < below_cloud["end"]))]
     ax.scatter(df_tmp["sza"], df_tmp["relation"], label="below cloud")
     df_tmp = df[~((below_cloud["start"] < df.index) & (df.index < below_cloud["end"]))]
@@ -198,10 +213,10 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% plot relation as function of SZA, exclude below cloud section
+# %% plot relation as function of SZA, exclude below cloud section
     h.set_cb_friendly_colors()
     plt.rc("font", size=14, family="serif")
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _, ax = plt.subplots(figsize=(10, 6))
     df_tmp = df[~((below_cloud["start"] < df.index) & (df.index < below_cloud["end"]))]
     ax.scatter(df_tmp["sza"], df_tmp["relation"])
     ax.grid()
@@ -216,11 +231,11 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% plot relation as function of time (exclude below cloud section)
+# %% plot relation as function of time (exclude below cloud section)
     h.set_cb_friendly_colors()
     plt.rc("font", size=14, family="serif")
     plot_df = df.sort_values(by="time")
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _, ax = plt.subplots(figsize=(10, 6))
     plot_df = plot_df[~((below_cloud["start"] < plot_df.index) & (plot_df.index < below_cloud["end"]))]
     ax.scatter(plot_df.index, plot_df["relation"])
     ax.grid()
@@ -235,12 +250,12 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
-    # %% dig into measurements with relation > 1
+# %% dig into measurements with relation > 1
     relation_filter = df.sort_values(by="time")["relation"] > 1
     plot_ds = bahamas_ds.where(relation_filter.to_xarray())
     h.set_cb_friendly_colors()
     plt.rc("font", size=12, family="serif")
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _, ax = plt.subplots(figsize=(10, 6))
     ax.scatter(plot_ds.time, plot_ds["IRS_THE"])
     ax.grid()
     h.set_xticks_and_xlabels(ax, time_extend)
@@ -251,3 +266,149 @@ if __name__ == "__main__":
     plt.show()
     plt.close()
 
+# %% Extension of analysis to the whole data set
+    bacardi_all_path = h.get_path("all", campaign=campaign, instrument="BACARDI")
+    bahamas_all_path = h.get_path("all", campaign=campaign, instrument="BAHAMAS")
+    plot_path = f"{h.get_path('plot', campaign=campaign)}/bacardi_measurement_investigation"
+    fig_path = "C:/Users/Johannes/PycharmProjects/phd_base/docs/figures/bacardi_measurement_investigation"
+
+# %% read in data
+    all_files = os.listdir(bacardi_all_path)
+    all_files.sort()
+    all_files = [os.path.join(bacardi_all_path, file) for file in all_files[2:] if file.endswith("JR.nc")]
+    bacardi_ds = xr.open_mfdataset(all_files)
+    # bahamas
+    all_files = [f for f in os.listdir(bahamas_all_path) if f.startswith("HALO")]
+    all_files.sort()
+    all_files = [os.path.join(bahamas_all_path, file) for file in all_files[1:]]
+    bahamas_ds = xr.open_mfdataset(all_files, preprocess=preprocess_bahamas)
+
+# %% calculate relation and deviation between simulated and measured solar downward irradiance
+    bacardi_ds["relation"] = bacardi_ds["F_down_solar"] / bacardi_ds["F_down_solar_sim"]
+    bacardi_ds["deviation"] = (bacardi_ds["relation"] - 1) * 100
+
+# %% viewing direction of halo: 0 = towards sun, 180 = away from sun
+    heading = bahamas_ds.IRS_HDG
+    viewing_dir = bacardi_ds.saa - heading
+    bacardi_ds["viewing_dir"] = viewing_dir.where(viewing_dir > 0, viewing_dir + 360)
+
+# %% filter data for altitude
+    bacardi_ds_fil = bacardi_ds.where(bacardi_ds.alt >= 10000)
+
+# %% plot polar plot with viewing angle and solar zenith angle
+    plot_ds = bacardi_ds_fil.isel(time=slice(0, len(bacardi_ds_fil.time), 100))
+    h.set_cb_friendly_colors()
+    plt.rc("font", size=12)
+    fig, ax = plt.subplots(figsize=h.figsize_wide, subplot_kw={'projection': 'polar'})
+    scatter = ax.scatter(np.deg2rad(plot_ds["viewing_dir"]), plot_ds["sza"],
+                         c=plot_ds["relation"], s=1,
+                         cmap=cmr.pride, norm=colors.CenteredNorm(vcenter=1, halfrange=0.1))
+    fig.colorbar(scatter,
+                 label="$F^{\downarrow}_{solar}$ Ratio (Observed/Simulated)",
+                 format="%.2f",
+                 extend="both")
+    ax.set_rmax(91)
+    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+    ax.set_theta_direction(-1)
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_rorigin(55)
+    ax.set_rticks([60, 65, 70, 75, 80, 85, 90])
+
+    plt.tight_layout()
+    figname = f"{plot_path}/BACARDI_vs_simulation_sza_polar.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% plot polar plot with viewing angle and solar zenith angle and deviation from simulation in percent
+    plot_ds = bacardi_ds_fil.isel(time=slice(0, len(bacardi_ds_fil.time), 100))
+    h.set_cb_friendly_colors()
+    plt.rc("font", size=12)
+    fig, ax = plt.subplots(figsize=h.figsize_wide, subplot_kw={'projection': 'polar'})
+    scatter = ax.scatter(np.deg2rad(plot_ds["viewing_dir"]), plot_ds["sza"],
+                         c=plot_ds["deviation"], s=1,
+                         cmap=cmr.pride, norm=colors.CenteredNorm(vcenter=0, halfrange=10))
+    fig.colorbar(scatter,
+                 label="$F^{\downarrow}_{solar}$ Deviation from simulation (%)",
+                 format="%2.1f",
+                 extend="both")
+    ax.set_rmax(91)
+    ax.set_rlabel_position(-22.5)  # Move radial labels away from plotted line
+    ax.set_theta_direction(-1)
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_rorigin(55)
+    ax.set_rticks([60, 65, 70, 75, 80, 85, 90])
+
+    plt.tight_layout()
+    figname = f"{plot_path}/BACARDI_vs_simulation_sza_polar_percent.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% plot deviation from simulation as function of solar zenith angle
+    for key, value in meta.flight_names.items():
+        try:
+            date = value[9:17]
+            plot_ds = bacardi_ds_fil.sel(time=date)
+            h.set_cb_friendly_colors()
+            plt.rc("font", size=12)
+            fig, ax = plt.subplots(figsize=h.figsize_wide)
+            scatter = ax.scatter(plot_ds["sza"], plot_ds["deviation"],
+                                 c=plot_ds["viewing_dir"],
+                                 s=2,
+                                 cmap=cmr.horizon)
+            cbar = fig.colorbar(scatter,
+                                label="Viewing direction (deg)",
+                                format="%3.0f",
+                                extend="both")
+            ax.set(ylim=(-25, 25),
+                   ylabel="$F^{\downarrow}_{solar}$ Deviation from simulation (%)",
+                   xlabel="Solar zenith angle (deg)",
+                   title=value)
+            ax.grid()
+            plt.tight_layout()
+            figname = f"{plot_path}/{value}_BACARDI_vs_simulation_relation_sza_percent.png"
+            plt.savefig(figname, dpi=300)
+            plt.show()
+            plt.close()
+        except KeyError:
+            pass
+
+# %% plot deviation from simulation as function of solar zenith angle - all flights
+    date = value[9:17]
+    plot_ds = bacardi_ds_fil
+    h.set_cb_friendly_colors()
+    plt.rc("font", size=12)
+    fig, ax = plt.subplots(figsize=h.figsize_wide)
+    scatter = ax.scatter(plot_ds["sza"], plot_ds["deviation"],
+                         c=plot_ds["viewing_dir"],
+                         s=2,
+                         cmap=cmr.horizon)
+    fig.colorbar(scatter,
+                 label="Viewing direction (deg)",
+                 format="%3.0f",
+                 extend="both")
+    ax.set(ylim=(-25, 25),
+           ylabel="$F^{\downarrow}_{solar}$ Deviation from simulation (%)",
+           xlabel="Solar zenith angle (deg)")
+    ax.grid()
+    plt.tight_layout()
+    figname = f"{plot_path}/BACARDI_vs_simulation_relation_sza_percent.png"
+    plt.savefig(figname, dpi=300)
+    plt.show()
+    plt.close()
+
+# %% make statistics of deviation
+    plot_ds = bacardi_ds_fil.deviation.where(bacardi_ds_fil.sza < 81)
+    plot_ds = plot_ds.where(np.abs(plot_ds) < 10)
+    sns.histplot(plot_ds, stat="density", color=cbc[1], kde=True)
+    plt.axvline(plot_ds.mean(), ls="--")
+    plt.show()
+    plt.close()
+
+
+# %% testing
+    bacardi_ds_fil["relation"].where(np.abs(bacardi_ds_fil["relation"] - 1) < 0.2).plot(x="time")
+    bacardi_ds_fil["F_down_solar"].where(bacardi_ds_fil["F_down_solar"] > 300).plot(x="time")
+    plt.show()
+    plt.close()
