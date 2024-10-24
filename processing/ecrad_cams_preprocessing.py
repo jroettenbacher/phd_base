@@ -35,6 +35,8 @@ if __name__ == "__main__":
     from sklearn.neighbors import BallTree
     from datetime import datetime
 
+    g = 9.80665  # acceleration due to gravity [m s-2]
+
     # %% set source and paths
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
@@ -78,6 +80,7 @@ if __name__ == "__main__":
     # %% linearly interpolate in time and rename dimensions
     new_time_axis = pd.date_range(f"{date[0:4]}-01-15", f"{date[0:4]}-12-15", freq=pd.offsets.SemiMonthBegin(2))
     date_dt = pd.to_datetime(date)
+
     if source == "ADS":
         aerosol = (aerosol
                    .assign_coords(time=new_time_axis)
@@ -92,6 +95,20 @@ if __name__ == "__main__":
                    .assign_coords(month=new_time_axis)
                    .interp(month=date_dt)
                    .rename(month="time"))
+        # calculate layer mass by dividing the pressure difference between bottom and top of a layer by the gravitational acceleration
+        layer_mass = aerosol['half_level_delta_pressure'] / g  # [kg m-2]
+        layer_mass.name = 'layer_mass'
+        # convert from kg m-2 to kg kg-1 and update attributes
+        for var in aerosol:
+            if var not in ["half_level_pressure", 'half_level_delta_pressure', 'full_level_pressure']:
+                with xr.set_options(keep_attrs=True):
+                    aerosol[var] = aerosol[var] / layer_mass
+                    new_long_name = (aerosol[var].attrs['long_name']
+                                     .replace('layer-integrated mass',
+                                              'mass mixing ratio'))
+                    aerosol[var].attrs['units'] = 'kg kg-1'
+                    aerosol[var].attrs['long_name'] = new_long_name
+
         trace_gas = (trace_gas
                      .assign_coords(month=new_time_axis)
                      .interp(month=date_dt)
@@ -104,7 +121,6 @@ if __name__ == "__main__":
             trace_gas[var] = np.multiply(trace_gas[var], scale_factor)  # use numpy function to conserve attributes
             trace_gas[var].attrs["comment1"] = (f"Scaled to annual-mean surface concentration of "
                                                 f"{date[0:4]} provided in {scaling_file}")
-
     # %% create array of aircraft locations
     points = np.deg2rad(
         np.column_stack(
