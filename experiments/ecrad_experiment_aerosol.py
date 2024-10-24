@@ -6,7 +6,7 @@
 Comparison between ecRad simulation without and with CAMS monthly aerosol and trace gases.
 
 * ``IFS_namelist_jr_20220411_v15.1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model
-* ``IFS_namelist_jr_20220411_v30.1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and aersosols from monthly CAMS climatology
+* ``IFS_namelist_jr_20220411_v30.1.nam``: for flight HALO-AC3_20220411_HALO_RF17 with Fu-IFS ice model and aerosols from monthly CAMS climatology
 
 Turning on the aerosol in ecRad leads to slightly more extinction throughout the atmosphere as can be seen in the difference between v30.1 and v15.1 below.
 
@@ -25,17 +25,17 @@ This can be explained by a higher concentration of sea salt over the open ocean 
 
 if __name__ == '__main__':
 # %% import modules
-    import pylim.helpers as h
-    import pylim.halo_ac3 as meta
-    import ac3airborne
-    from ac3airborne.tools import flightphase
-    import xarray as xr
-    import numpy as np
+    import cmasher as cmr
+    import dill
     import matplotlib.pyplot as plt
     from matplotlib import colors
+    import numpy as np
     import pandas as pd
     from tqdm import tqdm
-    import cmasher as cmr
+    import xarray as xr
+
+    import pylim.helpers as h
+    import pylim.halo_ac3 as meta
 
     # plotting variables
     cbc = h.get_cb_friendly_colors()
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     flight = meta.flight_names[key]
     date = flight[9:17]
 
+    save_path = h.get_path('plot', campaign=campaign)
     plot_path = f'{h.get_path('plot', flight, campaign)}/experiment_aerosol'
     fig_path = './docs/figures/experiment_aerosol'
     h.make_dir(plot_path)
@@ -57,27 +58,13 @@ if __name__ == '__main__':
     bahamas_path = h.get_path('bahamas', flight, campaign)
 
 # %% get flight segments for case study period
-    segmentation = ac3airborne.get_flight_segments()['HALO-AC3']['HALO'][f'HALO-AC3_HALO_{key}']
-    segments = flightphase.FlightPhaseFile(segmentation)
-    above_cloud, below_cloud = dict(), dict()
-    if key == 'RF17':
-        above_cloud['start'] = segments.select('name', 'high level 7')[0]['start']
-        above_cloud['end'] = segments.select('name', 'high level 8')[0]['end']
-        below_cloud['start'] = segments.select('name', 'high level 9')[0]['start']
-        below_cloud['end'] = segments.select('name', 'high level 10')[0]['end']
-        above_slice = slice(above_cloud['start'], above_cloud['end'])
-        below_slice = slice(below_cloud['start'], below_cloud['end'])
-        case_slice = slice(pd.to_datetime('2022-04-11 10:30'), pd.to_datetime('2022-04-11 12:29'))
-    else:
-        above_cloud['start'] = segments.select('name', 'polygon pattern 1')[0]['start']
-        above_cloud['end'] = segments.select('name', 'polygon pattern 1')[0]['parts'][-1]['start']
-        below_cloud['start'] = segments.select('name', 'polygon pattern 2')[0]['start']
-        below_cloud['end'] = segments.select('name', 'polygon pattern 2')[0]['end']
-        above_slice = slice(above_cloud['start'], above_cloud['end'])
-        below_slice = slice(below_cloud['start'], below_cloud['end'])
-        case_slice = slice(above_cloud['start'], below_cloud['end'])
+    loaded_objects = list()
+    filenames = [f'{key}_slices.pkl', f'{key}_above_cloud.pkl', f'{key}_below_cloud.pkl']
+    for filename in filenames:
+        with open(f'{save_path}/{filename}', 'rb') as f:
+            loaded_objects.append(dill.load(f))
 
-    time_extend_cs = below_cloud['end'] - above_cloud['start']  # time extend for case study
+    slices = loaded_objects[0]
 
 # %% read in bahamas data
     bahamas = xr.open_dataset(f'{bahamas_path}/HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_1Min.nc')
@@ -92,14 +79,15 @@ if __name__ == '__main__':
         ecrad_dict[k] = ds.copy()
 
 # %% set plotting options
-    var = 'reflectivity_sw'
-    v = 'v15.1'
+    var = 'flux_up_lw'
+    v = 'diff'
     band = None
     aer_type = None
 
 # %% prepare data set for plotting
     band_str = f'_band{band}' if band is not None else ''
     aer_str = f'_type_{str(aer_type).replace(", None", "")}' if aer_type is not None else ''
+    cbar_label = f'{h.cbarlabels[var]} ({h.plot_units[var]})' if var in h.cbarlabels else var
 
     # kwarg dicts
     alphas = dict()
@@ -138,7 +126,7 @@ if __name__ == '__main__':
     if v == 'diff':
         # calculate difference between simulations
         ds = ecrad_dict['v15.1']
-        ecrad_ds_diff = ecrad_dict['v30.1'][var] - ds[var]
+        ecrad_ds_diff = ds[var] - ecrad_dict['v30.1'][var]
         ecrad_plot = ecrad_ds_diff.where((ds[var] != 0) | (~np.isnan(ds[var]))) * sf
     else:
         ecrad_plot = ecrad_dict[v][var] * sf
@@ -170,7 +158,7 @@ if __name__ == '__main__':
     # ecrad_plot = ecrad_plot.where(np.abs(ecrad_plot) > 0.001)
 
     # select time height slice
-    time_sel = slice(pd.Timestamp(f'{date} 08:00'), pd.Timestamp(f'{date} 17:00'))
+    time_sel = slices['case']  # slice(pd.Timestamp(f'{date} 08:00'), pd.Timestamp(f'{date} 17:00'))
     if 'band_sw' in ecrad_plot.dims:
         dim3 = 'band_sw'
         dim3 = dim3 if dim3 in ecrad_plot.dims else None
@@ -187,11 +175,13 @@ if __name__ == '__main__':
     time_extend = pd.to_timedelta((ecrad_plot.time[-1] - ecrad_plot.time[0]).to_numpy())
 
 # %% plot 2D IFS variables along flight track
-    _, ax = plt.subplots(figsize=h.figsize_wide, layout='constrained')
+    _, ax = plt.subplots(figsize=h.figsize_wide,
+                         layout='constrained')
     # ecrad 2D field
     ecrad_plot.plot(x='time', y='height', cmap=cmap, ax=ax, robust=robust,
                     vmin=vmin, vmax=vmax, alpha=alpha, norm=norm,
-                    cbar_kwargs={'pad': 0.04, #'label': f'{h.cbarlabels[var]} ({h.plot_units[var]})',
+                    cbar_kwargs={'pad': 0.04,
+                                 'label': cbar_label,
                                  'ticks': ticks})
     if lines is not None:
         # add contour lines
@@ -205,7 +195,7 @@ if __name__ == '__main__':
     ax.set_xlabel('Time (UTC)')
     h.set_xticks_and_xlabels(ax, time_extend)
     figname = f'{plot_path}/{flight}_ecrad_{v}_{var}{band_str}{aer_str}_along_track.png'
-    plt.savefig(figname, dpi=300, bbox_inches='tight')
+    plt.savefig(figname, dpi=300)
     # figname = f'{fig_path}/{flight}_ecrad_{v}_{var}{band_str}{aer_str}_along_track.png'
     # plt.savefig(figname, dpi=300, bbox_inches='tight')
     plt.show()
@@ -221,9 +211,9 @@ if __name__ == '__main__':
     ax.grid()
     ax.set_yscale('log')
     figname = f'{plot_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png'
-    plt.savefig(figname, dpi=300, bbox_inches='tight')
-    figname = f'{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png'
-    plt.savefig(figname, dpi=300, bbox_inches='tight')
+    plt.savefig(figname, dpi=300)
+    # figname = f'{fig_path}/{flight}_ecrad_{v}_{var}{band_str}_hist.png'
+    # plt.savefig(figname, dpi=300, bbox_inches='tight')
     plt.show()
     plt.close()
 
