@@ -35,7 +35,7 @@ plot_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/figure'
 keys = ['RF17', 'RF18']
 ecrad_versions = [f'v{x}' for x in [13, 13.1, 13.2, 15, 15.1, 18.1, 19.1,
                                     22.1, 24.1, 26, 27, 30.1, 31.1, 32.1,
-                                    36, 37, 38, 39.2, 40.2, 41.2, 42.2]]
+                                    36, 37, 38, 39.2, 40.2, 41.2, 42.2, 43.1]]
 
 # %% read in data
 (
