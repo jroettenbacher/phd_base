@@ -183,6 +183,7 @@ HEIGHT=8192&WIDTH=8192&TIME={urldate}&layers=MODIS_Terra_CorrectedReflectance_Ba
 # %% define variables for multiple use
 date_title = ['11 April 2022', '12 April 2022']
 panel_label = ['(a)', '(b)']
+xlim = (0.35, 1)  # xlim for violin plots
 
 # %% plot temperature and humidity profiles from IFS and from dropsonde
 below_cloud_altitude = dict()
@@ -256,6 +257,232 @@ plt.show()
 plt.close()
 h.set_cb_friendly_colors('petroff_6')
 
+# %% calculate mean difference between dropsonde and IFS profiles
+key = 'RF18'
+i = 0  # 0 - 4
+ifs_plot = ecrad_dicts[key]['v15.1'].sel(time=slices[key]['case'])
+ds_plot = dropsonde_ds[key]
+times = ['104205', '110137'] if key == 'RF17' else ['110321', '110823', '111442', '112014', '112524']
+date = '20220411' if key == 'RF17' else '20220412'
+times_dt = pd.to_datetime([date + t for t in times], format='%Y%m%d%H%M%S')
+ds_sel = (ds_plot
+          .sel(sonde_id=np.isin(ds_plot.launch_time, times_dt))
+          .sortby(ds_plot.launch_time))
+midpoint_between_dropsondes = ds_sel.launch_time[:-1] + ds_sel.launch_time.diff(dim='sonde_id').to_numpy() / 2
+if i == 0:
+    ifs_sel = ifs_plot.where(ifs_plot.time < midpoint_between_dropsondes[0].to_numpy(), drop=True)
+elif i == 1 and key == 'RF17':
+    ifs_sel = ifs_plot.where(ifs_plot.time > midpoint_between_dropsondes[0].to_numpy(), drop=True)
+elif i < 4:
+    t1 = midpoint_between_dropsondes[i - 1]
+    t2 = midpoint_between_dropsondes[i]
+    sel = (ifs_plot.time > t1) & (ifs_plot.time < t2)
+    ifs_sel = ifs_plot.where(sel, drop=True)
+elif i == 4:
+    t1 = midpoint_between_dropsondes[-1]
+    ifs_sel = ifs_plot.where(ifs_plot.time > t1, drop=True)
+else:
+    print(f'i with value {i} out of range')
+
+ifs_alt = ifs_sel.press_height_hl.mean(dim='time')
+ifs_sel = ifs_sel.assign_coords(half_level=ifs_alt).rename(half_level='alt').sortby('alt').sel(alt=slice(0, 11000))
+ds_t = ds_sel.ta.isel(sonde_id=i)
+ifs_t = ifs_sel.temperature_hl.interp(alt=ds_t.alt)
+t_diff = (ifs_t - ds_t)
+
+# %% plot temperature difference of each IFS profile to the closest radiosonde
+_, ax = plt.subplots(layout='constrained')
+cbar_kwargs = dict(label='Temperature difference (K)')
+t_diff.plot(x='time', ax=ax, cbar_kwargs=cbar_kwargs)
+ax.axvline(times_dt[i], color='k', label='Dropsonde')
+dt = t_diff.time[-1] - t_diff.time[0]
+h.set_xticks_and_xlabels(ax, pd.to_timedelta(dt.to_numpy()))
+ax.set(
+    title='Temperature difference between IFS and dropsonde\n'
+          f'Launch time: {times_dt[i]}',
+    xlabel='Time (UTC)',
+    ylabel='Altitude (m)',
+)
+ax.legend()
+plt.savefig(f'{plot_path}/A_HALO-AC3_HALO_{key}_t_diff_ifs_ds_{times_dt[i]:%H%M%S}.png', dpi=300)
+plt.show()
+plt.close()
+
+# %% plot mean temperature difference of IFS profiles to the closest dropsonde
+_, ax = plt.subplots(layout='constrained')
+t_diff.mean(dim='time').plot(y='alt', ax=ax)
+ax.set(
+    title='Mean temperature difference between IFS and dropsonde\n'
+          f'Launch time: {times_dt[i]}',
+    xlabel='Mean temperature difference (K)',
+    ylabel='Altitude (m)',
+)
+ax.grid()
+plt.savefig(f'{plot_path}/A_HALO-AC3_HALO_{key}_t_diff_mean_ifs_ds_{times_dt[i]:%H%M%S}.png', dpi=300)
+plt.show()
+plt.close()
+max_t_diff = list()
+max_t_diff.append(np.max(np.abs(t_diff)).to_numpy())
+print(f'Launch time: {times_dt[i]}\n'
+      f'Maximum temperature difference between dropsonde and IFS: {max_t_diff[i]:.1f} K\n')
+
+# %% plot temperature profile for the lowest 1000m to check inversion height
+h.set_cb_friendly_colors('petroff_8')
+plt.rc('font', size=10)
+_, axs = plt.subplots(1, 4, figsize=(18 * h.cm, 11 * h.cm), layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i * 2]
+    ifs_plot = ecrad_dicts[key]['v15.1'].sel(time=slices[key]['case'])
+    sf = 1000
+
+    # Air temperature
+    for t in ifs_plot.time:
+        ifs_p = ifs_plot.sel(time=t)
+        ax.plot(ifs_p.temperature_hl - 273.15, ifs_p.press_height_hl / 1000, color='grey', lw=0.5)
+    ds_plot = dropsonde_ds[key]
+    times = ['104205', '110137'] if key == 'RF17' else ['110321', '110823', '111442', '112014', '112524']
+    date = '20220411' if key == 'RF17' else '20220412'
+    times_dt = pd.to_datetime([date + t for t in times], format='%Y%m%d%H%M%S')
+    for k in times_dt:
+        ds = ds_plot.where(ds_plot.launch_time == k, drop=True)
+        ds = ds.where(~np.isnan(ds['ta']), drop=True)
+        ax.plot(ds['ta'][0] - 273.15, ds.alt / sf, label=f'DS {k:%H:%M} UTC', lw=2)
+    ax.set(
+        xlim=(-30, -10),
+        ylim=(0, 0.5),
+        xlabel='Air temperature (°C)',
+    )
+    ax.set_title(f'{key.replace('1', ' 1')} - {date_title[i]}', fontsize=10)
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(base=5))
+    ax.plot([], color='grey', label='IFS profiles')
+    ax.grid()
+
+    # RH
+    ax = axs[i * 2 + 1]
+    ifs_plot = ecrad_dicts[key]['v15.1'].sel(time=slices[key]['case'])
+    for t in ifs_plot.time:
+        ifs_p = ifs_plot.sel(time=t)
+        rh = relative_humidity_from_specific_humidity(ifs_p.pressure_full * u.Pa, ifs_p.t * u.K, ifs_p.q * u('kg/kg'))
+        rh_ice = met.relative_humidity_water_to_relative_humidity_ice(rh * 100, ifs_p.t - 273.15)
+        ax.plot(rh_ice, ifs_p.press_height_full / 1000, color='grey', lw=0.5)
+    ds_plot = dropsonde_ds[key]
+    for k in times_dt:
+        ds = ds_plot.where(ds_plot.launch_time == k, drop=True)
+        ds = ds.where(~np.isnan(ds.rh), drop=True)
+        ax.plot(met.relative_humidity_water_to_relative_humidity_ice(ds.rh * 100, ds['ta'] - 273.15)[0],
+                ds.alt / sf, label=f'DS {k:%H:%M} UTC', lw=2)
+    ax.set(
+        xlim=(0, 130),
+        ylim=(0, 0.5),
+        xlabel='Relative humidity \nover ice (%)',
+    )
+    ax.set_title(f'{key.replace('1', ' 1')} - {date_title[i]}', fontsize=10)
+    ax.xaxis.set_major_locator(mticker.MultipleLocator(base=25))
+    ax.plot([], color='grey', label='IFS profiles')
+    ax.legend(fontsize=7)
+    ax.grid()
+
+axs[0].set_ylabel('Altitude (km)')
+axs[0].text(0.02, 0.95, '(a)', transform=axs[0].transAxes)
+axs[1].text(0.02, 0.95, '(b)', transform=axs[1].transAxes)
+axs[2].text(0.02, 0.95, '(c)', transform=axs[2].transAxes)
+axs[3].text(0.02, 0.95, '(d)', transform=axs[3].transAxes)
+
+figname = f'{plot_path}/05_HALO-AC3_HALO_RF17_RF18_ifs_dropsonde_t_rh_0.5km.pdf'
+plt.savefig(figname, dpi=300)
+plt.show()
+plt.close()
+h.set_cb_friendly_colors('petroff_6')
+
+# %% calculate mean RH difference between dropsonde and IFS profiles
+key = 'RF18'
+ifs_plot = ecrad_dicts[key]['v15.1'].sel(time=slices[key]['case'])
+ds_plot = dropsonde_ds[key]
+date = '20220411' if key == 'RF17' else '20220412'
+times = ['104205', '110137'] if key == 'RF17' else ['110321', '110823', '111442', '112014', '112524']
+times_dt = pd.to_datetime([date + t for t in times], format='%Y%m%d%H%M%S')
+ds_sel = (ds_plot
+          .sel(sonde_id=np.isin(ds_plot.launch_time, times_dt))
+          .sortby(ds_plot.launch_time))
+midpoint_between_dropsondes = ds_sel.launch_time[:-1] + ds_sel.launch_time.diff(dim='sonde_id').to_numpy() / 2
+rh_diffs, max_rh_diff = list(), list()
+fig, axs = plt.subplots(1, len(times),
+                        figsize=(15, 9),
+                        layout='constrained')
+for i in range(len(times)):
+    if i == 0:
+        ifs_sel = ifs_plot.where(ifs_plot.time < midpoint_between_dropsondes[0].to_numpy(), drop=True)
+    elif i == 1 and key == 'RF17':
+        ifs_sel = ifs_plot.where(ifs_plot.time > midpoint_between_dropsondes[0].to_numpy(), drop=True)
+    elif i < 4:
+        t1 = midpoint_between_dropsondes[i - 1]
+        t2 = midpoint_between_dropsondes[i]
+        sel = (ifs_plot.time > t1) & (ifs_plot.time < t2)
+        ifs_sel = ifs_plot.where(sel, drop=True)
+    elif i == 4:
+        t1 = midpoint_between_dropsondes[-1]
+        ifs_sel = ifs_plot.where(ifs_plot.time > t1, drop=True)
+    else:
+        print(f'i with value {i} out of range')
+
+    ifs_alt = ifs_sel.press_height_full.mean(dim='time')
+    ifs_sel = (ifs_sel
+               .assign_coords(level=ifs_alt)
+               .rename(level='alt')
+               .sortby('alt')
+               .sel(alt=slice(0, 11000)))
+    ds_rh = ds_sel.rh.isel(sonde_id=i)
+    ifs_list = list()
+    for t in ifs_sel.time:
+        ifs_p = ifs_sel.sel(time=t)
+        rh = relative_humidity_from_specific_humidity(ifs_p.pressure_full * u.Pa,
+                                                      ifs_p.t * u.K,
+                                                      ifs_p.q * u('kg/kg'))
+        rh = rh * 100
+        rh.name = 'rh'
+        ifs_list.append(rh.interp(alt=ds_rh.alt))
+
+    ifs_rh = xr.concat(ifs_list, dim='time')
+    rh_diff = (ifs_rh - ds_rh * 100)
+    max_rh_diff.append(np.max(np.abs(rh_diff)).to_numpy())
+    rh_diffs.append(rh_diff)
+
+    # plot mean RH_ice difference of IFS profiles to the closest dropsonde
+    ax = axs[i]
+    rh_diff.mean(dim='time').plot(y='alt', ax=ax)
+    ax.axvline(x=0, color='k')
+    ax.set(
+        title=f'{times_dt[i]}',
+        xlabel='',
+        ylabel='',
+    )
+    ax.grid()
+
+axs[0].set(
+    ylabel='Height (m)'
+)
+fig.suptitle('Mean RH difference between IFS and dropsonde')
+fig.supxlabel('Mean RH difference (%)')
+
+plt.savefig(f'{plot_path}/A_HALO-AC3_HALO_{key}_rh_diff_mean_ifs_ds.png', dpi=300)
+plt.show()
+plt.close()
+print(f'Maximum RH difference between dropsonde and IFS: {max_rh_diff} K\n')
+
+# %% plot mean RH_ice difference between IFS and dropsondes
+rh_diff_mean = xr.concat([x.mean(dim='time') for x in rh_diffs], dim='time', coords='minimal', compat='override').mean(dim='time')
+_, ax = plt.subplots()
+rh_diff_mean.plot(y='alt', ax=ax)
+ax.axvline(x=0, color='k')
+ax.set(
+    title=f'{key} ' + 'Mean RH difference between dropsonde and IFS',
+    xlabel='RH difference (%)',
+    ylabel='Height (m)'
+)
+ax.grid()
+plt.show()
+plt.close()
+
 # %% plot IFS cloud fraction lidar/mask comparison
 var = 'cloud_fraction'
 plt.rc('font', size=10)
@@ -296,7 +523,7 @@ for i, key in enumerate(keys):
     pcm = ifs_plot[var].plot(x='time', cmap=cmr.sapphire, ax=ax, add_colorbar=False)
     halo_plot.plot.contour(x='time', levels=[0.9], colors=cbc[1], ax=ax, linewidths=2)
     ax.plot([], color=cbc[1], label='Radar & Lidar Mask', lw=2)
-    bahamas_plot.plot(x='time', lw=2, color=cbc[-2], label='HALO altitude', ax=ax)
+    bahamas_plot.plot(x='time', lw=2, color=cbc[-2], label='HALO flight altitude', ax=ax)
     ax.axvline(x=pd.to_datetime(f'{bahamas_plot.time.dt.date[0]:%Y-%m-%d} 11:30'),
                label='New IFS time step', lw=2, ls='--')
     h.set_xticks_and_xlabels(ax, time_extend)
@@ -317,7 +544,7 @@ plt.close()
 
 # %% plot PDF of IWC from IFS above cloud for 11 and 12 UTC
 plt.rc('font', size=10)
-legend_labels = ['11 UTC', '12 UTC']
+legend_labels = ['11:00$\\,$UTC', '12:00$\\,$UTC']
 binsizes = dict(iwc=1, reice=4)
 _, axs = plt.subplots(1, 2, figsize=(15 * h.cm, 8 * h.cm), layout='constrained')
 ylims = {'iwc': (0, 0.22), 'reice': (0, 0.095)}
@@ -521,7 +748,7 @@ for i, key in enumerate(keys):
     sns.violinplot(df_plot, x='values', y='label', hue='label', ax=ax)
     ax.set(xlabel='Solar transmissivity',
            ylabel='',
-           xlim=(0.35, 1),
+           xlim=xlim,
            )
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
@@ -550,7 +777,7 @@ for i, key in enumerate(keys):
         ylabel='',
         yticklabels=['BACARDI',
                      'ecRad Reference\nsimulation (v15.1)'],
-        xlim=(0.35, 1),
+        xlim=xlim,
     )
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
                  fontsize=10)
@@ -623,7 +850,7 @@ for i, key in enumerate(keys):
         xlabel='',
         ylabel='',
         yticklabels='',
-        xlim=(0.45, 1),
+        xlim=xlim,
            )
     ax.set_yticklabels(['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
@@ -662,7 +889,7 @@ for i, key in enumerate(keys):
     ax.set(xlabel='',
            ylabel='',
            yticklabels='',
-           xlim=(0.45, 1),
+           xlim=xlim,
            )
     ax.set(yticklabels=['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
@@ -697,7 +924,7 @@ for i, key in enumerate(keys):
     ax.set(xlabel='Solar transmissivity',
            ylabel='',
            yticklabels='',
-           xlim=(0.45, 1),
+           xlim=xlim,
            )
     ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
@@ -736,12 +963,12 @@ for i, key in enumerate(keys):
     ax.set(xlabel='',
            ylabel='',
            yticklabels='',
-           xlim=(0.45, 1),
+           xlim=xlim,
            )
     ax.set(yticklabels=['BACARDI',
                         'ecRad Reference\nFu-IFS (v15.1)',
-                        'ecRad Reference\nYi2013 (v19.1)',
-                        'ecRad Reference\nBaran2016 (v18.1)',
+                        'ecRad Yi2013\n(v19.1)',
+                        'ecRad Baran2016\n(v18.1)',
                         ])
     ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
@@ -853,11 +1080,11 @@ for i, key in enumerate(keys):
     ax.set(xlabel='',
            ylabel='',
            yticklabels='',
-           xlim=(0.45, 1),
+           xlim=xlim,
            )
     ax.set(yticklabels=['BACARDI',
                         'ecRad Reference\nCosine (v15.1)',
-                        'ecRad Reference\nNo cosine (v39.2)',
+                        'ecRad \nNo cosine (v39.2)',
                         ])
     ax.xaxis.set_major_locator(mticker.MultipleLocator(0.1))
     ax.set_title(key.replace('1', ' 1') + ' - ' + date_title[i],
@@ -916,7 +1143,7 @@ ax.legend()
 ax.grid()
 ax.text(text_loc_x, text_loc_y, '(a)', transform=ax.transAxes)
 ax.set(
-    ylabel='Probability density function',
+    ylabel='',
     xlabel=f'Ice water content ({h.plot_units['iwc']})',
     ylim=ylims['iwc'])
 ax.set_title('RF 17 - 11 April 2022', fontsize=9)
@@ -976,7 +1203,7 @@ for i, v in enumerate(['v36', 'v15.1']):
 ax.legend()
 ax.grid()
 ax.text(text_loc_x, text_loc_y, '(e)', transform=ax.transAxes)
-ax.set(ylabel='Probability density function',
+ax.set(ylabel='',
        xlabel=f'Ice effective radius ({h.plot_units['re_ice']})',
        ylim=ylims['reice'])
 
@@ -1091,7 +1318,7 @@ for i, key in enumerate(keys):
     ax.set(xlabel='',
            ylabel='',
            yticklabels='',
-           xlim=(0.45, 1),
+           xlim=xlim,
            )
     ax.set(yticklabels=['BACARDI',
                         'ecRad VarCloud\nFu-IFS (v36)',
@@ -1109,6 +1336,20 @@ axs[1].set(
 )
 figname = f'05_HALO_AC3_RF17_RF18_transmissivity_sw_BACARDI_ecRad_varcloud_violin.pdf'
 plt.savefig(f'{plot_path}/{figname}', dpi=300)
+plt.show()
+plt.close()
+
+# %% plot BACARDI Fdn below cloud vs ecRad cloud free below cloud
+key = 'RF17'
+ds_b = bacardi_ds[key].sel(time=slices[key]['below'])
+ds_e = ecrad_dicts[key]['v15.1'].sel(time=slices[key]['below'])
+_, ax = plt.subplots(layout='constrained')
+ds_b.F_down_solar.plot(x='time', label='BACARDI', ax=ax)
+(ds_e.flux_dn_sw_clear
+ .isel(half_level=ds_e.aircraft_level)
+ .plot(x='time', label='ecRad clear-sky', ax=ax))
+ax.legend()
+ax.grid()
 plt.show()
 plt.close()
 
