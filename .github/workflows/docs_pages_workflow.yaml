@@ -2,6 +2,8 @@ name: docs_pages_workflow
 
 # execute this workflow automatically when we push to the docs directory on master
 on:
+  workflow_dispatch:
+  
   push:
     branches:
       - main
