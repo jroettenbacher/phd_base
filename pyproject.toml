@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pylim"
-version = "0.9.0"
+version = "1.0.0"
 description = "Package and scripts used for my PhD at Leipzig (2021 - 2024)"
 readme = "README.md"
 authors = [{ name = "Johannes Röttenbacher", email = "johannes.roettenbacher@uni-leipzig.de" },
@@ -35,7 +35,7 @@ dependencies = [
 requires-python = ">=3.8"
 
 [project.optional-dependencies]
-dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+dev = ["bumpver", "isort", "pip-tools", "pytest"]
 
 [project.urls]
 GitHub = "https://github.com/jroettenbacher/phd_base"
