@@ -43,14 +43,14 @@ if __name__ == "__main__":
     # %% read in command line arguments
     args = h.read_command_line_args()
     campaign = args["campaign"] if "campaign" in args else "halo-ac3"
-    key = args["key"] if "key" in args else "RF17"
+    key = args["key"] if "key" in args else "RF18"
     t_interp = h.strtobool(args["t_interp"]) if "t_interp" in args else False
     init_time = args["init"] if "init" in args else "00"
     o3_source = args["o3_source"] if "o3_source" in args else "47r1"
     trace_gas_source = args["trace_gas_source"] if "trace_gas_source" in args else "47r1"
     aerosol_source = args["aerosol_source"] if "aerosol_source" in args else "47r1"
     filter_low_clouds = h.strtobool(args["filter_low_clouds"]) if "filter_low_clouds" in args else True
-    no_cosine_dependence = h.strtobool(args["no_cosine_dependence"]) if "no_cosine_dependence" in args else True
+    no_cosine_dependence = h.strtobool(args["no_cosine_dependence"]) if "no_cosine_dependence" in args else False
     if not filter_low_clouds and not no_cosine_dependence:
         version = "v6"
     elif filter_low_clouds and not no_cosine_dependence:
@@ -186,28 +186,22 @@ if __name__ == "__main__":
         if o3_source != "47r1":
             ds["o3_vmr"] = ds[f"o3_vmr_{o3_source}"]
 
-        # calculate pressure difference between each level,
-        # use half level pressure as the full level pressure corresponds to the pressure at the center of the layer
-        delta_p = np.diff(ds['pressure_hl'].isel(rgrid=0))
-        # calculate layer mass
-        layer_mass = delta_p / g
         # interpolate aerosol dataset to ifs full pressure levels,
         # and turn it into a data array with one new dimension: aer_type
-        aerosol_kgm2 = (aerosol
-                        .isel(time=i)
-                        .assign(level=(aerosol
-                                       .isel(time=i)["full_level_pressure"]
-                                       .to_numpy()))
-                        .interp(level=new_pressure,
-                                kwargs={"fill_value": 0})
-                        .drop_vars(["half_level_pressure", "full_level_pressure",
-                                    "half_level_delta_pressure"])
-                        .to_array(dim="aer_type")
-                        .assign_coords(aer_type=np.arange(1, 12),
-                                       level=ds.level)
-                        .reset_coords("time", drop=True))
-        # convert layer integrated mass to mass mixing ratio
-        aerosol_mmr = aerosol_kgm2 / layer_mass
+        aerosol_mmr = (aerosol
+                       .isel(time=i)
+                       .assign(level=(aerosol
+                                      .isel(time=i)["full_level_pressure"]
+                                      .to_numpy()))
+                       .interp(level=new_pressure,
+                               kwargs={"fill_value": 0})
+                       .drop_vars(["half_level_pressure", "full_level_pressure",
+                                   "half_level_delta_pressure"])
+                       .to_array(dim="aer_type")
+                       .assign_coords(aer_type=np.arange(1, 12),
+                                      level=ds.level)
+                       .reset_coords("time", drop=True))
+
         aerosol_mmr.attrs = dict(units="kg kg-1",
                                  long_name="Aerosol mass mixing ratio",
                                  short_name="aerosol_mmr",
