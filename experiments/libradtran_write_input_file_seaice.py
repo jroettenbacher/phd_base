@@ -54,13 +54,13 @@ if __name__ == '__main__':
 
 # %% user input
     campaign = 'halo-ac3'
-    key = 'RF17'
+    key = 'RF18'
     flight = meta.flight_names[key]
     date = flight[9:17] if campaign == 'halo-ac3' else flight[7:15]
     month_id = int(date[4:6]) - 1  # get month id for albedo parameterization
     time_step = '1Min'  # define time steps of simulations
     use_smart_ins = False  # whether to use the SMART INS system or BAHAMAS
-    solar_flag = False
+    solar_flag = True
     integrate = True
 
 # %% setup logging
@@ -192,7 +192,7 @@ if __name__ == '__main__':
             # sza=f'{sza_libradtran:.4f}',  # page 122
             # verbose='',  # page 123
             # SMART wavelength range (179.5, 2225), BACARDI solar (290, 3600), BACARDI terrestrial (4000, 100000)
-            wavelength='290 4400' if solar_flag else '4000 100000',
+            wavelength='290 3600' if solar_flag else '4000 100000',
             zout=f'{zout:.3f} {zout_max:.3f} TOA',  # page 127; altitude in km above surface altitude
         )
 
