@@ -14,7 +14,7 @@ import re
 
 keys = ['RF17']
 namelists = [f for f in os.listdir('/projekt_agmwend/data/HALO-AC3/08_ecrad/20220411') if '.nam' in f]
-matches = [re.search(r"v\d{2}(\.1)?", s) for s in namelists]
+matches = [re.search(r"v\d{2}(\.[1,2])?", s) for s in namelists]
 ecrad_versions = [m[0] for m in matches if m is not None]
 ecrad_versions.remove('v10')
 ecrad_versions.remove('v11')
