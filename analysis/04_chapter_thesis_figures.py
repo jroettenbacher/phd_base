@@ -5,15 +5,11 @@
 
 Plots for Model chapter
 """
-import os
 
 # %% import modules
-import cmasher as cm
 import dill
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-from metpy.constants import Rd
-from metpy.units import units as u
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -21,7 +17,6 @@ import xarray as xr
 
 import pylim.helpers as h
 import pylim.halo_ac3 as meta
-from pylim import ecrad
 
 cbc = h.get_cb_friendly_colors('petroff_6')
 
@@ -160,8 +155,8 @@ axs[0].plot([], color=None, ls='', label='Ice Optics')
 axs[0].plot([], color=cbc[0], label='Yi2013')
 axs[0].plot([], color=cbc[1], label='Baran2016')
 axs[0].plot([], color=None, ls='', label='Latitude')
-axs[0].plot([], color='k', ls=ls[0], label='30°$\\,$N')
-axs[0].plot([], color='k', ls=ls[1], label='80°$\\,$N')
+axs[0].plot([], color='k', ls=ls[0], label='30$\\,^{\\circ}$N')
+axs[0].plot([], color='k', ls=ls[1], label='80$\\,^{\\circ}$N')
 fig.legend(loc='outside right upper')
 
 axs[0].set(ylabel='Altitude (km)')
@@ -247,8 +242,6 @@ for v in vs:
 
 df_stat = pd.DataFrame(stats, columns=['version', 'latitude', 'q_ice', 'stat', 'variable', 'value'])
 
-# %% print
-
 # %% calculate difference of above to below cloud solar downward irradiance
 pivot_df = (df[df.variable == 'flux_dn_sw']
             .pivot_table(index=['version', 'latitude', 'q_ice', 'variable'],
@@ -273,7 +266,8 @@ for i, key in enumerate(keys):
     ax = axs[i]
     date = '2022-04-11' if key == 'RF17' else '2022-04-12'
     plot_df = (bacardi_ds[key][['ecrad_fdw', 'F_down_solar_sim', 'alt', 'lat']]
-               # .sel(time=slices[key]['case'])
+               .sel(time=slice(bacardi_ds[key].time[0] + pd.Timedelta(1, 'h'),
+                               bacardi_ds[key].time[-1] - pd.Timedelta(1, 'h')))
                .to_pandas()
                .dropna())
     rmse = np.mean(np.sqrt((plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])**2))
@@ -283,10 +277,10 @@ for i, key in enumerate(keys):
     ax.grid()
     ax.set(
         aspect='equal',
-        xlabel='libRadtran $F^{\\downarrow}_{\\text{solar}}$' + f' ({h.plot_units['flux_dn_sw']})',
+        xlabel='libRadtran $F^{\\downarrow}_{\\text{sol}}$' + f' ({h.plot_units['flux_dn_sw']})',
         ylabel='',
-        xlim=(150, 550),
-        ylim=(150, 550)
+        xlim=(150, 500),
+        ylim=(150, 500)
     )
     ax.xaxis.set_major_locator(ticker.MultipleLocator(100))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(100))
@@ -294,9 +288,9 @@ for i, key in enumerate(keys):
         0.05,
         0.95,
         f'{label[i]} {key.replace('F', 'F ')}\n'
-        f'$n$ = {sum(~np.isnan(plot_df['F_down_solar_sim'])):,.0f}\n'
+        f'n = {sum(~np.isnan(plot_df['F_down_solar_sim'])):,.0f}\n'
         f'RMSE: {rmse:.0f} {h.plot_units['flux_dn_sw']}\n'
-        f'Bias: {bias:.0f} {h.plot_units['flux_dn_sw']}',
+        f'Bias: {np.abs(bias):.0f} {h.plot_units['flux_dn_sw']}',
         ha='left',
         va='top',
         transform=ax.transAxes,
@@ -304,16 +298,16 @@ for i, key in enumerate(keys):
     )
 
 axs[0].set(
-    ylabel='ecRad $F^{\\downarrow}_{\\text{solar}}$' f' ({h.plot_units['flux_dn_sw']})',
+    ylabel='ecRad $F^{\\downarrow}_{\\text{sol}}$' f' ({h.plot_units['flux_dn_sw']})',
 )
-figname = f'04_libRadtran_vs_ecRad_cloud-free.pdf'
-plt.savefig(f'{plot_path}/{figname}')
+figname = f'04_libRadtran_vs_ecRad_cloud-free.png'
+plt.savefig(f'{plot_path}/{figname}', dpi=300)
 plt.show()
 plt.close()
 
 # %% plot comparison of above cloud irradiance between libRadtran and ecRad - time series
 label = ['a)', 'b)']
-_, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
+fig, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
 for i, key in enumerate(keys):
     ax = axs[i]
     plot_df = (bacardi_ds[key][['ecrad_fdw', 'F_down_solar_sim', 'alt', 'lat']]
@@ -329,10 +323,41 @@ for i, key in enumerate(keys):
     ax.grid()
     ax.set(
         xlabel='Time (UTC)',
-        ylabel='Downward solar irradiance (wm2)',
+        ylabel='',
     )
+    h.set_xticks_and_xlabels(ax, pd.Timedelta(7, 'h'))
 
-figname = f'04_libRadtran_vs_ecRad_cloud-free_time_series.pdf'
+fig.supylabel(f'Downward solar irradiance ({h.plot_units["flux_dn_sw"]})')
+figname = f'04_libRadtran_vs_ecRad_cloud-free_time_series_difference.png'
+plt.savefig(f'{plot_path}/{figname}')
+plt.show()
+plt.close()
+
+# %% plot comparison of above cloud irradiance between libRadtran and ecRad - time series
+label = ['a)', 'b)']
+fig, axs = plt.subplots(2, 1, figsize=(15 * h.cm, 9 * h.cm), layout='constrained')
+for i, key in enumerate(keys):
+    ax = axs[i]
+    plot_df = (bacardi_ds[key][['ecrad_fdw', 'F_down_solar_sim', 'alt', 'lat']]
+               # .sel(time=slices[key]['case'])
+               .to_pandas()
+               .dropna())
+    plot_df['difference'] = plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw']
+    rmse = np.mean(np.sqrt((plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])**2))
+    bias = np.mean(plot_df['F_down_solar_sim'] - plot_df['ecrad_fdw'])
+    ax.plot(plot_df.index, plot_df['F_down_solar_sim'], label='libRadtran')
+    ax.plot(plot_df.index, plot_df['ecrad_fdw'], label='ecRad')
+    # ax.plot(plot_df.index, plot_df['difference'])
+    ax.legend()
+    ax.grid()
+    ax.set(
+        xlabel='Time (UTC)',
+        ylabel='',
+    )
+    h.set_xticks_and_xlabels(ax, pd.Timedelta(7, 'h'))
+
+fig.supylabel(f'Downward solar irradiance ({h.plot_units["flux_dn_sw"]})')
+figname = f'04_libRadtran_vs_ecRad_cloud-free_time_series.png'
 plt.savefig(f'{plot_path}/{figname}')
 plt.show()
 plt.close()
