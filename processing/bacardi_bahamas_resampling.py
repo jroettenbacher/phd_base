@@ -22,6 +22,7 @@ cbc = h.get_cb_friendly_colors()
 
 # %% set paths
 campaign = "halo-ac3"
+revision = "R2"  # BACARDI revision
 # keys = "RF17"  # run for single flight
 keys = [f"RF{i:02}" for i in range(3, 19)]  # run for all flights
 
@@ -33,7 +34,7 @@ for key in tqdm(keys):
     bahamas_path = h.get_path("bahamas", flight, campaign)
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
     bacardi_path = h.get_path("bacardi", flight, campaign)
-    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR.nc"
+    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_{revision}_JR.nc"
 
     # %% read in BACARDI and BAHAMAS data
     try:

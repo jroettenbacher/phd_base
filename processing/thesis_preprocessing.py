@@ -4,6 +4,10 @@
 | *created*: 01.02.2024
 
 Here the data used in the plotting script for my thesis is prepared.
+
+Scripts to run before:
+- bacardi_attitude_filter.py
+- bacardi_bahamas_resampling.py
 """
 # %% import modules
 import pylim.helpers as h
@@ -19,6 +23,7 @@ import xarray as xr
 
 # %% set paths
 campaign = 'halo-ac3'
+revision = 'R2'  # BACARDI revision version
 save_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data'
 keys = ['RF17', 'RF18']
 ecrad_version = 'v15.1'
@@ -37,7 +42,7 @@ for key in keys:
 
     # filenames
     bahamas_file = f'HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc'
-    bacardi_file = f'HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR.nc'
+    bacardi_file = f'HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_{revision}_JR.nc'
     libradtran_bb_solar_si = f'HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_solar_si_{date}_{key}.nc'
     libradtran_bb_thermal_si = f'HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_si_{date}_{key}.nc'
     ifs_file = f'ifs_{date}_00_ml_O1280_processed.nc'

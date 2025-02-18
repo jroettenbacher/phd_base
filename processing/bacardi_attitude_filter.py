@@ -22,6 +22,7 @@ cbc = h.get_cb_friendly_colors()
 
 # %% set paths
 campaign = "halo-ac3"
+revision = "R2"  # revision of BACARDI files
 # keys = "RF17"  # run for single flight
 keys = [f"RF{i:02}" for i in range(3, 19)]  # run for all flights
 
@@ -34,7 +35,7 @@ for key in tqdm(keys):
     bahamas_path = h.get_path("bahamas", flight, campaign)
     bahamas_file = f"HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1.nc"
     bacardi_path = h.get_path("bacardi", flight, campaign)
-    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1.nc"
+    bacardi_file = f"HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_{revision}.nc"
 
     # %% get flight segmentation and select below and above cloud section
     segmentation = ac3airborne.get_flight_segments()["HALO-AC3"]["HALO"][f"HALO-AC3_HALO_{key}"]
@@ -130,7 +131,7 @@ for key in tqdm(keys):
     ax.set_title(f"{key} - BACARDI solar downward broadband irradiance")
     plt.tight_layout()
     # plt.subplots_adjust(bottom=0.3)
-    figname = f"{plot_path}/{flight}_BACARDI_F_down_raw_vs_filtered.png"
+    figname = f"{plot_path}/{flight}_BACARDI_F_down_raw_vs_filtered_{revision}.png"
     plt.savefig(figname, dpi=300)
     plt.show()
     plt.close()
