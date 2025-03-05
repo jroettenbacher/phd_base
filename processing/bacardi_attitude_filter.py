@@ -22,7 +22,7 @@ cbc = h.get_cb_friendly_colors()
 
 # %% set paths
 campaign = "halo-ac3"
-revision = "R2"  # revision of BACARDI files
+revision = "R1"  # revision of BACARDI files
 # keys = "RF17"  # run for single flight
 keys = [f"RF{i:02}" for i in range(3, 19)]  # run for all flights
 

@@ -24,7 +24,7 @@ import xarray as xr
 # %% set paths
 campaign = 'halo-ac3'
 revision = 'R2'  # BACARDI revision version
-save_path = 'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data'
+save_path = f'C:/Users/Johannes/Documents/Doktor/manuscripts/_thesis/data{revision if revision != "R1" else ''}'
 keys = ['RF17', 'RF18']
 ecrad_version = 'v15.1'
 

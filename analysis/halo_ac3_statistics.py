@@ -17,6 +17,7 @@ import xarray as xr
 
 # %% set paths
 campaign = 'halo-ac3'
+revision = 'R2'  # BACARDI revision
 outpath = h.get_path('plot', campaign=campaign)
 keys = ['RF17', 'RF18']
 ecrad_versions = [f'v{x}' for x in [13, 13.1, 13.2, 15.1, 18.1, 19.1, 30.1, 31.1, 32.1]
@@ -41,7 +42,7 @@ for key in keys:
 
     # filenames
     bahamas_file = f'HALO-AC3_HALO_BAHAMAS_{date}_{key}_v1_JR.nc'
-    bacardi_file = f'HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_R1_JR.nc'
+    bacardi_file = f'HALO-AC3_HALO_BACARDI_BroadbandFluxes_{date}_{key}_{revision}_JR.nc'
     libradtran_bb_solar_si = f'HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_solar_si_{date}_{key}.nc'
     libradtran_bb_thermal_si = f'HALO-AC3_HALO_libRadtran_bb_clearsky_simulation_thermal_si_{date}_{key}.nc'
 
@@ -224,6 +225,6 @@ columns = ['version', 'source', 'key', 'variable', 'section', 'count',
 ecrad_df = pd.DataFrame(ecrad_stats, columns=columns)
 bacardi_df = pd.DataFrame(bacardi_stats, columns=columns)
 df = pd.concat([ecrad_df, bacardi_df]).reset_index(drop=True)
-outfile = f'{outpath}/{campaign}_bacardi_ecrad_statistics.csv'
+outfile = f'{outpath}/{campaign}_bacardi_{revision}_ecrad_statistics.csv'
 df.to_csv(outfile, index=False)
 print(f'Saved {outfile}')
